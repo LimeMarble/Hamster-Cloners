@@ -14,6 +14,36 @@ import {
 } from './crops.js'
 
 export const SAVE_KEY = 'hamster-field-cloners-save-v1'
+export const SAVE_FORMAT_VERSION = 1
+
+function encodeBase64(value) {
+  const bytes = new TextEncoder().encode(value)
+  let binary = ''
+
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte)
+  })
+
+  return globalThis.btoa(binary)
+}
+
+function decodeBase64(value) {
+  const saveCode = value.trim()
+
+  if (
+    !saveCode ||
+    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(
+      saveCode,
+    )
+  ) {
+    throw new Error('The save code is not valid Base64.')
+  }
+
+  const binary = globalThis.atob(saveCode)
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0))
+
+  return new TextDecoder().decode(bytes)
+}
 
 function toNonNegativeNumber(value, fallback) {
   const parsed = Number(value)
@@ -123,10 +153,58 @@ export function normalizeGame(rawGame) {
   }
 }
 
+export function exportGame(game) {
+  return encodeBase64(
+    JSON.stringify({
+      version: SAVE_FORMAT_VERSION,
+      game,
+    }),
+  )
+}
+
+export function importGame(saveCode) {
+  let payload
+
+  try {
+    payload = JSON.parse(decodeBase64(saveCode))
+  } catch (error) {
+    throw new Error(
+      error instanceof Error && error.message === 'The save code is not valid Base64.'
+        ? error.message
+        : 'The save code is invalid or corrupted.',
+      { cause: error },
+    )
+  }
+
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    payload.version !== SAVE_FORMAT_VERSION ||
+    !payload.game ||
+    typeof payload.game !== 'object'
+  ) {
+    throw new Error('This save code is from an unsupported version of the game.')
+  }
+
+  return normalizeGame(payload.game)
+}
+
 export function loadGame() {
   try {
     const rawSave = window.localStorage.getItem(SAVE_KEY)
-    return rawSave ? normalizeGame(JSON.parse(rawSave)) : createInitialGame()
+
+    if (!rawSave) {
+      return createInitialGame()
+    }
+
+    try {
+      return importGame(rawSave)
+    } catch {
+      // Migrate pre-save-code JSON saves without taking away existing progress.
+      const migratedGame = normalizeGame(JSON.parse(rawSave))
+      saveGame(migratedGame)
+      return migratedGame
+    }
   } catch {
     return createInitialGame()
   }
@@ -134,7 +212,7 @@ export function loadGame() {
 
 export function saveGame(game) {
   try {
-    window.localStorage.setItem(SAVE_KEY, JSON.stringify(game))
+    window.localStorage.setItem(SAVE_KEY, exportGame(game))
   } catch {
     // The game remains playable if storage is unavailable or full.
   }

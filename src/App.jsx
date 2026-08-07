@@ -40,7 +40,7 @@ import {
 } from './game/crops.js'
 import { getMonocropThreshold } from './game/monocropPenalty.js'
 import { getCachedFormattedNumber } from './game/numberFormat.js'
-import { loadGame, saveGame } from './game/storage'
+import { exportGame, importGame, loadGame, saveGame } from './game/storage'
 import './App.css'
 
 function FormattedNumber({ value, maximumFractionDigits = 1 }) {
@@ -229,6 +229,8 @@ function App() {
   const [isMonocropWarningOpen, setIsMonocropWarningOpen] = useState(false)
   const [hardResetClicks, setHardResetClicks] = useState(0)
   const [lastHardResetClickAt, setLastHardResetClickAt] = useState(0)
+  const [saveCode, setSaveCode] = useState('')
+  const [saveTransferStatus, setSaveTransferStatus] = useState(null)
 
   function updateGame(update) {
     const nextGame = update(gameRef.current)
@@ -714,7 +716,54 @@ function App() {
   function openOptions() {
     setHardResetClicks(0)
     setLastHardResetClickAt(0)
+    setSaveTransferStatus(null)
     setActiveTab('options')
+  }
+
+  async function exportSave() {
+    const nextSaveCode = exportGame(gameRef.current)
+    setSaveCode(nextSaveCode)
+
+    try {
+      await navigator.clipboard.writeText(nextSaveCode)
+      setSaveTransferStatus({
+        type: 'success',
+        message: 'Save code copied to your clipboard.',
+      })
+    } catch {
+      setSaveTransferStatus({
+        type: 'success',
+        message: 'Save code is ready below. Copy it somewhere safe.',
+      })
+    }
+  }
+
+  function importSave() {
+    try {
+      const importedGame = importGame(saveCode)
+
+      gameRef.current = importedGame
+      setGame(importedGame)
+      setIsEditingBlueprint(false)
+      setIsUnionConfirmationOpen(false)
+      setPendingBlueprintExpansionId(null)
+      setPendingMirrorCornPlacement(null)
+      setHoveredEditorCrop(null)
+      setSelectedCrop('leek')
+      setSaveCode('')
+      setSaveTransferStatus({
+        type: 'success',
+        message: 'Save imported. Your local progress has been replaced.',
+      })
+    } catch (error) {
+      setSaveTransferStatus({
+        type: 'error',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'The save code could not be imported.',
+      })
+    }
   }
 
   function openInventions() {
@@ -1082,6 +1131,53 @@ function App() {
         <section className="inventions-panel options-panel" aria-labelledby="options-title">
           <p className="eyebrow">Game options</p>
           <h1 id="options-title">Options</h1>
+          <article className="invention-card save-transfer-card">
+            <div>
+              <p className="eyebrow">Save transfer</p>
+              <h2>Export or import save data</h2>
+              <p>
+                Your progress is stored locally as a Base64 save code. Export it
+                before changing browsers or devices; importing replaces this
+                browser&apos;s current progress.
+              </p>
+            </div>
+            <div className="save-transfer-controls">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={exportSave}
+              >
+                Export save
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={importSave}
+                disabled={!saveCode.trim()}
+              >
+                Import save
+              </button>
+            </div>
+            <label className="save-code-label" htmlFor="save-code">
+              Save code
+              <textarea
+                id="save-code"
+                className="save-code-input"
+                value={saveCode}
+                onChange={(event) => setSaveCode(event.target.value)}
+                placeholder="Export a save or paste a Base64 save code here"
+                spellCheck="false"
+              />
+            </label>
+            {saveTransferStatus ? (
+              <p
+                className={`save-transfer-status save-transfer-status-${saveTransferStatus.type}`}
+                role="status"
+              >
+                {saveTransferStatus.message}
+              </p>
+            ) : null}
+          </article>
           <article className="invention-card hard-reset-card">
             <div>
               <p className="eyebrow">Irreversible</p>

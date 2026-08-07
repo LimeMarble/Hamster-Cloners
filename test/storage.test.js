@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { normalizeGame } from '../src/game/storage.js'
+import {
+  exportGame,
+  importGame,
+  normalizeGame,
+  SAVE_FORMAT_VERSION,
+} from '../src/game/storage.js'
 
 test('legacy saves reset blueprint progress after the expansion axes swap', () => {
   const migratedGame = normalizeGame({
@@ -39,4 +44,28 @@ test('current saves retain only valid Mirror Corn diagonal targets', () => {
   })
 
   assert.deepEqual(migratedGame.blueprint.mirrorCornTargets, [3, null, null, null])
+})
+
+test('exports and imports a versioned Base64 save code', () => {
+  const saveCode = exportGame({
+    crops: 12_345,
+    hamsters: 10,
+    blueprintExpansionAxesSwapped: true,
+    blueprint: { cells: ['leek'] },
+  })
+
+  assert.match(saveCode, /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/)
+
+  const importedGame = importGame(saveCode)
+  assert.equal(importedGame.crops, 12_345)
+  assert.equal(importedGame.hamsters, 10)
+  assert.equal(SAVE_FORMAT_VERSION, 1)
+})
+
+test('rejects invalid and unsupported save codes', () => {
+  assert.throws(() => importGame('not a save code'), /Base64/)
+  assert.throws(
+    () => importGame(btoa(JSON.stringify({ version: 99, game: {} }))),
+    /unsupported version/,
+  )
 })

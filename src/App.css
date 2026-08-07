@@ -275,6 +275,65 @@ h2 {
   border-color: #8b3a3a;
 }
 
+.save-transfer-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  border-color: #496681;
+}
+
+.save-transfer-card > div:first-child {
+  align-self: center;
+}
+
+.save-transfer-controls {
+  display: grid;
+  gap: 8px;
+  min-width: 148px;
+}
+
+.save-code-label {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.save-code-input {
+  min-height: 82px;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid var(--line);
+  color: var(--text-strong);
+  background: #080d08;
+  font: 0.72rem/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.save-code-input:focus {
+  outline: 1px solid var(--field-green);
+  outline-offset: 1px;
+}
+
+.save-transfer-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.save-transfer-status-success {
+  color: var(--field-green);
+}
+
+.save-transfer-status-error {
+  color: #ff9999;
+}
+
 .hard-reset-button {
   width: min(100%, 330px);
   padding: 11px 16px;
@@ -966,6 +1025,14 @@ dd {
 
   .hero-panel {
     gap: 18px;
+  }
+
+  .save-transfer-card {
+    display: flex;
+  }
+
+  .save-transfer-controls {
+    width: 100%;
   }
 
   .field-stats,
