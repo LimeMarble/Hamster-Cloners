@@ -33,6 +33,7 @@ import {
   getCropName,
   getUnlockedCropIds,
   getVisibleCropIds,
+  LENTIL_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
 } from '../src/game/crops.js'
 import {
@@ -297,6 +298,18 @@ test('Mirror Corn boosts selected diagonal crop effects', () => {
   )
 })
 
+test('Lentil is ineligible for Mirror Corn targeting', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', 'leek', null, 'lentil'],
+    mirrorCornTargets: [3],
+  })
+
+  assert.deepEqual(getDiagonalCropIndexes(blueprint, 0), [])
+  assert.deepEqual(blueprint.mirrorCornTargets, [null, null, null, null])
+})
+
 test('Mirror Corn passive boosts multiply with adjacent crop-effect modifiers', () => {
   const blueprint = createBlueprint({
     rows: 2,
@@ -546,6 +559,30 @@ test('Pumpkins yield five Crops and halve adjacent crop buffs', () => {
   )
 })
 
+test('Lentils multiply all harvests and ignore adjacent Turnips', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['turnip', 'lentil', 'leek'],
+  })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.ok(
+    Math.abs(getCropProductionPerSecond(blueprint, farmland) - 33.125) < 1e-12,
+  )
+  assert.ok(
+    Math.abs(getBlueprintCropStats(blueprint, 2).harvestYield - 1.25) < 1e-12,
+  )
+  const lentilStats = getBlueprintCropStats(blueprint, 1)
+  assert.deepEqual(
+    lentilStats.receivedEffects.length,
+    1,
+  )
+  assert.equal(lentilStats.receivedEffects[0].type, 'global-harvest')
+  assert.equal(lentilStats.receivedEffects[0].sourceCropId, 'lentil')
+  assert.ok(Math.abs(lentilStats.receivedEffects[0].multiplier - 1.25) < 1e-12)
+})
+
 test('adjacency modifier crops stack on buffs without modifying each other', () => {
   const blueprint = createBlueprint({
     rows: 1,
@@ -597,6 +634,11 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
     'sweetPotato',
     'turnip',
   ])
+  assert.equal(LENTIL_UNLOCK_CROP_COUNT, 8e15)
+  assert.deepEqual(
+    getUnlockedCropIds(expandedBlueprint, true, 125, true, true, true),
+    ['leek', 'corn', 'pumpkin', 'sweetPotato', 'turnip', 'appleTree', 'lentil'],
+  )
 })
 
 test('crop visibility reveals each crop only after its discovery milestone', () => {

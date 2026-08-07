@@ -10,6 +10,7 @@ import {
   APPLE_TREE_UNLOCK_CROP_COUNT,
   CROP_PERFECTION_IDS,
   CROP_PERFECTION_UNLOCK_CROP_COUNT,
+  LENTIL_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
 } from './crops.js'
 
@@ -139,6 +140,9 @@ export function normalizeGame(rawGame) {
       rawGame.hasUnlockedAppleTree === true ||
       hasLegacyAppleTreeUnlock ||
       toNonNegativeNumber(rawGame.crops, 0) >= APPLE_TREE_UNLOCK_CROP_COUNT,
+    hasUnlockedLentil:
+      rawGame.hasUnlockedLentil === true ||
+      toNonNegativeNumber(rawGame.crops, 0) >= LENTIL_UNLOCK_CROP_COUNT,
     hasUnlockedCropPerfection:
       rawGame.hasUnlockedCropPerfection === true ||
       toNonNegativeNumber(rawGame.crops, 0) >= CROP_PERFECTION_UNLOCK_CROP_COUNT,

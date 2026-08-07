@@ -32,6 +32,7 @@ import {
   CROP_PERFECTIONS,
   APPLE_TREE_UNLOCK_CROP_COUNT,
   CROP_PERFECTION_UNLOCK_CROP_COUNT,
+  LENTIL_UNLOCK_CROP_COUNT,
   getCropEffectDescription,
   getCropName,
   getUnlockedCropIds,
@@ -175,6 +176,14 @@ function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'global-harvest') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from {getCropName(effect.sourceCropId, completedCropPerfections)}
+                </li>
+              )
+            }
+
             if (effect.type === 'monocrop') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
@@ -219,6 +228,7 @@ function App() {
       game.hamsters,
       game.hasUnlockedTurnip,
       game.hasUnlockedAppleTree,
+      game.hasUnlockedLentil,
     )
 
     return getVisibleCropIds(
@@ -311,6 +321,7 @@ function App() {
         game.hamsters,
         game.hasUnlockedTurnip,
         game.hasUnlockedAppleTree,
+        game.hasUnlockedLentil,
       ),
     [
       game.blueprint,
@@ -318,6 +329,7 @@ function App() {
       game.hamsters,
       game.hasUnlockedTurnip,
       game.hasUnlockedAppleTree,
+      game.hasUnlockedLentil,
     ],
   )
   const visibleCropIds = useMemo(
@@ -482,6 +494,8 @@ function App() {
           hasUnlockedAppleTree:
             currentGame.hasUnlockedAppleTree ||
             nextCrops >= APPLE_TREE_UNLOCK_CROP_COUNT,
+          hasUnlockedLentil:
+            currentGame.hasUnlockedLentil || nextCrops >= LENTIL_UNLOCK_CROP_COUNT,
           hasUnlockedCropPerfection:
             currentGame.hasUnlockedCropPerfection ||
             nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT,

@@ -2,6 +2,7 @@ export const SWEET_POTATO_UNLOCK_HAMSTER_COUNT = 125
 export const TURNIP_UNLOCK_CROP_COUNT = 1e8
 export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
 export const APPLE_TREE_UNLOCK_CROP_COUNT = 5e13
+export const LENTIL_UNLOCK_CROP_COUNT = 8e15
 export const CORN_REVEAL_HAMSTER_COUNT = 50
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
 
@@ -58,6 +59,16 @@ export const CROP_DEFINITIONS = {
     effectDescription:
       '10 Crops per slot · destroys adjacent harvests · receives ×2 external Crop buffs',
     unlockDescription: 'Unlocks at 50T Crops',
+  },
+  lentil: {
+    name: 'Lentil',
+    icon: '🫘',
+    baseYield: 25,
+    hamsterEfficiencyBonus: 0,
+    globalHarvestMultiplier: 1.25,
+    canBeMirrorCornTarget: false,
+    effectDescription: '25 Crops per slot · ×1.25 all Crop harvest',
+    unlockDescription: 'Unlocks at 8 Qd Crops',
   },
 }
 
@@ -131,6 +142,10 @@ export function isCropEffectModifier(cropId) {
   return Boolean(CROP_DEFINITIONS[cropId]?.adjacentCropEffectModifier)
 }
 
+export function canBeMirrorCornTarget(cropId) {
+  return CROP_DEFINITIONS[cropId]?.canBeMirrorCornTarget !== false
+}
+
 export function getAdjacentCropYieldBonus(cropId, completedCropPerfections) {
   return (
     getCropPerfection(cropId, completedCropPerfections)
@@ -144,6 +159,7 @@ export function getUnlockedCropIds(
   hamsters = 0,
   hasUnlockedTurnip = false,
   hasUnlockedAppleTree = false,
+  hasUnlockedLentil = false,
 ) {
   const unlockedCrops = ['leek']
 
@@ -161,6 +177,9 @@ export function getUnlockedCropIds(
   }
   if (hasUnlockedAppleTree) {
     unlockedCrops.push('appleTree')
+  }
+  if (hasUnlockedLentil) {
+    unlockedCrops.push('lentil')
   }
 
   return unlockedCrops

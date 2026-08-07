@@ -484,6 +484,12 @@ h2 {
   background: #421c19;
 }
 
+.plot-lentil,
+.editor-plot-lentil {
+  border-color: #c2a05e;
+  background: #403015;
+}
+
 .plot span,
 .editor-plot span {
   color: var(--field-green);
@@ -513,6 +519,11 @@ h2 {
 .plot-appleTree span,
 .editor-plot-appleTree span {
   color: #dc5a4f;
+}
+
+.plot-lentil span,
+.editor-plot-lentil span {
+  color: #e6c878;
 }
 
 .edit-hint {
@@ -993,7 +1004,7 @@ dd {
   background: #14291a;
 }
 
-.editor-plot:not(.editor-plot-leek):not(.editor-plot-corn):not(.editor-plot-sweetPotato):not(.editor-plot-turnip):not(.editor-plot-pumpkin):not(.editor-plot-appleTree) span {
+.editor-plot:not(.editor-plot-leek):not(.editor-plot-corn):not(.editor-plot-sweetPotato):not(.editor-plot-turnip):not(.editor-plot-pumpkin):not(.editor-plot-appleTree):not(.editor-plot-lentil) span {
   color: var(--text-muted);
   font-size: 0.73rem;
 }

@@ -6,6 +6,7 @@ import {
   CROP_DEFINITIONS,
   CROP_PERFECTIONS,
   CROP_PERFECTION_IDS,
+  canBeMirrorCornTarget,
   getAdjacentCropYieldBonus,
   getCropPerfection,
   hasCropPerfection,
@@ -160,6 +161,7 @@ export function createBlueprint({
         targetIndex >= 0 &&
         targetIndex < totalCells &&
         normalizedCells[targetIndex] &&
+        canBeMirrorCornTarget(normalizedCells[targetIndex]) &&
         Math.abs(sourceRow - targetRow) === 1 &&
         Math.abs(sourceColumn - targetColumn) === 1
       )
@@ -180,6 +182,7 @@ export function createInitialGame() {
     hasVisitedInventions: false,
     hasUnlockedTurnip: false,
     hasUnlockedAppleTree: false,
+    hasUnlockedLentil: false,
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
     completedCropPerfections: [],
@@ -516,7 +519,7 @@ export function getDiagonalCropIndexes(blueprint, index) {
         targetColumn < columns
       ) {
         const targetIndex = targetRow * columns + targetColumn
-        if (cells[targetIndex]) {
+        if (cells[targetIndex] && canBeMirrorCornTarget(cells[targetIndex])) {
           diagonalIndexes.push(targetIndex)
         }
       }
@@ -526,11 +529,7 @@ export function getDiagonalCropIndexes(blueprint, index) {
   return diagonalIndexes
 }
 
-function getAdjacentCropEffectMultiplier(
-  blueprint,
-  index,
-  crop,
-) {
+function getAdjacentCropEffectMultiplier(blueprint, index, crop) {
   if (isCropEffectModifier(crop)) {
     return 1
   }
@@ -538,7 +537,7 @@ function getAdjacentCropEffectMultiplier(
   return getAdjacentCropIndexes(blueprint, index).reduce(
     (multiplier, neighborIndex) =>
       multiplier *
-      getAdjacentCropEffectModifier(blueprint.cells[neighborIndex]),
+      getAdjacentCropEffectModifier(blueprint.cells[neighborIndex], crop),
     1,
   )
 }
@@ -561,6 +560,10 @@ function getMirrorCornTargetCount(
   // Percentage passives which modify other crop effects (such as Turnip and
   // Pumpkin) are protected from other crop buffs, including Mirror Corn.
   if (isCropEffectModifier(blueprint.cells[targetIndex])) {
+    return 0
+  }
+
+  if (!canBeMirrorCornTarget(blueprint.cells[targetIndex])) {
     return 0
   }
 
@@ -606,7 +609,7 @@ function getCropHamsterEfficiencyBonus(crop, completedCropPerfections) {
   )
 }
 
-function getAdjacentCropEffectModifier(crop) {
+function getAdjacentCropEffectModifier(crop, targetCrop) {
   const adjacentCropEffectModifier =
     CROP_DEFINITIONS[crop]?.adjacentCropEffectModifier
 
@@ -616,7 +619,53 @@ function getAdjacentCropEffectModifier(crop) {
     return 1
   }
 
+  if (crop === 'turnip' && targetCrop === 'lentil') {
+    return 1
+  }
+
   return adjacentCropEffectModifier
+}
+
+function getGlobalHarvestEffects(blueprint) {
+  const fieldSize = blueprint.rows * blueprint.columns
+  const cropCounts = Object.fromEntries(
+    Object.keys(CROP_DEFINITIONS).map((crop) => [
+      crop,
+      getPlantedCropCount(blueprint, crop),
+    ]),
+  )
+
+  return blueprint.cells.flatMap((crop, index) => {
+    const globalHarvestMultiplier =
+      CROP_DEFINITIONS[crop]?.globalHarvestMultiplier
+
+    if (globalHarvestMultiplier === undefined) {
+      return []
+    }
+
+    const monocropMultiplier = getMonocropYieldMultiplier(
+      cropCounts[crop],
+      fieldSize,
+    )
+    const adjustedBonus =
+      (globalHarvestMultiplier - 1) *
+      monocropMultiplier *
+      getAdjacentCropEffectMultiplier(blueprint, index, crop)
+
+    return [
+      {
+        sourceCropId: crop,
+        multiplier: 1 + adjustedBonus,
+      },
+    ]
+  })
+}
+
+function getGlobalHarvestMultiplier(blueprint) {
+  return getGlobalHarvestEffects(blueprint).reduce(
+    (multiplier, effect) => multiplier * effect.multiplier,
+    1,
+  )
 }
 
 function getCropYieldBonus(crop, completedCropPerfections) {
@@ -738,7 +787,7 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
     ]),
   )
 
-  return blueprint.cells.reduce((totalIncome, crop, index) => {
+  const baseIncome = blueprint.cells.reduce((totalIncome, crop, index) => {
     const definition = CROP_DEFINITIONS[crop]
 
     if (!definition) {
@@ -797,6 +846,8 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
         monocropMultiplier
     )
   }, 0)
+
+  return baseIncome * getGlobalHarvestMultiplier(blueprint)
 }
 
 export function getBlueprintCropStats(
@@ -826,10 +877,16 @@ export function getBlueprintCropStats(
 
     neighboringIndexes.forEach((neighborIndex) => {
       const sourceCropId = blueprint.cells[neighborIndex]
-      const multiplier =
+      const baseMultiplier =
         CROP_DEFINITIONS[sourceCropId]?.adjacentCropEffectModifier
 
-      if (multiplier !== undefined) {
+      if (baseMultiplier !== undefined) {
+        const multiplier = getAdjacentCropEffectModifier(sourceCropId, crop)
+
+        if (multiplier === 1) {
+          return
+        }
+
         const currentStack = modifierStacksByCrop.get(sourceCropId) ?? {
           count: 0,
           multiplier,
@@ -947,11 +1004,21 @@ export function getBlueprintCropStats(
       index,
       completedCropPerfections,
     )
+  const globalHarvestEffects = getGlobalHarvestEffects(blueprint)
+  const globalHarvestMultiplier = globalHarvestEffects.reduce(
+    (multiplier, effect) => multiplier * effect.multiplier,
+    1,
+  )
   const harvestYield = harvestDestroyedByAppleTree
     ? 0
     : (getCropBaseYield(crop, completedCropPerfections) +
         adjacentYieldBonus * (externalCropBuffMultiplier ?? 1)) *
-      monocropMultiplier
+      monocropMultiplier *
+      globalHarvestMultiplier
+
+  globalHarvestEffects.forEach((effect) => {
+    receivedEffects.push({ type: 'global-harvest', ...effect })
+  })
 
   if (harvestDestroyedByAppleTree) {
     receivedEffects.push({ type: 'harvest-destruction' })
