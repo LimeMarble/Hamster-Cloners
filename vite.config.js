@@ -4,7 +4,7 @@ import babel from '@rolldown/plugin-babel'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/hamster-field-cloners/',
+  base: '/hamster-cloners/',
   plugins: [
     react(),
     babel({ presets: [reactCompilerPreset()] })
