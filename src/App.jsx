@@ -781,9 +781,9 @@ function App() {
   return (
     <main className="game-shell">
       <header className="topbar">
-        <a className="brand" href="#main" aria-label="Hamster Field Cloners home">
+        <a className="brand" href="#main" aria-label="Hamster Cloners home">
           <span className="brand-mark" aria-hidden="true">H</span>
-          <span>Hamster Field Cloners</span>
+          <span>Hamster Cloners</span>
         </a>
         <span className="save-status">Saved locally</span>
       </header>

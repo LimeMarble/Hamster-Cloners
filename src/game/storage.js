@@ -13,7 +13,8 @@ import {
   TURNIP_UNLOCK_CROP_COUNT,
 } from './crops.js'
 
-export const SAVE_KEY = 'hamster-field-cloners-save-v1'
+export const SAVE_KEY = 'hamster-cloners-save-v1'
+const LEGACY_SAVE_KEY = 'hamster-field-cloners-save-v1'
 export const SAVE_FORMAT_VERSION = 1
 
 function encodeBase64(value) {
@@ -191,7 +192,9 @@ export function importGame(saveCode) {
 
 export function loadGame() {
   try {
-    const rawSave = window.localStorage.getItem(SAVE_KEY)
+    const rawSave =
+      window.localStorage.getItem(SAVE_KEY) ??
+      window.localStorage.getItem(LEGACY_SAVE_KEY)
 
     if (!rawSave) {
       return createInitialGame()
