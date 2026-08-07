@@ -1,0 +1,725 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import {
+  BLUEPRINT_EXPANSION_TRACKS,
+  createBlueprint,
+  createFarmlandMultipliers,
+  getCropProductionPerSecond,
+  getCropHamsterEfficiencyMultiplier,
+  getBlueprintExpansionCost,
+  getBlueprintCropStats,
+  getDiagonalCropIndexes,
+  canUnlockCropPerfection,
+  getHamsterStateAfterHire,
+  getHamsterCoordinationMultiplier,
+  getHamsterExternalMultiplier,
+  getMaxHamsterPurchase,
+  getNextHamsterCost,
+  getColumnsProducedPerSecond,
+  getColumnsProducedForTick,
+  getFieldsPlanted,
+  getProductionForTick,
+  HAMSTER_BASE_COST,
+  HAMSTER_COST_GROWTH,
+  POST_UNION_HAMSTER_EFFICIENCY_GROWTH,
+  resetForBlueprintExpansion,
+  SIMULATION_TICK_INTERVAL_MS,
+  unlockCropPerfection,
+  VISUAL_UPDATE_INTERVAL_MS,
+} from '../src/game/gameLogic.js'
+import {
+  APPLE_TREE_UNLOCK_CROP_COUNT,
+  CROP_PERFECTIONS,
+  getCropName,
+  getUnlockedCropIds,
+  getVisibleCropIds,
+  TURNIP_UNLOCK_CROP_COUNT,
+} from '../src/game/crops.js'
+import {
+  getMonocropThreshold,
+  getMonocropYieldMultiplier,
+} from '../src/game/monocropPenalty.js'
+
+test('hamster costs increase additively by one before unionization', () => {
+  assert.equal(getNextHamsterCost(0), HAMSTER_BASE_COST)
+  assert.equal(getNextHamsterCost(1), HAMSTER_BASE_COST + 1)
+  assert.equal(getNextHamsterCost(999), HAMSTER_BASE_COST + 999)
+})
+
+test('hamster costs grow by 1.1 after unionization', () => {
+  assert.equal(
+    getNextHamsterCost(1, true),
+    Math.ceil(HAMSTER_BASE_COST * HAMSTER_COST_GROWTH),
+  )
+  assert.ok(getNextHamsterCost(101, true) > getNextHamsterCost(100, true))
+})
+
+test('hamsters build 0.1 hidden Columns of farmland per second each', () => {
+  assert.equal(getColumnsProducedPerSecond(0), 0)
+  assert.equal(getColumnsProducedPerSecond(1), 0.1)
+  assert.equal(getColumnsProducedPerSecond(8), 0.8)
+})
+
+test('simulation advances at 60 ticks per second while visuals stay at 10', () => {
+  const blueprint = createBlueprint({ cells: ['leek'] })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(SIMULATION_TICK_INTERVAL_MS, 1000 / 60)
+  assert.equal(VISUAL_UPDATE_INTERVAL_MS, 100)
+  assert.ok(
+    Math.abs(
+      getProductionForTick(blueprint, farmland) * 60 -
+        getCropProductionPerSecond(blueprint, farmland),
+    ) < 1e-12,
+  )
+  assert.ok(
+    Math.abs(
+      getColumnsProducedForTick(8) * 60 - getColumnsProducedPerSecond(8),
+    ) < 1e-12,
+  )
+})
+
+test('unionized hamsters have no bonus until a post-union hire is made', () => {
+  assert.equal(getColumnsProducedPerSecond(100, 0), 10)
+})
+
+test('a post-union hire enables exponential 1.03-per-hamster efficiency', () => {
+  const expectedRate = 10.1 * POST_UNION_HAMSTER_EFFICIENCY_GROWTH ** 101
+  const actualRate = getColumnsProducedPerSecond(101, 1)
+
+  assert.ok(Math.abs(actualRate - expectedRate) < 1e-12)
+})
+
+test('field efficiency, hamster coordination, and external multipliers are separate', () => {
+  const coordinationMultiplier = getHamsterCoordinationMultiplier(101, 1)
+  const expectedCoordinationMultiplier =
+    POST_UNION_HAMSTER_EFFICIENCY_GROWTH ** 101
+
+  assert.equal(getHamsterCoordinationMultiplier(101, 0), 1)
+  assert.equal(coordinationMultiplier, expectedCoordinationMultiplier)
+  assert.equal(getHamsterExternalMultiplier(), 1)
+  assert.ok(
+    Math.abs(
+      getColumnsProducedPerSecond(101, 1, 0.5) -
+        10.1 * coordinationMultiplier * 0.5,
+    ) < 1e-12,
+  )
+})
+
+test('the 1,000th hamster triggers unionization and leaves 100 active', () => {
+  assert.deepEqual(
+    getHamsterStateAfterHire({
+      hamsters: 999,
+      totalHamstersHired: 999,
+    }),
+    {
+      hamsters: 100,
+      totalHamstersHired: 1000,
+      unionized: true,
+      postUnionHamstersHired: 0,
+    },
+  )
+})
+
+test('a post-union hire records eligibility for the exponential efficiency bonus', () => {
+  assert.deepEqual(
+    getHamsterStateAfterHire({
+      hamsters: 100,
+      totalHamstersHired: 1000,
+      unionized: true,
+    }),
+    {
+      hamsters: 101,
+      totalHamstersHired: 1001,
+      unionized: true,
+      postUnionHamstersHired: 1,
+    },
+  )
+})
+
+test('hire max stops at 999 hamsters before unionization', () => {
+  const result = getMaxHamsterPurchase({
+    crops: 10000,
+    hamsters: 990,
+    totalHamstersHired: 990,
+    unionized: false,
+  })
+
+  assert.equal(result.purchased, 9)
+  assert.equal(result.hamsters, 999)
+  assert.equal(result.totalHamstersHired, 999)
+  assert.equal(result.unionized, false)
+})
+
+test('income is zero until the first farmland Columns have been made', () => {
+  const blueprint = createBlueprint({ rows: 2, columns: 2, cells: ['leek', 'leek'] })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ columns: 0 }),
+    ),
+    0,
+  )
+})
+
+test('income multiplies the base field income by rows, columns, floors, farms, and other multipliers', () => {
+  const blueprint = createBlueprint({ rows: 2, columns: 2, cells: ['leek', 'leek'] })
+  const farmland = createFarmlandMultipliers({
+    rows: 2,
+    columns: 3,
+    floors: 2,
+    farms: 4,
+    otherMultiplier: 1.5,
+  })
+
+  assert.equal(getCropProductionPerSecond(blueprint, farmland), 144)
+})
+
+test('Fields Planted is Rows times Columns times Floors times Farms', () => {
+  assert.equal(
+    getFieldsPlanted(
+      createFarmlandMultipliers({ rows: 2, columns: 3, floors: 4, farms: 5 }),
+    ),
+    120,
+  )
+})
+
+test('empty plots do not produce crops', () => {
+  const blueprint = createBlueprint({ rows: 2, columns: 2 })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 5 }),
+    ),
+    0,
+  )
+})
+
+test('corn provides two Crops per slot and applies a 10 percent Hamster Efficiency penalty', () => {
+  const blueprint = createBlueprint({ rows: 2, columns: 2, cells: ['corn'] })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1 }),
+    ),
+    2,
+  )
+  assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 0.9)
+})
+
+test('crop Hamster Efficiency bonuses stack additively before other multipliers', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', 'sweetPotato'],
+  })
+
+  assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 1.15)
+})
+
+test('Turnips double adjacent crop bonuses without increasing crop yield', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['sweetPotato', 'turnip'],
+  })
+
+  assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 1.5)
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1 }),
+    ),
+    1.5,
+  )
+})
+
+test('Enriching Leek changes its name and enriches adjacent crop yield', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['leek', 'corn'],
+  })
+
+  assert.equal(getCropName('leek', ['enrichingLeek']), 'Enriching Leek')
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1 }),
+      ['enrichingLeek'],
+    ),
+    8,
+  )
+})
+
+test('Mirror Corn changes Corn to five yield and −50% Hamster Efficiency', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', 'leek', 'sweetPotato', 'appleTree'],
+    mirrorCornTargets: [3],
+  })
+
+  assert.equal(getCropName('corn', ['mirrorCorn']), 'Mirror Corn')
+  assert.deepEqual(getDiagonalCropIndexes(blueprint, 0), [3])
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(blueprint, ['mirrorCorn']),
+    0.75,
+  )
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+      ['mirrorCorn', 'enrichingLeek'],
+    ),
+    40,
+  )
+})
+
+test('Mirror Corn boosts selected diagonal crop effects', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', 'appleTree', null, 'leek'],
+    mirrorCornTargets: [3],
+  })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+      ['mirrorCorn', 'enrichingLeek'],
+    ),
+    30,
+  )
+})
+
+test('Mirror Corn passive boosts multiply with adjacent crop-effect modifiers', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', 'turnip', null, 'sweetPotato'],
+    mirrorCornTargets: [3],
+  })
+
+  // Sweet Potato's +25% is doubled by both the Turnip and its Mirror Corn.
+  // Mirror Corn itself retains its -50% Hamster Efficiency contribution.
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(blueprint, ['mirrorCorn']),
+    1.5,
+  )
+})
+
+test('blueprint crop stats expose a crop’s received effects', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', 'turnip', null, 'sweetPotato'],
+    mirrorCornTargets: [3],
+  })
+
+  assert.deepEqual(
+    getBlueprintCropStats(blueprint, 3, ['mirrorCorn']),
+    {
+      crop: 'sweetPotato',
+      baseYield: 1,
+      harvestYield: 1,
+      hamsterEfficiencyBonus: 1,
+      harvestDestroyedByAppleTree: false,
+      externalCropBuffMultiplier: null,
+      receivedEffects: [
+        {
+          type: 'crop-effect-modifier',
+          sourceCropId: 'turnip',
+          count: 1,
+          multiplier: 2,
+        },
+        {
+          type: 'mirror-corn',
+          count: 1,
+          multiplier: 2,
+        },
+      ],
+    },
+  )
+})
+
+test('blueprint crop stats combine Turnip and Pumpkin effect stacks', () => {
+  const blueprint = createBlueprint({
+    rows: 3,
+    columns: 3,
+    cells: [
+      null,
+      'pumpkin',
+      null,
+      'turnip',
+      'sweetPotato',
+      'turnip',
+      null,
+      'pumpkin',
+      null,
+    ],
+  })
+
+  const modifierEffects = getBlueprintCropStats(blueprint, 4).receivedEffects
+    .filter((effect) => effect.type === 'crop-effect-modifier')
+
+  assert.deepEqual(modifierEffects, [
+    { type: 'crop-effect-modifier', sourceCropId: 'pumpkin', count: 2, multiplier: 0.25 },
+    { type: 'crop-effect-modifier', sourceCropId: 'turnip', count: 2, multiplier: 4 },
+  ])
+})
+
+test('Mirror Corn costs 200T Crops to unlock', () => {
+  const game = {
+    crops: CROP_PERFECTIONS.mirrorCorn.cost,
+    hasUnlockedCropPerfection: true,
+    completedCropPerfections: [],
+  }
+
+  assert.equal(canUnlockCropPerfection(game, 'mirrorCorn'), true)
+  assert.deepEqual(unlockCropPerfection(game, 'mirrorCorn'), {
+    ...game,
+    crops: 0,
+    completedCropPerfections: ['mirrorCorn'],
+  })
+})
+
+test('Apple Trees erase adjacent harvests but leave their crop effects active', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['appleTree', 'sweetPotato'],
+  })
+
+  assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 1.25)
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+    ),
+    10,
+  )
+})
+
+test('Apple Trees receive twice external Crop yield buffs', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['leek', 'appleTree'],
+  })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+      ['enrichingLeek'],
+    ),
+    20,
+  )
+})
+
+test('Turnips and Pumpkins modify Apple Tree external Crop buffs', () => {
+  const turnipBlueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['leek', 'appleTree', 'turnip'],
+  })
+  const pumpkinBlueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['leek', 'appleTree', 'pumpkin'],
+  })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(
+    getCropProductionPerSecond(turnipBlueprint, farmland, ['enrichingLeek']),
+    30,
+  )
+  assert.equal(
+    getCropProductionPerSecond(pumpkinBlueprint, farmland, ['enrichingLeek']),
+    15,
+  )
+})
+
+test('Apple Trees apply their receiver bonus to each external passive effect', () => {
+  const baseBlueprint = {
+    rows: 3,
+    columns: 3,
+    cells: [
+      'corn',
+      'turnip',
+      'corn',
+      'turnip',
+      'appleTree',
+      'turnip',
+      null,
+      'leek',
+      null,
+    ],
+  }
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      createBlueprint(baseBlueprint),
+      farmland,
+      ['mirrorCorn', 'enrichingLeek'],
+    ),
+    340,
+  )
+  assert.equal(
+    getCropProductionPerSecond(
+      createBlueprint({ ...baseBlueprint, mirrorCornTargets: [4, null, 4] }),
+      farmland,
+      ['mirrorCorn', 'enrichingLeek'],
+    ),
+    5140,
+  )
+  assert.equal(
+    getBlueprintCropStats(
+      createBlueprint({ ...baseBlueprint, mirrorCornTargets: [4, null, 4] }),
+      4,
+      ['mirrorCorn', 'enrichingLeek'],
+    ).externalCropBuffMultiplier,
+    1024,
+  )
+})
+
+test('Apple Tree unlocks after reaching 50T Crops', () => {
+  assert.equal(APPLE_TREE_UNLOCK_CROP_COUNT, 5e13)
+  assert.deepEqual(
+    getUnlockedCropIds(createBlueprint(), false, 0, false, true),
+    ['leek', 'appleTree'],
+  )
+})
+
+test('ordinary yield bonuses affect and are affected by crop-effect modifiers', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['turnip', 'leek', 'corn'],
+  })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1 }),
+      ['enrichingLeek'],
+    ),
+    23.5,
+  )
+})
+
+test('Enriching Leek costs 20 billion Crops to unlock', () => {
+  const game = {
+    crops: CROP_PERFECTIONS.enrichingLeek.cost,
+    hasUnlockedCropPerfection: true,
+    completedCropPerfections: [],
+  }
+
+  assert.equal(canUnlockCropPerfection(game, 'enrichingLeek'), true)
+  assert.deepEqual(unlockCropPerfection(game, 'enrichingLeek'), {
+    ...game,
+    crops: 0,
+    completedCropPerfections: ['enrichingLeek'],
+  })
+})
+
+test('Pumpkins yield five Crops and halve adjacent crop buffs', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['sweetPotato', 'pumpkin'],
+  })
+
+  assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 1.125)
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1 }),
+    ),
+    6,
+  )
+})
+
+test('adjacency modifier crops stack on buffs without modifying each other', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['turnip', 'sweetPotato', 'pumpkin'],
+  })
+
+  assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 1.25)
+})
+
+test('monocrop penalties weaken crop buffs and strengthen crop debuffs', () => {
+  const sweetPotatoMonocrop = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['sweetPotato', 'sweetPotato', 'sweetPotato'],
+  })
+  const cornMonocrop = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', 'corn', 'corn'],
+  })
+
+  assert.equal(getCropHamsterEfficiencyMultiplier(sweetPotatoMonocrop), 1.375)
+  assert.ok(
+    Math.abs(getCropHamsterEfficiencyMultiplier(cornMonocrop) - 0.4) < 1e-12,
+  )
+})
+
+test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', () => {
+  const expandedBlueprint = createBlueprint({ rows: 1, columns: 2 })
+
+  assert.deepEqual(getUnlockedCropIds(expandedBlueprint, false), ['leek', 'corn'])
+  assert.deepEqual(getUnlockedCropIds(expandedBlueprint, true, 124), [
+    'leek',
+    'corn',
+    'pumpkin',
+  ])
+  assert.deepEqual(getUnlockedCropIds(expandedBlueprint, true, 125), [
+    'leek',
+    'corn',
+    'pumpkin',
+    'sweetPotato',
+  ])
+  assert.equal(TURNIP_UNLOCK_CROP_COUNT, 1e8)
+  assert.deepEqual(getUnlockedCropIds(expandedBlueprint, true, 125, true), [
+    'leek',
+    'corn',
+    'pumpkin',
+    'sweetPotato',
+    'turnip',
+  ])
+})
+
+test('crop visibility reveals each crop only after its discovery milestone', () => {
+  assert.deepEqual(getVisibleCropIds(['leek', 'corn'], 49), ['leek'])
+  assert.deepEqual(getVisibleCropIds(['leek', 'corn'], 50), ['leek', 'corn'])
+  assert.deepEqual(
+    getVisibleCropIds(['leek', 'corn', 'pumpkin'], 499),
+    ['leek', 'corn'],
+  )
+  assert.deepEqual(
+    getVisibleCropIds(['leek', 'corn', 'pumpkin'], 500),
+    ['leek', 'corn', 'pumpkin', 'sweetPotato'],
+  )
+  assert.deepEqual(
+    getVisibleCropIds(['leek', 'corn', 'pumpkin', 'sweetPotato'], 500),
+    ['leek', 'corn', 'pumpkin', 'sweetPotato', 'turnip'],
+  )
+  assert.deepEqual(
+    getVisibleCropIds(['leek', 'corn', 'pumpkin', 'turnip'], 500),
+    ['leek', 'corn', 'pumpkin', 'sweetPotato'],
+  )
+})
+
+test('blueprint expansions use the ordered milestone configuration', () => {
+  assert.deepEqual(
+    BLUEPRINT_EXPANSION_TRACKS.map(({ id, stages }) => ({
+      id,
+      costs: stages.map((stage) => stage.cost),
+    })),
+    [
+      { id: 'column', costs: [1e4, 1e8, 1e12, 1e16, 1e24, 1e36, 1e52] },
+      {
+        id: 'row',
+        costs: [1e7, 1e9, 1e11, 1e13, 1e15, 1e19, 1e25, 1e33, 1e43, 1e55],
+      },
+    ],
+  )
+
+  const firstColumnGame = {
+    crops: 1e4,
+    hamsters: 8,
+    totalHamstersHired: 8,
+    unionized: false,
+    postUnionHamstersHired: 0,
+    completedBlueprintExpansions: [],
+    farmland: createFarmlandMultipliers({ rows: 1, columns: 17 }),
+    blueprint: createBlueprint({ cells: ['leek'] }),
+  }
+  assert.equal(getBlueprintExpansionCost(firstColumnGame, 'firstColumn'), 1e4)
+  assert.equal(getBlueprintExpansionCost(firstColumnGame, 'firstRow'), null)
+
+  const firstColumnResult = resetForBlueprintExpansion(
+    firstColumnGame,
+    'firstColumn',
+  )
+  assert.equal(firstColumnResult.crops, 0)
+  assert.equal(firstColumnResult.farmland.rows, 1)
+  assert.equal(firstColumnResult.farmland.columns, 0)
+  assert.equal(firstColumnResult.blueprint.columns, 2)
+  assert.deepEqual(firstColumnResult.completedBlueprintExpansions, ['firstColumn'])
+
+  const firstRowResult = resetForBlueprintExpansion(
+    {
+      ...firstColumnResult,
+      crops: 1e7,
+      farmland: createFarmlandMultipliers({ rows: 1, columns: 17 }),
+      blueprint: createBlueprint({
+        rows: 1,
+        columns: 2,
+        cells: ['leek', 'corn'],
+      }),
+    },
+    'firstRow',
+  )
+  assert.equal(firstRowResult.blueprint.rows, 2)
+  assert.deepEqual(firstRowResult.blueprint.cells, ['leek', 'corn', null, null])
+  assert.deepEqual(firstRowResult.completedBlueprintExpansions, ['firstColumn', 'firstRow'])
+
+  const secondColumnResult = resetForBlueprintExpansion(
+    {
+      ...firstRowResult,
+      crops: 1e8,
+      farmland: createFarmlandMultipliers({ rows: 1, columns: 17 }),
+      blueprint: createBlueprint({
+        rows: 2,
+        columns: 2,
+        cells: ['leek', 'corn', 'sweetPotato', 'turnip'],
+      }),
+    },
+    'secondColumn',
+  )
+  assert.equal(secondColumnResult.crops, 0)
+  assert.equal(secondColumnResult.farmland.rows, 1)
+  assert.equal(secondColumnResult.farmland.columns, 0)
+  assert.equal(secondColumnResult.blueprint.columns, 3)
+  assert.deepEqual(secondColumnResult.blueprint.cells, [
+    'leek',
+    'corn',
+    null,
+    'sweetPotato',
+    'turnip',
+    null,
+  ])
+  assert.deepEqual(secondColumnResult.completedBlueprintExpansions, [
+    'firstColumn',
+    'firstRow',
+    'secondColumn',
+  ])
+})
+
+test('monocrop threshold matches the design formula', () => {
+  assert.equal(getMonocropThreshold(1), 1.5)
+  assert.equal(getMonocropThreshold(16), 9)
+  assert.equal(getMonocropThreshold(256), 65)
+})
+
+test('monocrop multiplier uses the inverse-power penalty at the threshold', () => {
+  assert.equal(getMonocropYieldMultiplier(2, 16), 1)
+  assert.equal(getMonocropYieldMultiplier(9, 16), 0.5)
+
+  const overage = (16 - getMonocropThreshold(16)) / 16
+  assert.equal(
+    getMonocropYieldMultiplier(16, 16),
+    1 / (2 * (overage + 1) ** 10),
+  )
+})
