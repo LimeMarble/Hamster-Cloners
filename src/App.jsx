@@ -179,7 +179,7 @@ function CropHoverInspector({
             if (effect.type === 'global-harvest') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from {getCropName(effect.sourceCropId, completedCropPerfections)}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from {effect.count} {getCropName(effect.sourceCropId, completedCropPerfections)}{effect.count === 1 ? '' : 's'}
                 </li>
               )
             }
@@ -194,7 +194,7 @@ function CropHoverInspector({
 
             return (
               <li key={`${effect.type}-${effectIndex}`}>
-                +<FormattedNumber value={effect.bonus} maximumFractionDigits={2} /> Crop yield from {getCropName(effect.sourceCropId, completedCropPerfections)}
+                +<FormattedNumber value={effect.bonus} maximumFractionDigits={2} /> Crop yield from {effect.count} {getCropName(effect.sourceCropId, completedCropPerfections)}{effect.count === 1 ? '' : 's'}
               </li>
             )
           })}

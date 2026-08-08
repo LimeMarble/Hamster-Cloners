@@ -580,7 +580,34 @@ test('Lentils multiply all harvests and ignore adjacent Turnips', () => {
   )
   assert.equal(lentilStats.receivedEffects[0].type, 'global-harvest')
   assert.equal(lentilStats.receivedEffects[0].sourceCropId, 'lentil')
+  assert.equal(lentilStats.receivedEffects[0].count, 1)
   assert.ok(Math.abs(lentilStats.receivedEffects[0].multiplier - 1.25) < 1e-12)
+})
+
+test('Lentil harvest bonuses stack additively in one received-effect entry', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 5,
+    cells: ['lentil', 'leek', 'lentil'],
+  })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(getCropProductionPerSecond(blueprint, farmland), 76.5)
+  assert.deepEqual(getBlueprintCropStats(blueprint, 1).receivedEffects, [
+    { type: 'global-harvest', sourceCropId: 'lentil', count: 2, multiplier: 1.5 },
+  ])
+})
+
+test('Enriching Leek harvest bonuses stack in one received-effect entry', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['leek', 'corn', 'leek'],
+  })
+
+  assert.deepEqual(getBlueprintCropStats(blueprint, 1, ['enrichingLeek']).receivedEffects, [
+    { type: 'crop-yield', sourceCropId: 'leek', count: 2, bonus: 10 },
+  ])
 })
 
 test('adjacency modifier crops stack on buffs without modifying each other', () => {

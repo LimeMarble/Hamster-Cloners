@@ -655,17 +655,39 @@ function getGlobalHarvestEffects(blueprint) {
     return [
       {
         sourceCropId: crop,
-        multiplier: 1 + adjustedBonus,
+        bonus: adjustedBonus,
       },
     ]
   })
 }
 
 function getGlobalHarvestMultiplier(blueprint) {
-  return getGlobalHarvestEffects(blueprint).reduce(
-    (multiplier, effect) => multiplier * effect.multiplier,
-    1,
+  return 1 + getGlobalHarvestEffects(blueprint).reduce(
+    (totalBonus, effect) => totalBonus + effect.bonus,
+    0,
   )
+}
+
+function getGroupedGlobalHarvestEffects(blueprint) {
+  const effectsByCrop = new Map()
+
+  getGlobalHarvestEffects(blueprint).forEach(({ sourceCropId, bonus }) => {
+    const currentEffect = effectsByCrop.get(sourceCropId) ?? {
+      count: 0,
+      bonus: 0,
+    }
+
+    effectsByCrop.set(sourceCropId, {
+      count: currentEffect.count + 1,
+      bonus: currentEffect.bonus + bonus,
+    })
+  })
+
+  return Array.from(effectsByCrop, ([sourceCropId, effect]) => ({
+    sourceCropId,
+    count: effect.count,
+    multiplier: 1 + effect.bonus,
+  }))
 }
 
 function getCropYieldBonus(crop, completedCropPerfections) {
@@ -926,6 +948,8 @@ export function getBlueprintCropStats(
     })
   }
 
+  const cropYieldBonusesByCrop = new Map()
+
   neighboringIndexes.forEach((neighborIndex) => {
     const sourceCropId = blueprint.cells[neighborIndex]
     const baseCropYieldBonus = getCropYieldBonus(
@@ -946,12 +970,25 @@ export function getBlueprintCropStats(
         )
 
     if (cropYieldBonus !== 0) {
-      receivedEffects.push({
-        type: 'crop-yield',
-        sourceCropId,
-        bonus: cropYieldBonus,
+      const currentBonus = cropYieldBonusesByCrop.get(sourceCropId) ?? {
+        count: 0,
+        bonus: 0,
+      }
+
+      cropYieldBonusesByCrop.set(sourceCropId, {
+        count: currentBonus.count + 1,
+        bonus: currentBonus.bonus + cropYieldBonus,
       })
     }
+  })
+
+  cropYieldBonusesByCrop.forEach(({ count, bonus }, sourceCropId) => {
+    receivedEffects.push({
+      type: 'crop-yield',
+      sourceCropId,
+      count,
+      bonus,
+    })
   })
 
   const harvestDestroyedByAppleTree = neighboringIndexes.some(
@@ -1004,11 +1041,8 @@ export function getBlueprintCropStats(
       index,
       completedCropPerfections,
     )
-  const globalHarvestEffects = getGlobalHarvestEffects(blueprint)
-  const globalHarvestMultiplier = globalHarvestEffects.reduce(
-    (multiplier, effect) => multiplier * effect.multiplier,
-    1,
-  )
+  const globalHarvestEffects = getGroupedGlobalHarvestEffects(blueprint)
+  const globalHarvestMultiplier = getGlobalHarvestMultiplier(blueprint)
   const harvestYield = harvestDestroyedByAppleTree
     ? 0
     : (getCropBaseYield(crop, completedCropPerfections) +
