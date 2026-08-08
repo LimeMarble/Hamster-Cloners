@@ -29,11 +29,14 @@ export const HIRE_MAX_UNLOCK_COUNT = 10
 export const UNION_STATUS_RETIRE_HIRE_COUNT = 20
 export const INVENTIONS_HAMSTER_UNLOCK_COUNT = 50
 export const ROW_DUPLICATORS_UNLOCK_CROP_COUNT = 404e21
+export const ROW_DUPLICATOR_BASE_COST = 1e12
+export const ROW_DUPLICATOR_COST_GROWTH = 1.2
+export const ROW_DUPLICATOR_INCOME_GROWTH = 1.02
 export const BLUEPRINT_EXPANSION_CONFIG = [
   {
     id: 'column',
     title: 'Blueprint Column Expansion',
-    maximumExpansions: 7,
+    maximumExpansions: 6,
     baseCost: 1e4,
     costScale: 1e4,
     acceleratedScalingAfter: 4,
@@ -42,7 +45,7 @@ export const BLUEPRINT_EXPANSION_CONFIG = [
   {
     id: 'row',
     title: 'Blueprint Row Expansion',
-    maximumExpansions: 10,
+    maximumExpansions: 8,
     baseCost: 1e7,
     costScale: 1e2,
     acceleratedScalingAfter: 5,
@@ -260,6 +263,7 @@ export function createInitialGame() {
     unionized: false,
     postUnionHamstersHired: 0,
     hasSeenMonocropLimit: false,
+    hasSeenBlueprintMastery: false,
     hasVisitedInventions: false,
     hasUnlockedTurnip: false,
     hasUnlockedAppleTree: false,
@@ -268,6 +272,7 @@ export function createInitialGame() {
     hasUnlockedRootTunnel: false,
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
+    rowDuplicators: 0,
     completedCropPerfections: [],
     blueprintExpansionAxesSwapped: true,
     completedBlueprintExpansions: [],
@@ -331,6 +336,40 @@ export function getNextHamsterCost(hamsters, unionized = false) {
   }
 
   return Math.ceil(HAMSTER_BASE_COST * HAMSTER_COST_GROWTH ** safeHamsters)
+}
+
+export function getNextRowDuplicatorCost(rowDuplicators = 0) {
+  const safeRowDuplicators = Math.max(
+    0,
+    Math.floor(Number(rowDuplicators) || 0),
+  )
+
+  return Math.ceil(
+    ROW_DUPLICATOR_BASE_COST *
+      ROW_DUPLICATOR_COST_GROWTH ** safeRowDuplicators,
+  )
+}
+
+export function getRowDuplicatorIncomeMultiplier(
+  rowDuplicators = 0,
+  blueprint = null,
+  completedCropPerfections = [],
+) {
+  const safeRowDuplicators = Math.max(
+    0,
+    Math.floor(Number(rowDuplicators) || 0),
+  )
+  const effectivenessMultiplier = blueprint
+    ? getRowDuplicatorEffectivenessMultiplier(
+        blueprint,
+        completedCropPerfections,
+      )
+    : 1
+
+  return (
+    1 +
+    (ROW_DUPLICATOR_INCOME_GROWTH - 1) * effectivenessMultiplier
+  ) ** safeRowDuplicators
 }
 
 export function getHamsterStateAfterHire({
@@ -1086,6 +1125,57 @@ export function getCropHamsterEfficiencyMultiplier(
   return Math.max(0, 1 + additiveCropBonus)
 }
 
+export function getRowDuplicatorEffectivenessMultiplier(
+  blueprint,
+  completedCropPerfections = [],
+) {
+  const fieldSize = blueprint.rows * blueprint.columns
+  const cropCounts = Object.fromEntries(
+    Object.keys(CROP_DEFINITIONS).map((crop) => [
+      crop,
+      getPlantedCropCount(blueprint, crop),
+    ]),
+  )
+  const additiveEffectivenessBonus = blueprint.cells.reduce(
+    (totalBonus, crop, index) => {
+      const baseEffectivenessBonus =
+        CROP_DEFINITIONS[crop]?.rowDuplicatorEffectivenessBonus ?? 0
+
+      if (baseEffectivenessBonus === 0) {
+        return totalBonus
+      }
+
+      const monocropMultiplier = getMonocropYieldMultiplier(
+        cropCounts[crop],
+        fieldSize,
+      )
+      const adjustedBonus =
+        baseEffectivenessBonus > 0
+          ? baseEffectivenessBonus * monocropMultiplier
+          : baseEffectivenessBonus / monocropMultiplier
+      const adjacentCropBonusMultiplier =
+        baseEffectivenessBonus > 0
+          ? getAdjacentCropEffectMultiplier(blueprint, index, crop)
+          : 1
+      const mirrorCornEffectMultiplier = getMirrorCornEffectMultiplier(
+        blueprint,
+        index,
+        completedCropPerfections,
+      )
+
+      return (
+        totalBonus +
+        adjustedBonus *
+          adjacentCropBonusMultiplier *
+          mirrorCornEffectMultiplier
+      )
+    },
+    0,
+  )
+
+  return Math.max(0, 1 + additiveEffectivenessBonus)
+}
+
 export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCounts = Object.fromEntries(
@@ -1405,10 +1495,16 @@ export function getCropProductionPerSecond(
   blueprint,
   farmland,
   completedCropPerfections = [],
+  rowDuplicators = 0,
 ) {
   return (
     getBaseFieldIncome(blueprint, completedCropPerfections) *
-    getIncomeMultiplier(farmland)
+    getIncomeMultiplier(farmland) *
+    getRowDuplicatorIncomeMultiplier(
+      rowDuplicators,
+      blueprint,
+      completedCropPerfections,
+    )
   )
 }
 
@@ -1450,6 +1546,7 @@ export function getProductionForTick(
   blueprint,
   farmland,
   completedCropPerfections = [],
+  rowDuplicators = 0,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
 ) {
   return (
@@ -1457,6 +1554,7 @@ export function getProductionForTick(
       blueprint,
       farmland,
       completedCropPerfections,
+      rowDuplicators,
     ) *
     (tickIntervalMs / 1000)
   )

@@ -390,6 +390,10 @@ h2 {
   border-left: 3px solid var(--hamster-purple);
 }
 
+.row-duplicator-upgrade-card {
+  border-left-color: #e4bf42;
+}
+
 .size-pill,
 .hamster-badge {
   display: inline-flex;
@@ -488,6 +492,23 @@ h2 {
   background: #0a110b;
 }
 
+.sunflower-garden {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: -4px 0 14px;
+  color: #f4d457;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sunflower-garden span[aria-hidden='true'] {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
 .field-grid,
 .editor-grid {
   display: grid;
@@ -559,6 +580,12 @@ h2 {
   background: #25201b;
 }
 
+.plot-sunflower,
+.editor-plot-sunflower {
+  border-color: #e4bf42;
+  background: #443c12;
+}
+
 .plot-leechingGourd,
 .plot-leechingGourdPart,
 .editor-plot-leechingGourd,
@@ -611,6 +638,11 @@ h2 {
 .plot-rootTunnel span,
 .editor-plot-rootTunnel span {
   color: #b7a996;
+}
+
+.plot-sunflower span,
+.editor-plot-sunflower span {
+  color: #ffe27a;
 }
 
 .plot-leechingGourd span,
@@ -879,6 +911,46 @@ dd {
   margin-top: 12px;
 }
 
+.blueprint-mastery-backdrop {
+  z-index: 26;
+  background: rgb(19 29 11 / 90%);
+}
+
+.blueprint-mastery-modal {
+  width: min(540px, 100%);
+  padding: 32px;
+  border: 2px solid #e4bf42;
+  color: var(--text-strong);
+  background: radial-gradient(circle at top, #403614, #162014 68%);
+  box-shadow: 0 0 58px rgb(228 191 66 / 28%);
+  text-align: center;
+}
+
+.blueprint-mastery-flowers {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 2rem;
+}
+
+.blueprint-mastery-modal h2 {
+  margin-bottom: 16px;
+  color: #ffe27a;
+  font-size: clamp(1.45rem, 4vw, 2rem);
+}
+
+.blueprint-mastery-modal p:not(.eyebrow) {
+  margin: 0 auto 20px;
+  color: #eee7c7;
+  font-size: 0.96rem;
+  line-height: 1.65;
+}
+
+.blueprint-mastery-modal .primary-button {
+  width: min(220px, 100%);
+}
+
 .icon-button {
   display: grid;
   width: 30px;
@@ -1096,7 +1168,7 @@ dd {
   background: #14291a;
 }
 
-.editor-plot:not(.editor-plot-leek):not(.editor-plot-corn):not(.editor-plot-sweetPotato):not(.editor-plot-turnip):not(.editor-plot-pumpkin):not(.editor-plot-appleTree):not(.editor-plot-lentil):not(.editor-plot-knotweed):not(.editor-plot-rootTunnel):not(.editor-plot-leechingGourd):not(.editor-plot-leechingGourdPart) span {
+.editor-plot:not(.editor-plot-leek):not(.editor-plot-corn):not(.editor-plot-sweetPotato):not(.editor-plot-turnip):not(.editor-plot-pumpkin):not(.editor-plot-appleTree):not(.editor-plot-lentil):not(.editor-plot-knotweed):not(.editor-plot-rootTunnel):not(.editor-plot-sunflower):not(.editor-plot-leechingGourd):not(.editor-plot-leechingGourdPart) span {
   color: var(--text-muted);
   font-size: 0.73rem;
 }

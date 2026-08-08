@@ -12,7 +12,9 @@ import {
   getHamsterStateAfterHire,
   getMaxHamsterPurchase,
   getNextHamsterCost,
+  getNextRowDuplicatorCost,
   getProductionForTick,
+  getRowDuplicatorIncomeMultiplier,
   getColumnsProducedPerSecond,
   getColumnsProducedForTick,
   SIMULATION_TICK_INTERVAL_MS,
@@ -269,6 +271,7 @@ function App() {
       game.hasUnlockedLentil,
       game.hasUnlockedKnotweed,
       game.hasUnlockedRootTunnel,
+      game.hasUnlockedRowDuplicators,
     )
 
     return getVisibleCropIds(
@@ -320,8 +323,14 @@ function App() {
         game.blueprint,
         game.farmland,
         game.completedCropPerfections,
+        game.rowDuplicators,
       ),
-    [game.blueprint, game.farmland, game.completedCropPerfections],
+    [
+      game.blueprint,
+      game.farmland,
+      game.completedCropPerfections,
+      game.rowDuplicators,
+    ],
   )
   const cropHamsterEfficiencyMultiplier = useMemo(
     () =>
@@ -365,6 +374,19 @@ function App() {
       game.hasUnlockedRowDuplicators,
     ],
   )
+  const nextRowDuplicatorCost = useMemo(
+    () => getNextRowDuplicatorCost(game.rowDuplicators),
+    [game.rowDuplicators],
+  )
+  const rowDuplicatorIncomeMultiplier = useMemo(
+    () =>
+      getRowDuplicatorIncomeMultiplier(
+        game.rowDuplicators,
+        game.blueprint,
+        game.completedCropPerfections,
+      ),
+    [game.rowDuplicators, game.blueprint, game.completedCropPerfections],
+  )
   const unlockedCropIds = useMemo(
     () =>
       getUnlockedCropIds(
@@ -376,6 +398,7 @@ function App() {
         game.hasUnlockedLentil,
         game.hasUnlockedKnotweed,
         game.hasUnlockedRootTunnel,
+        game.hasUnlockedRowDuplicators,
       ),
     [
       game.blueprint,
@@ -386,6 +409,7 @@ function App() {
       game.hasUnlockedLentil,
       game.hasUnlockedKnotweed,
       game.hasUnlockedRootTunnel,
+      game.hasUnlockedRowDuplicators,
     ],
   )
   const visibleCropIds = useMemo(
@@ -418,6 +442,9 @@ function App() {
     game.crops >= nextHamsterCost &&
     (game.unionized || game.totalHamstersHired < UNIONIZATION_HAMSTER_COUNT - 1)
   const blueprintExpansionTracks = getBlueprintExpansionTrackProgress(game)
+  const hasCompletedAllBlueprintExpansions = blueprintExpansionTracks.every(
+    (track) => track.nextExpansion === undefined,
+  )
   const pendingBlueprintExpansion = pendingBlueprintExpansionId
     ? getBlueprintExpansion(pendingBlueprintExpansionId)
     : null
@@ -550,6 +577,7 @@ function App() {
           currentGame.blueprint,
           currentGame.farmland,
           currentGame.completedCropPerfections,
+          currentGame.rowDuplicators,
         )
         const nextCrops =
           currentGame.crops +
@@ -704,6 +732,27 @@ function App() {
       const { purchased, ...nextGame } = getMaxHamsterPurchase(currentGame)
 
       return purchased > 0 ? { ...currentGame, ...nextGame } : currentGame
+    })
+  }
+
+  function buyRowDuplicator() {
+    updateGame((currentGame) => {
+      if (!currentGame.hasUnlockedRowDuplicators) {
+        return currentGame
+      }
+
+      const cost = getNextRowDuplicatorCost(currentGame.rowDuplicators)
+
+      if (currentGame.crops < cost) {
+        return currentGame
+      }
+
+      return {
+        ...currentGame,
+        crops: currentGame.crops - cost,
+        rowDuplicators:
+          Math.max(0, Math.floor(Number(currentGame.rowDuplicators) || 0)) + 1,
+      }
     })
   }
 
@@ -904,6 +953,13 @@ function App() {
     })
     setPendingBlueprintExpansionId(null)
     setActiveTab('field')
+  }
+
+  function closeBlueprintMastery() {
+    updateGame((currentGame) => ({
+      ...currentGame,
+      hasSeenBlueprintMastery: true,
+    }))
   }
 
   function confirmRowDuplicatorReset() {
@@ -1158,6 +1214,16 @@ function App() {
             <span className="edit-hint">Click field to edit blueprint</span>
           </button>
 
+          {game.hasUnlockedRowDuplicators ? (
+            <div className="sunflower-garden" aria-label="Row Duplicators are in bloom">
+              <span aria-hidden="true">🌻</span>
+              <span aria-hidden="true">🌻</span>
+              <span>Row Duplicators are in bloom</span>
+              <span aria-hidden="true">🌻</span>
+              <span aria-hidden="true">🌻</span>
+            </div>
+          ) : null}
+
           <dl className="field-stats">
             <div>
               <dt>Fields planted</dt>
@@ -1250,6 +1316,52 @@ function App() {
               : <><FormattedNumber value={nextHamsterCost - game.crops} /> more Crops needed.</>}
           </p>
         </article>
+
+        {game.hasUnlockedRowDuplicators ? (
+          <article className="replicator-card row-duplicator-upgrade-card">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Income engine</p>
+                <h2>Row Duplicators</h2>
+              </div>
+              <span className="hamster-badge" aria-label={`${game.rowDuplicators} Row Duplicators`}>
+                {game.rowDuplicators}
+              </span>
+            </div>
+            <p className="card-copy">
+              Each Row Duplicator permanently multiplies all Crop income by 1.02.
+            </p>
+            <dl className="replicator-stats">
+              <div>
+                <dt>Income boost</dt>
+                <dd>Ã—<FormattedNumber value={rowDuplicatorIncomeMultiplier} maximumFractionDigits={2} /></dd>
+              </div>
+              <div>
+                <dt>Next cost</dt>
+                <dd><FormattedNumber value={nextRowDuplicatorCost} maximumFractionDigits={0} /> Crops</dd>
+              </div>
+            </dl>
+            <div className="replicator-summary next-lesson">
+              <span>Next duplicator</span>
+              <strong><FormattedNumber value={nextRowDuplicatorCost} maximumFractionDigits={0} /> Crops</strong>
+            </div>
+            <div className="hire-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={buyRowDuplicator}
+                disabled={game.crops < nextRowDuplicatorCost}
+              >
+                Build Row Duplicator
+              </button>
+            </div>
+            <p className="affordability" aria-live="polite">
+              {game.crops >= nextRowDuplicatorCost
+                ? 'Ready to duplicate another row of income.'
+                : <><FormattedNumber value={nextRowDuplicatorCost - game.crops} /> more Crops needed.</>}
+            </p>
+          </article>
+        ) : null}
       </section>
         </>
       ) : activeTab === 'inventions' ? (
@@ -1391,7 +1503,7 @@ function App() {
                 <p className="eyebrow">Milestone invention</p>
                 <h2>Row Duplicators</h2>
                 <p>
-                  Reset at <FormattedNumber value={ROW_DUPLICATORS_UNLOCK_CROP_COUNT} maximumFractionDigits={0} /> Crops to make every hamster-built Column also build one Row.
+                  Reset at <FormattedNumber value={ROW_DUPLICATORS_UNLOCK_CROP_COUNT} maximumFractionDigits={0} /> Crops to unlock purchasable Row Duplicators.
                 </p>
               </div>
               {game.hasUnlockedRowDuplicators ? (
@@ -1772,6 +1884,36 @@ function App() {
         </div>
       ) : null}
 
+      {hasCompletedAllBlueprintExpansions && !game.hasSeenBlueprintMastery ? (
+        <div className="modal-backdrop blueprint-mastery-backdrop" role="presentation">
+          <section
+            className="blueprint-mastery-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="blueprint-mastery-title"
+          >
+            <div className="blueprint-mastery-flowers" aria-hidden="true">
+              <span>🌻</span>
+              <span>🌻</span>
+              <span>🌻</span>
+            </div>
+            <p className="eyebrow">Blueprint mastery</p>
+            <h2 id="blueprint-mastery-title">Every expansion is complete!</h2>
+            <p>
+              Your blueprint has reached its full Row and Column potential.
+              Every future field can now grow within this finished design.
+            </p>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={closeBlueprintMastery}
+            >
+              Keep farming
+            </button>
+          </section>
+        </div>
+      ) : null}
+
       {isUnionConfirmationOpen ? (
         <div className="modal-backdrop" role="presentation">
           <section
@@ -1861,7 +2003,8 @@ function App() {
               Columns to zero. Your hamster workforce stays ready to rebuild.
             </p>
             <p>
-              Every future hamster-built Column will also build one Row.
+              Every future hamster-built Column will also build one Row, and
+              purchasable Row Duplicators will become available on the Field tab.
             </p>
             <div className="union-modal-actions">
               <button

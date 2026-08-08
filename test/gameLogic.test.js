@@ -16,11 +16,14 @@ import {
   getHamsterExternalMultiplier,
   getMaxHamsterPurchase,
   getNextHamsterCost,
+  getNextRowDuplicatorCost,
   getColumnsProducedPerSecond,
   getColumnsProducedForTick,
   getFieldsPlanted,
   getLeechingGourdFootprint,
   getProductionForTick,
+  getRowDuplicatorIncomeMultiplier,
+  getRowDuplicatorEffectivenessMultiplier,
   getUnlockedBlueprintSlotCount,
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
@@ -29,6 +32,9 @@ import {
   resetForBlueprintExpansion,
   resetForRowDuplicators,
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
+  ROW_DUPLICATOR_BASE_COST,
+  ROW_DUPLICATOR_COST_GROWTH,
+  ROW_DUPLICATOR_INCOME_GROWTH,
   SIMULATION_TICK_INTERVAL_MS,
   unlockCropPerfection,
   VISUAL_UPDATE_INTERVAL_MS,
@@ -836,6 +842,7 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
       true,
       true,
       true,
+      true,
     ),
     [
       'leek',
@@ -847,6 +854,7 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
       'lentil',
       'knotweed',
       'rootTunnel',
+      'sunflower',
     ],
   )
   assert.equal(getCropName('sweetPotato'), 'Potato')
@@ -866,6 +874,50 @@ test('Row Duplicators reset the field and unlock matched Row construction', () =
     hasUnlockedRowDuplicators: true,
     farmland: createFarmlandMultipliers({ rows: 0, columns: 0 }),
   })
+})
+
+test('Row Duplicators are purchasable upgrades with 1.2 cost growth and 1.02 income growth', () => {
+  const blueprint = createBlueprint({ cells: ['leek'] })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(ROW_DUPLICATOR_BASE_COST, 1e12)
+  assert.equal(ROW_DUPLICATOR_COST_GROWTH, 1.2)
+  assert.equal(ROW_DUPLICATOR_INCOME_GROWTH, 1.02)
+  assert.equal(getNextRowDuplicatorCost(0), 1e12)
+  assert.equal(getNextRowDuplicatorCost(1), Math.ceil(1e12 * 1.2))
+  assert.equal(getRowDuplicatorIncomeMultiplier(2), 1.02 ** 2)
+  assert.equal(
+    getCropProductionPerSecond(blueprint, farmland, [], 2),
+    1.02 ** 2,
+  )
+})
+
+test('Sunflowers boost Row Duplicators like Potatoes boost hamster efficiency', () => {
+  const sunflowerBlueprint = createBlueprint({
+    rows: 3,
+    columns: 3,
+    cells: [
+      null,
+      'turnip',
+      null,
+      null,
+      'sunflower',
+      null,
+      null,
+      null,
+      null,
+    ],
+  })
+
+  // The Turnip doubles the Sunflower's additive +20% effectiveness bonus.
+  assert.equal(
+    getRowDuplicatorEffectivenessMultiplier(sunflowerBlueprint),
+    1.4,
+  )
+  assert.equal(
+    getRowDuplicatorIncomeMultiplier(1, sunflowerBlueprint),
+    1.028,
+  )
 })
 
 test('crop visibility reveals each crop only after its discovery milestone', () => {
@@ -896,10 +948,10 @@ test('blueprint expansions use the ordered milestone configuration', () => {
       costs: stages.map((stage) => stage.cost),
     })),
     [
-      { id: 'column', costs: [1e4, 1e8, 1e12, 1e16, 1e24, 1e36, 1e52] },
+      { id: 'column', costs: [1e4, 1e8, 1e12, 1e16, 1e24, 1e36] },
       {
         id: 'row',
-        costs: [1e7, 1e9, 1e11, 1e13, 1e15, 1e19, 1e25, 1e33, 1e43, 1e55],
+        costs: [1e7, 1e9, 1e11, 1e13, 1e15, 1e19, 1e25, 1e33],
       },
     ],
   )

@@ -169,6 +169,7 @@ export function normalizeGame(rawGame) {
     ),
     hasSeenMonocropLimit:
       rawGame.hasSeenMonocropLimit === true || hasReachedLimit,
+    hasSeenBlueprintMastery: rawGame.hasSeenBlueprintMastery === true,
     hasVisitedInventions: rawGame.hasVisitedInventions === true,
     hasUnlockedTurnip:
       rawGame.hasUnlockedTurnip === true ||
@@ -191,6 +192,7 @@ export function normalizeGame(rawGame) {
       rawGame.hasUnlockedCropPerfection === true ||
       toNonNegativeNumber(rawGame.crops, 0) >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
     hasUnlockedRowDuplicators: rawGame.hasUnlockedRowDuplicators === true,
+    rowDuplicators: toNonNegativeInteger(rawGame.rowDuplicators, 0),
     completedCropPerfections,
     hamstersBuildColumns: true,
     blueprintExpansionAxesSwapped: true,

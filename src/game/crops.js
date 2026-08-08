@@ -99,6 +99,16 @@ export const CROP_DEFINITIONS = {
       'Transfers non-modifier crop adjacencies through this plot',
     unlockDescription: 'Unlocks at 216 Qn Crops',
   },
+  sunflower: {
+    name: 'Sunflower',
+    icon: '🌻',
+    baseYield: 1,
+    hamsterEfficiencyBonus: 0,
+    rowDuplicatorEffectivenessBonus: 0.2,
+    effectDescription:
+      '1 Crop per slot · +20% Row Duplicator effectiveness',
+    unlockDescription: 'Unlocks with Row Duplicators',
+  },
   leechingGourd: {
     name: 'Leeching Gourd',
     icon: '🎃',
@@ -263,6 +273,7 @@ export function getUnlockedCropIds(
   hasUnlockedLentil = false,
   hasUnlockedKnotweed = false,
   hasUnlockedRootTunnel = false,
+  hasUnlockedRowDuplicators = false,
 ) {
   const unlockedCrops = ['leek']
 
@@ -289,6 +300,9 @@ export function getUnlockedCropIds(
   }
   if (hasUnlockedRootTunnel) {
     unlockedCrops.push('rootTunnel')
+  }
+  if (hasUnlockedRowDuplicators) {
+    unlockedCrops.push('sunflower')
   }
 
   return unlockedCrops
