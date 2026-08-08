@@ -127,6 +127,55 @@ export const BLUEPRINT_EXPANSIONS = BLUEPRINT_EXPANSION_TRACKS.flatMap(
     })),
 )
 
+function isLeechingGourdAnchor(crop) {
+  return CROP_DEFINITIONS[crop]?.isLeechingGourdAnchor === true
+}
+
+function isLeechingGourdPart(crop) {
+  return CROP_DEFINITIONS[crop]?.isLeechingGourdPart === true
+}
+
+function isLeechingGourdCell(crop) {
+  return isLeechingGourdAnchor(crop) || isLeechingGourdPart(crop)
+}
+
+function normalizeLeechingGourdCells(cells, rows, columns) {
+  const anchorIndexes = cells.flatMap((crop, index) =>
+    isLeechingGourdAnchor(crop) ? [index] : [],
+  )
+  const clearGourdCells = () =>
+    cells.map((crop) => (isLeechingGourdCell(crop) ? null : crop))
+
+  if (anchorIndexes.length === 0) {
+    return cells.some(isLeechingGourdPart) ? clearGourdCells() : cells
+  }
+
+  if (anchorIndexes.length !== 1) {
+    return clearGourdCells()
+  }
+
+  const anchorIndex = anchorIndexes[0]
+  const row = Math.floor(anchorIndex / columns)
+  const column = anchorIndex % columns
+
+  if (row >= rows - 1 || column >= columns - 1) {
+    return clearGourdCells()
+  }
+
+  const footprint = [
+    anchorIndex,
+    anchorIndex + 1,
+    anchorIndex + columns,
+    anchorIndex + columns + 1,
+  ]
+  const hasValidFootprint = footprint.every((index, footprintIndex) =>
+    cells[index] ===
+    (footprintIndex === 0 ? 'leechingGourd' : 'leechingGourdPart'),
+  )
+
+  return hasValidFootprint ? cells : clearGourdCells()
+}
+
 export function createBlueprint({
   rows = INITIAL_BLUEPRINT_SIZE.rows,
   columns = INITIAL_BLUEPRINT_SIZE.columns,
@@ -137,10 +186,10 @@ export function createBlueprint({
   const safeColumns = Math.max(1, Math.floor(Number(columns) || 1))
   const totalCells = safeRows * safeColumns
   const sourceCells = Array.isArray(cells) ? cells : []
-  const normalizedCells = Array.from(
+  const normalizedCells = normalizeLeechingGourdCells(Array.from(
     { length: totalCells },
     (_, index) => (isKnownCrop(sourceCells[index]) ? sourceCells[index] : null),
-  )
+  ), safeRows, safeColumns)
   const sourceMirrorCornTargets = Array.isArray(mirrorCornTargets)
     ? mirrorCornTargets
     : []
@@ -172,6 +221,33 @@ export function createBlueprint({
   }
 }
 
+export function getLeechingGourdFootprint(blueprint, anchorIndex) {
+  const { rows, columns } = blueprint
+  const safeAnchorIndex = Number(anchorIndex)
+
+  if (
+    !Number.isInteger(safeAnchorIndex) ||
+    safeAnchorIndex < 0 ||
+    safeAnchorIndex >= rows * columns
+  ) {
+    return []
+  }
+
+  const row = Math.floor(safeAnchorIndex / columns)
+  const column = safeAnchorIndex % columns
+
+  if (row >= rows - 1 || column >= columns - 1) {
+    return []
+  }
+
+  return [
+    safeAnchorIndex,
+    safeAnchorIndex + 1,
+    safeAnchorIndex + columns,
+    safeAnchorIndex + columns + 1,
+  ]
+}
+
 export function createInitialGame() {
   return {
     crops: STARTING_CROPS,
@@ -184,6 +260,7 @@ export function createInitialGame() {
     hasUnlockedTurnip: false,
     hasUnlockedAppleTree: false,
     hasUnlockedLentil: false,
+    hasUnlockedKnotweed: false,
     hasUnlockedRootTunnel: false,
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
@@ -498,11 +575,13 @@ export function getPlantedCropCount(blueprint, crop = 'leek') {
 export function hasReachedMonocropLimit(blueprint) {
   const fieldSize = blueprint.rows * blueprint.columns
 
-  return Object.keys(CROP_DEFINITIONS).some(
+  return Object.keys(CROP_DEFINITIONS)
+    .filter((crop) => CROP_DEFINITIONS[crop].internalOnly !== true)
+    .some(
     (crop) =>
       getPlantedCropCount(blueprint, crop) >=
       getMonocropThreshold(fieldSize),
-  )
+    )
 }
 
 function getOrthogonalIndexes(blueprint, index) {
@@ -529,6 +608,51 @@ function getOrthogonalIndexes(blueprint, index) {
 
 function isRootTunnel(crop) {
   return CROP_DEFINITIONS[crop]?.transfersAdjacencies === true
+}
+
+function getLeechingGourdAdjacentCropIndexes(blueprint) {
+  const anchorIndex = blueprint.cells.findIndex(isLeechingGourdAnchor)
+
+  if (anchorIndex === -1) {
+    return []
+  }
+
+  const footprint = getLeechingGourdFootprint(blueprint, anchorIndex)
+
+  if (footprint.length !== 4) {
+    return []
+  }
+
+  return [
+    ...new Set(
+      footprint.flatMap((footprintIndex) =>
+        getOrthogonalIndexes(blueprint, footprintIndex),
+      ),
+    ),
+  ].filter((index) => {
+    const crop = blueprint.cells[index]
+
+    return crop && !isLeechingGourdCell(crop)
+  })
+}
+
+function getLeechingGourdTurnipEffect(blueprint) {
+  const debuffContribution = getLeechingGourdAdjacentCropIndexes(
+    blueprint,
+  ).reduce((total, index) => {
+    const definition = CROP_DEFINITIONS[blueprint.cells[index]]
+
+    if (!definition?.hasDebuff) {
+      return total
+    }
+
+    return total + (definition.isHarmful ? 2 : 1)
+  }, 0)
+
+  return {
+    debuffContribution,
+    multiplier: 1 + debuffContribution * 0.05,
+  }
 }
 
 function getConnectedRootTunnelIndexes(blueprint, startingIndexes) {
@@ -560,7 +684,9 @@ function getAdjacentCropIndexes(blueprint, index) {
   const orthogonalIndexes = getOrthogonalIndexes(blueprint, index)
   const directCropIndexes = orthogonalIndexes.filter(
     (neighborIndex) =>
-      cells[neighborIndex] && !isRootTunnel(cells[neighborIndex]),
+      cells[neighborIndex] &&
+      !isRootTunnel(cells[neighborIndex]) &&
+      !isLeechingGourdCell(cells[neighborIndex]),
   )
 
   if (!crop || isCropEffectModifier(crop)) {
@@ -581,6 +707,7 @@ function getAdjacentCropIndexes(blueprint, index) {
           tunnelNeighborIndex !== index &&
           tunnelNeighborCrop &&
           !isRootTunnel(tunnelNeighborCrop) &&
+          !isLeechingGourdCell(tunnelNeighborCrop) &&
           !isCropEffectModifier(tunnelNeighborCrop)
         )
       },
@@ -626,7 +753,11 @@ function getAdjacentCropEffectMultiplier(blueprint, index, crop) {
   return getAdjacentCropIndexes(blueprint, index).reduce(
     (multiplier, neighborIndex) =>
       multiplier *
-      getAdjacentCropEffectModifier(blueprint.cells[neighborIndex], crop),
+      getAdjacentCropEffectModifier(
+        blueprint,
+        blueprint.cells[neighborIndex],
+        crop,
+      ),
     1,
   )
 }
@@ -702,7 +833,7 @@ function getCropHamsterEfficiencyBonus(crop, completedCropPerfections) {
   )
 }
 
-function getAdjacentCropEffectModifier(crop, targetCrop) {
+function getAdjacentCropEffectModifier(blueprint, crop, targetCrop) {
   const adjacentCropEffectModifier =
     CROP_DEFINITIONS[crop]?.adjacentCropEffectModifier
 
@@ -714,6 +845,13 @@ function getAdjacentCropEffectModifier(crop, targetCrop) {
 
   if (crop === 'turnip' && targetCrop === 'lentil') {
     return 1
+  }
+
+  if (crop === 'turnip') {
+    return (
+      adjacentCropEffectModifier *
+      getLeechingGourdTurnipEffect(blueprint).multiplier
+    )
   }
 
   return adjacentCropEffectModifier
@@ -783,10 +921,10 @@ function getGroupedGlobalHarvestEffects(blueprint) {
   }))
 }
 
-function getCropYieldBonus(crop, completedCropPerfections) {
-  return getAdjacentCropYieldBonus(
-    crop,
-    completedCropPerfections,
+function getAdjacentHarvestModifier(crop, completedCropPerfections) {
+  return (
+    getAdjacentCropYieldBonus(crop, completedCropPerfections) +
+    (CROP_DEFINITIONS[crop]?.adjacentHarvestModifier ?? 0)
   )
 }
 
@@ -807,13 +945,20 @@ function getExternalCropBuffMultiplier(
     blueprint,
     index,
   ).flatMap((neighborIndex) => {
-    const adjacentCropEffectModifier =
+    const baseAdjacentCropEffectModifier =
       CROP_DEFINITIONS[blueprint.cells[neighborIndex]]
         ?.adjacentCropEffectModifier
 
-    return adjacentCropEffectModifier === undefined
+    return baseAdjacentCropEffectModifier === undefined
       ? []
-      : [baseExternalCropBuffMultiplier * adjacentCropEffectModifier]
+      : [
+          baseExternalCropBuffMultiplier *
+            getAdjacentCropEffectModifier(
+              blueprint,
+              blueprint.cells[neighborIndex],
+              crop,
+            ),
+        ]
   })
   const mirrorCorn = getCropPerfection('corn', completedCropPerfections)
   const mirrorCornTargetCount = getMirrorCornTargetCount(
@@ -926,7 +1071,7 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
       index,
     ).reduce((totalBonus, neighborIndex) => {
       const neighborCrop = blueprint.cells[neighborIndex]
-      const baseCropYieldBonus = getCropYieldBonus(
+      const baseCropYieldBonus = getAdjacentHarvestModifier(
         neighborCrop,
         completedCropPerfections,
       )
@@ -1000,7 +1145,11 @@ export function getBlueprintCropStats(
         CROP_DEFINITIONS[sourceCropId]?.adjacentCropEffectModifier
 
       if (baseMultiplier !== undefined) {
-        const multiplier = getAdjacentCropEffectModifier(sourceCropId, crop)
+        const multiplier = getAdjacentCropEffectModifier(
+          blueprint,
+          sourceCropId,
+          crop,
+        )
 
         if (multiplier === 1) {
           return
@@ -1028,6 +1177,18 @@ export function getBlueprintCropStats(
     })
   }
 
+  if (crop === 'turnip') {
+    const leechingGourdEffect = getLeechingGourdTurnipEffect(blueprint)
+
+    if (leechingGourdEffect.debuffContribution > 0) {
+      receivedEffects.push({
+        type: 'leeching-gourd',
+        count: leechingGourdEffect.debuffContribution,
+        multiplier: leechingGourdEffect.multiplier,
+      })
+    }
+  }
+
   const mirrorCornTargetCount = getMirrorCornTargetCount(
     blueprint,
     index,
@@ -1049,7 +1210,7 @@ export function getBlueprintCropStats(
 
   neighboringIndexes.forEach((neighborIndex) => {
     const sourceCropId = blueprint.cells[neighborIndex]
-    const baseCropYieldBonus = getCropYieldBonus(
+    const baseCropYieldBonus = getAdjacentHarvestModifier(
       sourceCropId,
       completedCropPerfections,
     )
@@ -1094,7 +1255,7 @@ export function getBlueprintCropStats(
   const adjacentYieldBonus = neighboringIndexes.reduce(
     (totalBonus, neighborIndex) => {
       const sourceCropId = blueprint.cells[neighborIndex]
-      const baseCropYieldBonus = getCropYieldBonus(
+      const baseCropYieldBonus = getAdjacentHarvestModifier(
         sourceCropId,
         completedCropPerfections,
       )

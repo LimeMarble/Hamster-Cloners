@@ -490,10 +490,24 @@ h2 {
   background: #403015;
 }
 
+.plot-knotweed,
+.editor-plot-knotweed {
+  border-color: #8ca153;
+  background: #263617;
+}
+
 .plot-rootTunnel,
 .editor-plot-rootTunnel {
   border-color: #817666;
   background: #25201b;
+}
+
+.plot-leechingGourd,
+.plot-leechingGourdPart,
+.editor-plot-leechingGourd,
+.editor-plot-leechingGourdPart {
+  border-color: #cf6d2c;
+  background: #4b2512;
 }
 
 .plot span,
@@ -532,9 +546,19 @@ h2 {
   color: #e6c878;
 }
 
+.plot-knotweed span,
+.editor-plot-knotweed span {
+  color: #c4d57d;
+}
+
 .plot-rootTunnel span,
 .editor-plot-rootTunnel span {
   color: #b7a996;
+}
+
+.plot-leechingGourd span,
+.editor-plot-leechingGourd span {
+  color: #ffae58;
 }
 
 .edit-hint {
@@ -1015,7 +1039,7 @@ dd {
   background: #14291a;
 }
 
-.editor-plot:not(.editor-plot-leek):not(.editor-plot-corn):not(.editor-plot-sweetPotato):not(.editor-plot-turnip):not(.editor-plot-pumpkin):not(.editor-plot-appleTree):not(.editor-plot-lentil):not(.editor-plot-rootTunnel) span {
+.editor-plot:not(.editor-plot-leek):not(.editor-plot-corn):not(.editor-plot-sweetPotato):not(.editor-plot-turnip):not(.editor-plot-pumpkin):not(.editor-plot-appleTree):not(.editor-plot-lentil):not(.editor-plot-knotweed):not(.editor-plot-rootTunnel):not(.editor-plot-leechingGourd):not(.editor-plot-leechingGourdPart) span {
   color: var(--text-muted);
   font-size: 0.73rem;
 }

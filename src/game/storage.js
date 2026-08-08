@@ -11,6 +11,7 @@ import {
   CROP_PERFECTION_IDS,
   CROP_PERFECTION_UNLOCK_CROP_COUNT,
   LENTIL_UNLOCK_CROP_COUNT,
+  KNOTWEED_UNLOCK_CROP_COUNT,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
 } from './crops.js'
@@ -144,6 +145,9 @@ export function normalizeGame(rawGame) {
     hasUnlockedLentil:
       rawGame.hasUnlockedLentil === true ||
       toNonNegativeNumber(rawGame.crops, 0) >= LENTIL_UNLOCK_CROP_COUNT,
+    hasUnlockedKnotweed:
+      rawGame.hasUnlockedKnotweed === true ||
+      toNonNegativeNumber(rawGame.crops, 0) >= KNOTWEED_UNLOCK_CROP_COUNT,
     hasUnlockedRootTunnel:
       rawGame.hasUnlockedRootTunnel === true ||
       toNonNegativeNumber(rawGame.crops, 0) >= ROOT_TUNNEL_UNLOCK_CROP_COUNT,

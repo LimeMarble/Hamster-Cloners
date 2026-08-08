@@ -18,6 +18,7 @@ import {
   getColumnsProducedPerSecond,
   getColumnsProducedForTick,
   getFieldsPlanted,
+  getLeechingGourdFootprint,
   getProductionForTick,
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
@@ -37,6 +38,7 @@ import {
   getUnlockedCropIds,
   getVisibleCropIds,
   LENTIL_UNLOCK_CROP_COUNT,
+  KNOTWEED_UNLOCK_CROP_COUNT,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
 } from '../src/game/crops.js'
@@ -610,6 +612,109 @@ test('Pumpkins yield five Crops and halve adjacent crop buffs', () => {
   )
 })
 
+test('Leeching Gourd uses a single valid 2×2 footprint', () => {
+  const validGourd = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: [
+      'leechingGourd',
+      'leechingGourdPart',
+      'leechingGourdPart',
+      'leechingGourdPart',
+    ],
+  })
+  const malformedGourd = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['leechingGourd', 'leechingGourdPart'],
+  })
+
+  assert.deepEqual(getLeechingGourdFootprint(validGourd, 0), [0, 1, 2, 3])
+  assert.deepEqual(getLeechingGourdFootprint(validGourd, 1), [])
+  assert.deepEqual(validGourd.cells, [
+    'leechingGourd',
+    'leechingGourdPart',
+    'leechingGourdPart',
+    'leechingGourdPart',
+  ])
+  assert.deepEqual(malformedGourd.cells, [null, null, null, null])
+})
+
+test('Leeching Gourd boosts all Turnips from adjacent debuffs, with harmful crops doubled', () => {
+  const blueprint = createBlueprint({
+    rows: 4,
+    columns: 4,
+    cells: [
+      null,
+      'corn',
+      null,
+      null,
+      'knotweed',
+      'leechingGourd',
+      'leechingGourdPart',
+      null,
+      null,
+      'leechingGourdPart',
+      'leechingGourdPart',
+      null,
+      'turnip',
+      'sweetPotato',
+      null,
+      null,
+    ],
+  })
+
+  // Corn contributes one +5% stack and harmful Knotweed contributes two,
+  // raising Turnip's ×2 effect to ×2.3 on the adjacent Potato. Corn's own
+  // −10% Hamster Efficiency effect remains additive alongside that bonus.
+  assert.ok(
+    Math.abs(getCropHamsterEfficiencyMultiplier(blueprint) - 1.475) < 1e-12,
+  )
+  assert.deepEqual(
+    getBlueprintCropStats(blueprint, 12).receivedEffects,
+    [{ type: 'leeching-gourd', count: 3, multiplier: 1.15 }],
+  )
+})
+
+test('Leeching Gourd costs 2 Qn Crops and is not a Mirror Corn target', () => {
+  const game = {
+    crops: CROP_PERFECTIONS.leechingGourd.cost,
+    hasUnlockedCropPerfection: true,
+    completedCropPerfections: [],
+  }
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', null, null, 'leechingGourd'],
+    mirrorCornTargets: [3],
+  })
+
+  assert.equal(CROP_PERFECTIONS.leechingGourd.cost, 2e18)
+  assert.equal(canUnlockCropPerfection(game, 'leechingGourd'), true)
+  assert.deepEqual(unlockCropPerfection(game, 'leechingGourd'), {
+    ...game,
+    crops: 0,
+    completedCropPerfections: ['leechingGourd'],
+  })
+  assert.deepEqual(blueprint.mirrorCornTargets, [null, null, null, null])
+})
+
+test('Knotweed provides no harvest and subtracts 10 harvest from adjacent crops', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['knotweed', 'leek'],
+  })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+    ),
+    -9,
+  )
+})
+
 test('Lentils multiply all harvests and ignore adjacent Turnips', () => {
   const blueprint = createBlueprint({
     rows: 1,
@@ -713,13 +818,23 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
     'turnip',
   ])
   assert.equal(LENTIL_UNLOCK_CROP_COUNT, 8e15)
+  assert.equal(KNOTWEED_UNLOCK_CROP_COUNT, 2e18)
   assert.equal(ROOT_TUNNEL_UNLOCK_CROP_COUNT, 216e18)
   assert.deepEqual(
     getUnlockedCropIds(expandedBlueprint, true, 125, true, true, true),
     ['leek', 'corn', 'pumpkin', 'sweetPotato', 'turnip', 'appleTree', 'lentil'],
   )
   assert.deepEqual(
-    getUnlockedCropIds(expandedBlueprint, true, 125, true, true, true, true),
+    getUnlockedCropIds(
+      expandedBlueprint,
+      true,
+      125,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ),
     [
       'leek',
       'corn',
@@ -728,6 +843,7 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
       'turnip',
       'appleTree',
       'lentil',
+      'knotweed',
       'rootTunnel',
     ],
   )

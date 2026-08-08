@@ -3,6 +3,7 @@ export const TURNIP_UNLOCK_CROP_COUNT = 1e8
 export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
 export const APPLE_TREE_UNLOCK_CROP_COUNT = 5e13
 export const LENTIL_UNLOCK_CROP_COUNT = 8e15
+export const KNOTWEED_UNLOCK_CROP_COUNT = 2e18
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = 216e18
 export const CORN_REVEAL_HAMSTER_COUNT = 50
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
@@ -21,6 +22,7 @@ export const CROP_DEFINITIONS = {
     icon: '🌽',
     baseYield: 2,
     hamsterEfficiencyBonus: -0.1,
+    hasDebuff: true,
     effectDescription: '2 Crops per slot · −10% Hamster efficiency',
     unlockDescription: 'Unlocks after the first blueprint column expansion',
   },
@@ -30,6 +32,7 @@ export const CROP_DEFINITIONS = {
     baseYield: 5,
     hamsterEfficiencyBonus: 0,
     adjacentCropEffectModifier: 0.5,
+    hasDebuff: true,
     effectDescription: '5 Crops per slot · halves adjacent crop buffs',
     unlockDescription: 'Unlocks after unionization',
   },
@@ -56,6 +59,7 @@ export const CROP_DEFINITIONS = {
     baseYield: 10,
     hamsterEfficiencyBonus: 0,
     destroysAdjacentHarvests: true,
+    hasDebuff: true,
     externalCropBuffMultiplier: 2,
     effectDescription:
       '10 Crops per slot · destroys adjacent harvests · receives ×2 external Crop buffs',
@@ -71,6 +75,18 @@ export const CROP_DEFINITIONS = {
     effectDescription: '25 Crops per slot · ×1.25 all Crop harvest',
     unlockDescription: 'Unlocks at 8 Qd Crops',
   },
+  knotweed: {
+    name: 'Knotweed',
+    icon: '🌿',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    adjacentHarvestModifier: -10,
+    doesNotHarvest: true,
+    hasDebuff: true,
+    isHarmful: true,
+    effectDescription: '0 Crops per slot · −10 adjacent Crop harvest',
+    unlockDescription: 'Unlocks at 2 Qn Crops',
+  },
   rootTunnel: {
     name: 'Root Tunnel',
     icon: '🕳️',
@@ -83,9 +99,35 @@ export const CROP_DEFINITIONS = {
       'Transfers non-modifier crop adjacencies through this plot',
     unlockDescription: 'Unlocks at 216 Qn Crops',
   },
+  leechingGourd: {
+    name: 'Leeching Gourd',
+    icon: '🎃',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    isLeechingGourdAnchor: true,
+    canBeMirrorCornTarget: false,
+    internalOnly: true,
+    effectDescription:
+      '+5% all Turnip effectiveness per adjacent debuff; harmful crops count twice',
+  },
+  leechingGourdPart: {
+    name: 'Leeching Gourd',
+    icon: '',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    isLeechingGourdPart: true,
+    canBeMirrorCornTarget: false,
+    internalOnly: true,
+    effectDescription: 'Part of a Leeching Gourd',
+  },
 }
 
-export const CROP_IDS = Object.keys(CROP_DEFINITIONS)
+const KNOWN_CROP_IDS = Object.keys(CROP_DEFINITIONS)
+export const CROP_IDS = KNOWN_CROP_IDS.filter(
+  (cropId) => CROP_DEFINITIONS[cropId].internalOnly !== true,
+)
 
 export const CROP_PERFECTIONS = {
   enrichingLeek: {
@@ -107,12 +149,21 @@ export const CROP_PERFECTIONS = {
     baseEffectDescription: '5 Crops per slot · −50% Hamster efficiency',
     effectDescription: 'Doubles one diagonally adjacent crop effect',
   },
+  leechingGourd: {
+    id: 'leechingGourd',
+    cropId: 'pumpkin',
+    name: 'Leeching Gourd',
+    cost: 2e18,
+    baseEffectDescription: 'Occupies one 2×2 block and produces no Crops',
+    effectDescription:
+      '+5% all Turnip effectiveness per adjacent debuff; harmful crops count twice',
+  },
 }
 
 export const CROP_PERFECTION_IDS = Object.keys(CROP_PERFECTIONS)
 
 export function isKnownCrop(crop) {
-  return CROP_IDS.includes(crop)
+  return KNOWN_CROP_IDS.includes(crop)
 }
 
 export function hasCropPerfection(completedCropPerfections, perfectionId) {
@@ -131,11 +182,28 @@ export function getCropPerfection(cropId, completedCropPerfections) {
 }
 
 export function getCropName(cropId, completedCropPerfections) {
+  const perfection = getCropPerfection(cropId, completedCropPerfections)
+
+  // Leeching Gourd is a special 2x2 placement that replaces the Pumpkin
+  // palette option. Existing Pumpkins retain their identity after the
+  // perfection is unlocked, so saves never silently rewrite planted crops.
+  if (cropId === 'pumpkin' && perfection?.id === 'leechingGourd') {
+    return CROP_DEFINITIONS.pumpkin.name
+  }
+
   return (
-    getCropPerfection(cropId, completedCropPerfections)?.name ??
+    perfection?.name ??
     CROP_DEFINITIONS[cropId]?.name ??
     cropId
   )
+}
+
+export function getCropPlacementName(cropId, completedCropPerfections) {
+  const perfection = getCropPerfection(cropId, completedCropPerfections)
+
+  return cropId === 'pumpkin' && perfection?.id === 'leechingGourd'
+    ? perfection.name
+    : getCropName(cropId, completedCropPerfections)
 }
 
 export function getCropEffectDescription(cropId, completedCropPerfections) {
@@ -146,8 +214,28 @@ export function getCropEffectDescription(cropId, completedCropPerfections) {
     return cropId
   }
 
+  if (cropId === 'pumpkin' && perfection?.id === 'leechingGourd') {
+    return cropDefinition.effectDescription
+  }
+
   return perfection
     ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} · ${perfection.effectDescription}`
+    : cropDefinition.effectDescription
+}
+
+export function getCropPlacementEffectDescription(
+  cropId,
+  completedCropPerfections,
+) {
+  const cropDefinition = CROP_DEFINITIONS[cropId]
+  const perfection = getCropPerfection(cropId, completedCropPerfections)
+
+  if (!cropDefinition) {
+    return cropId
+  }
+
+  return perfection
+    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} Â· ${perfection.effectDescription}`
     : cropDefinition.effectDescription
 }
 
@@ -173,6 +261,7 @@ export function getUnlockedCropIds(
   hasUnlockedTurnip = false,
   hasUnlockedAppleTree = false,
   hasUnlockedLentil = false,
+  hasUnlockedKnotweed = false,
   hasUnlockedRootTunnel = false,
 ) {
   const unlockedCrops = ['leek']
@@ -194,6 +283,9 @@ export function getUnlockedCropIds(
   }
   if (hasUnlockedLentil) {
     unlockedCrops.push('lentil')
+  }
+  if (hasUnlockedKnotweed) {
+    unlockedCrops.push('knotweed')
   }
   if (hasUnlockedRootTunnel) {
     unlockedCrops.push('rootTunnel')

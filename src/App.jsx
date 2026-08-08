@@ -4,6 +4,7 @@ import {
   getCropProductionPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getDiagonalCropIndexes,
+  getLeechingGourdFootprint,
   getFieldsPlanted,
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
@@ -36,9 +37,12 @@ import {
   APPLE_TREE_UNLOCK_CROP_COUNT,
   CROP_PERFECTION_UNLOCK_CROP_COUNT,
   LENTIL_UNLOCK_CROP_COUNT,
+  KNOTWEED_UNLOCK_CROP_COUNT,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   getCropEffectDescription,
   getCropName,
+  getCropPlacementEffectDescription,
+  getCropPlacementName,
   getUnlockedCropIds,
   getVisibleCropIds,
   TURNIP_UNLOCK_CROP_COUNT,
@@ -172,6 +176,14 @@ function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'leeching-gourd') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Turnip effectiveness from Leeching Gourd
+                </li>
+              )
+            }
+
             if (effect.type === 'harvest-destruction') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
@@ -198,7 +210,7 @@ function CropHoverInspector({
 
             return (
               <li key={`${effect.type}-${effectIndex}`}>
-                +<FormattedNumber value={effect.bonus} maximumFractionDigits={2} /> Crop yield from {effect.count} {getCropName(effect.sourceCropId, completedCropPerfections)}{effect.count === 1 ? '' : 's'}
+                {effect.bonus >= 0 ? '+' : '−'}<FormattedNumber value={Math.abs(effect.bonus)} maximumFractionDigits={2} /> Crop yield from {effect.count} {getCropName(effect.sourceCropId, completedCropPerfections)}{effect.count === 1 ? '' : 's'}
               </li>
             )
           })}
@@ -235,6 +247,7 @@ function App() {
       game.hasUnlockedTurnip,
       game.hasUnlockedAppleTree,
       game.hasUnlockedLentil,
+      game.hasUnlockedKnotweed,
       game.hasUnlockedRootTunnel,
     )
 
@@ -341,6 +354,7 @@ function App() {
         game.hasUnlockedTurnip,
         game.hasUnlockedAppleTree,
         game.hasUnlockedLentil,
+        game.hasUnlockedKnotweed,
         game.hasUnlockedRootTunnel,
       ),
     [
@@ -350,6 +364,7 @@ function App() {
       game.hasUnlockedTurnip,
       game.hasUnlockedAppleTree,
       game.hasUnlockedLentil,
+      game.hasUnlockedKnotweed,
       game.hasUnlockedRootTunnel,
     ],
   )
@@ -393,11 +408,17 @@ function App() {
     'enrichingLeek',
   )
   const canUnlockMirrorCorn = canUnlockCropPerfection(game, 'mirrorCorn')
+  const canUnlockLeechingGourd = canUnlockCropPerfection(game, 'leechingGourd')
   const canUnlockRows = canUnlockRowDuplicators(game)
   const hasEnrichingLeek = game.completedCropPerfections.includes(
     'enrichingLeek',
   )
   const hasMirrorCorn = game.completedCropPerfections.includes('mirrorCorn')
+  const hasLeechingGourd = game.completedCropPerfections.includes(
+    'leechingGourd',
+  )
+  const getDisplayedCropName = (cropId) =>
+    getCropPlacementName(cropId, game.completedCropPerfections)
   const mirrorCornLinks = hasMirrorCorn
     ? (game.blueprint.mirrorCornTargets ?? []).flatMap(
         (targetIndex, sourceIndex) =>
@@ -526,6 +547,9 @@ function App() {
             nextCrops >= APPLE_TREE_UNLOCK_CROP_COUNT,
           hasUnlockedLentil:
             currentGame.hasUnlockedLentil || nextCrops >= LENTIL_UNLOCK_CROP_COUNT,
+          hasUnlockedKnotweed:
+            currentGame.hasUnlockedKnotweed ||
+            nextCrops >= KNOTWEED_UNLOCK_CROP_COUNT,
           hasUnlockedRootTunnel:
             currentGame.hasUnlockedRootTunnel ||
             nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT,
@@ -634,27 +658,8 @@ function App() {
     setIsUnionConfirmationOpen(false)
   }
 
-  function setPlot(index, crop, mirrorCornTargetIndex = null) {
-    if (crop !== null && !unlockedCropIds.includes(crop)) {
-      return
-    }
-
+  function commitBlueprint(nextBlueprint) {
     const currentGame = gameRef.current
-
-    const nextBlueprint = {
-      ...currentGame.blueprint,
-      cells: currentGame.blueprint.cells.map((cell, cellIndex) =>
-        cellIndex === index ? crop : cell,
-      ),
-      mirrorCornTargets: (currentGame.blueprint.mirrorCornTargets ?? []).map(
-        (targetIndex, sourceIndex) => {
-          if (sourceIndex === index) {
-            return crop === 'corn' ? mirrorCornTargetIndex : null
-          }
-          return targetIndex === index ? null : targetIndex
-        },
-      ),
-    }
     const hasReachedLimit = hasReachedMonocropLimit(nextBlueprint)
     const hasJustReachedLimit =
       !currentGame.hasSeenMonocropLimit &&
@@ -673,6 +678,92 @@ function App() {
     }
   }
 
+  function setPlot(index, crop, mirrorCornTargetIndex = null) {
+    if (crop !== null && !unlockedCropIds.includes(crop)) {
+      return
+    }
+
+    const currentGame = gameRef.current
+    const nextBlueprint = {
+      ...currentGame.blueprint,
+      cells: currentGame.blueprint.cells.map((cell, cellIndex) =>
+        cellIndex === index ? crop : cell,
+      ),
+      mirrorCornTargets: (currentGame.blueprint.mirrorCornTargets ?? []).map(
+        (targetIndex, sourceIndex) => {
+          if (sourceIndex === index) {
+            return crop === 'corn' ? mirrorCornTargetIndex : null
+          }
+          return targetIndex === index ? null : targetIndex
+        },
+      ),
+    }
+
+    commitBlueprint(nextBlueprint)
+  }
+
+  function removeLeechingGourd() {
+    const currentGame = gameRef.current
+    const gourdIndexes = currentGame.blueprint.cells.flatMap((crop, index) =>
+      crop === 'leechingGourd' || crop === 'leechingGourdPart' ? [index] : [],
+    )
+
+    if (gourdIndexes.length === 0) {
+      return
+    }
+
+    const gourdIndexSet = new Set(gourdIndexes)
+    commitBlueprint({
+      ...currentGame.blueprint,
+      cells: currentGame.blueprint.cells.map((crop) =>
+        crop === 'leechingGourd' || crop === 'leechingGourdPart' ? null : crop,
+      ),
+      mirrorCornTargets: (currentGame.blueprint.mirrorCornTargets ?? []).map(
+        (targetIndex, sourceIndex) =>
+          gourdIndexSet.has(sourceIndex) || gourdIndexSet.has(targetIndex)
+            ? null
+            : targetIndex,
+      ),
+    })
+  }
+
+  function placeLeechingGourd(index) {
+    const currentGame = gameRef.current
+
+    if (currentGame.blueprint.cells.includes('leechingGourd')) {
+      return
+    }
+
+    const footprint = getLeechingGourdFootprint(currentGame.blueprint, index)
+
+    if (
+      footprint.length !== 4 ||
+      footprint.some((footprintIndex) =>
+        currentGame.blueprint.cells[footprintIndex] !== null,
+      )
+    ) {
+      return
+    }
+
+    const footprintIndexes = new Set(footprint)
+    commitBlueprint({
+      ...currentGame.blueprint,
+      cells: currentGame.blueprint.cells.map((crop, cellIndex) => {
+        if (!footprintIndexes.has(cellIndex)) {
+          return crop
+        }
+
+        return cellIndex === index ? 'leechingGourd' : 'leechingGourdPart'
+      }),
+      mirrorCornTargets: (currentGame.blueprint.mirrorCornTargets ?? []).map(
+        (targetIndex, sourceIndex) =>
+          footprintIndexes.has(sourceIndex) || footprintIndexes.has(targetIndex)
+            ? null
+            : targetIndex,
+      ),
+    })
+  }
+
   function handleEditorPlotClick(index, crop) {
     if (pendingMirrorCornPlacement) {
       if (index === pendingMirrorCornPlacement.sourceIndex) {
@@ -687,6 +778,16 @@ function App() {
         )
         setPendingMirrorCornPlacement(null)
       }
+      return
+    }
+
+    if (crop === 'leechingGourd' || crop === 'leechingGourdPart') {
+      removeLeechingGourd()
+      return
+    }
+
+    if (hasLeechingGourd && selectedCrop === 'pumpkin') {
+      placeLeechingGourd(index)
       return
     }
 
@@ -739,6 +840,13 @@ function App() {
   function unlockMirrorCorn() {
     updateGame((currentGame) => {
       const nextGame = unlockCropPerfection(currentGame, 'mirrorCorn')
+      return nextGame ?? currentGame
+    })
+  }
+
+  function unlockLeechingGourd() {
+    updateGame((currentGame) => {
+      const nextGame = unlockCropPerfection(currentGame, 'leechingGourd')
       return nextGame ?? currentGame
     })
   }
@@ -1122,6 +1230,38 @@ function App() {
                   / <FormattedNumber value={CROP_PERFECTIONS.mirrorCorn.cost} maximumFractionDigits={0} /> Crops
                 </p>
               ) : null}
+              <article className="invention-card crop-perfection-card">
+                <div>
+                  <p className="eyebrow">Pumpkin perfection</p>
+                  <h2>{CROP_PERFECTIONS.leechingGourd.name}</h2>
+                  <p>
+                    Occupies one 2×2 block and gives all Turnips +5% effectiveness
+                    per adjacent debuff, with harmful crops counting twice.
+                  </p>
+                </div>
+                {hasLeechingGourd ? (
+                  <span className="invention-complete">Perfected</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="primary-button"
+                    onClick={unlockLeechingGourd}
+                    disabled={!canUnlockLeechingGourd}
+                  >
+                    Spend <FormattedNumber value={CROP_PERFECTIONS.leechingGourd.cost} maximumFractionDigits={0} />
+                    {' '}Crops
+                  </button>
+                )}
+              </article>
+              {!hasLeechingGourd ? (
+                <p className="invention-progress">
+                  <FormattedNumber
+                    value={Math.min(game.crops, CROP_PERFECTIONS.leechingGourd.cost)}
+                    maximumFractionDigits={0}
+                  />{' '}
+                  / <FormattedNumber value={CROP_PERFECTIONS.leechingGourd.cost} maximumFractionDigits={0} /> Crops
+                </p>
+              ) : null}
             </section>
           ) : (
             <>
@@ -1373,9 +1513,11 @@ function App() {
                         aria-label={
                           isPendingMirrorCornTarget
                             ? `Boost ${getCropName(crop, game.completedCropPerfections)} with Mirror Corn`
-                            : crop === selectedCrop
+                            : crop === 'leechingGourd' || crop === 'leechingGourdPart'
+                              ? 'Remove Leeching Gourd from blueprint'
+                              : crop === selectedCrop
                               ? `Remove ${getCropName(crop, game.completedCropPerfections)} from plot`
-                              : `Plant ${getCropName(selectedCrop, game.completedCropPerfections)} in plot`
+                              : `Plant ${getDisplayedCropName(selectedCrop)} in plot`
                         }
                       >
                         {crop ? <span aria-hidden="true">{getCropMark(crop)}</span> : <span>Plant</span>}
@@ -1407,11 +1549,11 @@ function App() {
                           <span className="crop-option-icon" aria-hidden="true">
                             {crop.icon}
                           </span>
-                          {getCropName(cropId, game.completedCropPerfections)}
+                          {getDisplayedCropName(cropId)}
                         </span>
                         <small>
                           {unlocked
-                            ? getCropEffectDescription(
+                            ? getCropPlacementEffectDescription(
                                 cropId,
                                 game.completedCropPerfections,
                               )
