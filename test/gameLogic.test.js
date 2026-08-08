@@ -344,6 +344,23 @@ test('Root Tunnels transfer ordinary crop adjacencies but not modifier crops', (
   assert.deepEqual(mirrorBlueprint.mirrorCornTargets, [null, null, null, null])
 })
 
+test('Root Tunnels transfer adjacencies through connected tunnel chains', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 4,
+    cells: ['leek', 'rootTunnel', 'rootTunnel', 'corn'],
+  })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+      ['enrichingLeek'],
+    ),
+    8,
+  )
+})
+
 test('Mirror Corn passive boosts multiply with adjacent crop-effect modifiers', () => {
   const blueprint = createBlueprint({
     rows: 2,

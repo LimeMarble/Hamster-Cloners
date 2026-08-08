@@ -531,6 +531,29 @@ function isRootTunnel(crop) {
   return CROP_DEFINITIONS[crop]?.transfersAdjacencies === true
 }
 
+function getConnectedRootTunnelIndexes(blueprint, startingIndexes) {
+  const { cells } = blueprint
+  const visitedIndexes = new Set()
+  const pendingIndexes = [...startingIndexes]
+
+  while (pendingIndexes.length > 0) {
+    const tunnelIndex = pendingIndexes.pop()
+
+    if (visitedIndexes.has(tunnelIndex) || !isRootTunnel(cells[tunnelIndex])) {
+      continue
+    }
+
+    visitedIndexes.add(tunnelIndex)
+    getOrthogonalIndexes(blueprint, tunnelIndex).forEach((neighborIndex) => {
+      if (isRootTunnel(cells[neighborIndex])) {
+        pendingIndexes.push(neighborIndex)
+      }
+    })
+  }
+
+  return [...visitedIndexes]
+}
+
 function getAdjacentCropIndexes(blueprint, index) {
   const { cells } = blueprint
   const crop = cells[index]
@@ -544,12 +567,13 @@ function getAdjacentCropIndexes(blueprint, index) {
     return directCropIndexes
   }
 
-  const transferredCropIndexes = orthogonalIndexes.flatMap((neighborIndex) => {
-    if (!isRootTunnel(cells[neighborIndex])) {
-      return []
-    }
-
-    return getOrthogonalIndexes(blueprint, neighborIndex).filter(
+  const connectedRootTunnelIndexes = getConnectedRootTunnelIndexes(
+    blueprint,
+    orthogonalIndexes.filter((neighborIndex) => isRootTunnel(cells[neighborIndex])),
+  )
+  const transferredCropIndexes = connectedRootTunnelIndexes.flatMap(
+    (tunnelIndex) =>
+      getOrthogonalIndexes(blueprint, tunnelIndex).filter(
       (tunnelNeighborIndex) => {
         const tunnelNeighborCrop = cells[tunnelNeighborIndex]
 
@@ -560,8 +584,8 @@ function getAdjacentCropIndexes(blueprint, index) {
           !isCropEffectModifier(tunnelNeighborCrop)
         )
       },
-    )
-  })
+      ),
+  )
 
   return [...new Set([...directCropIndexes, ...transferredCropIndexes])]
 }
