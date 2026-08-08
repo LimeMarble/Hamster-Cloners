@@ -22,7 +22,10 @@ import {
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
   POST_UNION_HAMSTER_EFFICIENCY_GROWTH,
+  canUnlockRowDuplicators,
   resetForBlueprintExpansion,
+  resetForRowDuplicators,
+  ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   SIMULATION_TICK_INTERVAL_MS,
   unlockCropPerfection,
   VISUAL_UPDATE_INTERVAL_MS,
@@ -34,6 +37,7 @@ import {
   getUnlockedCropIds,
   getVisibleCropIds,
   LENTIL_UNLOCK_CROP_COUNT,
+  ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
 } from '../src/game/crops.js'
 import {
@@ -308,6 +312,36 @@ test('Lentil is ineligible for Mirror Corn targeting', () => {
 
   assert.deepEqual(getDiagonalCropIndexes(blueprint, 0), [])
   assert.deepEqual(blueprint.mirrorCornTargets, [null, null, null, null])
+})
+
+test('Root Tunnels transfer ordinary crop adjacencies but not modifier crops', () => {
+  const transferBlueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['leek', 'rootTunnel', 'corn'],
+  })
+  const modifierBlueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['turnip', 'rootTunnel', 'sweetPotato'],
+  })
+  const mirrorBlueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', 'leek', null, 'rootTunnel'],
+    mirrorCornTargets: [3],
+  })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      transferBlueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+      ['enrichingLeek'],
+    ),
+    8,
+  )
+  assert.equal(getCropHamsterEfficiencyMultiplier(modifierBlueprint), 1.25)
+  assert.deepEqual(mirrorBlueprint.mirrorCornTargets, [null, null, null, null])
 })
 
 test('Mirror Corn passive boosts multiply with adjacent crop-effect modifiers', () => {
@@ -662,10 +696,41 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
     'turnip',
   ])
   assert.equal(LENTIL_UNLOCK_CROP_COUNT, 8e15)
+  assert.equal(ROOT_TUNNEL_UNLOCK_CROP_COUNT, 216e18)
   assert.deepEqual(
     getUnlockedCropIds(expandedBlueprint, true, 125, true, true, true),
     ['leek', 'corn', 'pumpkin', 'sweetPotato', 'turnip', 'appleTree', 'lentil'],
   )
+  assert.deepEqual(
+    getUnlockedCropIds(expandedBlueprint, true, 125, true, true, true, true),
+    [
+      'leek',
+      'corn',
+      'pumpkin',
+      'sweetPotato',
+      'turnip',
+      'appleTree',
+      'lentil',
+      'rootTunnel',
+    ],
+  )
+  assert.equal(getCropName('sweetPotato'), 'Potato')
+})
+
+test('Row Duplicators reset the field and unlock matched Row construction', () => {
+  const game = {
+    crops: ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
+    hasUnlockedRowDuplicators: false,
+    farmland: createFarmlandMultipliers({ rows: 7, columns: 12 }),
+  }
+
+  assert.equal(canUnlockRowDuplicators(game), true)
+  assert.deepEqual(resetForRowDuplicators(game), {
+    ...game,
+    crops: 0,
+    hasUnlockedRowDuplicators: true,
+    farmland: createFarmlandMultipliers({ rows: 0, columns: 0 }),
+  })
 })
 
 test('crop visibility reveals each crop only after its discovery milestone', () => {

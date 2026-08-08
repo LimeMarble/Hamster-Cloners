@@ -28,6 +28,7 @@ export const UNIONIZED_HAMSTER_COUNT = 100
 export const HIRE_MAX_UNLOCK_COUNT = 10
 export const UNION_STATUS_RETIRE_HIRE_COUNT = 20
 export const INVENTIONS_HAMSTER_UNLOCK_COUNT = 50
+export const ROW_DUPLICATORS_UNLOCK_CROP_COUNT = 404e21
 export const BLUEPRINT_EXPANSION_CONFIG = [
   {
     id: 'column',
@@ -183,6 +184,7 @@ export function createInitialGame() {
     hasUnlockedTurnip: false,
     hasUnlockedAppleTree: false,
     hasUnlockedLentil: false,
+    hasUnlockedRootTunnel: false,
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
     completedCropPerfections: [],
@@ -356,6 +358,30 @@ export function unlockCropPerfection(game, perfectionId) {
   }
 }
 
+export function canUnlockRowDuplicators(game) {
+  return (
+    game.hasUnlockedRowDuplicators !== true &&
+    Math.max(0, Number(game.crops) || 0) >= ROW_DUPLICATORS_UNLOCK_CROP_COUNT
+  )
+}
+
+export function resetForRowDuplicators(game) {
+  if (!canUnlockRowDuplicators(game)) {
+    return null
+  }
+
+  return {
+    ...game,
+    crops: 0,
+    hasUnlockedRowDuplicators: true,
+    farmland: {
+      ...createFarmlandMultipliers(game.farmland),
+      rows: 0,
+      columns: 0,
+    },
+  }
+}
+
 export function getBlueprintExpansionCost(game, expansionId) {
   const expansion = getBlueprintExpansion(expansionId)
 
@@ -479,8 +505,8 @@ export function hasReachedMonocropLimit(blueprint) {
   )
 }
 
-function getAdjacentCropIndexes(blueprint, index) {
-  const { rows, columns, cells } = blueprint
+function getOrthogonalIndexes(blueprint, index) {
+  const { rows, columns } = blueprint
   const row = Math.floor(index / columns)
   const column = index % columns
   const neighboringIndexes = []
@@ -498,7 +524,46 @@ function getAdjacentCropIndexes(blueprint, index) {
     neighboringIndexes.push(index + 1)
   }
 
-  return neighboringIndexes.filter((neighborIndex) => cells[neighborIndex])
+  return neighboringIndexes
+}
+
+function isRootTunnel(crop) {
+  return CROP_DEFINITIONS[crop]?.transfersAdjacencies === true
+}
+
+function getAdjacentCropIndexes(blueprint, index) {
+  const { cells } = blueprint
+  const crop = cells[index]
+  const orthogonalIndexes = getOrthogonalIndexes(blueprint, index)
+  const directCropIndexes = orthogonalIndexes.filter(
+    (neighborIndex) =>
+      cells[neighborIndex] && !isRootTunnel(cells[neighborIndex]),
+  )
+
+  if (!crop || isCropEffectModifier(crop)) {
+    return directCropIndexes
+  }
+
+  const transferredCropIndexes = orthogonalIndexes.flatMap((neighborIndex) => {
+    if (!isRootTunnel(cells[neighborIndex])) {
+      return []
+    }
+
+    return getOrthogonalIndexes(blueprint, neighborIndex).filter(
+      (tunnelNeighborIndex) => {
+        const tunnelNeighborCrop = cells[tunnelNeighborIndex]
+
+        return (
+          tunnelNeighborIndex !== index &&
+          tunnelNeighborCrop &&
+          !isRootTunnel(tunnelNeighborCrop) &&
+          !isCropEffectModifier(tunnelNeighborCrop)
+        )
+      },
+    )
+  })
+
+  return [...new Set([...directCropIndexes, ...transferredCropIndexes])]
 }
 
 export function getDiagonalCropIndexes(blueprint, index) {
@@ -544,6 +609,10 @@ function getAdjacentCropEffectMultiplier(blueprint, index, crop) {
 
 function destroysAdjacentHarvests(crop) {
   return CROP_DEFINITIONS[crop]?.destroysAdjacentHarvests === true
+}
+
+function doesNotHarvest(crop) {
+  return CROP_DEFINITIONS[crop]?.doesNotHarvest === true
 }
 
 function getMirrorCornTargetCount(
@@ -816,6 +885,10 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
       return totalIncome
     }
 
+    if (doesNotHarvest(crop)) {
+      return totalIncome
+    }
+
     if (
       getAdjacentCropIndexes(blueprint, index).some((neighborIndex) =>
         destroysAdjacentHarvests(blueprint.cells[neighborIndex]),
@@ -1043,7 +1116,7 @@ export function getBlueprintCropStats(
     )
   const globalHarvestEffects = getGroupedGlobalHarvestEffects(blueprint)
   const globalHarvestMultiplier = getGlobalHarvestMultiplier(blueprint)
-  const harvestYield = harvestDestroyedByAppleTree
+  const harvestYield = doesNotHarvest(crop) || harvestDestroyedByAppleTree
     ? 0
     : (getCropBaseYield(crop, completedCropPerfections) +
         adjacentYieldBonus * (externalCropBuffMultiplier ?? 1)) *

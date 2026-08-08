@@ -23,8 +23,11 @@ import {
   getBlueprintExpansionTrackProgress,
   getBlueprintCropStats,
   canUnlockCropPerfection,
+  canUnlockRowDuplicators,
   hasReachedMonocropLimit,
   resetForBlueprintExpansion,
+  resetForRowDuplicators,
+  ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   unlockCropPerfection,
 } from './game/gameLogic'
 import {
@@ -33,6 +36,7 @@ import {
   APPLE_TREE_UNLOCK_CROP_COUNT,
   CROP_PERFECTION_UNLOCK_CROP_COUNT,
   LENTIL_UNLOCK_CROP_COUNT,
+  ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   getCropEffectDescription,
   getCropName,
   getUnlockedCropIds,
@@ -213,6 +217,8 @@ function App() {
   const isEditingBlueprintRef = useRef(isEditingBlueprint)
   const [isUnionConfirmationOpen, setIsUnionConfirmationOpen] = useState(false)
   const [pendingBlueprintExpansionId, setPendingBlueprintExpansionId] = useState(null)
+  const [isRowDuplicatorUnlockPending, setIsRowDuplicatorUnlockPending] =
+    useState(false)
   const [activeTab, setActiveTab] = useState('field')
   const [activeInventionsTab, setActiveInventionsTab] = useState('blueprint')
   const [selectedCrop, setSelectedCrop] = useState('leek')
@@ -229,6 +235,7 @@ function App() {
       game.hasUnlockedTurnip,
       game.hasUnlockedAppleTree,
       game.hasUnlockedLentil,
+      game.hasUnlockedRootTunnel,
     )
 
     return getVisibleCropIds(
@@ -300,7 +307,7 @@ function App() {
     [game.hamsters, game.postUnionHamstersHired],
   )
   const hamsterExternalMultiplier = getHamsterExternalMultiplier()
-  const fieldsPlantedPerSecond = useMemo(
+  const columnsBuiltPerSecond = useMemo(
     () =>
       getColumnsProducedPerSecond(
         game.hamsters,
@@ -313,6 +320,18 @@ function App() {
       cropHamsterEfficiencyMultiplier,
     ],
   )
+  const fieldsPlantedPerSecond = useMemo(
+    () =>
+      columnsBuiltPerSecond *
+      (game.farmland.rows +
+        (game.hasUnlockedRowDuplicators ? game.farmland.columns : 0)),
+    [
+      columnsBuiltPerSecond,
+      game.farmland.columns,
+      game.farmland.rows,
+      game.hasUnlockedRowDuplicators,
+    ],
+  )
   const unlockedCropIds = useMemo(
     () =>
       getUnlockedCropIds(
@@ -322,6 +341,7 @@ function App() {
         game.hasUnlockedTurnip,
         game.hasUnlockedAppleTree,
         game.hasUnlockedLentil,
+        game.hasUnlockedRootTunnel,
       ),
     [
       game.blueprint,
@@ -330,6 +350,7 @@ function App() {
       game.hasUnlockedTurnip,
       game.hasUnlockedAppleTree,
       game.hasUnlockedLentil,
+      game.hasUnlockedRootTunnel,
     ],
   )
   const visibleCropIds = useMemo(
@@ -372,6 +393,7 @@ function App() {
     'enrichingLeek',
   )
   const canUnlockMirrorCorn = canUnlockCropPerfection(game, 'mirrorCorn')
+  const canUnlockRows = canUnlockRowDuplicators(game)
   const hasEnrichingLeek = game.completedCropPerfections.includes(
     'enrichingLeek',
   )
@@ -484,6 +506,14 @@ function App() {
             currentGame.farmland,
             currentGame.completedCropPerfections,
           )
+        const columnsProducedForTick = getColumnsProducedForTick(
+          currentGame.hamsters,
+          currentGame.postUnionHamstersHired,
+          getCropHamsterEfficiencyMultiplier(
+            currentGame.blueprint,
+            currentGame.completedCropPerfections,
+          ),
+        )
 
         gameRef.current = {
           ...currentGame,
@@ -496,21 +526,19 @@ function App() {
             nextCrops >= APPLE_TREE_UNLOCK_CROP_COUNT,
           hasUnlockedLentil:
             currentGame.hasUnlockedLentil || nextCrops >= LENTIL_UNLOCK_CROP_COUNT,
+          hasUnlockedRootTunnel:
+            currentGame.hasUnlockedRootTunnel ||
+            nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT,
           hasUnlockedCropPerfection:
             currentGame.hasUnlockedCropPerfection ||
             nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
           farmland: {
             ...currentGame.farmland,
             columns:
-              currentGame.farmland.columns +
-              getColumnsProducedForTick(
-                currentGame.hamsters,
-                currentGame.postUnionHamstersHired,
-                getCropHamsterEfficiencyMultiplier(
-                  currentGame.blueprint,
-                  currentGame.completedCropPerfections,
-                ),
-              ),
+              currentGame.farmland.columns + columnsProducedForTick,
+            rows: currentGame.hasUnlockedRowDuplicators
+              ? currentGame.farmland.rows + columnsProducedForTick
+              : currentGame.farmland.rows,
           },
         }
       }
@@ -692,6 +720,15 @@ function App() {
     setActiveTab('field')
   }
 
+  function confirmRowDuplicatorReset() {
+    updateGame((currentGame) => {
+      const resetGame = resetForRowDuplicators(currentGame)
+      return resetGame ?? currentGame
+    })
+    setIsRowDuplicatorUnlockPending(false)
+    setActiveTab('field')
+  }
+
   function unlockEnrichingLeek() {
     updateGame((currentGame) => {
       const nextGame = unlockCropPerfection(currentGame, 'enrichingLeek')
@@ -761,6 +798,7 @@ function App() {
       setIsEditingBlueprint(false)
       setIsUnionConfirmationOpen(false)
       setPendingBlueprintExpansionId(null)
+      setIsRowDuplicatorUnlockPending(false)
       setPendingMirrorCornPlacement(null)
       setHoveredEditorCrop(null)
       setSelectedCrop('leek')
@@ -1086,7 +1124,38 @@ function App() {
               ) : null}
             </section>
           ) : (
-            blueprintExpansionTracks.map((track) => {
+            <>
+            <article className="invention-card row-duplicator-card">
+              <div>
+                <p className="eyebrow">Milestone invention</p>
+                <h2>Row Duplicators</h2>
+                <p>
+                  Reset at <FormattedNumber value={ROW_DUPLICATORS_UNLOCK_CROP_COUNT} maximumFractionDigits={0} /> Crops to make every hamster-built Column also build one Row.
+                </p>
+              </div>
+              {game.hasUnlockedRowDuplicators ? (
+                <span className="invention-complete">Complete</span>
+              ) : (
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={() => setIsRowDuplicatorUnlockPending(true)}
+                  disabled={!canUnlockRows}
+                >
+                  Reset field &amp; unlock
+                </button>
+              )}
+            </article>
+            {!game.hasUnlockedRowDuplicators ? (
+              <p className="invention-progress">
+                <FormattedNumber
+                  value={Math.min(game.crops, ROW_DUPLICATORS_UNLOCK_CROP_COUNT)}
+                  maximumFractionDigits={0}
+                />{' '}
+                / <FormattedNumber value={ROW_DUPLICATORS_UNLOCK_CROP_COUNT} maximumFractionDigits={0} /> Crops
+              </p>
+            ) : null}
+            {blueprintExpansionTracks.map((track) => {
             const { nextExpansion } = track
             const completed = nextExpansion === undefined
             const canUnlock =
@@ -1138,7 +1207,8 @@ function App() {
                 ) : null}
               </div>
             )
-            })
+            })}
+            </>
           )}
         </section>
       ) : (
@@ -1475,6 +1545,43 @@ function App() {
                 type="button"
                 className="primary-button"
                 onClick={confirmBlueprintExpansionReset}
+              >
+                Reset &amp; unlock
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {isRowDuplicatorUnlockPending ? (
+        <div className="modal-backdrop" role="presentation">
+          <section
+            className="union-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="row-duplicator-reset-title"
+          >
+            <p className="eyebrow">Milestone reset</p>
+            <h2 id="row-duplicator-reset-title">Unlock Row Duplicators?</h2>
+            <p>
+              This spends your current Crops and resets accumulated Rows and
+              Columns to zero. Your hamster workforce stays ready to rebuild.
+            </p>
+            <p>
+              Every future hamster-built Column will also build one Row.
+            </p>
+            <div className="union-modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setIsRowDuplicatorUnlockPending(false)}
+              >
+                Not yet
+              </button>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={confirmRowDuplicatorReset}
               >
                 Reset &amp; unlock
               </button>

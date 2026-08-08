@@ -490,6 +490,12 @@ h2 {
   background: #403015;
 }
 
+.plot-rootTunnel,
+.editor-plot-rootTunnel {
+  border-color: #817666;
+  background: #25201b;
+}
+
 .plot span,
 .editor-plot span {
   color: var(--field-green);
@@ -524,6 +530,11 @@ h2 {
 .plot-lentil span,
 .editor-plot-lentil span {
   color: #e6c878;
+}
+
+.plot-rootTunnel span,
+.editor-plot-rootTunnel span {
+  color: #b7a996;
 }
 
 .edit-hint {
@@ -1004,7 +1015,7 @@ dd {
   background: #14291a;
 }
 
-.editor-plot:not(.editor-plot-leek):not(.editor-plot-corn):not(.editor-plot-sweetPotato):not(.editor-plot-turnip):not(.editor-plot-pumpkin):not(.editor-plot-appleTree):not(.editor-plot-lentil) span {
+.editor-plot:not(.editor-plot-leek):not(.editor-plot-corn):not(.editor-plot-sweetPotato):not(.editor-plot-turnip):not(.editor-plot-pumpkin):not(.editor-plot-appleTree):not(.editor-plot-lentil):not(.editor-plot-rootTunnel) span {
   color: var(--text-muted);
   font-size: 0.73rem;
 }

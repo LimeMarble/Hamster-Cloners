@@ -3,6 +3,7 @@ export const TURNIP_UNLOCK_CROP_COUNT = 1e8
 export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
 export const APPLE_TREE_UNLOCK_CROP_COUNT = 5e13
 export const LENTIL_UNLOCK_CROP_COUNT = 8e15
+export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = 216e18
 export const CORN_REVEAL_HAMSTER_COUNT = 50
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
 
@@ -33,7 +34,7 @@ export const CROP_DEFINITIONS = {
     unlockDescription: 'Unlocks after unionization',
   },
   sweetPotato: {
-    name: 'Sweet Potato',
+    name: 'Potato',
     icon: '🍠',
     baseYield: 1,
     hamsterEfficiencyBonus: 0.25,
@@ -69,6 +70,18 @@ export const CROP_DEFINITIONS = {
     canBeMirrorCornTarget: false,
     effectDescription: '25 Crops per slot · ×1.25 all Crop harvest',
     unlockDescription: 'Unlocks at 8 Qd Crops',
+  },
+  rootTunnel: {
+    name: 'Root Tunnel',
+    icon: '🕳️',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    transfersAdjacencies: true,
+    canBeMirrorCornTarget: false,
+    effectDescription:
+      'Transfers non-modifier crop adjacencies through this plot',
+    unlockDescription: 'Unlocks at 216 Qn Crops',
   },
 }
 
@@ -160,6 +173,7 @@ export function getUnlockedCropIds(
   hasUnlockedTurnip = false,
   hasUnlockedAppleTree = false,
   hasUnlockedLentil = false,
+  hasUnlockedRootTunnel = false,
 ) {
   const unlockedCrops = ['leek']
 
@@ -180,6 +194,9 @@ export function getUnlockedCropIds(
   }
   if (hasUnlockedLentil) {
     unlockedCrops.push('lentil')
+  }
+  if (hasUnlockedRootTunnel) {
+    unlockedCrops.push('rootTunnel')
   }
 
   return unlockedCrops
