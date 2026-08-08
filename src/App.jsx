@@ -756,6 +756,14 @@ function App() {
     })
   }
 
+  function buyMaxDuplicators() {
+    updateGame((currentGame) => {
+      const { purchased, ...nextGame } = getMaxHamsterPurchase(currentGame)
+
+      return purchased > 0 ? { ...currentGame, ...nextGame } : currentGame
+    })
+  }
+
   function confirmUnionization() {
     completeHamsterHire()
     setIsUnionConfirmationOpen(false)
@@ -1214,15 +1222,7 @@ function App() {
             <span className="edit-hint">Click field to edit blueprint</span>
           </button>
 
-          {game.hasUnlockedRowDuplicators ? (
-            <div className="sunflower-garden" aria-label="Row Duplicators are in bloom">
-              <span aria-hidden="true">🌻</span>
-              <span aria-hidden="true">🌻</span>
-              <span>Row Duplicators are in bloom</span>
-              <span aria-hidden="true">🌻</span>
-              <span aria-hidden="true">🌻</span>
-            </div>
-          ) : null}
+          
 
           <dl className="field-stats">
             <div>

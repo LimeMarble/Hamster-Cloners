@@ -447,6 +447,36 @@ export function getMaxHamsterPurchase(game) {
   }
 }
 
+export function getMaxDuplicatorPurchase(game) {
+  let nextGame = {
+    rowDuplicators: Math.max(0, Math.floor(Number(game.rowDuplicators) || 0)),
+    totalRowDuplicatorsHired: Math.max(
+      0,
+      Math.floor(Number(game.totalRowDuplicatorsHired) || 0),
+    ),
+  }
+  let remainingCrops = Math.max(0, Number(game.crops) || 0)
+  let purchased = 0
+
+  while (purchased < 10000) {
+    
+    const cost = getNextRowDuplicatorCost(nextGame.rowDuplicators, nextGame.unionized)
+    if (!Number.isFinite(cost) || cost > remainingCrops) {
+      break
+    }
+
+    remainingCrops -= cost
+    nextGame = getRowDuplicatorStateAfterHire(nextGame)
+    purchased += 1
+  }
+
+  return {
+    ...nextGame,
+    crops: remainingCrops,
+    purchased,
+  }
+}
+
 export function getBlueprintExpansion(expansionId) {
   return BLUEPRINT_EXPANSIONS.find(
     (expansion) => expansion.id === expansionId,
