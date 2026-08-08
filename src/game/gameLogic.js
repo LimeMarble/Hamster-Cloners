@@ -249,8 +249,12 @@ export function getLeechingGourdFootprint(blueprint, anchorIndex) {
 }
 
 export function createInitialGame() {
+  const blueprint = createBlueprint({ cells: ['leek'] })
+
   return {
     crops: STARTING_CROPS,
+    totalCropsMade: 0,
+    playtimeSeconds: 0,
     hamsters: 0,
     totalHamstersHired: 0,
     unionized: false,
@@ -267,10 +271,35 @@ export function createInitialGame() {
     completedCropPerfections: [],
     blueprintExpansionAxesSwapped: true,
     completedBlueprintExpansions: [],
-    blueprint: createBlueprint({ cells: ['leek'] }),
+    blueprint,
+    blueprintSlots: [blueprint],
+    activeBlueprintSlot: 0,
     hamstersBuildColumns: true,
     farmland: createFarmlandMultipliers({ columns: 0 }),
   }
+}
+
+export function getUnlockedBlueprintSlotCount(game) {
+  const blueprint = createBlueprint(game.blueprint)
+
+  if (game.hasUnlockedRootTunnel === true) {
+    return 3
+  }
+
+  return blueprint.columns > 1 ? 2 : 1
+}
+
+export function getBlueprintSlots(game) {
+  const fallbackBlueprint = createBlueprint(game.blueprint)
+  const storedSlots = Array.isArray(game.blueprintSlots)
+    ? game.blueprintSlots
+    : []
+  const slots = storedSlots
+    .slice(0, 3)
+    .filter((slot) => slot && typeof slot === 'object')
+    .map((slot) => createBlueprint(slot))
+
+  return slots.length > 0 ? slots : [fallbackBlueprint]
 }
 
 export function createFarmlandMultipliers({
@@ -541,6 +570,14 @@ function addBlueprintColumn(blueprint) {
 export function resetForBlueprintExpansion(game, expansionId) {
   const expansion = getBlueprintExpansion(expansionId)
   const currentBlueprint = createBlueprint(game.blueprint)
+  const storedBlueprintSlots = getBlueprintSlots(game)
+  const activeBlueprintSlot = Math.min(
+    Math.max(0, Math.floor(Number(game.activeBlueprintSlot) || 0)),
+    storedBlueprintSlots.length - 1,
+  )
+  const currentBlueprintSlots = storedBlueprintSlots.map((blueprint, slotIndex) =>
+    slotIndex === activeBlueprintSlot ? currentBlueprint : blueprint,
+  )
   const expansionCost = getBlueprintExpansionCost(game, expansionId)
   const currentCrops = Math.max(0, Number(game.crops) || 0)
 
@@ -548,10 +585,19 @@ export function resetForBlueprintExpansion(game, expansionId) {
     return null
   }
 
-  const nextBlueprint =
-    expansion.direction === 'row'
-      ? addBlueprintRow(currentBlueprint)
-      : addBlueprintColumn(currentBlueprint)
+  const expandBlueprint =
+    expansion.direction === 'row' ? addBlueprintRow : addBlueprintColumn
+  const expandedBlueprintSlots = currentBlueprintSlots.map(expandBlueprint)
+  const nextBlueprint = expandedBlueprintSlots[activeBlueprintSlot] ??
+    expandBlueprint(currentBlueprint)
+  const nextBlueprintSlotCount = getUnlockedBlueprintSlotCount({
+    blueprint: nextBlueprint,
+    hasUnlockedRootTunnel: game.hasUnlockedRootTunnel,
+  })
+
+  while (expandedBlueprintSlots.length < nextBlueprintSlotCount) {
+    expandedBlueprintSlots.push(createBlueprint(nextBlueprint))
+  }
 
   return {
     ...game,
@@ -561,6 +607,8 @@ export function resetForBlueprintExpansion(game, expansionId) {
       columns: 0,
     },
     blueprint: nextBlueprint,
+    blueprintSlots: expandedBlueprintSlots,
+    activeBlueprintSlot,
     completedBlueprintExpansions: [
       ...getCompletedBlueprintExpansions(game),
       expansionId,

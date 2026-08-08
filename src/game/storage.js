@@ -4,6 +4,7 @@ import {
   createBlueprint,
   createFarmlandMultipliers,
   createInitialGame,
+  getUnlockedBlueprintSlotCount,
   hasReachedMonocropLimit,
 } from './gameLogic.js'
 import {
@@ -70,7 +71,6 @@ export function normalizeGame(rawGame) {
   const blueprint = hasCurrentBlueprintAxes
     ? createBlueprint(rawGame.blueprint)
     : createBlueprint({ cells: ['leek'] })
-  const hasReachedLimit = hasReachedMonocropLimit(blueprint)
   const validExpansionIds = new Set(
     BLUEPRINT_EXPANSIONS.map((expansion) => expansion.id),
   )
@@ -89,6 +89,38 @@ export function normalizeGame(rawGame) {
   const hasLegacyAppleTreeUnlock =
     Array.isArray(rawGame.completedCropUnlocks) &&
     rawGame.completedCropUnlocks.includes('appleTree')
+  const hasUnlockedRootTunnel =
+    rawGame.hasUnlockedRootTunnel === true ||
+    toNonNegativeNumber(rawGame.crops, 0) >= ROOT_TUNNEL_UNLOCK_CROP_COUNT
+  const rawBlueprintSlots =
+    hasCurrentBlueprintAxes && Array.isArray(rawGame.blueprintSlots)
+      ? rawGame.blueprintSlots
+      : []
+  const blueprintSlotCount = getUnlockedBlueprintSlotCount({
+    blueprint,
+    hasUnlockedRootTunnel,
+  })
+  const blueprintSlots = Array.from(
+    { length: blueprintSlotCount },
+    (_, slotIndex) => {
+      const rawSlot = rawBlueprintSlots[slotIndex]
+
+      return rawSlot && typeof rawSlot === 'object'
+        ? createBlueprint({
+            rows: blueprint.rows,
+            columns: blueprint.columns,
+            cells: rawSlot.cells,
+            mirrorCornTargets: rawSlot.mirrorCornTargets,
+          })
+        : createBlueprint(blueprint)
+    },
+  )
+  const activeBlueprintSlot = Math.min(
+    Math.max(0, Math.floor(Number(rawGame.activeBlueprintSlot) || 0)),
+    blueprintSlots.length - 1,
+  )
+  const activeBlueprint = blueprintSlots[activeBlueprintSlot]
+  const hasReachedLimit = hasReachedMonocropLimit(activeBlueprint)
   const rawFarmland =
     rawGame.farmland && typeof rawGame.farmland === 'object'
       ? rawGame.farmland
@@ -120,6 +152,11 @@ export function normalizeGame(rawGame) {
 
   return {
     crops: toNonNegativeNumber(rawGame.crops, initialGame.crops),
+    totalCropsMade: toNonNegativeNumber(
+      rawGame.totalCropsMade,
+      toNonNegativeNumber(rawGame.crops, 0),
+    ),
+    playtimeSeconds: toNonNegativeNumber(rawGame.playtimeSeconds, 0),
     hamsters: toNonNegativeInteger(rawGame.hamsters, initialGame.hamsters),
     totalHamstersHired: toNonNegativeInteger(
       rawGame.totalHamstersHired,
@@ -149,8 +186,7 @@ export function normalizeGame(rawGame) {
       rawGame.hasUnlockedKnotweed === true ||
       toNonNegativeNumber(rawGame.crops, 0) >= KNOTWEED_UNLOCK_CROP_COUNT,
     hasUnlockedRootTunnel:
-      rawGame.hasUnlockedRootTunnel === true ||
-      toNonNegativeNumber(rawGame.crops, 0) >= ROOT_TUNNEL_UNLOCK_CROP_COUNT,
+      hasUnlockedRootTunnel,
     hasUnlockedCropPerfection:
       rawGame.hasUnlockedCropPerfection === true ||
       toNonNegativeNumber(rawGame.crops, 0) >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
@@ -161,7 +197,9 @@ export function normalizeGame(rawGame) {
     completedBlueprintExpansions: BLUEPRINT_EXPANSIONS.map(
       (expansion) => expansion.id,
     ).filter((expansionId) => completedExpansionIds.has(expansionId)),
-    blueprint,
+    blueprint: activeBlueprint,
+    blueprintSlots,
+    activeBlueprintSlot,
     farmland,
   }
 }

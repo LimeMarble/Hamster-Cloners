@@ -4,6 +4,7 @@ import {
   getCropProductionPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getDiagonalCropIndexes,
+  getBlueprintSlots,
   getLeechingGourdFootprint,
   getFieldsPlanted,
   getHamsterCoordinationMultiplier,
@@ -22,6 +23,7 @@ import {
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
   getBlueprintExpansion,
   getBlueprintExpansionTrackProgress,
+  getUnlockedBlueprintSlotCount,
   getBlueprintCropStats,
   canUnlockCropPerfection,
   canUnlockRowDuplicators,
@@ -54,6 +56,24 @@ import './App.css'
 
 function FormattedNumber({ value, maximumFractionDigits = 1 }) {
   return getCachedFormattedNumber(value, maximumFractionDigits)
+}
+
+function formatPlaytime(seconds) {
+  const totalSeconds = Math.max(0, Math.floor(Number(seconds) || 0))
+  const days = Math.floor(totalSeconds / 86_400)
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600)
+  const minutes = Math.floor((totalSeconds % 3_600) / 60)
+  const remainingSeconds = totalSeconds % 60
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${remainingSeconds}s`
+  }
+
+  return `${minutes}m ${remainingSeconds}s`
 }
 
 function MirrorCornConnectionLines({ blueprint, links, pending = false }) {
@@ -377,6 +397,8 @@ function App() {
       visibleCropIds.filter((cropId) => unlockedCropIds.includes(cropId)),
     [visibleCropIds, unlockedCropIds],
   )
+  const blueprintSlots = useMemo(() => getBlueprintSlots(game), [game])
+  const unlockedBlueprintSlotCount = getUnlockedBlueprintSlotCount(game)
   const fieldSize = game.blueprint.rows * game.blueprint.columns
   const monocropThreshold = getMonocropThreshold(fieldSize)
   const showMonocropLimit =
@@ -518,15 +540,20 @@ function App() {
         return
       }
 
+      const currentGame = gameRef.current
+      const nextPlaytimeSeconds =
+        (Number(currentGame.playtimeSeconds) || 0) +
+        SIMULATION_TICK_INTERVAL_MS / 1000
+
       if (!isEditingBlueprintRef.current) {
-        const currentGame = gameRef.current
+        const productionForTick = getProductionForTick(
+          currentGame.blueprint,
+          currentGame.farmland,
+          currentGame.completedCropPerfections,
+        )
         const nextCrops =
           currentGame.crops +
-          getProductionForTick(
-            currentGame.blueprint,
-            currentGame.farmland,
-            currentGame.completedCropPerfections,
-          )
+          productionForTick
         const columnsProducedForTick = getColumnsProducedForTick(
           currentGame.hamsters,
           currentGame.postUnionHamstersHired,
@@ -535,10 +562,31 @@ function App() {
             currentGame.completedCropPerfections,
           ),
         )
+        const hasUnlockedRootTunnel =
+          currentGame.hasUnlockedRootTunnel ||
+          nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT
+        const currentBlueprintSlots = getBlueprintSlots(currentGame)
+        const activeBlueprintSlot = Math.min(
+          Math.max(0, Math.floor(Number(currentGame.activeBlueprintSlot) || 0)),
+          currentBlueprintSlots.length - 1,
+        )
+        const requiredBlueprintSlotCount = getUnlockedBlueprintSlotCount({
+          blueprint: currentGame.blueprint,
+          hasUnlockedRootTunnel,
+        })
+        const nextBlueprintSlots = [...currentBlueprintSlots]
+
+        while (nextBlueprintSlots.length < requiredBlueprintSlotCount) {
+          nextBlueprintSlots.push(currentGame.blueprint)
+        }
 
         gameRef.current = {
           ...currentGame,
           crops: nextCrops,
+          totalCropsMade:
+            (Number(currentGame.totalCropsMade) || 0) +
+            Math.max(0, productionForTick),
+          playtimeSeconds: nextPlaytimeSeconds,
           hasUnlockedTurnip:
             currentGame.hasUnlockedTurnip ||
             nextCrops >= TURNIP_UNLOCK_CROP_COUNT,
@@ -551,8 +599,7 @@ function App() {
             currentGame.hasUnlockedKnotweed ||
             nextCrops >= KNOTWEED_UNLOCK_CROP_COUNT,
           hasUnlockedRootTunnel:
-            currentGame.hasUnlockedRootTunnel ||
-            nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT,
+            hasUnlockedRootTunnel,
           hasUnlockedCropPerfection:
             currentGame.hasUnlockedCropPerfection ||
             nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
@@ -564,6 +611,13 @@ function App() {
               ? currentGame.farmland.rows + columnsProducedForTick
               : currentGame.farmland.rows,
           },
+          blueprintSlots: nextBlueprintSlots,
+          activeBlueprintSlot,
+        }
+      } else {
+        gameRef.current = {
+          ...currentGame,
+          playtimeSeconds: nextPlaytimeSeconds,
         }
       }
 
@@ -660,6 +714,11 @@ function App() {
 
   function commitBlueprint(nextBlueprint) {
     const currentGame = gameRef.current
+    const currentBlueprintSlots = getBlueprintSlots(currentGame)
+    const activeBlueprintSlot = Math.min(
+      Math.max(0, Math.floor(Number(currentGame.activeBlueprintSlot) || 0)),
+      currentBlueprintSlots.length - 1,
+    )
     const hasReachedLimit = hasReachedMonocropLimit(nextBlueprint)
     const hasJustReachedLimit =
       !currentGame.hasSeenMonocropLimit &&
@@ -669,6 +728,10 @@ function App() {
     updateGame(() => ({
       ...currentGame,
       blueprint: nextBlueprint,
+      blueprintSlots: currentBlueprintSlots.map((blueprint, slotIndex) =>
+        slotIndex === activeBlueprintSlot ? nextBlueprint : blueprint,
+      ),
+      activeBlueprintSlot,
       hasSeenMonocropLimit:
         currentGame.hasSeenMonocropLimit || hasReachedLimit,
     }))
@@ -676,6 +739,28 @@ function App() {
     if (hasJustReachedLimit) {
       setIsMonocropWarningOpen(true)
     }
+  }
+
+  function selectBlueprintSlot(slotIndex) {
+    const currentGame = gameRef.current
+    const currentBlueprintSlots = getBlueprintSlots(currentGame)
+
+    if (
+      slotIndex < 0 ||
+      slotIndex >= unlockedBlueprintSlotCount ||
+      !currentBlueprintSlots[slotIndex]
+    ) {
+      return
+    }
+
+    setPendingMirrorCornPlacement(null)
+    setHoveredEditorCrop(null)
+    updateGame(() => ({
+      ...currentGame,
+      blueprint: currentBlueprintSlots[slotIndex],
+      blueprintSlots: currentBlueprintSlots,
+      activeBlueprintSlot: slotIndex,
+    }))
   }
 
   function setPlot(index, crop, mirrorCornTargetIndex = null) {
@@ -977,7 +1062,13 @@ function App() {
             </aside>
           ) : null}
         </div>
-        <span className="game-tab" aria-disabled="true">Statistics</span>
+        <button
+          type="button"
+          className={`game-tab ${activeTab === 'statistics' ? 'game-tab-active' : ''}`}
+          onClick={() => setActiveTab('statistics')}
+        >
+          Statistics
+        </button>
         <button
           type="button"
           className={`game-tab ${activeTab === 'options' ? 'game-tab-active' : ''}`}
@@ -1014,6 +1105,36 @@ function App() {
             ) : null}
             <span className="size-pill">{game.blueprint.rows} × {game.blueprint.columns}</span>
           </div>
+
+          <nav className="blueprint-slots" aria-label="Blueprint slots">
+            {[0, 1, 2].map((slotIndex) => {
+              const unlocked =
+                slotIndex < unlockedBlueprintSlotCount &&
+                Boolean(blueprintSlots[slotIndex])
+              const active = game.activeBlueprintSlot === slotIndex
+              const unlockHint =
+                slotIndex === 1 ? 'Unlocks with Corn' : 'Unlocks with Root Tunnel'
+
+              return (
+                <button
+                  type="button"
+                  className={`blueprint-slot ${active ? 'blueprint-slot-active' : ''}`}
+                  key={slotIndex}
+                  onClick={() => selectBlueprintSlot(slotIndex)}
+                  disabled={!unlocked}
+                  aria-label={
+                    unlocked
+                      ? `Select Blueprint ${slotIndex + 1}`
+                      : `Blueprint ${slotIndex + 1}: ${unlockHint}`
+                  }
+                >
+                  {unlocked
+                    ? `Blueprint ${slotIndex + 1}`
+                    : `Locked · ${unlockHint}`}
+                </button>
+              )
+            })}
+          </nav>
 
           <button
             type="button"
@@ -1350,6 +1471,36 @@ function App() {
             })}
             </>
           )}
+        </section>
+      ) : activeTab === 'statistics' ? (
+        <section className="inventions-panel statistics-panel" aria-labelledby="statistics-title">
+          <p className="eyebrow">Lifetime progress</p>
+          <h1 id="statistics-title">Statistics</h1>
+          <p className="inventions-intro">
+            These counters persist through field resets and blueprint changes.
+          </p>
+          <dl className="statistics-grid">
+            <div>
+              <dt>Crops made</dt>
+              <dd><FormattedNumber value={game.totalCropsMade} maximumFractionDigits={2} /></dd>
+            </div>
+            <div>
+              <dt>Hamsters hired</dt>
+              <dd><FormattedNumber value={game.totalHamstersHired} maximumFractionDigits={0} /></dd>
+            </div>
+            <div>
+              <dt>Crops unlocked</dt>
+              <dd><FormattedNumber value={unlockedCropIds.length} maximumFractionDigits={0} /></dd>
+            </div>
+            <div>
+              <dt>Crops perfected</dt>
+              <dd><FormattedNumber value={game.completedCropPerfections.length} maximumFractionDigits={0} /></dd>
+            </div>
+            <div className="statistics-playtime">
+              <dt>Playtime</dt>
+              <dd>{formatPlaytime(game.playtimeSeconds)}</dd>
+            </div>
+          </dl>
         </section>
       ) : (
         <section className="inventions-panel options-panel" aria-labelledby="options-title">

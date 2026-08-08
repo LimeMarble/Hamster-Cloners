@@ -204,6 +204,28 @@ h2 {
   font-size: 1.8rem;
 }
 
+.statistics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 20px 0 0;
+}
+
+.statistics-grid div {
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
+}
+
+.statistics-grid dd {
+  color: var(--crop-gold);
+  font-size: 1.16rem;
+}
+
+.statistics-grid .statistics-playtime {
+  grid-column: span 2;
+}
+
 .invention-tabs {
   display: flex;
   gap: 6px;
@@ -386,6 +408,41 @@ h2 {
 
 .blueprint-heading {
   gap: 8px;
+}
+
+.blueprint-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.blueprint-slot {
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid #354735;
+  color: var(--text-muted);
+  background: #0b160d;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.67rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.blueprint-slot:hover:not(:disabled) {
+  border-color: var(--field-green);
+}
+
+.blueprint-slot-active {
+  border-color: var(--field-green);
+  color: var(--field-green);
+  background: #12381b;
+}
+
+.blueprint-slot:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .monocrop-pill {
@@ -1085,6 +1142,10 @@ dd {
   .replicator-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
+
+  .statistics-grid .statistics-playtime {
+    grid-column: span 1;
   }
 
   .modal-actions .primary-button {

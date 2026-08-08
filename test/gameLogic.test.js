@@ -7,6 +7,7 @@ import {
   getCropProductionPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getBlueprintExpansionCost,
+  getBlueprintSlots,
   getBlueprintCropStats,
   getDiagonalCropIndexes,
   canUnlockCropPerfection,
@@ -20,6 +21,7 @@ import {
   getFieldsPlanted,
   getLeechingGourdFootprint,
   getProductionForTick,
+  getUnlockedBlueprintSlotCount,
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
   POST_UNION_HAMSTER_EFFICIENCY_GROWTH,
@@ -972,6 +974,53 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     'firstRow',
     'secondColumn',
   ])
+})
+
+test('blueprint slots unlock with Corn and Root Tunnel and retain separate layouts', () => {
+  const startingBlueprint = createBlueprint({ cells: ['leek'] })
+  const cornBlueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['leek', 'corn'],
+  })
+
+  assert.equal(
+    getUnlockedBlueprintSlotCount({ blueprint: startingBlueprint }),
+    1,
+  )
+  assert.equal(
+    getUnlockedBlueprintSlotCount({ blueprint: cornBlueprint }),
+    2,
+  )
+  assert.equal(
+    getUnlockedBlueprintSlotCount({
+      blueprint: cornBlueprint,
+      hasUnlockedRootTunnel: true,
+    }),
+    3,
+  )
+
+  const firstColumnResult = resetForBlueprintExpansion(
+    {
+      crops: 1e4,
+      blueprint: startingBlueprint,
+      blueprintSlots: [startingBlueprint],
+      activeBlueprintSlot: 0,
+      completedBlueprintExpansions: [],
+      farmland: createFarmlandMultipliers({ rows: 1, columns: 1 }),
+    },
+    'firstColumn',
+  )
+
+  assert.equal(firstColumnResult.blueprintSlots.length, 2)
+  assert.deepEqual(
+    firstColumnResult.blueprintSlots.map((blueprint) => blueprint.cells),
+    [
+      ['leek', null],
+      ['leek', null],
+    ],
+  )
+  assert.equal(getBlueprintSlots(firstColumnResult).length, 2)
 })
 
 test('monocrop threshold matches the design formula', () => {
