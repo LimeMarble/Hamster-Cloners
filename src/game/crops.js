@@ -104,7 +104,7 @@ export const CROP_DEFINITIONS = {
     icon: '🌻',
     baseYield: 1,
     hamsterEfficiencyBonus: 0,
-    rowDuplicatorEffectivenessBonus: 0.2,
+    cropRowDuplicatorEffectivenessBonus: 0.2,
     effectDescription:
       '1 Crop per slot · +20% Row Duplicator effectiveness',
     unlockDescription: 'Unlocks with Row Duplicators',
