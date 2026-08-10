@@ -22,7 +22,8 @@ import {
   getFieldsPlanted,
   getLeechingGourdFootprint,
   getProductionForTick,
-  cropRowEffectivenessMultiplier,
+  getRowDuplicatorIncomeMultiplier,
+  getRowDuplicatorEffectivenessMultiplier,
   getUnlockedBlueprintSlotCount,
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
@@ -884,6 +885,7 @@ test('Row Duplicators are purchasable upgrades with 1.2 cost growth and 1.02 inc
   assert.equal(ROW_DUPLICATOR_INCOME_GROWTH, 1.02)
   assert.equal(getNextRowDuplicatorCost(0), 1e12)
   assert.equal(getNextRowDuplicatorCost(1), Math.ceil(1e12 * 1.2))
+  assert.equal(getRowDuplicatorIncomeMultiplier(2), 1.02 ** 2)
   assert.equal(
     getCropProductionPerSecond(blueprint, farmland, [], 2),
     1.02 ** 2,
@@ -906,6 +908,16 @@ test('Sunflowers boost Row Duplicators like Potatoes boost hamster efficiency', 
       null,
     ],
   })
+
+  // The Turnip doubles the Sunflower's additive +20% effectiveness bonus.
+  assert.equal(
+    getRowDuplicatorEffectivenessMultiplier(sunflowerBlueprint),
+    1.4,
+  )
+  assert.equal(
+    getRowDuplicatorIncomeMultiplier(1, sunflowerBlueprint),
+    1.028,
+  )
 })
 
 test('crop visibility reveals each crop only after its discovery milestone', () => {

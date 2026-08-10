@@ -360,7 +360,7 @@ export function getRowDuplicatorIncomeMultiplier(
     Math.floor(Number(rowDuplicators) || 0),
   )
   const effectivenessMultiplier = blueprint
-    ? cropRowEffectivenessMultiplier(
+    ? getRowDuplicatorEffectivenessMultiplier(
         blueprint,
         completedCropPerfections,
       )
@@ -1155,7 +1155,7 @@ export function getCropHamsterEfficiencyMultiplier(
   return Math.max(0, 1 + additiveCropBonus)
 }
 
-export function cropRowEffectivenessMultiplier(
+export function getRowDuplicatorEffectivenessMultiplier(
   blueprint,
   completedCropPerfections = [],
 ) {
@@ -1169,7 +1169,7 @@ export function cropRowEffectivenessMultiplier(
   const additiveEffectivenessBonus = blueprint.cells.reduce(
     (totalBonus, crop, index) => {
       const baseEffectivenessBonus =
-        CROP_DEFINITIONS[crop]?.cropRowDuplicatorEffectivenessBonus ?? 0
+        CROP_DEFINITIONS[crop]?.rowDuplicatorEffectivenessBonus ?? 0
 
       if (baseEffectivenessBonus === 0) {
         return totalBonus
@@ -1529,7 +1529,12 @@ export function getCropProductionPerSecond(
 ) {
   return (
     getBaseFieldIncome(blueprint, completedCropPerfections) *
-    getIncomeMultiplier(farmland) 
+    getIncomeMultiplier(farmland) *
+    getRowDuplicatorIncomeMultiplier(
+      rowDuplicators,
+      blueprint,
+      completedCropPerfections,
+    )
   )
 }
 
@@ -1546,21 +1551,6 @@ export function getColumnsProducedPerSecond(
     getHamsterCoordinationMultiplier(safeHamsters, postUnionHamstersHired) *
     getHamsterExternalMultiplier() *
     Math.max(0, Number(cropHamsterEfficiencyMultiplier) || 0)
-  )
-}
-
-export function getRowsProducedPerSecond(
-  rowDuplicators,
-  cropHamsterEfficiencyMultiplier = 1,
-) {
-  const safeHamsters = Math.max(0, Math.floor(Number(hamsters) || 0))
-
-  return (
-    safeRowDuplicators *
-    ROWS_PER_DUPLICATOR_PER_SECOND *
-    safeRowDuplicators ** 1.02 *
-    getHamsterExternalMultiplier() *
-    Math.max(0, Number(cropRowProducerEfficiencyMultiplier) || 0)
   )
 }
 

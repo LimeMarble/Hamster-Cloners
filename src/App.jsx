@@ -14,6 +14,7 @@ import {
   getNextHamsterCost,
   getNextRowDuplicatorCost,
   getProductionForTick,
+  getRowDuplicatorIncomeMultiplier,
   getColumnsProducedPerSecond,
   getColumnsProducedForTick,
   SIMULATION_TICK_INTERVAL_MS,
@@ -361,31 +362,31 @@ function App() {
       cropHamsterEfficiencyMultiplier,
     ],
   )
-  const rowsBuiltPerSecond = useMemo(
-    () =>
-      getRowsProducedPerSecond(
-        game.rowProducers,
-        cropRowProducerEfficiencyMultiplier,
-      ),
-    [
-      game.rowProducers,
-      cropRowProducerEfficiencyMultiplier,
-    ],
-  )
   const fieldsPlantedPerSecond = useMemo(
     () =>
       columnsBuiltPerSecond *
-      game.farmland.rows,
+      (game.farmland.rows +
+        (game.hasUnlockedRowDuplicators ? game.farmland.columns : 0)),
     [
       columnsBuiltPerSecond,
+      game.farmland.columns,
       game.farmland.rows,
+      game.hasUnlockedRowDuplicators,
     ],
   )
   const nextRowDuplicatorCost = useMemo(
     () => getNextRowDuplicatorCost(game.rowDuplicators),
     [game.rowDuplicators],
   )
-  
+  const rowDuplicatorIncomeMultiplier = useMemo(
+    () =>
+      getRowDuplicatorIncomeMultiplier(
+        game.rowDuplicators,
+        game.blueprint,
+        game.completedCropPerfections,
+      ),
+    [game.rowDuplicators, game.blueprint, game.completedCropPerfections],
+  )
   const unlockedCropIds = useMemo(
     () =>
       getUnlockedCropIds(
@@ -757,7 +758,7 @@ function App() {
 
   function buyMaxDuplicators() {
     updateGame((currentGame) => {
-      const { purchased, ...nextGame } = getMaxRowDuplicatorPurchase(currentGame)
+      const { purchased, ...nextGame } = getMaxHamsterPurchase(currentGame)
 
       return purchased > 0 ? { ...currentGame, ...nextGame } : currentGame
     })
@@ -1231,14 +1232,13 @@ function App() {
             {game.hasUnlockedRowDuplicators ? (
               <>
                 <div>
-                  <dt>Rows built</dt>
-                  <dd><FormattedNumber value={game.farmland.rows} maximumFractionDigits={2} /></dd>
-                </div>
-                <div>
                   <dt>Columns built</dt>
                   <dd><FormattedNumber value={game.farmland.columns} maximumFractionDigits={2} /></dd>
                 </div>
-                
+                <div>
+                  <dt>Rows built</dt>
+                  <dd><FormattedNumber value={game.farmland.rows} maximumFractionDigits={2} /></dd>
+                </div>
               </>
             ) : null}
           </dl>
@@ -1333,8 +1333,8 @@ function App() {
             </p>
             <dl className="replicator-stats">
               <div>
-                <dt>Rows built</dt>
-                <dd><FormattedNumber value={rowDuplicatorIncomeMultiplier} maximumFractionDigits={2} />/s</dd>
+                <dt>Income boost</dt>
+                <dd>Ã—<FormattedNumber value={rowDuplicatorIncomeMultiplier} maximumFractionDigits={2} /></dd>
               </div>
               <div>
                 <dt>Next cost</dt>
