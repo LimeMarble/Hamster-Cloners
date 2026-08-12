@@ -66,7 +66,6 @@ export function useGameState(isEditingBlueprintRef) {
           currentGame.blueprint,
           currentGame.farmland,
           currentGame.completedCropPerfections,
-          currentGame.rowDuplicators,
           SIMULATION_TICK_INTERVAL_MS,
           currentGame.testingCheats?.cropMultiplierEnabled ? 10 : 1,
         )

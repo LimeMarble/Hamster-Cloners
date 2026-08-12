@@ -5,7 +5,6 @@ import {
   COLUMNS_PER_HAMSTER_PER_SECOND,
   POST_UNION_HAMSTER_EFFICIENCY_GROWTH,
   ROWS_PER_ROW_DUPLICATOR_PER_SECOND,
-  ROW_DUPLICATOR_INCOME_GROWTH,
   SIMULATION_TICK_INTERVAL_MS,
 } from './gameConfig.js'
 import { createFarmlandMultipliers } from './blueprintLogic.js'
@@ -22,29 +21,6 @@ import {
   getMirrorCornEffectMultiplier,
   getPlantedCropCount,
 } from './cropEffects.js'
-
-export function getRowDuplicatorIncomeMultiplier(
-  rowDuplicators = 0,
-  blueprint = null,
-  completedCropPerfections = [],
-) {
-  const safeRowDuplicators = Math.max(
-    0,
-    Math.floor(Number(rowDuplicators) || 0),
-  )
-  const effectivenessMultiplier = blueprint
-    ? getRowDuplicatorEffectivenessMultiplier(
-        blueprint,
-        completedCropPerfections,
-      )
-    : 1
-
-  return (
-    1 +
-    (ROW_DUPLICATOR_INCOME_GROWTH - 1) * effectivenessMultiplier
-  ) ** safeRowDuplicators
-}
-
 
 export function getCropHamsterEfficiencyMultiplier(
   blueprint,
@@ -261,17 +237,11 @@ export function getCropProductionPerSecond(
   blueprint,
   farmland,
   completedCropPerfections = [],
-  rowDuplicators = 0,
   externalCropMultiplier = 1,
 ) {
   return (
     getBaseFieldIncome(blueprint, completedCropPerfections) *
     getIncomeMultiplier(farmland) *
-    getRowDuplicatorIncomeMultiplier(
-      rowDuplicators,
-      blueprint,
-      completedCropPerfections,
-    ) *
     Math.max(0, Number(externalCropMultiplier) || 0)
   )
 }
@@ -331,7 +301,6 @@ export function getProductionForTick(
   blueprint,
   farmland,
   completedCropPerfections = [],
-  rowDuplicators = 0,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
   externalCropMultiplier = 1,
 ) {
@@ -340,7 +309,6 @@ export function getProductionForTick(
       blueprint,
       farmland,
       completedCropPerfections,
-      rowDuplicators,
       externalCropMultiplier,
     ) *
     (tickIntervalMs / 1000)

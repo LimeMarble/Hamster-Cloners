@@ -26,7 +26,6 @@ import {
   grantNextBlueprintExpansion,
   getLeechingGourdFootprint,
   getProductionForTick,
-  getRowDuplicatorIncomeMultiplier,
   getRowDuplicatorEffectivenessMultiplier,
   getRowsProducedForTick,
   getRowsProducedPerSecond,
@@ -40,7 +39,6 @@ import {
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   ROW_DUPLICATOR_BASE_COST,
   ROW_DUPLICATOR_COST_GROWTH,
-  ROW_DUPLICATOR_INCOME_GROWTH,
   ROWS_PER_ROW_DUPLICATOR_PER_SECOND,
   SIMULATION_TICK_INTERVAL_MS,
   unlockCropPerfection,
@@ -133,7 +131,7 @@ test('testing multipliers apply to Crop production and Hamster external efficien
   const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
 
   assert.equal(
-    getCropProductionPerSecond(blueprint, farmland, [], 0, 10),
+    getCropProductionPerSecond(blueprint, farmland, [], 10),
     10,
   )
   assert.equal(getHamsterExternalMultiplier(10), 10)
@@ -958,19 +956,17 @@ test('Row Duplicators reset the field before becoming the only Row source', () =
   })
 })
 
-test('Row Duplicators are purchasable upgrades with 1.2 cost growth and 1.02 income growth', () => {
+test('Row Duplicators are purchasable upgrades with 1.2 cost growth and no direct income boost', () => {
   const blueprint = createBlueprint({ cells: ['leek'] })
   const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
 
   assert.equal(ROW_DUPLICATOR_BASE_COST, 1e12)
   assert.equal(ROW_DUPLICATOR_COST_GROWTH, 1.2)
-  assert.equal(ROW_DUPLICATOR_INCOME_GROWTH, 1.02)
   assert.equal(getNextRowDuplicatorCost(0), 1e12)
   assert.equal(getNextRowDuplicatorCost(1), Math.ceil(1e12 * 1.2))
-  assert.equal(getRowDuplicatorIncomeMultiplier(2), 1.02 ** 2)
   assert.equal(
-    getCropProductionPerSecond(blueprint, farmland, [], 2),
-    1.02 ** 2,
+    getCropProductionPerSecond(blueprint, farmland),
+    1,
   )
 })
 
@@ -1021,10 +1017,6 @@ test('Sunflowers boost Row Duplicators like Potatoes boost hamster efficiency', 
   assert.equal(
     getRowDuplicatorEffectivenessMultiplier(sunflowerBlueprint),
     1.4,
-  )
-  assert.equal(
-    getRowDuplicatorIncomeMultiplier(1, sunflowerBlueprint),
-    1.028,
   )
   assert.ok(
     Math.abs(

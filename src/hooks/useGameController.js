@@ -81,8 +81,6 @@ export function useGameController() {
           ? {
               game,
               nextRowDuplicatorCost: derived.nextRowDuplicatorCost,
-              rowDuplicatorIncomeMultiplier:
-                derived.rowDuplicatorIncomeMultiplier,
               rowDuplicatorEffectivenessMultiplier:
                 derived.rowDuplicatorEffectivenessMultiplier,
               rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
