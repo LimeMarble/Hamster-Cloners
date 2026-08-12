@@ -245,7 +245,7 @@ export function getCropPlacementEffectDescription(
   }
 
   return perfection
-    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} Â· ${perfection.effectDescription}`
+    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} · ${perfection.effectDescription}`
     : cropDefinition.effectDescription
 }
 
