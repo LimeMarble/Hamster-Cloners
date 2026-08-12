@@ -17,8 +17,8 @@ concurrency:
 jobs:
   deploy:
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: ${{ github.ref_name == 'beta' && 'github-pages-beta' || 'github-pages' }}
+      url: ${{ github.ref_name == 'beta' && 'https://limemarble.github.io/Hamster-Cloners/beta/' || steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout stable branch
