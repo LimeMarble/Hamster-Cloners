@@ -1,0 +1,67 @@
+@media (max-width: 700px) {
+  .game-shell {
+    width: min(100% - 20px, 620px);
+    padding-top: 12px;
+  }
+
+  .hero-panel,
+  .invention-card,
+  .modal-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hero-panel {
+    gap: 18px;
+  }
+
+  .save-transfer-card {
+    display: flex;
+  }
+
+  .save-transfer-controls {
+    width: 100%;
+  }
+
+  .field-stats,
+  .replicator-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
+
+  .statistics-grid .statistics-playtime {
+    grid-column: span 1;
+  }
+
+  .modal-actions .primary-button {
+    width: 100%;
+  }
+
+  .blueprint-editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hire-actions > *,
+  .union-modal-actions > * {
+    width: 100%;
+  }
+
+  .hard-reset-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 460px) {
+  .game-tabs {
+    gap: 3px;
+    overflow-x: auto;
+  }
+
+  .game-tab {
+    padding: 7px 10px;
+    font-size: 0.73rem;
+    white-space: nowrap;
+  }
+
+}
+

@@ -1,0 +1,311 @@
+
+.field-card,
+.replicator-card,
+.blueprint-modal {
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.field-card,
+.replicator-card {
+  padding: 18px;
+}
+
+.replicator-card {
+  border-left: 3px solid var(--hamster-purple);
+}
+
+.row-duplicator-upgrade-card {
+  border-left-color: #e4bf42;
+}
+
+.size-pill,
+.hamster-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.size-pill {
+  padding: 5px 8px;
+  border: 1px solid var(--field-green);
+  color: var(--field-green);
+}
+
+.blueprint-heading {
+  gap: 8px;
+}
+
+.blueprint-slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.blueprint-slot {
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid #354735;
+  color: var(--text-muted);
+  background: #0b160d;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.67rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.blueprint-slot:hover:not(:disabled) {
+  border-color: var(--field-green);
+}
+
+.blueprint-slot-active {
+  border-color: var(--field-green);
+  color: var(--field-green);
+  background: #12381b;
+}
+
+.blueprint-slot:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.monocrop-pill {
+  display: inline-flex;
+  flex-direction: column;
+  padding: 5px 8px;
+  border: 1px solid #bd9b4f;
+  color: #e7c773;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.monocrop-pill strong {
+  color: var(--text-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+}
+
+.hamster-badge {
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid var(--hamster-purple);
+  color: var(--hamster-purple);
+}
+
+.blueprint-preview {
+  display: block;
+  width: 100%;
+  margin: 16px 0 14px;
+  padding: 15px;
+  border: 1px solid #354735;
+  color: inherit;
+  background: #080d08;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.blueprint-preview:hover {
+  border-color: var(--field-green);
+  background: #0a110b;
+}
+
+.sunflower-garden {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: -4px 0 14px;
+  color: #f4d457;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sunflower-garden span[aria-hidden='true'] {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.field-grid,
+.editor-grid {
+  display: grid;
+  gap: 5px;
+  width: min(100%, 390px);
+  margin: 0 auto;
+}
+
+.plot,
+.editor-plot {
+  display: grid;
+  min-height: 58px;
+  place-items: center;
+  border: 1px solid #315a38;
+  background: #0b160d;
+}
+
+.plot-leek,
+.editor-plot-leek {
+  border-color: var(--field-green);
+  background: #12381b;
+}
+
+.plot-corn,
+.editor-plot-corn {
+  border-color: var(--crop-gold);
+  background: #3d320d;
+}
+
+.plot-sweetPotato,
+.editor-plot-sweetPotato {
+  border-color: var(--hamster-purple);
+  background: #2d1738;
+}
+
+.plot-turnip,
+.editor-plot-turnip {
+  border-color: #b6d7d2;
+  background: #193331;
+}
+
+.plot-pumpkin,
+.editor-plot-pumpkin {
+  border-color: #eb9335;
+  background: #41210e;
+}
+
+.plot-appleTree,
+.editor-plot-appleTree {
+  border-color: #dc5a4f;
+  background: #421c19;
+}
+
+.plot-lentil,
+.editor-plot-lentil {
+  border-color: #c2a05e;
+  background: #403015;
+}
+
+.plot-knotweed,
+.editor-plot-knotweed {
+  border-color: #8ca153;
+  background: #263617;
+}
+
+.plot-rootTunnel,
+.editor-plot-rootTunnel {
+  border-color: #817666;
+  background: #25201b;
+}
+
+.plot-sunflower,
+.editor-plot-sunflower {
+  border-color: #e4bf42;
+  background: #443c12;
+}
+
+.plot-leechingGourd,
+.plot-leechingGourdPart,
+.editor-plot-leechingGourd,
+.editor-plot-leechingGourdPart {
+  border-color: #cf6d2c;
+  background: #4b2512;
+}
+
+.plot span,
+.editor-plot span {
+  color: var(--field-green);
+  font-size: 1.65rem;
+}
+
+.plot-corn span,
+.editor-plot-corn span {
+  color: var(--crop-gold);
+}
+
+.plot-sweetPotato span,
+.editor-plot-sweetPotato span {
+  color: var(--hamster-purple);
+}
+
+.plot-turnip span,
+.editor-plot-turnip span {
+  color: #b6d7d2;
+}
+
+.plot-pumpkin span,
+.editor-plot-pumpkin span {
+  color: #eb9335;
+}
+
+.plot-appleTree span,
+.editor-plot-appleTree span {
+  color: #dc5a4f;
+}
+
+.plot-lentil span,
+.editor-plot-lentil span {
+  color: #e6c878;
+}
+
+.plot-knotweed span,
+.editor-plot-knotweed span {
+  color: #c4d57d;
+}
+
+.plot-rootTunnel span,
+.editor-plot-rootTunnel span {
+  color: #b7a996;
+}
+
+.plot-sunflower span,
+.editor-plot-sunflower span {
+  color: #ffe27a;
+}
+
+.plot-leechingGourd span,
+.editor-plot-leechingGourd span {
+  color: #ffae58;
+}
+
+.edit-hint {
+  display: block;
+  margin-top: 11px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.field-stats,
+.replicator-stats {
+  align-items: stretch;
+  gap: 8px;
+  margin: 0;
+}
+
+.field-stats div,
+.replicator-stats div {
+  flex: 1;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
+}
+
+dt {
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+

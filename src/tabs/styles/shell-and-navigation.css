@@ -1,0 +1,375 @@
+.game-shell {
+  width: min(960px, calc(100% - 28px));
+  margin: 0 auto;
+  padding: 22px 0 54px;
+}
+
+.topbar,
+.section-heading,
+.modal-heading,
+.modal-actions,
+.replicator-summary,
+.field-stats,
+.replicator-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar {
+  min-height: 38px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-strong);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.brand-mark {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--field-green);
+  color: var(--field-green);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88rem;
+}
+
+.save-status,
+.card-copy,
+.affordability,
+.union-status {
+  color: var(--text-muted);
+}
+
+.save-status {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+}
+
+.game-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 20px 0 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.inventions-tab-wrap {
+  position: relative;
+  display: flex;
+}
+
+.game-tab {
+  padding: 7px 13px;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.79rem;
+  font-weight: 700;
+}
+
+.game-tab-active {
+  border-color: var(--field-green);
+  color: var(--field-green);
+  background: var(--field-green-muted);
+}
+
+.game-tab:disabled {
+  border-color: #303638;
+  color: #596061;
+  cursor: not-allowed;
+}
+
+.inventions-unlock-callout {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 12px);
+  left: 50%;
+  display: grid;
+  gap: 5px;
+  width: min(260px, calc(100vw - 32px));
+  padding: 13px 14px;
+  border: 1px solid var(--field-green);
+  color: var(--text-strong);
+  background: #102417;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 45%);
+  transform: translateX(-50%);
+}
+
+.inventions-unlock-callout::before {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-right: 9px solid transparent;
+  border-bottom: 9px solid var(--field-green);
+  border-left: 9px solid transparent;
+  content: '';
+  transform: translateX(-50%);
+}
+
+.inventions-unlock-callout strong {
+  color: var(--field-green);
+  font-size: 0.83rem;
+}
+
+.inventions-unlock-callout span {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.hero-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 28px 18px 26px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  text-align: center;
+}
+
+.hero-panel > div:first-child {
+  flex: 1;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2 {
+  color: var(--text-strong);
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 600;
+}
+
+h1 {
+  margin-bottom: 7px;
+  color: var(--crop-gold);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  letter-spacing: -0.045em;
+}
+
+h2 {
+  margin-bottom: 0;
+  font-size: 1.08rem;
+}
+
+.hero-copy {
+  margin-bottom: 0;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.game-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.inventions-panel {
+  margin-top: 12px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.inventions-panel h1 {
+  margin-bottom: 10px;
+  font-size: 1.8rem;
+}
+
+.statistics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 20px 0 0;
+}
+
+.statistics-grid div {
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
+}
+
+.statistics-grid dd {
+  color: var(--crop-gold);
+  font-size: 1.16rem;
+}
+
+.statistics-grid .statistics-playtime {
+  grid-column: span 2;
+}
+
+.invention-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 18px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.invention-tab {
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.invention-tab-active {
+  border-color: var(--crop-gold);
+  color: var(--crop-gold);
+  background: #31260f;
+}
+
+.crop-perfection-card {
+  border-color: #7d9f72;
+}
+
+.inventions-intro,
+.invention-card p,
+.invention-progress {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.invention-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid #6f527a;
+  background: var(--panel-raised);
+}
+
+.invention-card p:last-child {
+  max-width: 530px;
+  margin: 9px 0 0;
+}
+
+.invention-complete {
+  padding: 9px 12px;
+  border: 1px solid var(--field-green);
+  color: var(--field-green);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.invention-progress {
+  margin: 12px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.hard-reset-card {
+  border-color: #8b3a3a;
+}
+
+.save-transfer-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  border-color: #496681;
+}
+
+.save-transfer-card > div:first-child {
+  align-self: center;
+}
+
+.save-transfer-controls {
+  display: grid;
+  gap: 8px;
+  min-width: 148px;
+}
+
+.save-code-label {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.save-code-input {
+  min-height: 82px;
+  resize: vertical;
+  padding: 10px;
+  border: 1px solid var(--line);
+  color: var(--text-strong);
+  background: #080d08;
+  font: 0.72rem/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.save-code-input:focus {
+  outline: 1px solid var(--field-green);
+  outline-offset: 1px;
+}
+
+.save-transfer-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.save-transfer-status-success {
+  color: var(--field-green);
+}
+
+.save-transfer-status-error {
+  color: #ff9999;
+}
+
+.hard-reset-button {
+  width: min(100%, 330px);
+  padding: 11px 16px;
+  border: 1px solid #b44f4f;
+  color: #ffd6d6;
+  background: #4c1c1c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.hard-reset-button:hover {
+  border-color: #ff8e8e;
+  background: #6d2929;
+}

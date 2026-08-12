@@ -1,8 +1,8 @@
-name: Deploy Hamster Cloners to GitHub Pages
+name: Deploy stable and beta Hamster Cloners
 
 on:
   push:
-    branches: ['main']
+    branches: ['main', 'beta']
   workflow_dispatch:
 
 permissions:
@@ -21,23 +21,63 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout stable branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          path: main-build
+
+      - name: Checkout beta branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: beta
+          path: beta-build
+
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: lts/*
           cache: npm
-      - name: Install dependencies
+          cache-dependency-path: |
+            main-build/package-lock.json
+            beta-build/package-lock.json
+
+      - name: Install stable dependencies
+        working-directory: main-build
         run: npm ci
-      - name: Build
+
+      - name: Build stable site
+        working-directory: main-build
+        env:
+          VITE_BASE_PATH: /Hamster-Cloners/
+          VITE_SAVE_KEY: hamster-cloners-save-v1
         run: npm run build
+
+      - name: Install beta dependencies
+        working-directory: beta-build
+        run: npm ci
+
+      - name: Build beta site
+        working-directory: beta-build
+        env:
+          VITE_BASE_PATH: /Hamster-Cloners/beta/
+          VITE_SAVE_KEY: hamster-cloners-beta-save-v1
+        run: npm run build
+
+      - name: Assemble stable and beta sites
+        run: |
+          mkdir -p site/beta
+          cp -R main-build/dist/. site/
+          cp -R beta-build/dist/. site/beta/
+
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
-      - name: Upload site
+
+      - name: Upload combined site
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
-          path: ./dist
+          path: ./site
+
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5

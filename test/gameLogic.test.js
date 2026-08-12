@@ -10,10 +10,12 @@ import {
   getBlueprintSlots,
   getBlueprintCropStats,
   getDiagonalCropIndexes,
+  getEffectiveFarmlandMultipliers,
   canUnlockCropPerfection,
   getHamsterStateAfterHire,
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
+  getMaxDuplicatorPurchase,
   getMaxHamsterPurchase,
   getNextHamsterCost,
   getNextRowDuplicatorCost,
@@ -24,6 +26,8 @@ import {
   getProductionForTick,
   getRowDuplicatorIncomeMultiplier,
   getRowDuplicatorEffectivenessMultiplier,
+  getRowsProducedForTick,
+  getRowsProducedPerSecond,
   getUnlockedBlueprintSlotCount,
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
@@ -35,6 +39,7 @@ import {
   ROW_DUPLICATOR_BASE_COST,
   ROW_DUPLICATOR_COST_GROWTH,
   ROW_DUPLICATOR_INCOME_GROWTH,
+  ROWS_PER_ROW_DUPLICATOR_PER_SECOND,
   SIMULATION_TICK_INTERVAL_MS,
   unlockCropPerfection,
   VISUAL_UPDATE_INTERVAL_MS,
@@ -197,6 +202,32 @@ test('Fields Planted is Rows times Columns times Floors times Farms', () => {
       createFarmlandMultipliers({ rows: 2, columns: 3, floors: 4, farms: 5 }),
     ),
     120,
+  )
+})
+
+test('fractional farmland dimensions do not count until they reach a whole unit', () => {
+  const blueprint = createBlueprint({ cells: ['leek'] })
+  const fractionalFarmland = createFarmlandMultipliers({
+    rows: 12.4,
+    columns: 182.8,
+    floors: 1.9,
+    farms: 2.2,
+  })
+  const effectiveFarmland = getEffectiveFarmlandMultipliers(
+    fractionalFarmland,
+  )
+
+  assert.deepEqual(effectiveFarmland, {
+    rows: 12,
+    columns: 182,
+    floors: 1,
+    farms: 2,
+    otherMultiplier: 1,
+  })
+  assert.equal(getFieldsPlanted(fractionalFarmland), 4368)
+  assert.equal(
+    getCropProductionPerSecond(blueprint, fractionalFarmland),
+    getCropProductionPerSecond(blueprint, effectiveFarmland),
   )
 })
 
@@ -860,7 +891,7 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
   assert.equal(getCropName('sweetPotato'), 'Potato')
 })
 
-test('Row Duplicators reset the field and unlock matched Row construction', () => {
+test('Row Duplicators reset the field before becoming the only Row source', () => {
   const game = {
     crops: ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
     hasUnlockedRowDuplicators: false,
@@ -872,7 +903,7 @@ test('Row Duplicators reset the field and unlock matched Row construction', () =
     ...game,
     crops: 0,
     hasUnlockedRowDuplicators: true,
-    farmland: createFarmlandMultipliers({ rows: 0, columns: 0 }),
+    farmland: createFarmlandMultipliers({ rows: 1, columns: 0 }),
   })
 })
 
@@ -890,6 +921,32 @@ test('Row Duplicators are purchasable upgrades with 1.2 cost growth and 1.02 inc
     getCropProductionPerSecond(blueprint, farmland, [], 2),
     1.02 ** 2,
   )
+})
+
+test('Row Duplicators generate Rows independently from Hamster-built Columns', () => {
+  assert.equal(ROWS_PER_ROW_DUPLICATOR_PER_SECOND, 0.1)
+  assert.equal(getRowsProducedPerSecond(0), 0)
+  assert.equal(getRowsProducedPerSecond(1), 0.1)
+  assert.equal(getRowsProducedPerSecond(8), 0.8)
+  assert.ok(Math.abs(getRowsProducedForTick(8) * 60 - 0.8) < 1e-12)
+})
+
+test('Row Duplicator buy max purchases every affordable upgrade after unlock', () => {
+  const lockedPurchase = getMaxDuplicatorPurchase({
+    crops: 4e12,
+    rowDuplicators: 0,
+    hasUnlockedRowDuplicators: false,
+  })
+  const purchase = getMaxDuplicatorPurchase({
+    crops: 4e12,
+    rowDuplicators: 0,
+    hasUnlockedRowDuplicators: true,
+  })
+
+  assert.equal(lockedPurchase.purchased, 0)
+  assert.equal(purchase.purchased, 3)
+  assert.equal(purchase.rowDuplicators, 3)
+  assert.ok(Math.abs(purchase.crops - 3.6e11) < 1)
 })
 
 test('Sunflowers boost Row Duplicators like Potatoes boost hamster efficiency', () => {
@@ -917,6 +974,14 @@ test('Sunflowers boost Row Duplicators like Potatoes boost hamster efficiency', 
   assert.equal(
     getRowDuplicatorIncomeMultiplier(1, sunflowerBlueprint),
     1.028,
+  )
+  assert.ok(
+    Math.abs(
+      getRowsProducedPerSecond(
+        1,
+        getRowDuplicatorEffectivenessMultiplier(sunflowerBlueprint),
+      ) - 0.14,
+    ) < 1e-12,
   )
 })
 
