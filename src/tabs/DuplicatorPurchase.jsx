@@ -42,7 +42,7 @@ export function DuplicatorPurchase({
         <div>
           <dt>Duplicator coordination</dt>
           <dd>
-            Ã—<FormattedNumber value={rowDuplicatorCoordinationMultiplier} maximumFractionDigits={2} />
+            x<FormattedNumber value={rowDuplicatorCoordinationMultiplier} maximumFractionDigits={2} />
           </dd>
         </div>
         <div>
