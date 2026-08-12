@@ -274,6 +274,33 @@ h2 {
   background: var(--panel-raised);
 }
 
+.milestone-invention-card {
+  border-color: #a88a32;
+  background: linear-gradient(135deg, #29230f, var(--panel-raised) 58%);
+}
+
+.milestone-invention-card h2,
+.milestone-invention-card .eyebrow {
+  color: var(--crop-gold);
+}
+
+.milestone-invention-card .primary-button {
+  border-color: #d4af37;
+  color: #fff4bf;
+  background: #755b13;
+}
+
+.milestone-invention-card .primary-button:hover:not(:disabled) {
+  border-color: #ffe27a;
+  background: #92731b;
+}
+
+.milestone-invention-card .primary-button:disabled {
+  border-color: #685b31;
+  color: #9c916a;
+  background: #352f1e;
+}
+
 .invention-card p:last-child {
   max-width: 530px;
   margin: 9px 0 0;
@@ -291,6 +318,37 @@ h2 {
 .invention-progress {
   margin: 12px 0 0;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.notation-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  gap: 6px;
+  min-width: min(100%, 250px);
+}
+
+.notation-option {
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  background: #111;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.notation-option:hover {
+  border-color: var(--text-muted);
+  color: var(--text-strong);
+}
+
+.notation-option-active,
+.notation-option-active:hover {
+  border-color: var(--crop-gold);
+  color: var(--crop-gold);
+  background: #31260f;
 }
 
 .hard-reset-card {

@@ -1,0 +1,137 @@
+.code-entry-card {
+  display: grid;
+  align-items: stretch;
+  border-color: #8e7332;
+}
+
+.code-entry-form {
+  display: grid;
+  gap: 7px;
+  width: min(100%, 620px);
+}
+
+.code-entry-form label {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.code-entry-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.code-entry-controls input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  color: var(--text-strong);
+  background: #111;
+  font: inherit;
+}
+
+.code-entry-controls input:focus {
+  border-color: var(--crop-gold);
+  outline: 1px solid var(--crop-gold);
+  outline-offset: 1px;
+}
+
+.code-entry-status {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.code-entry-status-success {
+  color: var(--field-green) !important;
+}
+
+.code-entry-status-error {
+  color: #ff9999 !important;
+}
+
+.testing-panel {
+  position: fixed;
+  z-index: 15;
+  top: 88px;
+  right: 16px;
+  display: grid;
+  gap: 8px;
+  width: min(300px, calc(100vw - 24px));
+  max-height: calc(100dvh - 104px);
+  padding: 14px;
+  border: 1px solid #d4a93b;
+  color: var(--text-strong);
+  background: #201a0c;
+  box-shadow: 0 14px 36px rgb(0 0 0 / 55%);
+  overflow-y: auto;
+}
+
+.testing-panel h2 {
+  margin: -2px 0 0;
+  color: #ffe27a;
+  font-size: 1.05rem;
+}
+
+.testing-panel-warning {
+  margin: 0 0 3px;
+  color: #d4cba8;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.testing-panel-controls {
+  display: grid;
+  gap: 7px;
+}
+
+.testing-toggle,
+.testing-action {
+  padding: 9px 10px;
+  border: 1px solid #655629;
+  color: var(--text-strong);
+  background: #2c2513;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.testing-toggle:hover:not(:disabled),
+.testing-action:hover:not(:disabled) {
+  border-color: #d4a93b;
+  background: #3a3016;
+}
+
+.testing-toggle-active {
+  border-color: #71b968;
+  color: #c9f1c3;
+  background: #17321a;
+}
+
+.testing-action:disabled {
+  color: #756f5f;
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+@media (max-width: 700px) {
+  .code-entry-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .code-entry-controls .secondary-button {
+    width: 100%;
+  }
+
+  .testing-panel {
+    top: auto;
+    right: 10px;
+    bottom: 10px;
+    max-height: min(58dvh, 480px);
+  }
+}

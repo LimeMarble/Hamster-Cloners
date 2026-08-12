@@ -4,12 +4,13 @@ import {
   BLUEPRINT_EXPANSION_TRACKS,
   createBlueprint,
   createFarmlandMultipliers,
+  createInitialGame,
   getCropProductionPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getBlueprintExpansionCost,
   getBlueprintSlots,
   getBlueprintCropStats,
-  getDiagonalCropIndexes,
+  getDiagonalTileIndexes,
   getEffectiveFarmlandMultipliers,
   canUnlockCropPerfection,
   getHamsterStateAfterHire,
@@ -22,12 +23,13 @@ import {
   getColumnsProducedPerSecond,
   getColumnsProducedForTick,
   getFieldsPlanted,
+  grantNextBlueprintExpansion,
   getLeechingGourdFootprint,
   getProductionForTick,
-  getRowDuplicatorIncomeMultiplier,
   getRowDuplicatorEffectivenessMultiplier,
   getRowsProducedForTick,
   getRowsProducedPerSecond,
+  getRowDuplicatorCoordinationMultiplier,
   getUnlockedBlueprintSlotCount,
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
@@ -38,8 +40,8 @@ import {
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   ROW_DUPLICATOR_BASE_COST,
   ROW_DUPLICATOR_COST_GROWTH,
-  ROW_DUPLICATOR_INCOME_GROWTH,
   ROWS_PER_ROW_DUPLICATOR_PER_SECOND,
+  ROW_DUPLICATOR_COORDINATION_GROWTH,
   SIMULATION_TICK_INTERVAL_MS,
   unlockCropPerfection,
   VISUAL_UPDATE_INTERVAL_MS,
@@ -124,6 +126,18 @@ test('field efficiency, hamster coordination, and external multipliers are separ
         10.1 * coordinationMultiplier * 0.5,
     ) < 1e-12,
   )
+})
+
+test('testing multipliers apply to Crop production and Hamster external efficiency', () => {
+  const blueprint = createBlueprint({ cells: ['leek'] })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(
+    getCropProductionPerSecond(blueprint, farmland, [], 10),
+    10,
+  )
+  assert.equal(getHamsterExternalMultiplier(10), 10)
+  assert.equal(getColumnsProducedPerSecond(1, 0, 1, 10), 1)
 })
 
 test('the 1,000th hamster triggers unionization and leaves 100 active', () => {
@@ -310,7 +324,7 @@ test('Mirror Corn changes Corn to five yield and −50% Hamster Efficiency', () 
   })
 
   assert.equal(getCropName('corn', ['mirrorCorn']), 'Mirror Corn')
-  assert.deepEqual(getDiagonalCropIndexes(blueprint, 0), [3])
+  assert.deepEqual(getDiagonalTileIndexes(blueprint, 0), [3])
   assert.equal(
     getCropHamsterEfficiencyMultiplier(blueprint, ['mirrorCorn']),
     0.75,
@@ -343,16 +357,53 @@ test('Mirror Corn boosts selected diagonal crop effects', () => {
   )
 })
 
-test('Lentil is ineligible for Mirror Corn targeting', () => {
+test('Mirror Corn targets tiles but gives Lentil no effect', () => {
   const blueprint = createBlueprint({
     rows: 2,
     columns: 2,
     cells: ['corn', 'leek', null, 'lentil'],
     mirrorCornTargets: [3],
   })
+  const unlinkedBlueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', 'leek', null, 'lentil'],
+  })
 
-  assert.deepEqual(getDiagonalCropIndexes(blueprint, 0), [])
-  assert.deepEqual(blueprint.mirrorCornTargets, [null, null, null, null])
+  assert.deepEqual(getDiagonalTileIndexes(blueprint, 0), [3])
+  assert.deepEqual(blueprint.mirrorCornTargets, [3, null, null, null])
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+      ['mirrorCorn'],
+    ),
+    getCropProductionPerSecond(
+      unlinkedBlueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+      ['mirrorCorn'],
+    ),
+  )
+})
+
+test('Mirror Corn tile targets persist through empty and replacement crops', () => {
+  const emptyTargetBlueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', null, null, null],
+    mirrorCornTargets: [3],
+  })
+  const replacementBlueprint = createBlueprint({
+    ...emptyTargetBlueprint,
+    cells: ['corn', null, null, 'sweetPotato'],
+  })
+
+  assert.deepEqual(emptyTargetBlueprint.mirrorCornTargets, [3, null, null, null])
+  assert.deepEqual(replacementBlueprint.mirrorCornTargets, [3, null, null, null])
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(replacementBlueprint, ['mirrorCorn']),
+    1,
+  )
 })
 
 test('Root Tunnels transfer ordinary crop adjacencies but not modifier crops', () => {
@@ -382,7 +433,7 @@ test('Root Tunnels transfer ordinary crop adjacencies but not modifier crops', (
     8,
   )
   assert.equal(getCropHamsterEfficiencyMultiplier(modifierBlueprint), 1.25)
-  assert.deepEqual(mirrorBlueprint.mirrorCornTargets, [null, null, null, null])
+  assert.deepEqual(mirrorBlueprint.mirrorCornTargets, [3, null, null, null])
 })
 
 test('Root Tunnels transfer adjacencies through connected tunnel chains', () => {
@@ -715,7 +766,7 @@ test('Leeching Gourd boosts all Turnips from adjacent debuffs, with harmful crop
   )
 })
 
-test('Leeching Gourd costs 2 Qn Crops and is not a Mirror Corn target', () => {
+test('Leeching Gourd costs 2 Qn Crops and receives no Mirror Corn effect', () => {
   const game = {
     crops: CROP_PERFECTIONS.leechingGourd.cost,
     hasUnlockedCropPerfection: true,
@@ -735,7 +786,7 @@ test('Leeching Gourd costs 2 Qn Crops and is not a Mirror Corn target', () => {
     crops: 0,
     completedCropPerfections: ['leechingGourd'],
   })
-  assert.deepEqual(blueprint.mirrorCornTargets, [null, null, null, null])
+  assert.deepEqual(blueprint.mirrorCornTargets, [3, null, null, null])
 })
 
 test('Knotweed provides no harvest and subtracts 10 harvest from adjacent crops', () => {
@@ -907,28 +958,31 @@ test('Row Duplicators reset the field before becoming the only Row source', () =
   })
 })
 
-test('Row Duplicators are purchasable upgrades with 1.2 cost growth and 1.02 income growth', () => {
+test('Row Duplicators are purchasable upgrades with 1.2 cost growth and no direct income boost', () => {
   const blueprint = createBlueprint({ cells: ['leek'] })
   const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
 
   assert.equal(ROW_DUPLICATOR_BASE_COST, 1e12)
   assert.equal(ROW_DUPLICATOR_COST_GROWTH, 1.2)
-  assert.equal(ROW_DUPLICATOR_INCOME_GROWTH, 1.02)
   assert.equal(getNextRowDuplicatorCost(0), 1e12)
   assert.equal(getNextRowDuplicatorCost(1), Math.ceil(1e12 * 1.2))
-  assert.equal(getRowDuplicatorIncomeMultiplier(2), 1.02 ** 2)
   assert.equal(
-    getCropProductionPerSecond(blueprint, farmland, [], 2),
-    1.02 ** 2,
+    getCropProductionPerSecond(blueprint, farmland),
+    1,
   )
 })
 
 test('Row Duplicators generate Rows independently from Hamster-built Columns', () => {
   assert.equal(ROWS_PER_ROW_DUPLICATOR_PER_SECOND, 0.1)
+  assert.equal(ROW_DUPLICATOR_COORDINATION_GROWTH, 1.02)
+  assert.equal(getRowDuplicatorCoordinationMultiplier(0), 1)
+  assert.equal(getRowDuplicatorCoordinationMultiplier(8), 1.02 ** 8)
   assert.equal(getRowsProducedPerSecond(0), 0)
-  assert.equal(getRowsProducedPerSecond(1), 0.1)
-  assert.equal(getRowsProducedPerSecond(8), 0.8)
-  assert.ok(Math.abs(getRowsProducedForTick(8) * 60 - 0.8) < 1e-12)
+  assert.equal(getRowsProducedPerSecond(1), 0.1 * 1.02)
+  assert.equal(getRowsProducedPerSecond(8), 0.8 * 1.02 ** 8)
+  assert.ok(
+    Math.abs(getRowsProducedForTick(8) * 60 - 0.8 * 1.02 ** 8) < 1e-12,
+  )
 })
 
 test('Row Duplicator buy max purchases every affordable upgrade after unlock', () => {
@@ -971,16 +1025,12 @@ test('Sunflowers boost Row Duplicators like Potatoes boost hamster efficiency', 
     getRowDuplicatorEffectivenessMultiplier(sunflowerBlueprint),
     1.4,
   )
-  assert.equal(
-    getRowDuplicatorIncomeMultiplier(1, sunflowerBlueprint),
-    1.028,
-  )
   assert.ok(
     Math.abs(
       getRowsProducedPerSecond(
         1,
         getRowDuplicatorEffectivenessMultiplier(sunflowerBlueprint),
-      ) - 0.14,
+      ) - 0.14 * 1.02,
     ) < 1e-12,
   )
 })
@@ -1091,6 +1141,23 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     'firstRow',
     'secondColumn',
   ])
+})
+
+test('testing expansion grants follow each configured track and stop at its cap', () => {
+  let game = createInitialGame()
+
+  for (let index = 0; index < 6; index += 1) {
+    game = grantNextBlueprintExpansion(game, 'column')
+  }
+  for (let index = 0; index < 8; index += 1) {
+    game = grantNextBlueprintExpansion(game, 'row')
+  }
+
+  assert.equal(game.blueprint.columns, 7)
+  assert.equal(game.blueprint.rows, 9)
+  assert.equal(game.completedBlueprintExpansions.length, 14)
+  assert.equal(grantNextBlueprintExpansion(game, 'column'), null)
+  assert.equal(grantNextBlueprintExpansion(game, 'row'), null)
 })
 
 test('blueprint slots unlock with Corn and Root Tunnel and retain separate layouts', () => {

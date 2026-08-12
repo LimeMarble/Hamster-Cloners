@@ -1,7 +1,7 @@
 
 .blueprint-editor-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(190px, 220px);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 16px;
 }
@@ -12,7 +12,7 @@
 
 .crop-options {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 6px;
 }
 
@@ -130,6 +130,82 @@
   color: #717171;
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.blueprint-transfer-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px 18px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #496681;
+  background: var(--panel-raised);
+}
+
+.blueprint-transfer-card h3 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 0.96rem;
+}
+
+.blueprint-transfer-card p {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.blueprint-transfer-actions {
+  display: grid;
+  gap: 7px;
+  min-width: 180px;
+}
+
+.blueprint-transfer-actions .primary-button,
+.blueprint-transfer-actions .secondary-button {
+  width: 100%;
+}
+
+.blueprint-code-label {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 7px;
+  color: var(--text-muted);
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.blueprint-code-input {
+  min-height: 76px;
+  padding: 9px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  color: var(--text-strong);
+  background: #080d08;
+  font: 0.69rem/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.blueprint-code-input:focus {
+  outline: 1px solid var(--field-green);
+  outline-offset: 1px;
+}
+
+.blueprint-transfer-status {
+  grid-column: 1 / -1;
+  margin: 0 !important;
+}
+
+.blueprint-transfer-status-success {
+  color: var(--field-green) !important;
+}
+
+.blueprint-transfer-status-error {
+  color: #ff9999 !important;
 }
 
 .editor-grid {

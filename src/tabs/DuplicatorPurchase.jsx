@@ -3,8 +3,8 @@ import { FormattedNumber } from './ui.jsx'
 export function DuplicatorPurchase({
   game,
   nextRowDuplicatorCost,
-  rowDuplicatorIncomeMultiplier,
   rowDuplicatorEffectivenessMultiplier,
+  rowDuplicatorCoordinationMultiplier,
   rowsBuiltPerSecond,
   fieldsPlantedPerSecond,
   onBuyRowDuplicator,
@@ -22,8 +22,9 @@ export function DuplicatorPurchase({
         </span>
       </div>
       <p className="card-copy">
-        Row Duplicators are the only source of farmland Rows. Each builds 0.1
-        Rows per second and permanently multiplies Crop income by 1.02.
+        Row Duplicators are the only source of farmland Rows. Each supplies a
+        base 0.1 Rows per second, and their coordination grows by 2% per
+        Duplicator.
       </p>
       <dl className="replicator-stats">
         <div>
@@ -39,15 +40,15 @@ export function DuplicatorPurchase({
           </dd>
         </div>
         <div>
-          <dt>Duplicator effectiveness</dt>
+          <dt>Duplicator coordination</dt>
           <dd>
-            ×<FormattedNumber value={rowDuplicatorEffectivenessMultiplier} maximumFractionDigits={2} />
+            x<FormattedNumber value={rowDuplicatorCoordinationMultiplier} maximumFractionDigits={2} />
           </dd>
         </div>
         <div>
-          <dt>Income boost</dt>
+          <dt>Duplicator effectiveness</dt>
           <dd>
-            ×<FormattedNumber value={rowDuplicatorIncomeMultiplier} maximumFractionDigits={2} />
+            ×<FormattedNumber value={rowDuplicatorEffectivenessMultiplier} maximumFractionDigits={2} />
           </dd>
         </div>
         <div>

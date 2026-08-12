@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import {
   getBlueprintSlots,
-  getDiagonalCropIndexes,
+  getDiagonalTileIndexes,
   getLeechingGourdFootprint,
   hasReachedMonocropLimit,
 } from '../game/gameLogic.js'
 import { getCropPlacementName } from '../game/crops.js'
+import { useBlueprintTransfer } from './useBlueprintTransfer.js'
 
 export function useBlueprintEditor({
   game,
@@ -106,7 +107,7 @@ export function useBlueprintEditor({
           if (sourceIndex === index) {
             return crop === 'corn' ? mirrorCornTargetIndex : null
           }
-          return targetIndex === index ? null : targetIndex
+          return targetIndex
         },
       ),
     }
@@ -132,9 +133,7 @@ export function useBlueprintEditor({
       ),
       mirrorCornTargets: (currentGame.blueprint.mirrorCornTargets ?? []).map(
         (targetIndex, sourceIndex) =>
-          gourdIndexSet.has(sourceIndex) || gourdIndexSet.has(targetIndex)
-            ? null
-            : targetIndex,
+          gourdIndexSet.has(sourceIndex) ? null : targetIndex,
       ),
     })
   }
@@ -170,10 +169,7 @@ export function useBlueprintEditor({
       }),
       mirrorCornTargets: (currentGame.blueprint.mirrorCornTargets ?? []).map(
         (targetIndex, sourceIndex) =>
-          footprintIndexes.has(sourceIndex) ||
-          footprintIndexes.has(targetIndex)
-            ? null
-            : targetIndex,
+          footprintIndexes.has(sourceIndex) ? null : targetIndex,
       ),
     })
   }
@@ -204,7 +200,7 @@ export function useBlueprintEditor({
     const nextCrop = crop === selectedCrop ? null : selectedCrop
 
     if (nextCrop === 'corn' && hasMirrorCorn) {
-      const targetIndexes = getDiagonalCropIndexes(game.blueprint, index)
+      const targetIndexes = getDiagonalTileIndexes(game.blueprint, index)
 
       if (targetIndexes.length > 0) {
         setPendingMirrorCornPlacement({ sourceIndex: index, targetIndexes })
@@ -213,6 +209,32 @@ export function useBlueprintEditor({
     }
 
     setPlot(index, nextCrop)
+  }
+
+  const blueprintTransfer = useBlueprintTransfer({
+    gameRef,
+    commitBlueprint,
+    unlockedCropIds,
+    hasMirrorCorn,
+    hasLeechingGourd,
+  })
+
+  function handleEditorPlotContextMenu(index, crop, event) {
+    event.preventDefault()
+    setPendingMirrorCornPlacement(null)
+    setHoveredEditorCrop(null)
+    blueprintTransfer.resetBlueprintTransfer()
+
+    if (!crop) {
+      return
+    }
+
+    if (crop === 'leechingGourd' || crop === 'leechingGourdPart') {
+      removeLeechingGourd()
+      return
+    }
+
+    setPlot(index, null)
   }
 
   function closeBlueprintEditor() {
@@ -224,6 +246,7 @@ export function useBlueprintEditor({
   function resetBlueprintEditor() {
     closeBlueprintEditor()
     setSelectedCrop('leek')
+    blueprintTransfer.resetBlueprintTransfer()
   }
 
   const getDisplayedCropName = (cropId) =>
@@ -269,6 +292,18 @@ export function useBlueprintEditor({
           onClose: closeBlueprintEditor,
           onResume: closeBlueprintEditor,
           onEditorPlotClick: handleEditorPlotClick,
+          onEditorPlotContextMenu: handleEditorPlotContextMenu,
+          blueprintTransfer: {
+            ...blueprintTransfer,
+            onImportBlueprint: () => {
+              const imported = blueprintTransfer.onImportBlueprint()
+
+              if (imported) {
+                setPendingMirrorCornPlacement(null)
+                setHoveredEditorCrop(null)
+              }
+            },
+          },
           onUpdateHoveredEditorCrop: updateHoveredEditorCrop,
           onClearHoveredEditorCrop: () => setHoveredEditorCrop(null),
         }

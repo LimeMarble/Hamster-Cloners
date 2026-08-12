@@ -1,8 +1,24 @@
+import Decimal from 'break_infinity.js'
+
 const PRIMARY_SUFFIXES = [
   '',
   'k',
   'M',
   'B',
+  'T',
+  'Qd',
+  'Qn',
+  'Sx',
+  'Sp',
+  'Oc',
+  'No',
+]
+
+const LAYERED_PRIMARY_SUFFIXES = [
+  '',
+  'k',
+  'U',
+  'D',
   'T',
   'Qd',
   'Qn',
@@ -41,7 +57,21 @@ const THIRD_LAYER_SUFFIXES = [
 const DECIMAL_PATTERN = /^([+-]?)(\d+(?:\.\d*)?|\.\d+)(?:e([+-]?\d+))?$/i
 const MAX_FORMAT_CACHE_SIZE = 512
 const SUFFIX_SIGNIFICANT_DIGITS = 3
+export const NUMBER_NOTATION_SUFFIX = 'suffix'
+export const NUMBER_NOTATION_SCIENTIFIC = 'scientific'
+export const FORCED_SCIENTIFIC_EXPONENT = 3003
 const formattedNumberCache = new Map()
+let activeNumberNotation = NUMBER_NOTATION_SUFFIX
+
+function normalizeNumberNotation(notation) {
+  return notation === NUMBER_NOTATION_SCIENTIFIC
+    ? NUMBER_NOTATION_SCIENTIFIC
+    : NUMBER_NOTATION_SUFFIX
+}
+
+export function setActiveNumberNotation(notation) {
+  activeNumberNotation = normalizeNumberNotation(notation)
+}
 
 function normalizeDecimalCoefficient(coefficient) {
   const [integerPart, fractionPart = ''] = coefficient.split('.')
@@ -66,6 +96,21 @@ function normalizeDecimalCoefficient(coefficient) {
 }
 
 function getScientificParts(value) {
+  if (value instanceof Decimal) {
+    if (!Number.isFinite(value.mantissa) || !Number.isFinite(value.exponent)) {
+      return null
+    }
+    if (value.mantissa === 0) {
+      return { negative: false, mantissa: 0, exponent: 0 }
+    }
+
+    return {
+      negative: value.mantissa < 0,
+      mantissa: Math.abs(value.mantissa),
+      exponent: value.exponent,
+    }
+  }
+
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) {
       return null
@@ -100,15 +145,20 @@ function getScientificParts(value) {
 }
 
 function getSuffixForGroup(suffixGroup) {
-  if (suffixGroup < 1 || suffixGroup > 999) {
+  if (suffixGroup < 1 || suffixGroup > 1000) {
     return ''
   }
   if (suffixGroup <= 10) {
     return PRIMARY_SUFFIXES[suffixGroup]
   }
 
+  const primaryLayerIndex = suffixGroup % 10
   const primarySuffix =
-    suffixGroup % 10 === 1 ? '' : PRIMARY_SUFFIXES[suffixGroup % 10]
+    primaryLayerIndex === 1
+      ? ''
+      : LAYERED_PRIMARY_SUFFIXES[
+          primaryLayerIndex === 0 ? 10 : primaryLayerIndex
+        ]
   const secondLayerSuffix =
     SECOND_LAYER_SUFFIXES[Math.floor((suffixGroup - 1) / 10) % 10]
   const thirdLayerSuffix =
@@ -147,7 +197,31 @@ function getRoundedSuffixParts(mantissa, exponent) {
   return { suffixGroup, scaledValue, fractionDigits }
 }
 
-export function getFormatCacheKey(value, maximumFractionDigits = 1) {
+function getRoundedScientificParts(mantissa, exponent) {
+  let scientificExponent = exponent
+  let scaledValue = Math.round(mantissa * 100) / 100
+
+  if (scaledValue >= 10) {
+    scaledValue /= 10
+    scientificExponent += 1
+  }
+
+  return { scaledValue, scientificExponent }
+}
+
+function shouldUseScientificNotation(notation, exponent) {
+  return (
+    normalizeNumberNotation(notation) === NUMBER_NOTATION_SCIENTIFIC ||
+    exponent >= FORCED_SCIENTIFIC_EXPONENT ||
+    !getSuffixForExponent(exponent)
+  )
+}
+
+export function getFormatCacheKey(
+  value,
+  maximumFractionDigits = 1,
+  notation = NUMBER_NOTATION_SUFFIX,
+) {
   const scientificParts = getScientificParts(value)
 
   if (!scientificParts) {
@@ -166,8 +240,12 @@ export function getFormatCacheKey(value, maximumFractionDigits = 1) {
     return `${prefix}:plain:${Math.round(mantissa * 10 ** exponent * roundingScale)}:${precision}`
   }
 
-  if (!getSuffixForExponent(exponent)) {
-    return `${prefix}:scientific:${Math.round(mantissa * roundingScale)}:${exponent}:${precision}`
+  if (shouldUseScientificNotation(notation, exponent)) {
+    const { scaledValue, scientificExponent } = getRoundedScientificParts(
+      mantissa,
+      exponent,
+    )
+    return `${prefix}:scientific:${Math.round(scaledValue * 100)}:${scientificExponent}`
   }
 
   const { suffixGroup, scaledValue, fractionDigits } = getRoundedSuffixParts(
@@ -178,7 +256,11 @@ export function getFormatCacheKey(value, maximumFractionDigits = 1) {
   return `${prefix}:suffix:${suffixGroup}:${Math.round(scaledValue * suffixRoundingScale)}:${fractionDigits}`
 }
 
-export function formatNumber(value, maximumFractionDigits = 1) {
+export function formatNumber(
+  value,
+  maximumFractionDigits = 1,
+  notation = NUMBER_NOTATION_SUFFIX,
+) {
   const scientificParts = getScientificParts(value)
 
   if (!scientificParts) {
@@ -197,10 +279,12 @@ export function formatNumber(value, maximumFractionDigits = 1) {
     return `${sign}${formatPlainNumber(mantissa * 10 ** exponent, maximumFractionDigits)}`
   }
 
-  const suffix = getSuffixForExponent(exponent)
-
-  if (!suffix) {
-    return `${sign}${formatPlainNumber(mantissa, maximumFractionDigits)}e${exponent}`
+  if (shouldUseScientificNotation(notation, exponent)) {
+    const { scaledValue, scientificExponent } = getRoundedScientificParts(
+      mantissa,
+      exponent,
+    )
+    return `${sign}${formatPlainNumber(scaledValue, 2, 2)}e${scientificExponent}`
   }
 
   const { suffixGroup, scaledValue, fractionDigits } = getRoundedSuffixParts(
@@ -214,15 +298,19 @@ export function formatNumber(value, maximumFractionDigits = 1) {
   )}${getSuffixForGroup(suffixGroup)}`
 }
 
-export function getCachedFormattedNumber(value, maximumFractionDigits = 1) {
-  const cacheKey = getFormatCacheKey(value, maximumFractionDigits)
+export function getCachedFormattedNumber(
+  value,
+  maximumFractionDigits = 1,
+  notation = activeNumberNotation,
+) {
+  const cacheKey = getFormatCacheKey(value, maximumFractionDigits, notation)
   const cachedValue = formattedNumberCache.get(cacheKey)
 
   if (cachedValue !== undefined) {
     return cachedValue
   }
 
-  const formattedValue = formatNumber(value, maximumFractionDigits)
+  const formattedValue = formatNumber(value, maximumFractionDigits, notation)
 
   if (formattedNumberCache.size >= MAX_FORMAT_CACHE_SIZE) {
     formattedNumberCache.delete(formattedNumberCache.keys().next().value)

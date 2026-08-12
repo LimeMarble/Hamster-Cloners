@@ -32,7 +32,7 @@ test('legacy saves reset blueprint progress after the expansion axes swap', () =
   })
 })
 
-test('current saves retain only valid Mirror Corn diagonal targets', () => {
+test('current saves retain valid Mirror Corn diagonal tile targets', () => {
   const migratedGame = normalizeGame({
     blueprintExpansionAxesSwapped: true,
     blueprint: {
@@ -44,6 +44,18 @@ test('current saves retain only valid Mirror Corn diagonal targets', () => {
   })
 
   assert.deepEqual(migratedGame.blueprint.mirrorCornTargets, [3, null, null, null])
+
+  const emptyTargetSave = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    blueprint: {
+      rows: 2,
+      columns: 2,
+      cells: ['corn', null, null, null],
+      mirrorCornTargets: [3],
+    },
+  })
+
+  assert.deepEqual(emptyTargetSave.blueprint.mirrorCornTargets, [3, null, null, null])
 })
 
 test('current saves retain independent unlocked blueprint slots', () => {
@@ -79,6 +91,34 @@ test('statistics persist and older saves receive safe lifetime defaults', () => 
   assert.equal(savedStatistics.playtimeSeconds, 123)
   assert.equal(olderSave.totalCropsMade, 50)
   assert.equal(olderSave.playtimeSeconds, 0)
+})
+
+test('testing panel unlock and toggle states persist safely', () => {
+  const testingSave = normalizeGame({
+    testingPanelUnlocked: true,
+    testingCheats: {
+      cropMultiplierEnabled: true,
+      hamsterEfficiencyEnabled: true,
+    },
+  })
+  const ordinarySave = normalizeGame({})
+
+  assert.equal(testingSave.testingPanelUnlocked, true)
+  assert.deepEqual(testingSave.testingCheats, {
+    cropMultiplierEnabled: true,
+    hamsterEfficiencyEnabled: true,
+  })
+  assert.equal(ordinarySave.testingPanelUnlocked, false)
+  assert.deepEqual(ordinarySave.testingCheats, {
+    cropMultiplierEnabled: false,
+    hamsterEfficiencyEnabled: false,
+  })
+})
+
+test('number notation persists and defaults safely to suffix notation', () => {
+  assert.equal(normalizeGame({ numberNotation: 'scientific' }).numberNotation, 'scientific')
+  assert.equal(normalizeGame({ numberNotation: 'unknown' }).numberNotation, 'suffix')
+  assert.equal(normalizeGame({}).numberNotation, 'suffix')
 })
 
 test('exports and imports a versioned Base64 save code', () => {

@@ -4,8 +4,8 @@ import {
   BASE_CROP_YIELD_PER_PLOT,
   COLUMNS_PER_HAMSTER_PER_SECOND,
   POST_UNION_HAMSTER_EFFICIENCY_GROWTH,
+  ROW_DUPLICATOR_COORDINATION_GROWTH,
   ROWS_PER_ROW_DUPLICATOR_PER_SECOND,
-  ROW_DUPLICATOR_INCOME_GROWTH,
   SIMULATION_TICK_INTERVAL_MS,
 } from './gameConfig.js'
 import { createFarmlandMultipliers } from './blueprintLogic.js'
@@ -22,29 +22,6 @@ import {
   getMirrorCornEffectMultiplier,
   getPlantedCropCount,
 } from './cropEffects.js'
-
-export function getRowDuplicatorIncomeMultiplier(
-  rowDuplicators = 0,
-  blueprint = null,
-  completedCropPerfections = [],
-) {
-  const safeRowDuplicators = Math.max(
-    0,
-    Math.floor(Number(rowDuplicators) || 0),
-  )
-  const effectivenessMultiplier = blueprint
-    ? getRowDuplicatorEffectivenessMultiplier(
-        blueprint,
-        completedCropPerfections,
-      )
-    : 1
-
-  return (
-    1 +
-    (ROW_DUPLICATOR_INCOME_GROWTH - 1) * effectivenessMultiplier
-  ) ** safeRowDuplicators
-}
-
 
 export function getCropHamsterEfficiencyMultiplier(
   blueprint,
@@ -261,16 +238,12 @@ export function getCropProductionPerSecond(
   blueprint,
   farmland,
   completedCropPerfections = [],
-  rowDuplicators = 0,
+  externalCropMultiplier = 1,
 ) {
   return (
     getBaseFieldIncome(blueprint, completedCropPerfections) *
     getIncomeMultiplier(farmland) *
-    getRowDuplicatorIncomeMultiplier(
-      rowDuplicators,
-      blueprint,
-      completedCropPerfections,
-    )
+    Math.max(0, Number(externalCropMultiplier) || 0)
   )
 }
 
@@ -278,6 +251,7 @@ export function getColumnsProducedPerSecond(
   hamsters,
   postUnionHamstersHired = 0,
   cropHamsterEfficiencyMultiplier = 1,
+  hamsterExternalMultiplier = 1,
 ) {
   const safeHamsters = Math.max(0, Math.floor(Number(hamsters) || 0))
 
@@ -285,7 +259,7 @@ export function getColumnsProducedPerSecond(
     safeHamsters *
     COLUMNS_PER_HAMSTER_PER_SECOND *
     getHamsterCoordinationMultiplier(safeHamsters, postUnionHamstersHired) *
-    getHamsterExternalMultiplier() *
+    getHamsterExternalMultiplier(hamsterExternalMultiplier) *
     Math.max(0, Number(cropHamsterEfficiencyMultiplier) || 0)
   )
 }
@@ -302,8 +276,18 @@ export function getRowsProducedPerSecond(
   return (
     safeRowDuplicators *
     ROWS_PER_ROW_DUPLICATOR_PER_SECOND *
+    getRowDuplicatorCoordinationMultiplier(safeRowDuplicators) *
     Math.max(0, Number(rowDuplicatorEffectivenessMultiplier) || 0)
   )
+}
+
+export function getRowDuplicatorCoordinationMultiplier(rowDuplicators = 0) {
+  const safeRowDuplicators = Math.max(
+    0,
+    Math.floor(Number(rowDuplicators) || 0),
+  )
+
+  return ROW_DUPLICATOR_COORDINATION_GROWTH ** safeRowDuplicators
 }
 
 // The post-union hiring boost is separate from other construction bonuses so
@@ -320,23 +304,23 @@ export function getHamsterCoordinationMultiplier(
 }
 
 // Future inventions and other global construction effects belong here.
-export function getHamsterExternalMultiplier() {
-  return 1
+export function getHamsterExternalMultiplier(multiplier = 1) {
+  return Math.max(0, Number(multiplier) || 0)
 }
 
 export function getProductionForTick(
   blueprint,
   farmland,
   completedCropPerfections = [],
-  rowDuplicators = 0,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
+  externalCropMultiplier = 1,
 ) {
   return (
     getCropProductionPerSecond(
       blueprint,
       farmland,
       completedCropPerfections,
-      rowDuplicators,
+      externalCropMultiplier,
     ) *
     (tickIntervalMs / 1000)
   )
@@ -347,12 +331,14 @@ export function getColumnsProducedForTick(
   postUnionHamstersHired = 0,
   cropHamsterEfficiencyMultiplier = 1,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
+  hamsterExternalMultiplier = 1,
 ) {
   return (
     getColumnsProducedPerSecond(
       hamsters,
       postUnionHamstersHired,
       cropHamsterEfficiencyMultiplier,
+      hamsterExternalMultiplier,
     ) *
     (tickIntervalMs / 1000)
   )

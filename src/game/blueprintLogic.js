@@ -2,7 +2,6 @@ import {
   CROP_DEFINITIONS,
   CROP_PERFECTIONS,
   CROP_PERFECTION_IDS,
-  canBeMirrorCornTarget,
   hasCropPerfection,
   isKnownCrop,
 } from './crops.js'
@@ -97,8 +96,6 @@ export function createBlueprint({
         Number.isInteger(targetIndex) &&
         targetIndex >= 0 &&
         targetIndex < totalCells &&
-        normalizedCells[targetIndex] &&
-        canBeMirrorCornTarget(normalizedCells[targetIndex]) &&
         Math.abs(sourceRow - targetRow) === 1 &&
         Math.abs(sourceColumn - targetColumn) === 1
       )
@@ -157,6 +154,12 @@ export function createInitialGame() {
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
     rowDuplicators: 0,
+    numberNotation: 'suffix',
+    testingPanelUnlocked: false,
+    testingCheats: {
+      cropMultiplierEnabled: false,
+      hamsterEfficiencyEnabled: false,
+    },
     completedCropPerfections: [],
     blueprintExpansionAxesSwapped: true,
     completedBlueprintExpansions: [],
@@ -372,8 +375,7 @@ function addBlueprintColumn(blueprint) {
   }
 }
 
-export function resetForBlueprintExpansion(game, expansionId) {
-  const expansion = getBlueprintExpansion(expansionId)
+function applyBlueprintExpansion(game, expansion) {
   const currentBlueprint = createBlueprint(game.blueprint)
   const storedBlueprintSlots = getBlueprintSlots(game)
   const activeBlueprintSlot = Math.min(
@@ -383,13 +385,6 @@ export function resetForBlueprintExpansion(game, expansionId) {
   const currentBlueprintSlots = storedBlueprintSlots.map((blueprint, slotIndex) =>
     slotIndex === activeBlueprintSlot ? currentBlueprint : blueprint,
   )
-  const expansionCost = getBlueprintExpansionCost(game, expansionId)
-  const currentCrops = Math.max(0, Number(game.crops) || 0)
-
-  if (!expansion || expansionCost === null || currentCrops < expansionCost) {
-    return null
-  }
-
   const expandBlueprint =
     expansion.direction === 'row' ? addBlueprintRow : addBlueprintColumn
   const expandedBlueprintSlots = currentBlueprintSlots.map(expandBlueprint)
@@ -405,18 +400,48 @@ export function resetForBlueprintExpansion(game, expansionId) {
   }
 
   return {
-    ...game,
-    crops: 0,
-    farmland: {
-      ...createFarmlandMultipliers(game.farmland),
-      columns: 0,
-    },
     blueprint: nextBlueprint,
     blueprintSlots: expandedBlueprintSlots,
     activeBlueprintSlot,
     completedBlueprintExpansions: [
       ...getCompletedBlueprintExpansions(game),
-      expansionId,
+      expansion.id,
     ],
+  }
+}
+
+export function grantNextBlueprintExpansion(game, trackId) {
+  const track = BLUEPRINT_EXPANSION_TRACKS.find(
+    (candidateTrack) => candidateTrack.id === trackId,
+  )
+  const nextExpansionStage = track?.stages.find(
+    (stage) => !hasCompletedBlueprintExpansion(game, stage.id),
+  )
+  const nextExpansion = nextExpansionStage
+    ? getBlueprintExpansion(nextExpansionStage.id)
+    : null
+
+  return nextExpansion
+    ? { ...game, ...applyBlueprintExpansion(game, nextExpansion) }
+    : null
+}
+
+export function resetForBlueprintExpansion(game, expansionId) {
+  const expansion = getBlueprintExpansion(expansionId)
+  const expansionCost = getBlueprintExpansionCost(game, expansionId)
+  const currentCrops = Math.max(0, Number(game.crops) || 0)
+
+  if (!expansion || expansionCost === null || currentCrops < expansionCost) {
+    return null
+  }
+
+  return {
+    ...game,
+    ...applyBlueprintExpansion(game, expansion),
+    crops: 0,
+    farmland: {
+      ...createFarmlandMultipliers(game.farmland),
+      columns: 0,
+    },
   }
 }
