@@ -2,7 +2,6 @@ import {
   CROP_DEFINITIONS,
   CROP_PERFECTIONS,
   CROP_PERFECTION_IDS,
-  canBeMirrorCornTarget,
   hasCropPerfection,
   isKnownCrop,
 } from './crops.js'
@@ -97,8 +96,6 @@ export function createBlueprint({
         Number.isInteger(targetIndex) &&
         targetIndex >= 0 &&
         targetIndex < totalCells &&
-        normalizedCells[targetIndex] &&
-        canBeMirrorCornTarget(normalizedCells[targetIndex]) &&
         Math.abs(sourceRow - targetRow) === 1 &&
         Math.abs(sourceColumn - targetColumn) === 1
       )
@@ -157,6 +154,7 @@ export function createInitialGame() {
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
     rowDuplicators: 0,
+    numberNotation: 'suffix',
     testingPanelUnlocked: false,
     testingCheats: {
       cropMultiplierEnabled: false,

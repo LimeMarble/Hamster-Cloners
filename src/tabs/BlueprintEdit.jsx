@@ -24,6 +24,7 @@ export function BlueprintEdit({
   onClose,
   onResume,
   onEditorPlotClick,
+  onEditorPlotContextMenu,
   onUpdateHoveredEditorCrop,
   onClearHoveredEditorCrop,
 }) {
@@ -51,18 +52,19 @@ export function BlueprintEdit({
         </div>
 
         <p className="editing-notice">
-          Harvesting is paused while you modify this blueprint.
+          Harvesting is paused while you modify this blueprint. Right-click a
+          planted crop to remove it.
         </p>
 
         {pendingMirrorCornPlacement ? (
           <p className="mirror-corn-notice">
-            Choose one yellow-lined diagonal crop to boost. Click the pending
+            Choose one yellow-lined diagonal tile to target. Click the pending
             Mirror Corn tile again to cancel.
           </p>
         ) : hasMirrorCorn && selectedCrop === 'corn' ? (
           <p className="mirror-corn-notice">
-            Place Mirror Corn beside a diagonally adjacent planted crop, then
-            choose the crop to boost.
+            Place Mirror Corn where it has a diagonal tile, then choose that
+            tile. The link remains when its crop changes.
           </p>
         ) : null}
 
@@ -95,6 +97,9 @@ export function BlueprintEdit({
                     className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''}`}
                     key={index}
                     onClick={() => onEditorPlotClick(index, crop)}
+                    onContextMenu={(event) =>
+                      onEditorPlotContextMenu(index, crop, event)
+                    }
                     onPointerEnter={(event) => onUpdateHoveredEditorCrop(index, event)}
                     onPointerMove={(event) => onUpdateHoveredEditorCrop(index, event)}
                     onPointerLeave={onClearHoveredEditorCrop}
@@ -112,7 +117,7 @@ export function BlueprintEdit({
                     onBlur={onClearHoveredEditorCrop}
                     aria-label={
                       isPendingMirrorCornTarget
-                        ? `Boost ${getCropName(crop, game.completedCropPerfections)} with Mirror Corn`
+                        ? 'Assign this tile as the Mirror Corn target'
                         : crop === 'leechingGourd' || crop === 'leechingGourdPart'
                           ? 'Remove Leeching Gourd from blueprint'
                           : crop === selectedCrop

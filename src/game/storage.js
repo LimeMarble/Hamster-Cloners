@@ -195,6 +195,8 @@ export function normalizeGame(rawGame) {
       toNonNegativeNumber(rawGame.crops, 0) >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
     hasUnlockedRowDuplicators: rawGame.hasUnlockedRowDuplicators === true,
     rowDuplicators: toNonNegativeInteger(rawGame.rowDuplicators, 0),
+    numberNotation:
+      rawGame.numberNotation === 'scientific' ? 'scientific' : 'suffix',
     testingPanelUnlocked: rawGame.testingPanelUnlocked === true,
     testingCheats: {
       cropMultiplierEnabled:

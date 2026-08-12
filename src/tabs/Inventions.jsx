@@ -170,40 +170,6 @@ export function Inventions({
           </section>
         ) : (
           <>
-            <article className="invention-card row-duplicator-card">
-              <div>
-                <p className="eyebrow">Milestone invention</p>
-                <h2>Row Duplicators</h2>
-                <p>
-                  Reset at{' '}
-                  <FormattedNumber value={ROW_DUPLICATORS_UNLOCK_CROP_COUNT} maximumFractionDigits={0} />{' '}
-                  Crops to unlock purchasable Row Duplicators.
-                </p>
-              </div>
-              {game.hasUnlockedRowDuplicators ? (
-                <span className="invention-complete">Complete</span>
-              ) : (
-                <button
-                  type="button"
-                  className="primary-button"
-                  onClick={onRequestRowDuplicatorUnlock}
-                  disabled={!canUnlockRows}
-                >
-                  Reset field &amp; unlock
-                </button>
-              )}
-            </article>
-            {!game.hasUnlockedRowDuplicators ? (
-              <p className="invention-progress">
-                <FormattedNumber
-                  value={Math.min(game.crops, ROW_DUPLICATORS_UNLOCK_CROP_COUNT)}
-                  maximumFractionDigits={0}
-                />{' '}
-                /{' '}
-                <FormattedNumber value={ROW_DUPLICATORS_UNLOCK_CROP_COUNT} maximumFractionDigits={0} />{' '}
-                Crops
-              </p>
-            ) : null}
             {blueprintExpansionTracks.map((track) => {
               const { nextExpansion } = track
               const completed = nextExpansion === undefined
@@ -214,7 +180,7 @@ export function Inventions({
 
               return (
                 <div key={track.id}>
-                  <article className="invention-card">
+                  <article className="invention-card milestone-invention-card">
                     <div>
                       <p className="eyebrow">
                         Progressive milestone · {track.completedStageCount} /{' '}
@@ -259,6 +225,40 @@ export function Inventions({
                 </div>
               )
             })}
+            <article className="invention-card milestone-invention-card row-duplicator-card">
+              <div>
+                <p className="eyebrow">Milestone invention</p>
+                <h2>Row Duplicators</h2>
+                <p>
+                  Reset at{' '}
+                  <FormattedNumber value={ROW_DUPLICATORS_UNLOCK_CROP_COUNT} maximumFractionDigits={0} />{' '}
+                  Crops to unlock purchasable Row Duplicators.
+                </p>
+              </div>
+              {game.hasUnlockedRowDuplicators ? (
+                <span className="invention-complete">Complete</span>
+              ) : (
+                <button
+                  type="button"
+                  className="primary-button"
+                  onClick={onRequestRowDuplicatorUnlock}
+                  disabled={!canUnlockRows}
+                >
+                  Reset field &amp; unlock
+                </button>
+              )}
+            </article>
+            {!game.hasUnlockedRowDuplicators ? (
+              <p className="invention-progress">
+                <FormattedNumber
+                  value={Math.min(game.crops, ROW_DUPLICATORS_UNLOCK_CROP_COUNT)}
+                  maximumFractionDigits={0}
+                />{' '}
+                /{' '}
+                <FormattedNumber value={ROW_DUPLICATORS_UNLOCK_CROP_COUNT} maximumFractionDigits={0} />{' '}
+                Crops
+              </p>
+            ) : null}
           </>
         )}
       </section>

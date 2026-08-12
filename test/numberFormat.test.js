@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import Decimal from 'break_infinity.js'
 import {
   formatNumber,
   getFormatCacheKey,
@@ -77,8 +78,35 @@ test('formats the third suffix layer from scientific notation strings', () => {
   assert.equal(getSuffixForExponent(309), 'DCent')
 })
 
+test('formats scientific notation with three significant figures', () => {
+  assert.equal(formatNumber(1250, 1, 'scientific'), '1.25e3')
+  assert.equal(formatNumber(12_500, 1, 'scientific'), '1.25e4')
+  assert.equal(formatNumber(999_900, 1, 'scientific'), '1.00e6')
+  assert.equal(formatNumber('1e55', 1, 'scientific'), '1.00e55')
+})
+
+test('forces scientific notation from e3003 onward', () => {
+  assert.equal(getSuffixForExponent(3000), 'NgNcnt')
+  assert.equal(formatNumber('1e3000'), '1.00NgNcnt')
+  assert.equal(formatNumber('1e3003'), '1.00e3003')
+  assert.equal(formatNumber('1e4000'), '1.00e4000')
+})
+
+test('formats break_infinity Decimal values beyond native Number limits', () => {
+  const suffixValue = new Decimal('1e55')
+  const forcedScientificValue = new Decimal('1e3003')
+
+  assert.equal(formatNumber(suffixValue), '10.0SpDc')
+  assert.equal(formatNumber(forcedScientificValue), '1.00e3003')
+  assert.equal(formatNumber(forcedScientificValue.mul(10)), '1.00e3004')
+})
+
 test('shares a cache key until a rounded display value changes', () => {
   assert.equal(getFormatCacheKey(1_000.01), getFormatCacheKey(1_004.99))
   assert.notEqual(getFormatCacheKey(1_004.99), getFormatCacheKey(1_005.01))
   assert.notEqual(getFormatCacheKey(999_400), getFormatCacheKey(1_000_000))
+  assert.notEqual(
+    getFormatCacheKey(1_000_000),
+    getFormatCacheKey(1_000_000, 1, 'scientific'),
+  )
 })

@@ -19,15 +19,27 @@ import {
   TURNIP_UNLOCK_CROP_COUNT,
 } from '../game/crops.js'
 import { loadGame, saveGame } from '../game/storage.js'
+import { setActiveNumberNotation } from '../game/numberFormat.js'
 
 export function useGameState(isEditingBlueprintRef) {
-  const [game, setGame] = useState(loadGame)
+  const [game, setRenderedGame] = useState(() => {
+    const loadedGame = loadGame()
+    setActiveNumberNotation(loadedGame.numberNotation)
+    return loadedGame
+  })
   const gameRef = useRef(game)
 
   function updateGame(update) {
     const nextGame = update(gameRef.current)
     gameRef.current = nextGame
-    setGame(nextGame)
+    setActiveNumberNotation(nextGame.numberNotation)
+    setRenderedGame(nextGame)
+  }
+
+  function replaceGame(nextGame) {
+    gameRef.current = nextGame
+    setActiveNumberNotation(nextGame.numberNotation)
+    setRenderedGame(nextGame)
   }
 
   useEffect(() => {
@@ -145,7 +157,7 @@ export function useGameState(isEditingBlueprintRef) {
         return
       }
 
-      setGame((currentGame) =>
+      setRenderedGame((currentGame) =>
         currentGame === gameRef.current ? currentGame : gameRef.current,
       )
       visualTimeoutId = window.setTimeout(
@@ -170,5 +182,5 @@ export function useGameState(isEditingBlueprintRef) {
     }
   }, [gameRef, isEditingBlueprintRef])
 
-  return { game, gameRef, setGame, updateGame }
+  return { game, gameRef, setGame: replaceGame, updateGame }
 }

@@ -164,8 +164,8 @@ export function getAdjacentCropIndexes(blueprint, index) {
   return [...new Set([...directCropIndexes, ...transferredCropIndexes])]
 }
 
-export function getDiagonalCropIndexes(blueprint, index) {
-  const { rows, columns, cells } = blueprint
+export function getDiagonalTileIndexes(blueprint, index) {
+  const { rows, columns } = blueprint
   const row = Math.floor(index / columns)
   const column = index % columns
   const diagonalIndexes = []
@@ -181,10 +181,7 @@ export function getDiagonalCropIndexes(blueprint, index) {
         targetColumn >= 0 &&
         targetColumn < columns
       ) {
-        const targetIndex = targetRow * columns + targetColumn
-        if (cells[targetIndex] && canBeMirrorCornTarget(cells[targetIndex])) {
-          diagonalIndexes.push(targetIndex)
-        }
+        diagonalIndexes.push(targetRow * columns + targetColumn)
       }
     }
   }

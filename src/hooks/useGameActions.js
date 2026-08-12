@@ -275,6 +275,12 @@ export function useGameActions({
       onSaveCodeChange: setSaveCode,
       saveTransferStatus,
       hardResetClicks,
+      onNumberNotationChange: (numberNotation) =>
+        updateGame((currentGame) => ({
+          ...currentGame,
+          numberNotation:
+            numberNotation === 'scientific' ? 'scientific' : 'suffix',
+        })),
       onExportSave: exportSave,
       onImportSave: importSave,
       onHardReset: handleHardReset,

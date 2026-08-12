@@ -1,7 +1,7 @@
 
 .blueprint-editor-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(190px, 220px);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 16px;
 }
@@ -12,7 +12,7 @@
 
 .crop-options {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 6px;
 }
 

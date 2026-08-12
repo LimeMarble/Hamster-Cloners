@@ -118,6 +118,7 @@ export function useGameController() {
       },
       options: {
         ...actions.options,
+        numberNotation: game.numberNotation,
         codeEntry: testing.codeEntry,
       },
     },

@@ -10,7 +10,7 @@ import {
   getBlueprintExpansionCost,
   getBlueprintSlots,
   getBlueprintCropStats,
-  getDiagonalCropIndexes,
+  getDiagonalTileIndexes,
   getEffectiveFarmlandMultipliers,
   canUnlockCropPerfection,
   getHamsterStateAfterHire,
@@ -324,7 +324,7 @@ test('Mirror Corn changes Corn to five yield and −50% Hamster Efficiency', () 
   })
 
   assert.equal(getCropName('corn', ['mirrorCorn']), 'Mirror Corn')
-  assert.deepEqual(getDiagonalCropIndexes(blueprint, 0), [3])
+  assert.deepEqual(getDiagonalTileIndexes(blueprint, 0), [3])
   assert.equal(
     getCropHamsterEfficiencyMultiplier(blueprint, ['mirrorCorn']),
     0.75,
@@ -357,16 +357,53 @@ test('Mirror Corn boosts selected diagonal crop effects', () => {
   )
 })
 
-test('Lentil is ineligible for Mirror Corn targeting', () => {
+test('Mirror Corn targets tiles but gives Lentil no effect', () => {
   const blueprint = createBlueprint({
     rows: 2,
     columns: 2,
     cells: ['corn', 'leek', null, 'lentil'],
     mirrorCornTargets: [3],
   })
+  const unlinkedBlueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', 'leek', null, 'lentil'],
+  })
 
-  assert.deepEqual(getDiagonalCropIndexes(blueprint, 0), [])
-  assert.deepEqual(blueprint.mirrorCornTargets, [null, null, null, null])
+  assert.deepEqual(getDiagonalTileIndexes(blueprint, 0), [3])
+  assert.deepEqual(blueprint.mirrorCornTargets, [3, null, null, null])
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+      ['mirrorCorn'],
+    ),
+    getCropProductionPerSecond(
+      unlinkedBlueprint,
+      createFarmlandMultipliers({ rows: 1, columns: 1 }),
+      ['mirrorCorn'],
+    ),
+  )
+})
+
+test('Mirror Corn tile targets persist through empty and replacement crops', () => {
+  const emptyTargetBlueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', null, null, null],
+    mirrorCornTargets: [3],
+  })
+  const replacementBlueprint = createBlueprint({
+    ...emptyTargetBlueprint,
+    cells: ['corn', null, null, 'sweetPotato'],
+  })
+
+  assert.deepEqual(emptyTargetBlueprint.mirrorCornTargets, [3, null, null, null])
+  assert.deepEqual(replacementBlueprint.mirrorCornTargets, [3, null, null, null])
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(replacementBlueprint, ['mirrorCorn']),
+    1,
+  )
 })
 
 test('Root Tunnels transfer ordinary crop adjacencies but not modifier crops', () => {
@@ -396,7 +433,7 @@ test('Root Tunnels transfer ordinary crop adjacencies but not modifier crops', (
     8,
   )
   assert.equal(getCropHamsterEfficiencyMultiplier(modifierBlueprint), 1.25)
-  assert.deepEqual(mirrorBlueprint.mirrorCornTargets, [null, null, null, null])
+  assert.deepEqual(mirrorBlueprint.mirrorCornTargets, [3, null, null, null])
 })
 
 test('Root Tunnels transfer adjacencies through connected tunnel chains', () => {
@@ -729,7 +766,7 @@ test('Leeching Gourd boosts all Turnips from adjacent debuffs, with harmful crop
   )
 })
 
-test('Leeching Gourd costs 2 Qn Crops and is not a Mirror Corn target', () => {
+test('Leeching Gourd costs 2 Qn Crops and receives no Mirror Corn effect', () => {
   const game = {
     crops: CROP_PERFECTIONS.leechingGourd.cost,
     hasUnlockedCropPerfection: true,
@@ -749,7 +786,7 @@ test('Leeching Gourd costs 2 Qn Crops and is not a Mirror Corn target', () => {
     crops: 0,
     completedCropPerfections: ['leechingGourd'],
   })
-  assert.deepEqual(blueprint.mirrorCornTargets, [null, null, null, null])
+  assert.deepEqual(blueprint.mirrorCornTargets, [3, null, null, null])
 })
 
 test('Knotweed provides no harvest and subtracts 10 harvest from adjacent crops', () => {

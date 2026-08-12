@@ -1,4 +1,6 @@
 export function Options({
+  numberNotation,
+  onNumberNotationChange,
   saveCode,
   onSaveCodeChange,
   saveTransferStatus,
@@ -12,6 +14,34 @@ export function Options({
     <section className="inventions-panel options-panel" aria-labelledby="options-title">
       <p className="eyebrow">Game options</p>
       <h1 id="options-title">Options</h1>
+      <article className="invention-card notation-card">
+        <div>
+          <p className="eyebrow">Number display</p>
+          <h2>Notation</h2>
+          <p>
+            Choose how large values are abbreviated. Scientific notation is
+            always used from e3003 onward.
+          </p>
+        </div>
+        <div className="notation-options" role="group" aria-label="Number notation">
+          <button
+            type="button"
+            className={`notation-option ${numberNotation === 'suffix' ? 'notation-option-active' : ''}`}
+            onClick={() => onNumberNotationChange('suffix')}
+            aria-pressed={numberNotation === 'suffix'}
+          >
+            Suffix
+          </button>
+          <button
+            type="button"
+            className={`notation-option ${numberNotation === 'scientific' ? 'notation-option-active' : ''}`}
+            onClick={() => onNumberNotationChange('scientific')}
+            aria-pressed={numberNotation === 'scientific'}
+          >
+            Scientific
+          </button>
+        </div>
+      </article>
       <article className="invention-card code-entry-card">
         <div>
           <p className="eyebrow">Codes</p>

@@ -2,7 +2,7 @@ export * from './gameConfig.js'
 export * from './blueprintLogic.js'
 export * from './purchaseLogic.js'
 export {
-  getDiagonalCropIndexes,
+  getDiagonalTileIndexes,
   getPlantedCropCount,
   hasReachedMonocropLimit,
 } from './cropEffects.js'
