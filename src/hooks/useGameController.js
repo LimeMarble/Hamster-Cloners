@@ -5,6 +5,7 @@ import { useCropUnlockNotifications } from './useCropUnlockNotifications.js'
 import { useGameActions } from './useGameActions.js'
 import { useGameDerivedState } from './useGameDerivedState.js'
 import { useGameState } from './useGameState.js'
+import { useTestingCheats } from './useTestingCheats.js'
 
 export function useGameController() {
   const isEditingBlueprintRef = useRef(false)
@@ -33,6 +34,11 @@ export function useGameController() {
     areInventionsUnlocked: derived.areInventionsUnlocked,
     resetBlueprintEditor: blueprintEditor.resetBlueprintEditor,
     clearCropUnlockNotices: notifications.clearCropUnlockNotices,
+  })
+  const testing = useTestingCheats({
+    game,
+    updateGame,
+    blueprintExpansionTracks: derived.blueprintExpansionTracks,
   })
 
   return {
@@ -110,7 +116,10 @@ export function useGameController() {
         game,
         unlockedCropIds: derived.unlockedCropIds,
       },
-      options: actions.options,
+      options: {
+        ...actions.options,
+        codeEntry: testing.codeEntry,
+      },
     },
     overlays: {
       blueprintEditor: blueprintEditor.blueprintEditor,
@@ -123,6 +132,7 @@ export function useGameController() {
       },
       unionConfirmation: actions.unionConfirmation,
       cropUnlockNotice: notifications.cropUnlockNotice,
+      testingPanel: testing.testingPanel,
     },
   }
 }

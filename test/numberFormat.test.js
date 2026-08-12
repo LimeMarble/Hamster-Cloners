@@ -33,6 +33,8 @@ test('formats the first suffix layer', () => {
 test('overlays the first suffix layer on the second layer', () => {
   const suffixes = [
     [33, 'Dc'],
+    [36, 'UDc'],
+    [39, 'DDc'],
     [55, 'SpDc'],
     [63, 'Vg'],
     [93, 'Tg'],
@@ -47,6 +49,10 @@ test('overlays the first suffix layer on the second layer', () => {
   suffixes.forEach(([exponent, suffix]) => {
     assert.equal(getSuffixForExponent(exponent), suffix)
   })
+  assert.equal(formatNumber(1e6), '1.00M')
+  assert.equal(formatNumber(1e9), '1.00B')
+  assert.equal(formatNumber(1e36), '1.00UDc')
+  assert.equal(formatNumber(1e39), '1.00DDc')
   assert.equal(formatNumber(1e55), '10.0SpDc')
 })
 
@@ -67,6 +73,8 @@ test('formats the third suffix layer from scientific notation strings', () => {
     assert.equal(getSuffixForExponent(exponent), suffix)
     assert.equal(formatNumber(`1e${exponent}`), `1.00${suffix}`)
   })
+  assert.equal(getSuffixForExponent(306), 'UCent')
+  assert.equal(getSuffixForExponent(309), 'DCent')
 })
 
 test('shares a cache key until a rounded display value changes', () => {

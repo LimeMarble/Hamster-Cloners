@@ -55,6 +55,8 @@ export function useGameState(isEditingBlueprintRef) {
           currentGame.farmland,
           currentGame.completedCropPerfections,
           currentGame.rowDuplicators,
+          SIMULATION_TICK_INTERVAL_MS,
+          currentGame.testingCheats?.cropMultiplierEnabled ? 10 : 1,
         )
         const nextCrops = currentGame.crops + productionForTick
         const columnsProducedForTick = getColumnsProducedForTick(
@@ -64,6 +66,8 @@ export function useGameState(isEditingBlueprintRef) {
             currentGame.blueprint,
             currentGame.completedCropPerfections,
           ),
+          SIMULATION_TICK_INTERVAL_MS,
+          currentGame.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1,
         )
         const rowsProducedForTick = currentGame.hasUnlockedRowDuplicators
           ? getRowsProducedForTick(

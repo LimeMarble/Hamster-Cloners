@@ -81,6 +81,28 @@ test('statistics persist and older saves receive safe lifetime defaults', () => 
   assert.equal(olderSave.playtimeSeconds, 0)
 })
 
+test('testing panel unlock and toggle states persist safely', () => {
+  const testingSave = normalizeGame({
+    testingPanelUnlocked: true,
+    testingCheats: {
+      cropMultiplierEnabled: true,
+      hamsterEfficiencyEnabled: true,
+    },
+  })
+  const ordinarySave = normalizeGame({})
+
+  assert.equal(testingSave.testingPanelUnlocked, true)
+  assert.deepEqual(testingSave.testingCheats, {
+    cropMultiplierEnabled: true,
+    hamsterEfficiencyEnabled: true,
+  })
+  assert.equal(ordinarySave.testingPanelUnlocked, false)
+  assert.deepEqual(ordinarySave.testingCheats, {
+    cropMultiplierEnabled: false,
+    hamsterEfficiencyEnabled: false,
+  })
+})
+
 test('exports and imports a versioned Base64 save code', () => {
   const saveCode = exportGame({
     crops: 12_345,

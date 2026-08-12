@@ -6,11 +6,56 @@ export function Options({
   onExportSave,
   onImportSave,
   onHardReset,
+  codeEntry,
 }) {
   return (
     <section className="inventions-panel options-panel" aria-labelledby="options-title">
       <p className="eyebrow">Game options</p>
       <h1 id="options-title">Options</h1>
+      <article className="invention-card code-entry-card">
+        <div>
+          <p className="eyebrow">Codes</p>
+          <h2>Enter a code</h2>
+          <p>Valid codes can unlock special game features.</p>
+        </div>
+        <form
+          className="code-entry-form"
+          onSubmit={(event) => {
+            event.preventDefault()
+            codeEntry.onSubmitCode()
+          }}
+        >
+          <label htmlFor="game-code">Code</label>
+          <div className="code-entry-controls">
+            <input
+              id="game-code"
+              type="text"
+              value={codeEntry.codeInput}
+              onChange={(event) =>
+                codeEntry.onCodeInputChange(event.target.value)
+              }
+              placeholder="Enter a code"
+              autoComplete="off"
+              spellCheck="false"
+            />
+            <button
+              type="submit"
+              className="secondary-button"
+              disabled={!codeEntry.codeInput.trim()}
+            >
+              Submit
+            </button>
+          </div>
+        </form>
+        {codeEntry.codeStatus ? (
+          <p
+            className={`code-entry-status code-entry-status-${codeEntry.codeStatus.type}`}
+            role="status"
+          >
+            {codeEntry.codeStatus.message}
+          </p>
+        ) : null}
+      </article>
       <article className="invention-card save-transfer-card">
         <div>
           <p className="eyebrow">Save transfer</p>

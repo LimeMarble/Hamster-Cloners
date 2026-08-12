@@ -12,6 +12,20 @@ const PRIMARY_SUFFIXES = [
   'No',
 ]
 
+const LAYERED_PRIMARY_SUFFIXES = [
+  '',
+  'k',
+  'U',
+  'D',
+  'T',
+  'Qd',
+  'Qn',
+  'Sx',
+  'Sp',
+  'Oc',
+  'No',
+]
+
 const SECOND_LAYER_SUFFIXES = [
   '',
   'Dc',
@@ -108,7 +122,9 @@ function getSuffixForGroup(suffixGroup) {
   }
 
   const primarySuffix =
-    suffixGroup % 10 === 1 ? '' : PRIMARY_SUFFIXES[suffixGroup % 10]
+    suffixGroup % 10 === 1
+      ? ''
+      : LAYERED_PRIMARY_SUFFIXES[suffixGroup % 10]
   const secondLayerSuffix =
     SECOND_LAYER_SUFFIXES[Math.floor((suffixGroup - 1) / 10) % 10]
   const thirdLayerSuffix =

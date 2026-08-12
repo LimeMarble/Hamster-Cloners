@@ -37,12 +37,14 @@ export function useGameDerivedState(game) {
         game.farmland,
         game.completedCropPerfections,
         game.rowDuplicators,
+        game.testingCheats?.cropMultiplierEnabled ? 10 : 1,
       ),
     [
       game.blueprint,
       game.farmland,
       game.completedCropPerfections,
       game.rowDuplicators,
+      game.testingCheats?.cropMultiplierEnabled,
     ],
   )
   const cropHamsterEfficiencyMultiplier = useMemo(
@@ -61,18 +63,22 @@ export function useGameDerivedState(game) {
       ),
     [game.hamsters, game.postUnionHamstersHired],
   )
-  const hamsterExternalMultiplier = getHamsterExternalMultiplier()
+  const hamsterExternalMultiplier = getHamsterExternalMultiplier(
+    game.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1,
+  )
   const columnsBuiltPerSecond = useMemo(
     () =>
       getColumnsProducedPerSecond(
         game.hamsters,
         game.postUnionHamstersHired,
         cropHamsterEfficiencyMultiplier,
+        hamsterExternalMultiplier,
       ),
     [
       game.hamsters,
       game.postUnionHamstersHired,
       cropHamsterEfficiencyMultiplier,
+      hamsterExternalMultiplier,
     ],
   )
   const fieldsPlantedPerSecond = useMemo(

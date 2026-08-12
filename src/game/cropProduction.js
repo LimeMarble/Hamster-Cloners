@@ -262,6 +262,7 @@ export function getCropProductionPerSecond(
   farmland,
   completedCropPerfections = [],
   rowDuplicators = 0,
+  externalCropMultiplier = 1,
 ) {
   return (
     getBaseFieldIncome(blueprint, completedCropPerfections) *
@@ -270,7 +271,8 @@ export function getCropProductionPerSecond(
       rowDuplicators,
       blueprint,
       completedCropPerfections,
-    )
+    ) *
+    Math.max(0, Number(externalCropMultiplier) || 0)
   )
 }
 
@@ -278,6 +280,7 @@ export function getColumnsProducedPerSecond(
   hamsters,
   postUnionHamstersHired = 0,
   cropHamsterEfficiencyMultiplier = 1,
+  hamsterExternalMultiplier = 1,
 ) {
   const safeHamsters = Math.max(0, Math.floor(Number(hamsters) || 0))
 
@@ -285,7 +288,7 @@ export function getColumnsProducedPerSecond(
     safeHamsters *
     COLUMNS_PER_HAMSTER_PER_SECOND *
     getHamsterCoordinationMultiplier(safeHamsters, postUnionHamstersHired) *
-    getHamsterExternalMultiplier() *
+    getHamsterExternalMultiplier(hamsterExternalMultiplier) *
     Math.max(0, Number(cropHamsterEfficiencyMultiplier) || 0)
   )
 }
@@ -320,8 +323,8 @@ export function getHamsterCoordinationMultiplier(
 }
 
 // Future inventions and other global construction effects belong here.
-export function getHamsterExternalMultiplier() {
-  return 1
+export function getHamsterExternalMultiplier(multiplier = 1) {
+  return Math.max(0, Number(multiplier) || 0)
 }
 
 export function getProductionForTick(
@@ -330,6 +333,7 @@ export function getProductionForTick(
   completedCropPerfections = [],
   rowDuplicators = 0,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
+  externalCropMultiplier = 1,
 ) {
   return (
     getCropProductionPerSecond(
@@ -337,6 +341,7 @@ export function getProductionForTick(
       farmland,
       completedCropPerfections,
       rowDuplicators,
+      externalCropMultiplier,
     ) *
     (tickIntervalMs / 1000)
   )
@@ -347,12 +352,14 @@ export function getColumnsProducedForTick(
   postUnionHamstersHired = 0,
   cropHamsterEfficiencyMultiplier = 1,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
+  hamsterExternalMultiplier = 1,
 ) {
   return (
     getColumnsProducedPerSecond(
       hamsters,
       postUnionHamstersHired,
       cropHamsterEfficiencyMultiplier,
+      hamsterExternalMultiplier,
     ) *
     (tickIntervalMs / 1000)
   )

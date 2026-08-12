@@ -4,6 +4,7 @@ import {
   BLUEPRINT_EXPANSION_TRACKS,
   createBlueprint,
   createFarmlandMultipliers,
+  createInitialGame,
   getCropProductionPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getBlueprintExpansionCost,
@@ -22,6 +23,7 @@ import {
   getColumnsProducedPerSecond,
   getColumnsProducedForTick,
   getFieldsPlanted,
+  grantNextBlueprintExpansion,
   getLeechingGourdFootprint,
   getProductionForTick,
   getRowDuplicatorIncomeMultiplier,
@@ -124,6 +126,18 @@ test('field efficiency, hamster coordination, and external multipliers are separ
         10.1 * coordinationMultiplier * 0.5,
     ) < 1e-12,
   )
+})
+
+test('testing multipliers apply to Crop production and Hamster external efficiency', () => {
+  const blueprint = createBlueprint({ cells: ['leek'] })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(
+    getCropProductionPerSecond(blueprint, farmland, [], 0, 10),
+    10,
+  )
+  assert.equal(getHamsterExternalMultiplier(10), 10)
+  assert.equal(getColumnsProducedPerSecond(1, 0, 1, 10), 1)
 })
 
 test('the 1,000th hamster triggers unionization and leaves 100 active', () => {
@@ -1091,6 +1105,23 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     'firstRow',
     'secondColumn',
   ])
+})
+
+test('testing expansion grants follow each configured track and stop at its cap', () => {
+  let game = createInitialGame()
+
+  for (let index = 0; index < 6; index += 1) {
+    game = grantNextBlueprintExpansion(game, 'column')
+  }
+  for (let index = 0; index < 8; index += 1) {
+    game = grantNextBlueprintExpansion(game, 'row')
+  }
+
+  assert.equal(game.blueprint.columns, 7)
+  assert.equal(game.blueprint.rows, 9)
+  assert.equal(game.completedBlueprintExpansions.length, 14)
+  assert.equal(grantNextBlueprintExpansion(game, 'column'), null)
+  assert.equal(grantNextBlueprintExpansion(game, 'row'), null)
 })
 
 test('blueprint slots unlock with Corn and Root Tunnel and retain separate layouts', () => {

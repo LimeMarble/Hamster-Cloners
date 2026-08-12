@@ -1,4 +1,5 @@
 import { BlueprintEdit } from './BlueprintEdit.jsx'
+import { TestingPanel } from './TestingPanel.jsx'
 
 function MonocropWarning({ onClose }) {
   return (
@@ -94,10 +95,12 @@ export function GameOverlays({
   blueprintMastery,
   unionConfirmation,
   cropUnlockNotice,
+  testingPanel,
 }) {
   return (
     <>
       {blueprintEditor ? <BlueprintEdit {...blueprintEditor} /> : null}
+      {testingPanel ? <TestingPanel {...testingPanel} /> : null}
       {monocropWarning.isOpen ? (
         <MonocropWarning onClose={monocropWarning.onClose} />
       ) : null}
