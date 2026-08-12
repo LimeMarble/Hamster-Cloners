@@ -37,8 +37,11 @@ test('overlays the first suffix layer on the second layer', () => {
     [36, 'UDc'],
     [39, 'DDc'],
     [55, 'SpDc'],
+    [60, 'NoDc'],
     [63, 'Vg'],
+    [90, 'NoVg'],
     [93, 'Tg'],
+    [120, 'NoTg'],
     [123, 'qg'],
     [153, 'Qg'],
     [183, 'sg'],
@@ -55,6 +58,7 @@ test('overlays the first suffix layer on the second layer', () => {
   assert.equal(formatNumber(1e36), '1.00UDc')
   assert.equal(formatNumber(1e39), '1.00DDc')
   assert.equal(formatNumber(1e55), '10.0SpDc')
+  assert.equal(formatNumber(1e120), '1.00NoTg')
 })
 
 test('formats the third suffix layer from scientific notation strings', () => {
@@ -86,8 +90,8 @@ test('formats scientific notation with three significant figures', () => {
 })
 
 test('forces scientific notation from e3003 onward', () => {
-  assert.equal(getSuffixForExponent(3000), 'NgNcnt')
-  assert.equal(formatNumber('1e3000'), '1.00NgNcnt')
+  assert.equal(getSuffixForExponent(3000), 'NoNgNcnt')
+  assert.equal(formatNumber('1e3000'), '1.00NoNgNcnt')
   assert.equal(formatNumber('1e3003'), '1.00e3003')
   assert.equal(formatNumber('1e4000'), '1.00e4000')
 })

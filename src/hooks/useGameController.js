@@ -83,6 +83,8 @@ export function useGameController() {
               nextRowDuplicatorCost: derived.nextRowDuplicatorCost,
               rowDuplicatorEffectivenessMultiplier:
                 derived.rowDuplicatorEffectivenessMultiplier,
+              rowDuplicatorCoordinationMultiplier:
+                derived.rowDuplicatorCoordinationMultiplier,
               rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
               fieldsPlantedPerSecond:
                 derived.rowDuplicatorFieldsPlantedPerSecond,

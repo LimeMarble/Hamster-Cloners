@@ -6,6 +6,7 @@ import {
   hasReachedMonocropLimit,
 } from '../game/gameLogic.js'
 import { getCropPlacementName } from '../game/crops.js'
+import { useBlueprintTransfer } from './useBlueprintTransfer.js'
 
 export function useBlueprintEditor({
   game,
@@ -210,10 +211,19 @@ export function useBlueprintEditor({
     setPlot(index, nextCrop)
   }
 
+  const blueprintTransfer = useBlueprintTransfer({
+    gameRef,
+    commitBlueprint,
+    unlockedCropIds,
+    hasMirrorCorn,
+    hasLeechingGourd,
+  })
+
   function handleEditorPlotContextMenu(index, crop, event) {
     event.preventDefault()
     setPendingMirrorCornPlacement(null)
     setHoveredEditorCrop(null)
+    blueprintTransfer.resetBlueprintTransfer()
 
     if (!crop) {
       return
@@ -236,6 +246,7 @@ export function useBlueprintEditor({
   function resetBlueprintEditor() {
     closeBlueprintEditor()
     setSelectedCrop('leek')
+    blueprintTransfer.resetBlueprintTransfer()
   }
 
   const getDisplayedCropName = (cropId) =>
@@ -282,6 +293,17 @@ export function useBlueprintEditor({
           onResume: closeBlueprintEditor,
           onEditorPlotClick: handleEditorPlotClick,
           onEditorPlotContextMenu: handleEditorPlotContextMenu,
+          blueprintTransfer: {
+            ...blueprintTransfer,
+            onImportBlueprint: () => {
+              const imported = blueprintTransfer.onImportBlueprint()
+
+              if (imported) {
+                setPendingMirrorCornPlacement(null)
+                setHoveredEditorCrop(null)
+              }
+            },
+          },
           onUpdateHoveredEditorCrop: updateHoveredEditorCrop,
           onClearHoveredEditorCrop: () => setHoveredEditorCrop(null),
         }

@@ -41,6 +41,14 @@
     grid-template-columns: 1fr;
   }
 
+  .blueprint-transfer-card {
+    grid-template-columns: 1fr;
+  }
+
+  .blueprint-transfer-actions {
+    min-width: 0;
+  }
+
   .hire-actions > *,
   .union-modal-actions > * {
     width: 100%;

@@ -4,6 +4,7 @@ export function DuplicatorPurchase({
   game,
   nextRowDuplicatorCost,
   rowDuplicatorEffectivenessMultiplier,
+  rowDuplicatorCoordinationMultiplier,
   rowsBuiltPerSecond,
   fieldsPlantedPerSecond,
   onBuyRowDuplicator,
@@ -21,8 +22,9 @@ export function DuplicatorPurchase({
         </span>
       </div>
       <p className="card-copy">
-        Row Duplicators are the only source of farmland Rows. Each builds 0.1
-        Rows per second before crop effectiveness bonuses.
+        Row Duplicators are the only source of farmland Rows. Each supplies a
+        base 0.1 Rows per second, and their coordination grows by 2% per
+        Duplicator.
       </p>
       <dl className="replicator-stats">
         <div>
@@ -35,6 +37,12 @@ export function DuplicatorPurchase({
           <dt>Fields planted / sec</dt>
           <dd>
             <FormattedNumber value={fieldsPlantedPerSecond} maximumFractionDigits={2} />
+          </dd>
+        </div>
+        <div>
+          <dt>Duplicator coordination</dt>
+          <dd>
+            Ã—<FormattedNumber value={rowDuplicatorCoordinationMultiplier} maximumFractionDigits={2} />
           </dd>
         </div>
         <div>

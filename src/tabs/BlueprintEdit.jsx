@@ -25,6 +25,7 @@ export function BlueprintEdit({
   onResume,
   onEditorPlotClick,
   onEditorPlotContextMenu,
+  blueprintTransfer,
   onUpdateHoveredEditorCrop,
   onClearHoveredEditorCrop,
 }) {
@@ -171,6 +172,61 @@ export function BlueprintEdit({
             </div>
           </div>
         </div>
+
+        <section
+          className="blueprint-transfer-card"
+          aria-labelledby="blueprint-transfer-title"
+        >
+          <div>
+            <p className="eyebrow">Blueprint transfer</p>
+            <h3 id="blueprint-transfer-title">
+              Blueprint {game.activeBlueprintSlot + 1}
+            </h3>
+            <p>
+              Export or replace only this slot. Imports must match the current{' '}
+              {game.blueprint.rows}×{game.blueprint.columns} grid and your crop
+              unlocks.
+            </p>
+          </div>
+          <div className="blueprint-transfer-actions">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={blueprintTransfer.onExportBlueprint}
+            >
+              Export blueprint
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={blueprintTransfer.onImportBlueprint}
+              disabled={!blueprintTransfer.blueprintCode.trim()}
+            >
+              Import blueprint
+            </button>
+          </div>
+          <label className="blueprint-code-label" htmlFor="blueprint-code">
+            Blueprint code
+            <textarea
+              id="blueprint-code"
+              className="blueprint-code-input"
+              value={blueprintTransfer.blueprintCode}
+              onChange={(event) =>
+                blueprintTransfer.onBlueprintCodeChange(event.target.value)
+              }
+              placeholder="Export this slot or paste a blueprint code here"
+              spellCheck="false"
+            />
+          </label>
+          {blueprintTransfer.blueprintTransferStatus ? (
+            <p
+              className={`blueprint-transfer-status blueprint-transfer-status-${blueprintTransfer.blueprintTransferStatus.type}`}
+              role="status"
+            >
+              {blueprintTransfer.blueprintTransferStatus.message}
+            </p>
+          ) : null}
+        </section>
 
         {hoveredEditorCrop ? (
           <CropHoverInspector

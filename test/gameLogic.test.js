@@ -29,6 +29,7 @@ import {
   getRowDuplicatorEffectivenessMultiplier,
   getRowsProducedForTick,
   getRowsProducedPerSecond,
+  getRowDuplicatorCoordinationMultiplier,
   getUnlockedBlueprintSlotCount,
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
@@ -40,6 +41,7 @@ import {
   ROW_DUPLICATOR_BASE_COST,
   ROW_DUPLICATOR_COST_GROWTH,
   ROWS_PER_ROW_DUPLICATOR_PER_SECOND,
+  ROW_DUPLICATOR_COORDINATION_GROWTH,
   SIMULATION_TICK_INTERVAL_MS,
   unlockCropPerfection,
   VISUAL_UPDATE_INTERVAL_MS,
@@ -972,10 +974,15 @@ test('Row Duplicators are purchasable upgrades with 1.2 cost growth and no direc
 
 test('Row Duplicators generate Rows independently from Hamster-built Columns', () => {
   assert.equal(ROWS_PER_ROW_DUPLICATOR_PER_SECOND, 0.1)
+  assert.equal(ROW_DUPLICATOR_COORDINATION_GROWTH, 1.02)
+  assert.equal(getRowDuplicatorCoordinationMultiplier(0), 1)
+  assert.equal(getRowDuplicatorCoordinationMultiplier(8), 1.02 ** 8)
   assert.equal(getRowsProducedPerSecond(0), 0)
-  assert.equal(getRowsProducedPerSecond(1), 0.1)
-  assert.equal(getRowsProducedPerSecond(8), 0.8)
-  assert.ok(Math.abs(getRowsProducedForTick(8) * 60 - 0.8) < 1e-12)
+  assert.equal(getRowsProducedPerSecond(1), 0.1 * 1.02)
+  assert.equal(getRowsProducedPerSecond(8), 0.8 * 1.02 ** 8)
+  assert.ok(
+    Math.abs(getRowsProducedForTick(8) * 60 - 0.8 * 1.02 ** 8) < 1e-12,
+  )
 })
 
 test('Row Duplicator buy max purchases every affordable upgrade after unlock', () => {
@@ -1023,7 +1030,7 @@ test('Sunflowers boost Row Duplicators like Potatoes boost hamster efficiency', 
       getRowsProducedPerSecond(
         1,
         getRowDuplicatorEffectivenessMultiplier(sunflowerBlueprint),
-      ) - 0.14,
+      ) - 0.14 * 1.02,
     ) < 1e-12,
   )
 })

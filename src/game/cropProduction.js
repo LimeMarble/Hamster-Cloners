@@ -4,6 +4,7 @@ import {
   BASE_CROP_YIELD_PER_PLOT,
   COLUMNS_PER_HAMSTER_PER_SECOND,
   POST_UNION_HAMSTER_EFFICIENCY_GROWTH,
+  ROW_DUPLICATOR_COORDINATION_GROWTH,
   ROWS_PER_ROW_DUPLICATOR_PER_SECOND,
   SIMULATION_TICK_INTERVAL_MS,
 } from './gameConfig.js'
@@ -275,8 +276,18 @@ export function getRowsProducedPerSecond(
   return (
     safeRowDuplicators *
     ROWS_PER_ROW_DUPLICATOR_PER_SECOND *
+    getRowDuplicatorCoordinationMultiplier(safeRowDuplicators) *
     Math.max(0, Number(rowDuplicatorEffectivenessMultiplier) || 0)
   )
+}
+
+export function getRowDuplicatorCoordinationMultiplier(rowDuplicators = 0) {
+  const safeRowDuplicators = Math.max(
+    0,
+    Math.floor(Number(rowDuplicators) || 0),
+  )
+
+  return ROW_DUPLICATOR_COORDINATION_GROWTH ** safeRowDuplicators
 }
 
 // The post-union hiring boost is separate from other construction bonuses so

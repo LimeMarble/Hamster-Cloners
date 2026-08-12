@@ -14,6 +14,7 @@ import {
   getNextRowDuplicatorCost,
   getRowDuplicatorEffectivenessMultiplier,
   getRowsProducedPerSecond,
+  getRowDuplicatorCoordinationMultiplier,
   getUnlockedBlueprintSlotCount,
   hasReachedMonocropLimit,
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
@@ -106,6 +107,10 @@ export function useGameDerivedState(game) {
       ),
     [game.blueprint, game.completedCropPerfections],
   )
+  const rowDuplicatorCoordinationMultiplier = useMemo(
+    () => getRowDuplicatorCoordinationMultiplier(game.rowDuplicators),
+    [game.rowDuplicators],
+  )
   const rowsBuiltPerSecond = useMemo(
     () =>
       getRowsProducedPerSecond(
@@ -196,6 +201,7 @@ export function useGameDerivedState(game) {
     fieldsPlantedPerSecond,
     nextRowDuplicatorCost,
     rowDuplicatorEffectivenessMultiplier,
+    rowDuplicatorCoordinationMultiplier,
     rowsBuiltPerSecond,
     rowDuplicatorFieldsPlantedPerSecond,
     unlockedCropIds,

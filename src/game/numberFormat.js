@@ -152,10 +152,13 @@ function getSuffixForGroup(suffixGroup) {
     return PRIMARY_SUFFIXES[suffixGroup]
   }
 
+  const primaryLayerIndex = suffixGroup % 10
   const primarySuffix =
-    suffixGroup % 10 === 1
+    primaryLayerIndex === 1
       ? ''
-      : LAYERED_PRIMARY_SUFFIXES[suffixGroup % 10]
+      : LAYERED_PRIMARY_SUFFIXES[
+          primaryLayerIndex === 0 ? 10 : primaryLayerIndex
+        ]
   const secondLayerSuffix =
     SECOND_LAYER_SUFFIXES[Math.floor((suffixGroup - 1) / 10) % 10]
   const thirdLayerSuffix =
