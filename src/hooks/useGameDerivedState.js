@@ -3,15 +3,18 @@ import {
   canUnlockCropPerfection,
   canUnlockRowDuplicators,
   getBlueprintExpansionTrackProgress,
+  getBlueprintMonocropMultiplier,
   getBlueprintSlots,
   getColumnsProducedPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getCropProductionPerSecond,
-  getEffectiveFarmlandMultipliers,
+
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
   getNextHamsterCost,
+  getNextMajorProgressionGoal,
   getNextRowDuplicatorCost,
+  getMonocropThresholdBonus,
   getRowDuplicatorEffectivenessMultiplier,
   getRowsProducedPerSecond,
   getRowDuplicatorCoordinationMultiplier,
@@ -45,14 +48,7 @@ export function useGameDerivedState(game) {
       game.testingCheats?.cropMultiplierEnabled,
     ],
   )
-  const cropHamsterEfficiencyMultiplier = useMemo(
-    () =>
-      getCropHamsterEfficiencyMultiplier(
-        game.blueprint,
-        game.completedCropPerfections,
-      ),
-    [game.blueprint, game.completedCropPerfections],
-  )
+
   const hamsterCoordinationMultiplier = useMemo(
     () =>
       getHamsterCoordinationMultiplier(
@@ -63,37 +59,6 @@ export function useGameDerivedState(game) {
   )
   const hamsterExternalMultiplier = getHamsterExternalMultiplier(
     game.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1,
-  )
-  const columnsBuiltPerSecond = useMemo(
-    () =>
-      getColumnsProducedPerSecond(
-        game.hamsters,
-        game.postUnionHamstersHired,
-        cropHamsterEfficiencyMultiplier,
-        hamsterExternalMultiplier,
-      ),
-    [
-      game.hamsters,
-      game.postUnionHamstersHired,
-      cropHamsterEfficiencyMultiplier,
-      hamsterExternalMultiplier,
-    ],
-  )
-  const fieldsPlantedPerSecond = useMemo(
-    () => {
-      const farmland = getEffectiveFarmlandMultipliers(game.farmland)
-
-      return (
-        columnsBuiltPerSecond *
-        farmland.rows *
-        farmland.floors *
-        farmland.farms
-      )
-    },
-    [
-      columnsBuiltPerSecond,
-      game.farmland,
-    ],
   )
   const nextRowDuplicatorCost = useMemo(
     () => getNextRowDuplicatorCost(game.rowDuplicators),
@@ -123,16 +88,30 @@ export function useGameDerivedState(game) {
       rowDuplicatorEffectivenessMultiplier,
     ],
   )
-  const rowDuplicatorFieldsPlantedPerSecond = useMemo(() => {
-    const farmland = getEffectiveFarmlandMultipliers(game.farmland)
-
-    return (
-      rowsBuiltPerSecond *
-      farmland.columns *
-      farmland.floors *
-      farmland.farms
-    )
-  }, [game.farmland, rowsBuiltPerSecond])
+  const cropHamsterEfficiencyMultiplier = useMemo(
+    () =>
+      getCropHamsterEfficiencyMultiplier(
+        game.blueprint,
+        game.completedCropPerfections,
+        rowsBuiltPerSecond,
+      ),
+    [game.blueprint, game.completedCropPerfections, rowsBuiltPerSecond],
+  )
+  const columnsBuiltPerSecond = useMemo(
+    () =>
+      getColumnsProducedPerSecond(
+        game.hamsters,
+        game.postUnionHamstersHired,
+        cropHamsterEfficiencyMultiplier,
+        hamsterExternalMultiplier,
+      ),
+    [
+      game.hamsters,
+      game.postUnionHamstersHired,
+      cropHamsterEfficiencyMultiplier,
+      hamsterExternalMultiplier,
+    ],
+  )
   const unlockedCropIds = useMemo(
     () =>
       getUnlockedCropIds(
@@ -144,7 +123,7 @@ export function useGameDerivedState(game) {
         game.hasUnlockedLentil,
         game.hasUnlockedKnotweed,
         game.hasUnlockedRootTunnel,
-        game.hasUnlockedRowDuplicators,
+        game.hasUnlockedSunflower,
       ),
     [
       game.blueprint,
@@ -155,7 +134,7 @@ export function useGameDerivedState(game) {
       game.hasUnlockedLentil,
       game.hasUnlockedKnotweed,
       game.hasUnlockedRootTunnel,
-      game.hasUnlockedRowDuplicators,
+      game.hasUnlockedSunflower,
     ],
   )
   const visibleCropIds = useMemo(
@@ -169,11 +148,26 @@ export function useGameDerivedState(game) {
   )
   const blueprintSlots = useMemo(() => getBlueprintSlots(game), [game])
   const unlockedBlueprintSlotCount = getUnlockedBlueprintSlotCount(game)
-  const monocropThreshold = getMonocropThreshold(
-    game.blueprint.rows * game.blueprint.columns,
+  const monocropThresholdBonus = getMonocropThresholdBonus(
+    game.blueprint,
+    game.completedCropPerfections,
+  )
+  const monocropLimit = Math.ceil(
+    getMonocropThreshold(
+      game.blueprint.rows * game.blueprint.columns,
+      monocropThresholdBonus,
+    ),
+  )
+  const monocropPenaltyMultiplier = getBlueprintMonocropMultiplier(
+    game.blueprint,
+    game.completedCropPerfections,
   )
   const showMonocropLimit =
-    game.hasSeenMonocropLimit || hasReachedMonocropLimit(game.blueprint)
+    game.hasSeenMonocropLimit ||
+    hasReachedMonocropLimit(
+      game.blueprint,
+      game.completedCropPerfections,
+    )
   const formattedTotalHamstersHired = getCachedFormattedNumber(
     game.totalHamstersHired,
     0,
@@ -191,25 +185,30 @@ export function useGameDerivedState(game) {
             : null
   const blueprintExpansionTracks = getBlueprintExpansionTrackProgress(game)
   const completedCropPerfections = game.completedCropPerfections
+  const majorProgressionGoal = useMemo(
+    () => getNextMajorProgressionGoal(game),
+    [game],
+  )
 
   return {
     nextHamsterCost,
+    majorProgressionGoal,
     productionPerSecond,
     cropHamsterEfficiencyMultiplier,
     hamsterCoordinationMultiplier,
     hamsterExternalMultiplier,
-    fieldsPlantedPerSecond,
+    columnsBuiltPerSecond,
     nextRowDuplicatorCost,
     rowDuplicatorEffectivenessMultiplier,
     rowDuplicatorCoordinationMultiplier,
     rowsBuiltPerSecond,
-    rowDuplicatorFieldsPlantedPerSecond,
     unlockedCropIds,
     visibleCropIds,
     visibleUnlockedCropIds,
     blueprintSlots,
     unlockedBlueprintSlotCount,
-    monocropThreshold,
+    monocropLimit,
+    monocropPenaltyMultiplier,
     showMonocropLimit,
     unionStatus,
     canHireMax:
@@ -228,9 +227,13 @@ export function useGameDerivedState(game) {
     canUnlockEnrichingLeek: canUnlockCropPerfection(game, 'enrichingLeek'),
     canUnlockMirrorCorn: canUnlockCropPerfection(game, 'mirrorCorn'),
     canUnlockLeechingGourd: canUnlockCropPerfection(game, 'leechingGourd'),
+    canUnlockSweetPotato: canUnlockCropPerfection(game, 'sweetPotato'),
+    canUnlockSplitweed: canUnlockCropPerfection(game, 'splitweed'),
     canUnlockRows: canUnlockRowDuplicators(game),
     hasEnrichingLeek: completedCropPerfections.includes('enrichingLeek'),
     hasMirrorCorn: completedCropPerfections.includes('mirrorCorn'),
     hasLeechingGourd: completedCropPerfections.includes('leechingGourd'),
+    hasSweetPotato: completedCropPerfections.includes('sweetPotato'),
+    hasSplitweed: completedCropPerfections.includes('splitweed'),
   }
 }

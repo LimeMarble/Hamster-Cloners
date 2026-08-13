@@ -6,6 +6,7 @@ import {
   normalizeGame,
   SAVE_FORMAT_VERSION,
 } from '../src/game/storage.js'
+import { SUNFLOWER_UNLOCK_CROP_COUNT } from '../src/game/crops.js'
 
 test('legacy saves reset blueprint progress after the expansion axes swap', () => {
   const migratedGame = normalizeGame({
@@ -61,6 +62,8 @@ test('current saves retain valid Mirror Corn diagonal tile targets', () => {
 test('current saves retain independent unlocked blueprint slots', () => {
   const migratedGame = normalizeGame({
     blueprintExpansionAxesSwapped: true,
+    unionized: true,
+    hamsters: 125,
     blueprint: {
       rows: 1,
       columns: 2,
@@ -77,6 +80,94 @@ test('current saves retain independent unlocked blueprint slots', () => {
   assert.equal(migratedGame.activeBlueprintSlot, 1)
   assert.deepEqual(migratedGame.blueprint.cells, ['corn', 'leek'])
   assert.deepEqual(migratedGame.blueprintSlots[0].cells, ['leek', 'corn'])
+})
+
+test('current saves remove temporarily unavailable crops from every blueprint slot', () => {
+  const migratedGame = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    hasUnlockedRootTunnel: true,
+    hasUnlockedRowDuplicators: true,
+    hasUnlockedSunflower: true,
+    blueprint: {
+      rows: 1,
+      columns: 3,
+      cells: ['leek', 'rootTunnel', 'corn'],
+    },
+    blueprintSlots: [
+      { rows: 1, columns: 3, cells: ['rootTunnel', 'corn', 'leek'] },
+      { rows: 1, columns: 3, cells: ['leek', 'rootTunnel', 'corn'] },
+      { rows: 1, columns: 3, cells: ['corn', 'leek', 'rootTunnel'] },
+    ],
+    activeBlueprintSlot: 1,
+  })
+
+  assert.equal(migratedGame.blueprintSlots.length, 3)
+  assert.deepEqual(
+    migratedGame.blueprintSlots.map((blueprint) => blueprint.cells),
+    [
+      [null, 'corn', 'leek'],
+      ['leek', null, 'corn'],
+      ['corn', 'leek', null],
+    ],
+  )
+  assert.deepEqual(migratedGame.blueprint.cells, ['leek', null, 'corn'])
+})
+
+test('Sunflower unlock migration ignores Row Duplicators and uses its Crop milestone', () => {
+  const rowDuplicatorSave = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    crops: 1e30,
+    hasUnlockedKnotweed: true,
+    hasUnlockedRowDuplicators: true,
+    blueprint: {
+      rows: 1,
+      columns: 2,
+      cells: ['sunflower', 'leek'],
+    },
+    blueprintSlots: [
+      { rows: 1, columns: 2, cells: ['sunflower', 'leek'] },
+      { rows: 1, columns: 2, cells: ['leek', 'sunflower'] },
+      { rows: 1, columns: 2, cells: ['sunflower', 'sunflower'] },
+    ],
+    activeBlueprintSlot: 2,
+  })
+  const milestoneSave = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    crops: SUNFLOWER_UNLOCK_CROP_COUNT,
+    blueprint: {
+      rows: 1,
+      columns: 2,
+      cells: ['sunflower', 'leek'],
+    },
+  })
+
+  assert.equal(rowDuplicatorSave.hasUnlockedSunflower, false)
+  assert.equal(rowDuplicatorSave.activeBlueprintSlot, 0)
+  assert.equal(rowDuplicatorSave.blueprintSlots.length, 3)
+  assert.ok(
+    rowDuplicatorSave.blueprintSlots.every((blueprint) =>
+      blueprint.cells.every((cropId) => cropId !== 'sunflower'),
+    ),
+  )
+  assert.equal(milestoneSave.hasUnlockedSunflower, true)
+  assert.deepEqual(milestoneSave.blueprint.cells, ['sunflower', 'leek'])
+})
+
+test('locked migrated blueprint layouts remain stored but cannot stay active', () => {
+  const migratedGame = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    blueprint: { rows: 1, columns: 2, cells: ['leek', 'corn'] },
+    blueprintSlots: [
+      { rows: 1, columns: 2, cells: ['leek', 'corn'] },
+      { rows: 1, columns: 2, cells: ['corn', 'leek'] },
+      { rows: 1, columns: 2, cells: ['leek', 'leek'] },
+    ],
+    activeBlueprintSlot: 2,
+  })
+
+  assert.equal(migratedGame.blueprintSlots.length, 3)
+  assert.equal(migratedGame.activeBlueprintSlot, 0)
+  assert.deepEqual(migratedGame.blueprint.cells, ['leek', 'corn'])
 })
 
 test('statistics persist and older saves receive safe lifetime defaults', () => {

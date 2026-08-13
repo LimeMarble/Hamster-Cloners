@@ -26,6 +26,10 @@ export function useGameController() {
     unlockedBlueprintSlotCount: derived.unlockedBlueprintSlotCount,
     hasMirrorCorn: derived.hasMirrorCorn,
     hasLeechingGourd: derived.hasLeechingGourd,
+    rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
+    showMonocropLimit: derived.showMonocropLimit,
+    monocropLimit: derived.monocropLimit,
+    monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
   })
   const actions = useGameActions({
     gameRef,
@@ -42,6 +46,9 @@ export function useGameController() {
   })
 
   return {
+    progression: {
+      goal: derived.majorProgressionGoal,
+    },
     navigation: {
       activeTab: actions.activeTab,
       areInventionsUnlocked: derived.areInventionsUnlocked,
@@ -57,7 +64,8 @@ export function useGameController() {
         blueprint: {
           game,
           showMonocropLimit: derived.showMonocropLimit,
-          monocropThreshold: derived.monocropThreshold,
+          monocropLimit: derived.monocropLimit,
+          monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
           blueprintSlots: derived.blueprintSlots,
           unlockedBlueprintSlotCount: derived.unlockedBlueprintSlotCount,
           onSelectBlueprintSlot: blueprintEditor.onSelectBlueprintSlot,
@@ -66,7 +74,7 @@ export function useGameController() {
         hamsterPurchase: {
           game,
           nextHamsterCost: derived.nextHamsterCost,
-          fieldsPlantedPerSecond: derived.fieldsPlantedPerSecond,
+          columnsBuiltPerSecond: derived.columnsBuiltPerSecond,
           hamsterCoordinationMultiplier:
             derived.hamsterCoordinationMultiplier,
           cropHamsterEfficiencyMultiplier:
@@ -86,8 +94,6 @@ export function useGameController() {
               rowDuplicatorCoordinationMultiplier:
                 derived.rowDuplicatorCoordinationMultiplier,
               rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
-              fieldsPlantedPerSecond:
-                derived.rowDuplicatorFieldsPlantedPerSecond,
               onBuyRowDuplicator:
                 actions.purchaseActions.onBuyRowDuplicator,
               onBuyMaxRowDuplicators:
@@ -103,10 +109,14 @@ export function useGameController() {
         canUnlockEnrichingLeek: derived.canUnlockEnrichingLeek,
         canUnlockMirrorCorn: derived.canUnlockMirrorCorn,
         canUnlockLeechingGourd: derived.canUnlockLeechingGourd,
+        canUnlockSweetPotato: derived.canUnlockSweetPotato,
+        canUnlockSplitweed: derived.canUnlockSplitweed,
         canUnlockRows: derived.canUnlockRows,
         hasEnrichingLeek: derived.hasEnrichingLeek,
         hasMirrorCorn: derived.hasMirrorCorn,
         hasLeechingGourd: derived.hasLeechingGourd,
+        hasSweetPotato: derived.hasSweetPotato,
+        hasSplitweed: derived.hasSplitweed,
         pendingBlueprintExpansion: actions.pendingBlueprintExpansion,
         isRowDuplicatorUnlockPending:
           actions.isRowDuplicatorUnlockPending,

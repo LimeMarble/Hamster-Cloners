@@ -1,5 +1,8 @@
 import { useState } from 'react'
-import { grantNextBlueprintExpansion } from '../game/gameLogic.js'
+import {
+  grantNextBlueprintExpansion,
+  revokeLastBlueprintExpansion,
+} from '../game/gameLogic.js'
 
 const TESTING_CODE = 'limesaysopensesame'
 
@@ -48,9 +51,22 @@ export function useTestingCheats({
     }))
   }
 
+  function divideCurrentCrops() {
+    updateGame((currentGame) => ({
+      ...currentGame,
+      crops: Math.max(0, Number(currentGame.crops) || 0) / 1000,
+    }))
+  }
+
   function grantExpansion(trackId) {
     updateGame((currentGame) =>
       grantNextBlueprintExpansion(currentGame, trackId) ?? currentGame,
+    )
+  }
+
+  function revokeExpansion(trackId) {
+    updateGame((currentGame) =>
+      revokeLastBlueprintExpansion(currentGame, trackId) ?? currentGame,
     )
   }
 
@@ -83,8 +99,11 @@ export function useTestingCheats({
           onToggleHamsterEfficiency: () =>
             toggleCheat('hamsterEfficiencyEnabled'),
           onMultiplyCurrentCrops: multiplyCurrentCrops,
+          onDivideCurrentCrops: divideCurrentCrops,
           onGrantColumnExpansion: () => grantExpansion('column'),
           onGrantRowExpansion: () => grantExpansion('row'),
+          onRevokeColumnExpansion: () => revokeExpansion('column'),
+          onRevokeRowExpansion: () => revokeExpansion('row'),
         }
       : null,
   }

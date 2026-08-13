@@ -4,7 +4,7 @@ import {
   getColumnsProducedForTick,
   getCropHamsterEfficiencyMultiplier,
   getProductionForTick,
-  getRowsProducedForTick,
+  getRowsProducedPerSecond,
   getRowDuplicatorEffectivenessMultiplier,
   getUnlockedBlueprintSlotCount,
   SIMULATION_TICK_INTERVAL_MS,
@@ -16,6 +16,7 @@ import {
   KNOTWEED_UNLOCK_CROP_COUNT,
   LENTIL_UNLOCK_CROP_COUNT,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
+  SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
 } from '../game/crops.js'
 import { loadGame, saveGame } from '../game/storage.js'
@@ -70,36 +71,45 @@ export function useGameState(isEditingBlueprintRef) {
           currentGame.testingCheats?.cropMultiplierEnabled ? 10 : 1,
         )
         const nextCrops = currentGame.crops + productionForTick
+        const rowDuplicatorEffectivenessMultiplier =
+          getRowDuplicatorEffectivenessMultiplier(
+            currentGame.blueprint,
+            currentGame.completedCropPerfections,
+          )
+        const rowsBuiltPerSecond = currentGame.hasUnlockedRowDuplicators
+          ? getRowsProducedPerSecond(
+              currentGame.rowDuplicators,
+              rowDuplicatorEffectivenessMultiplier,
+            )
+          : 0
         const columnsProducedForTick = getColumnsProducedForTick(
           currentGame.hamsters,
           currentGame.postUnionHamstersHired,
           getCropHamsterEfficiencyMultiplier(
             currentGame.blueprint,
             currentGame.completedCropPerfections,
+            rowsBuiltPerSecond,
           ),
           SIMULATION_TICK_INTERVAL_MS,
           currentGame.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1,
         )
-        const rowsProducedForTick = currentGame.hasUnlockedRowDuplicators
-          ? getRowsProducedForTick(
-              currentGame.rowDuplicators,
-              getRowDuplicatorEffectivenessMultiplier(
-                currentGame.blueprint,
-                currentGame.completedCropPerfections,
-              ),
-            )
-          : 0
+        const rowsProducedForTick =
+          rowsBuiltPerSecond * (SIMULATION_TICK_INTERVAL_MS / 1000)
         const hasUnlockedRootTunnel =
           currentGame.hasUnlockedRootTunnel ||
           nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT
+        const hasUnlockedSunflower =
+          currentGame.hasUnlockedSunflower ||
+          nextCrops >= SUNFLOWER_UNLOCK_CROP_COUNT
         const currentBlueprintSlots = getBlueprintSlots(currentGame)
         const activeBlueprintSlot = Math.min(
           Math.max(0, Math.floor(Number(currentGame.activeBlueprintSlot) || 0)),
           currentBlueprintSlots.length - 1,
         )
         const requiredBlueprintSlotCount = getUnlockedBlueprintSlotCount({
-          blueprint: currentGame.blueprint,
+          ...currentGame,
           hasUnlockedRootTunnel,
+          hasUnlockedSunflower,
         })
         const nextBlueprintSlots = [...currentBlueprintSlots]
 
@@ -127,6 +137,7 @@ export function useGameState(isEditingBlueprintRef) {
             currentGame.hasUnlockedKnotweed ||
             nextCrops >= KNOTWEED_UNLOCK_CROP_COUNT,
           hasUnlockedRootTunnel,
+          hasUnlockedSunflower,
           hasUnlockedCropPerfection:
             currentGame.hasUnlockedCropPerfection ||
             nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT,

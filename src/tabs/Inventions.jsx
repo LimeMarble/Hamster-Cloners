@@ -10,13 +10,19 @@ export function Inventions({
   canUnlockEnrichingLeek,
   canUnlockMirrorCorn,
   canUnlockLeechingGourd,
+  canUnlockSweetPotato,
+  canUnlockSplitweed,
   canUnlockRows,
   hasEnrichingLeek,
   hasMirrorCorn,
   hasLeechingGourd,
+  hasSweetPotato,
+  hasSplitweed,
   onUnlockEnrichingLeek,
   onUnlockMirrorCorn,
   onUnlockLeechingGourd,
+  onUnlockSweetPotato,
+  onUnlockSplitweed,
   onRequestRowDuplicatorUnlock,
   onRequestBlueprintExpansion,
   pendingBlueprintExpansion,
@@ -102,8 +108,8 @@ export function Inventions({
                 <p className="eyebrow">Corn perfection</p>
                 <h2>{CROP_PERFECTIONS.mirrorCorn.name}</h2>
                 <p>
-                  Harvest 5 Crops, apply −50% Hamster Efficiency, and boost
-                  one diagonally selected crop effect by 100%.
+                  {CROP_PERFECTIONS.mirrorCorn.baseEffectDescription}.{' '}
+                  {CROP_PERFECTIONS.mirrorCorn.effectDescription}.
                 </p>
               </div>
               {hasMirrorCorn ? (
@@ -166,6 +172,102 @@ export function Inventions({
                 <FormattedNumber value={CROP_PERFECTIONS.leechingGourd.cost} maximumFractionDigits={0} />{' '}
                 Crops
               </p>
+            ) : null}
+            {game.hasUnlockedRowDuplicators ? (
+              <>
+                <article className="invention-card crop-perfection-card">
+                  <div>
+                    <p className="eyebrow">Potato perfection</p>
+                    <h2>{CROP_PERFECTIONS.sweetPotato.name}</h2>
+                    <p>
+                      Raise Potato&apos;s Hamster Efficiency bonus from +25% to
+                      +125%, then multiply Hamster Efficiency by 1 + planted
+                      Sweet Potatoes × log10(Rows/sec). This global multiplier
+                      cannot be boosted.
+                    </p>
+                  </div>
+                  {hasSweetPotato ? (
+                    <span className="invention-complete">Perfected</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={onUnlockSweetPotato}
+                      disabled={!canUnlockSweetPotato}
+                    >
+                      Spend{' '}
+                      <FormattedNumber
+                        value={CROP_PERFECTIONS.sweetPotato.cost}
+                        maximumFractionDigits={0}
+                      />{' '}
+                      Crops
+                    </button>
+                  )}
+                </article>
+                {!hasSweetPotato ? (
+                  <p className="invention-progress">
+                    <FormattedNumber
+                      value={Math.min(
+                        game.crops,
+                        CROP_PERFECTIONS.sweetPotato.cost,
+                      )}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    /{' '}
+                    <FormattedNumber
+                      value={CROP_PERFECTIONS.sweetPotato.cost}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    Crops
+                  </p>
+                ) : null}
+                <article className="invention-card crop-perfection-card">
+                  <div>
+                    <p className="eyebrow">Knotweed perfection</p>
+                    <h2>{CROP_PERFECTIONS.splitweed.name}</h2>
+                    <p>
+                      Suppress global Crop passives to ×0 unless Leeching Gourd
+                      nullifies the debuff. Splitweed counts as four debuff
+                      crops for Gourd adjacency and raises the Monocrop limit
+                      by 1 per planted Splitweed. This effect cannot be boosted.
+                    </p>
+                  </div>
+                  {hasSplitweed ? (
+                    <span className="invention-complete">Perfected</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={onUnlockSplitweed}
+                      disabled={!canUnlockSplitweed}
+                    >
+                      Spend{' '}
+                      <FormattedNumber
+                        value={CROP_PERFECTIONS.splitweed.cost}
+                        maximumFractionDigits={0}
+                      />{' '}
+                      Crops
+                    </button>
+                  )}
+                </article>
+                {!hasSplitweed ? (
+                  <p className="invention-progress">
+                    <FormattedNumber
+                      value={Math.min(
+                        game.crops,
+                        CROP_PERFECTIONS.splitweed.cost,
+                      )}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    /{' '}
+                    <FormattedNumber
+                      value={CROP_PERFECTIONS.splitweed.cost}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    Crops
+                  </p>
+                ) : null}
+              </>
             ) : null}
           </section>
         ) : (

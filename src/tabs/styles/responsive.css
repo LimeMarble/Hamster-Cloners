@@ -2,6 +2,7 @@
   .game-shell {
     width: min(100% - 20px, 620px);
     padding-top: 12px;
+    padding-bottom: 190px;
   }
 
   .hero-panel,

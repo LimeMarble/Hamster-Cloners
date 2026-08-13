@@ -7,7 +7,7 @@ import { FormattedNumber } from './ui.jsx'
 export function HamsterPurchase({
   game,
   nextHamsterCost,
-  fieldsPlantedPerSecond,
+  columnsBuiltPerSecond,
   hamsterCoordinationMultiplier,
   cropHamsterEfficiencyMultiplier,
   hamsterExternalMultiplier,
@@ -21,9 +21,9 @@ export function HamsterPurchase({
       <div className="section-heading">
         <div>
           <p className="eyebrow">Workforce</p>
-          <h2>Hamster Replicators</h2>
+          <h2>Hamster Cloners</h2>
         </div>
-        <span className="hamster-badge" aria-label={`${game.hamsters} hamster replicators`}>
+        <span className="hamster-badge" aria-label={`${game.hamsters} hamster cloners`}>
           {game.hamsters}
         </span>
       </div>
@@ -43,9 +43,9 @@ export function HamsterPurchase({
       ) : null}
       <dl className="replicator-stats">
         <div>
-          <dt>Fields planted / sec</dt>
+          <dt>Columns planted / sec</dt>
           <dd>
-            <FormattedNumber value={fieldsPlantedPerSecond} maximumFractionDigits={2} />
+            <FormattedNumber value={columnsBuiltPerSecond} maximumFractionDigits={2} />
           </dd>
         </div>
         <div>

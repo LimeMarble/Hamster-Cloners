@@ -2,6 +2,7 @@ import {
   CROP_DEFINITIONS,
   CROP_PERFECTIONS,
   CROP_PERFECTION_IDS,
+  SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
   hasCropPerfection,
   isKnownCrop,
 } from './crops.js'
@@ -79,29 +80,37 @@ export function createBlueprint({
   const sourceMirrorCornTargets = Array.isArray(mirrorCornTargets)
     ? mirrorCornTargets
     : []
+  const mirrorCornTargetCounts = new Map()
+  const maximumReflectionsPerTile =
+    CROP_PERFECTIONS.mirrorCorn.maximumReflectionsPerTile
+  const normalizedMirrorCornTargets = normalizedCells.map((crop, sourceIndex) => {
+    const targetIndex = sourceMirrorCornTargets[sourceIndex]
+    const sourceRow = Math.floor(sourceIndex / safeColumns)
+    const sourceColumn = sourceIndex % safeColumns
+    const targetRow = Math.floor(targetIndex / safeColumns)
+    const targetColumn = targetIndex % safeColumns
+    const hasValidTarget =
+      crop === 'corn' &&
+      Number.isInteger(targetIndex) &&
+      targetIndex >= 0 &&
+      targetIndex < totalCells &&
+      Math.abs(sourceRow - targetRow) === 1 &&
+      Math.abs(sourceColumn - targetColumn) === 1
+
+    if (!hasValidTarget) return null
+
+    const currentTargetCount = mirrorCornTargetCounts.get(targetIndex) ?? 0
+    if (currentTargetCount >= maximumReflectionsPerTile) return null
+
+    mirrorCornTargetCounts.set(targetIndex, currentTargetCount + 1)
+    return targetIndex
+  })
 
   return {
     rows: safeRows,
     columns: safeColumns,
     cells: normalizedCells,
-    mirrorCornTargets: normalizedCells.map((crop, sourceIndex) => {
-      const targetIndex = sourceMirrorCornTargets[sourceIndex]
-      const sourceRow = Math.floor(sourceIndex / safeColumns)
-      const sourceColumn = sourceIndex % safeColumns
-      const targetRow = Math.floor(targetIndex / safeColumns)
-      const targetColumn = targetIndex % safeColumns
-
-      return (
-        crop === 'corn' &&
-        Number.isInteger(targetIndex) &&
-        targetIndex >= 0 &&
-        targetIndex < totalCells &&
-        Math.abs(sourceRow - targetRow) === 1 &&
-        Math.abs(sourceColumn - targetColumn) === 1
-      )
-        ? targetIndex
-        : null
-    }),
+    mirrorCornTargets: normalizedMirrorCornTargets,
   }
 }
 
@@ -151,6 +160,7 @@ export function createInitialGame() {
     hasUnlockedLentil: false,
     hasUnlockedKnotweed: false,
     hasUnlockedRootTunnel: false,
+    hasUnlockedSunflower: false,
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
     rowDuplicators: 0,
@@ -172,13 +182,15 @@ export function createInitialGame() {
 }
 
 export function getUnlockedBlueprintSlotCount(game) {
-  const blueprint = createBlueprint(game.blueprint)
-
-  if (game.hasUnlockedRootTunnel === true) {
+  if (game.hasUnlockedSunflower === true) {
     return 3
   }
 
-  return blueprint.columns > 1 ? 2 : 1
+  return game.unionized === true &&
+    Math.max(0, Math.floor(Number(game.hamsters) || 0)) >=
+      SWEET_POTATO_UNLOCK_HAMSTER_COUNT
+    ? 2
+    : 1
 }
 
 export function getBlueprintSlots(game) {
@@ -250,6 +262,8 @@ export function canUnlockCropPerfection(game, perfectionId) {
   return (
     game.hasUnlockedCropPerfection === true &&
     cost !== null &&
+    (CROP_PERFECTIONS[perfectionId]?.requiresRowDuplicators !== true ||
+      game.hasUnlockedRowDuplicators === true) &&
     !hasCropPerfection(getCompletedCropPerfections(game), perfectionId) &&
     Math.max(0, Number(game.crops) || 0) >= cost
   )
@@ -375,6 +389,57 @@ function addBlueprintColumn(blueprint) {
   }
 }
 
+function removeBlueprintRow(blueprint) {
+  if (blueprint.rows <= 1) {
+    return blueprint
+  }
+
+  const totalCells = (blueprint.rows - 1) * blueprint.columns
+
+  return createBlueprint({
+    rows: blueprint.rows - 1,
+    columns: blueprint.columns,
+    cells: blueprint.cells.slice(0, totalCells),
+    mirrorCornTargets: blueprint.mirrorCornTargets.slice(0, totalCells),
+  })
+}
+
+function removeBlueprintColumn(blueprint) {
+  if (blueprint.columns <= 1) {
+    return blueprint
+  }
+
+  const nextColumnCount = blueprint.columns - 1
+  const cells = []
+  const mirrorCornTargets = []
+
+  blueprint.cells.forEach((crop, sourceIndex) => {
+    const sourceColumn = sourceIndex % blueprint.columns
+
+    if (sourceColumn >= nextColumnCount) {
+      return
+    }
+
+    const targetIndex = blueprint.mirrorCornTargets[sourceIndex]
+    const targetRow = Math.floor(targetIndex / blueprint.columns)
+    const targetColumn = targetIndex % blueprint.columns
+
+    cells.push(crop)
+    mirrorCornTargets.push(
+      Number.isInteger(targetIndex) && targetColumn < nextColumnCount
+        ? targetRow * nextColumnCount + targetColumn
+        : null,
+    )
+  })
+
+  return createBlueprint({
+    rows: blueprint.rows,
+    columns: nextColumnCount,
+    cells,
+    mirrorCornTargets,
+  })
+}
+
 function applyBlueprintExpansion(game, expansion) {
   const currentBlueprint = createBlueprint(game.blueprint)
   const storedBlueprintSlots = getBlueprintSlots(game)
@@ -391,8 +456,8 @@ function applyBlueprintExpansion(game, expansion) {
   const nextBlueprint = expandedBlueprintSlots[activeBlueprintSlot] ??
     expandBlueprint(currentBlueprint)
   const nextBlueprintSlotCount = getUnlockedBlueprintSlotCount({
+    ...game,
     blueprint: nextBlueprint,
-    hasUnlockedRootTunnel: game.hasUnlockedRootTunnel,
   })
 
   while (expandedBlueprintSlots.length < nextBlueprintSlotCount) {
@@ -424,6 +489,48 @@ export function grantNextBlueprintExpansion(game, trackId) {
   return nextExpansion
     ? { ...game, ...applyBlueprintExpansion(game, nextExpansion) }
     : null
+}
+
+export function revokeLastBlueprintExpansion(game, trackId) {
+  const track = BLUEPRINT_EXPANSION_TRACKS.find(
+    (candidateTrack) => candidateTrack.id === trackId,
+  )
+  const completedExpansion = [...(track?.stages ?? [])]
+    .reverse()
+    .find((stage) => hasCompletedBlueprintExpansion(game, stage.id))
+
+  if (!completedExpansion) {
+    return null
+  }
+
+  const shrinkBlueprint =
+    trackId === 'row' ? removeBlueprintRow : removeBlueprintColumn
+  const currentSlots = getBlueprintSlots(game)
+  const shrunkSlots = currentSlots.map(shrinkBlueprint)
+  const previousActiveSlot = Math.min(
+    Math.max(0, Math.floor(Number(game.activeBlueprintSlot) || 0)),
+    shrunkSlots.length - 1,
+  )
+  const previousActiveBlueprint = shrunkSlots[previousActiveSlot]
+  const unlockedSlotCount = getUnlockedBlueprintSlotCount({
+    ...game,
+    blueprint: previousActiveBlueprint,
+  })
+  const blueprintSlots = shrunkSlots.slice(0, unlockedSlotCount)
+  const activeBlueprintSlot = Math.min(
+    previousActiveSlot,
+    blueprintSlots.length - 1,
+  )
+
+  return {
+    ...game,
+    blueprint: blueprintSlots[activeBlueprintSlot],
+    blueprintSlots,
+    activeBlueprintSlot,
+    completedBlueprintExpansions: getCompletedBlueprintExpansions(game).filter(
+      (expansionId) => expansionId !== completedExpansion.id,
+    ),
+  }
 }
 
 export function resetForBlueprintExpansion(game, expansionId) {

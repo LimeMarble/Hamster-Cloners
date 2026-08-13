@@ -77,6 +77,7 @@
 .monocrop-pill {
   display: inline-flex;
   flex-direction: column;
+  max-width: 250px;
   padding: 5px 8px;
   border: 1px solid #bd9b4f;
   color: #e7c773;
@@ -90,6 +91,12 @@
   color: var(--text-strong);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.74rem;
+}
+
+.monocrop-penalty-label {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid rgb(189 155 79 / 45%);
 }
 
 .hamster-badge {

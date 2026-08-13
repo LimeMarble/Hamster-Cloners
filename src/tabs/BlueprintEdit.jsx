@@ -6,6 +6,7 @@ import {
 import {
   CropHoverInspector,
   MirrorCornConnectionLines,
+  MonocropStatus,
 } from './ui.jsx'
 import { getCropMark } from './uiHelpers.js'
 
@@ -17,6 +18,10 @@ export function BlueprintEdit({
   hoveredEditorCrop,
   visibleCropIds,
   unlockedCropIds,
+  rowsBuiltPerSecond,
+  showMonocropLimit,
+  monocropLimit,
+  monocropPenaltyMultiplier,
   mirrorCornLinks,
   pendingMirrorCornLinks,
   hasMirrorCorn,
@@ -52,6 +57,13 @@ export function BlueprintEdit({
           </button>
         </div>
 
+        {showMonocropLimit ? (
+          <MonocropStatus
+            limit={monocropLimit}
+            multiplier={monocropPenaltyMultiplier}
+          />
+        ) : null}
+
         <p className="editing-notice">
           Harvesting is paused while you modify this blueprint. Right-click a
           planted crop to remove it.
@@ -65,7 +77,8 @@ export function BlueprintEdit({
         ) : hasMirrorCorn && selectedCrop === 'corn' ? (
           <p className="mirror-corn-notice">
             Place Mirror Corn where it has a diagonal tile, then choose that
-            tile. The link remains when its crop changes.
+            tile. The link remains when its crop changes, but each tile can
+            receive at most two reflections.
           </p>
         ) : null}
 
@@ -233,6 +246,7 @@ export function BlueprintEdit({
             blueprint={game.blueprint}
             index={hoveredEditorCrop.index}
             completedCropPerfections={game.completedCropPerfections}
+            rowsProducedPerSecond={rowsBuiltPerSecond}
             cursor={hoveredEditorCrop}
           />
         ) : null}

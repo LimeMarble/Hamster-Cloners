@@ -14,7 +14,9 @@ import {
   LENTIL_UNLOCK_CROP_COUNT,
   KNOTWEED_UNLOCK_CROP_COUNT,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
+  SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
+  isCropTemporarilyUnavailable,
 } from './crops.js'
 
 export const DEFAULT_SAVE_KEY = 'hamster-cloners-save-v1'
@@ -62,6 +64,18 @@ function toNonNegativeInteger(value, fallback) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback
 }
 
+function removeUnavailableCrops(blueprint, hasUnlockedSunflower) {
+  return createBlueprint({
+    ...blueprint,
+    cells: blueprint.cells.map((cropId) =>
+      isCropTemporarilyUnavailable(cropId) ||
+      (cropId === 'sunflower' && !hasUnlockedSunflower)
+        ? null
+        : cropId,
+    ),
+  })
+}
+
 export function normalizeGame(rawGame) {
   const initialGame = createInitialGame()
 
@@ -70,8 +84,15 @@ export function normalizeGame(rawGame) {
   }
 
   const hasCurrentBlueprintAxes = rawGame.blueprintExpansionAxesSwapped === true
+  const currentCrops = toNonNegativeNumber(rawGame.crops, initialGame.crops)
+  const hasUnlockedSunflower =
+    rawGame.hasUnlockedSunflower === true ||
+    currentCrops >= SUNFLOWER_UNLOCK_CROP_COUNT
   const blueprint = hasCurrentBlueprintAxes
-    ? createBlueprint(rawGame.blueprint)
+    ? removeUnavailableCrops(
+        createBlueprint(rawGame.blueprint),
+        hasUnlockedSunflower,
+      )
     : createBlueprint({ cells: ['leek'] })
   const validExpansionIds = new Set(
     BLUEPRINT_EXPANSIONS.map((expansion) => expansion.id),
@@ -98,31 +119,43 @@ export function normalizeGame(rawGame) {
     hasCurrentBlueprintAxes && Array.isArray(rawGame.blueprintSlots)
       ? rawGame.blueprintSlots
       : []
-  const blueprintSlotCount = getUnlockedBlueprintSlotCount({
+  const unlockedBlueprintSlotCount = getUnlockedBlueprintSlotCount({
     blueprint,
-    hasUnlockedRootTunnel,
+    unionized: rawGame.unionized === true,
+    hamsters: toNonNegativeInteger(rawGame.hamsters, initialGame.hamsters),
+    hasUnlockedSunflower,
   })
+  const blueprintSlotCount = Math.max(
+    unlockedBlueprintSlotCount,
+    Math.min(3, rawBlueprintSlots.length),
+  )
   const blueprintSlots = Array.from(
     { length: blueprintSlotCount },
     (_, slotIndex) => {
       const rawSlot = rawBlueprintSlots[slotIndex]
 
       return rawSlot && typeof rawSlot === 'object'
-        ? createBlueprint({
-            rows: blueprint.rows,
-            columns: blueprint.columns,
-            cells: rawSlot.cells,
-            mirrorCornTargets: rawSlot.mirrorCornTargets,
-          })
+        ? removeUnavailableCrops(
+            createBlueprint({
+              rows: blueprint.rows,
+              columns: blueprint.columns,
+              cells: rawSlot.cells,
+              mirrorCornTargets: rawSlot.mirrorCornTargets,
+            }),
+            hasUnlockedSunflower,
+          )
         : createBlueprint(blueprint)
     },
   )
   const activeBlueprintSlot = Math.min(
     Math.max(0, Math.floor(Number(rawGame.activeBlueprintSlot) || 0)),
-    blueprintSlots.length - 1,
+    unlockedBlueprintSlotCount - 1,
   )
   const activeBlueprint = blueprintSlots[activeBlueprintSlot]
-  const hasReachedLimit = hasReachedMonocropLimit(activeBlueprint)
+  const hasReachedLimit = hasReachedMonocropLimit(
+    activeBlueprint,
+    completedCropPerfections,
+  )
   const rawFarmland =
     rawGame.farmland && typeof rawGame.farmland === 'object'
       ? rawGame.farmland
@@ -153,7 +186,7 @@ export function normalizeGame(rawGame) {
   }
 
   return {
-    crops: toNonNegativeNumber(rawGame.crops, initialGame.crops),
+    crops: currentCrops,
     totalCropsMade: toNonNegativeNumber(
       rawGame.totalCropsMade,
       toNonNegativeNumber(rawGame.crops, 0),
@@ -190,6 +223,7 @@ export function normalizeGame(rawGame) {
       toNonNegativeNumber(rawGame.crops, 0) >= KNOTWEED_UNLOCK_CROP_COUNT,
     hasUnlockedRootTunnel:
       hasUnlockedRootTunnel,
+    hasUnlockedSunflower,
     hasUnlockedCropPerfection:
       rawGame.hasUnlockedCropPerfection === true ||
       toNonNegativeNumber(rawGame.crops, 0) >= CROP_PERFECTION_UNLOCK_CROP_COUNT,

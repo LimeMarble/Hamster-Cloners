@@ -9,31 +9,34 @@ export const COLUMNS_PER_HAMSTER_PER_SECOND = 0.1
 export const ROWS_PER_ROW_DUPLICATOR_PER_SECOND = 0.1
 export const POST_UNION_HAMSTER_EFFICIENCY_GROWTH = 1.03
 export const ROW_DUPLICATOR_COORDINATION_GROWTH = 1.02
+export const ROOT_TUNNEL_ADJACENCY_DECAY = 0.8
 export const UNIONIZATION_HAMSTER_COUNT = 1000
 export const UNIONIZED_HAMSTER_COUNT = 100
 export const HIRE_MAX_UNLOCK_COUNT = 10
 export const UNION_STATUS_RETIRE_HIRE_COUNT = 20
 export const INVENTIONS_HAMSTER_UNLOCK_COUNT = 50
-export const ROW_DUPLICATORS_UNLOCK_CROP_COUNT = 404e21
+export const ROW_DUPLICATORS_UNLOCK_CROP_COUNT = 4.04e23
 export const ROW_DUPLICATOR_BASE_COST = 1e12
 export const ROW_DUPLICATOR_COST_GROWTH = 1.2
 export const BLUEPRINT_EXPANSION_CONFIG = [
   {
     id: 'column',
     title: 'Blueprint Column Expansion',
-    maximumExpansions: 6,
+    maximumExpansions: 16,
     baseCost: 1e4,
     costScale: 1e4,
-    acceleratedScalingAfter: 4,
+    acceleratedScalingAfter: 5,
+    acceleratedCostScale: 1e3,
     initialPrerequisiteIds: [],
   },
   {
     id: 'row',
     title: 'Blueprint Row Expansion',
-    maximumExpansions: 8,
+    maximumExpansions: 20,
     baseCost: 1e7,
     costScale: 1e2,
     acceleratedScalingAfter: 5,
+    acceleratedCostScale: 1e3,
     initialPrerequisiteIds: ['firstColumn'],
   },
 ]
@@ -49,6 +52,16 @@ const EXPANSION_ORDINAL_IDS = [
   'eighth',
   'ninth',
   'tenth',
+  'eleventh',
+  'twelfth',
+  'thirteenth',
+  'fourteenth',
+  'fifteenth',
+  'sixteenth',
+  'seventeenth',
+  'eighteenth',
+  'nineteenth',
+  'twentieth',
 ]
 
 function getExpansionStageCost(config, stageIndex) {
@@ -61,13 +74,17 @@ function getExpansionStageCost(config, stageIndex) {
     stageIndex - config.acceleratedScalingAfter + 1,
   )
   const acceleratedScalePowers =
-    (acceleratedScaleStepCount * (acceleratedScaleStepCount + 3)) / 2
+    (acceleratedScaleStepCount * (acceleratedScaleStepCount + 1)) / 2
   const baseCostExponent = Math.round(Math.log10(config.baseCost))
   const costScaleExponent = Math.round(Math.log10(config.costScale))
+  const accelerationExponent = Math.round(
+    Math.log10(config.acceleratedCostScale),
+  )
   const totalCostExponent =
     baseCostExponent +
     regularScaleSteps * costScaleExponent +
-    acceleratedScalePowers * costScaleExponent
+    acceleratedScaleStepCount * costScaleExponent +
+    acceleratedScalePowers * accelerationExponent
 
   return Number.parseFloat(`1e${totalCostExponent}`)
 }

@@ -1,7 +1,7 @@
 .game-shell {
   width: min(960px, calc(100% - 28px));
   margin: 0 auto;
-  padding: 22px 0 54px;
+  padding: 22px 0 150px;
 }
 
 .topbar,
@@ -272,33 +272,6 @@ h2 {
   padding: 16px;
   border: 1px solid #6f527a;
   background: var(--panel-raised);
-}
-
-.milestone-invention-card {
-  border-color: #a88a32;
-  background: linear-gradient(135deg, #29230f, var(--panel-raised) 58%);
-}
-
-.milestone-invention-card h2,
-.milestone-invention-card .eyebrow {
-  color: var(--crop-gold);
-}
-
-.milestone-invention-card .primary-button {
-  border-color: #d4af37;
-  color: #fff4bf;
-  background: #755b13;
-}
-
-.milestone-invention-card .primary-button:hover:not(:disabled) {
-  border-color: #ffe27a;
-  background: #92731b;
-}
-
-.milestone-invention-card .primary-button:disabled {
-  border-color: #685b31;
-  color: #9c916a;
-  background: #352f1e;
 }
 
 .invention-card p:last-child {

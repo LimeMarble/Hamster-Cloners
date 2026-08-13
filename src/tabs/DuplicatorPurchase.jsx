@@ -6,7 +6,6 @@ export function DuplicatorPurchase({
   rowDuplicatorEffectivenessMultiplier,
   rowDuplicatorCoordinationMultiplier,
   rowsBuiltPerSecond,
-  fieldsPlantedPerSecond,
   onBuyRowDuplicator,
   onBuyMaxRowDuplicators,
 }) {
@@ -31,12 +30,6 @@ export function DuplicatorPurchase({
           <dt>Rows built / sec</dt>
           <dd>
             <FormattedNumber value={rowsBuiltPerSecond} maximumFractionDigits={2} />
-          </dd>
-        </div>
-        <div>
-          <dt>Fields planted / sec</dt>
-          <dd>
-            <FormattedNumber value={fieldsPlantedPerSecond} maximumFractionDigits={2} />
           </dd>
         </div>
         <div>
