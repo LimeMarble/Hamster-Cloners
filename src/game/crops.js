@@ -1,7 +1,7 @@
 export const SWEET_POTATO_UNLOCK_HAMSTER_COUNT = 125
 export const TURNIP_UNLOCK_CROP_COUNT = 1e8
 export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
-export const APPLE_TREE_UNLOCK_CROP_COUNT = 5e13
+export const APPLE_TREE_UNLOCK_CROP_COUNT = 1e15
 export const LENTIL_UNLOCK_CROP_COUNT = 8e15
 export const KNOTWEED_UNLOCK_CROP_COUNT = 2e18
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = 216e18
@@ -60,10 +60,10 @@ export const CROP_DEFINITIONS = {
     hamsterEfficiencyBonus: 0,
     destroysAdjacentHarvests: true,
     hasDebuff: true,
-    externalCropBuffMultiplier: 2,
+    externalCropBuffMultiplier: 1.8,
     effectDescription:
-      '10 Crops per slot · destroys adjacent harvests · receives ×2 external Crop buffs',
-    unlockDescription: 'Unlocks at 50T Crops',
+      '10 Crops per slot · destroys adjacent harvests · receives ×1.8 external Crop buffs',
+    unlockDescription: 'Unlocks at 1 Qd Crops',
   },
   lentil: {
     name: 'Lentil',
@@ -152,12 +152,12 @@ export const CROP_PERFECTIONS = {
     id: 'mirrorCorn',
     cropId: 'corn',
     name: 'Mirror Corn',
-    cost: 2e14,
+    cost: 2e13,
     baseYield: 5,
     hamsterEfficiencyBonus: -0.5,
-    diagonalTargetEffectBonus: 1,
+    diagonalTargetEffectMultiplier: 4,
     baseEffectDescription: '5 Crops per slot · −50% Hamster efficiency',
-    effectDescription: 'Doubles one diagonally adjacent crop effect',
+    effectDescription: 'Multiplies one diagonally adjacent crop effect by ×4',
   },
   leechingGourd: {
     id: 'leechingGourd',

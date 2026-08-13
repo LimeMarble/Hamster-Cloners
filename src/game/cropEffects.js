@@ -160,7 +160,7 @@ export function getMirrorCornTargetCount(
 ) {
   const mirrorCorn = getCropPerfection('corn', completedCropPerfections)
 
-  if (!mirrorCorn?.diagonalTargetEffectBonus) {
+  if (!mirrorCorn?.diagonalTargetEffectMultiplier) {
     return 0
   }
 
@@ -196,7 +196,7 @@ export function getMirrorCornEffectMultiplier(
   )
 
   return (
-    1 + (mirrorCorn?.diagonalTargetEffectBonus ?? 0)
+    mirrorCorn?.diagonalTargetEffectMultiplier ?? 1
   ) ** mirrorCornTargetCount
 }
 
@@ -362,15 +362,15 @@ export function getExternalCropBuffMultiplier(
   )
   const mirrorCornSourceMultiplier =
     baseExternalCropBuffMultiplier *
-    (1 + (mirrorCorn?.diagonalTargetEffectBonus ?? 0))
+    (mirrorCorn?.diagonalTargetEffectMultiplier ?? 1)
   const externalEffectSourceMultipliers = [
     ...adjacentEffectSourceMultipliers,
     ...Array(mirrorCornTargetCount).fill(mirrorCornSourceMultiplier),
   ]
 
   // Apple Tree's receiver bonus applies to every external passive separately.
-  // A Turnip therefore supplies ×4 (its ×2 effect received at ×2), while a
-  // current Mirror Corn supplies ×4 after its percentage passive is received
+  // A Turnip therefore supplies ×3.6 (its ×2 effect received at ×1.8), while a
+  // current Mirror Corn supplies ×7.2 after its ×4 passive is received
   // by the tree.
   return externalEffectSourceMultipliers.length > 0
     ? externalEffectSourceMultipliers.reduce(

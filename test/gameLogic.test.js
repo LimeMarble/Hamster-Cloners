@@ -51,6 +51,7 @@ import {
 } from '../src/game/gameLogic.js'
 import {
   APPLE_TREE_UNLOCK_CROP_COUNT,
+  CROP_DEFINITIONS,
   CROP_PERFECTIONS,
   getCropName,
   getUnlockedCropIds,
@@ -327,6 +328,7 @@ test('Mirror Corn changes Corn to five yield and −50% Hamster Efficiency', () 
   })
 
   assert.equal(getCropName('corn', ['mirrorCorn']), 'Mirror Corn')
+  assert.equal(CROP_PERFECTIONS.mirrorCorn.diagonalTargetEffectMultiplier, 4)
   assert.deepEqual(getDiagonalTileIndexes(blueprint, 0), [3])
   assert.equal(
     getCropHamsterEfficiencyMultiplier(blueprint, ['mirrorCorn']),
@@ -338,11 +340,11 @@ test('Mirror Corn changes Corn to five yield and −50% Hamster Efficiency', () 
       createFarmlandMultipliers({ rows: 1, columns: 1 }),
       ['mirrorCorn', 'enrichingLeek'],
     ),
-    40,
+    56,
   )
 })
 
-test('Mirror Corn boosts selected diagonal crop effects', () => {
+test('Mirror Corn quadruples selected diagonal crop effects', () => {
   const blueprint = createBlueprint({
     rows: 2,
     columns: 2,
@@ -356,7 +358,7 @@ test('Mirror Corn boosts selected diagonal crop effects', () => {
       createFarmlandMultipliers({ rows: 1, columns: 1 }),
       ['mirrorCorn', 'enrichingLeek'],
     ),
-    30,
+    46,
   )
 })
 
@@ -405,7 +407,7 @@ test('Mirror Corn tile targets persist through empty and replacement crops', () 
   assert.deepEqual(replacementBlueprint.mirrorCornTargets, [3, null, null, null])
   assert.equal(
     getCropHamsterEfficiencyMultiplier(replacementBlueprint, ['mirrorCorn']),
-    1,
+    1.5,
   )
 })
 
@@ -589,11 +591,11 @@ test('Mirror Corn passive boosts multiply with adjacent crop-effect modifiers', 
     mirrorCornTargets: [3],
   })
 
-  // Sweet Potato's +25% is doubled by both the Turnip and its Mirror Corn.
+  // Potato's +25% is doubled by the Turnip and quadrupled by Mirror Corn.
   // Mirror Corn itself retains its -50% Hamster Efficiency contribution.
   assert.equal(
     getCropHamsterEfficiencyMultiplier(blueprint, ['mirrorCorn']),
-    1.5,
+    2.5,
   )
 })
 
@@ -611,7 +613,7 @@ test('blueprint crop stats expose a crop’s received effects', () => {
       crop: 'sweetPotato',
       baseYield: 1,
       harvestYield: 1,
-      hamsterEfficiencyBonus: 1,
+      hamsterEfficiencyBonus: 2,
       harvestDestroyedByAppleTree: false,
       externalCropBuffMultiplier: null,
       receivedEffects: [
@@ -624,7 +626,7 @@ test('blueprint crop stats expose a crop’s received effects', () => {
         {
           type: 'mirror-corn',
           count: 1,
-          multiplier: 2,
+          multiplier: 4,
         },
       ],
     },
@@ -657,7 +659,7 @@ test('blueprint crop stats combine Turnip and Pumpkin effect stacks', () => {
   ])
 })
 
-test('Mirror Corn costs 200T Crops to unlock', () => {
+test('Mirror Corn costs 20T Crops to unlock', () => {
   const game = {
     crops: CROP_PERFECTIONS.mirrorCorn.cost,
     hasUnlockedCropPerfection: true,
@@ -689,20 +691,21 @@ test('Apple Trees erase adjacent harvests but leave their crop effects active', 
   )
 })
 
-test('Apple Trees receive twice external Crop yield buffs', () => {
+test('Apple Trees receive ×1.8 external Crop yield buffs', () => {
   const blueprint = createBlueprint({
     rows: 1,
     columns: 2,
     cells: ['leek', 'appleTree'],
   })
 
+  assert.equal(CROP_DEFINITIONS.appleTree.externalCropBuffMultiplier, 1.8)
   assert.equal(
     getCropProductionPerSecond(
       blueprint,
       createFarmlandMultipliers({ rows: 1, columns: 1 }),
       ['enrichingLeek'],
     ),
-    20,
+    19,
   )
 })
 
@@ -721,11 +724,11 @@ test('Turnips and Pumpkins modify Apple Tree external Crop buffs', () => {
 
   assert.equal(
     getCropProductionPerSecond(turnipBlueprint, farmland, ['enrichingLeek']),
-    30,
+    28,
   )
   assert.equal(
     getCropProductionPerSecond(pumpkinBlueprint, farmland, ['enrichingLeek']),
-    15,
+    14.5,
   )
 })
 
@@ -753,7 +756,7 @@ test('Apple Trees apply their receiver bonus to each external passive effect', (
       farmland,
       ['mirrorCorn', 'enrichingLeek'],
     ),
-    340,
+    253.28000000000003,
   )
   assert.equal(
     getCropProductionPerSecond(
@@ -761,7 +764,7 @@ test('Apple Trees apply their receiver bonus to each external passive effect', (
       farmland,
       ['mirrorCorn', 'enrichingLeek'],
     ),
-    5140,
+    12113.235200000003,
   )
   assert.equal(
     getBlueprintCropStats(
@@ -769,12 +772,12 @@ test('Apple Trees apply their receiver bonus to each external passive effect', (
       4,
       ['mirrorCorn', 'enrichingLeek'],
     ).externalCropBuffMultiplier,
-    1024,
+    2418.6470400000007,
   )
 })
 
-test('Apple Tree unlocks after reaching 50T Crops', () => {
-  assert.equal(APPLE_TREE_UNLOCK_CROP_COUNT, 5e13)
+test('Apple Tree unlocks after reaching 1 Qd Crops', () => {
+  assert.equal(APPLE_TREE_UNLOCK_CROP_COUNT, 1e15)
   assert.deepEqual(
     getUnlockedCropIds(createBlueprint(), false, 0, false, true),
     ['leek', 'appleTree'],
