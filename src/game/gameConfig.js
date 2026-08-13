@@ -25,7 +25,7 @@ export const BLUEPRINT_EXPANSION_CONFIG = [
     maximumExpansions: 6,
     baseCost: 1e4,
     costScale: 1e4,
-    acceleratedScalingAfter: 4,
+    acceleratedScalingAfter: 5,
     acceleratedCostScale: 1e3,
     initialPrerequisiteIds: [],
   },
