@@ -425,6 +425,11 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
     columns: 3,
     cells: ['pumpkin', 'rootTunnel', 'sweetPotato'],
   })
+  const turnipTargetBlueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['leek', 'rootTunnel', 'turnip'],
+  })
   const mirrorBlueprint = createBlueprint({
     rows: 2,
     columns: 2,
@@ -449,6 +454,29 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
       1e-12,
   )
   assert.equal(getCropHamsterEfficiencyMultiplier(pumpkinBlueprint), 1.25)
+  assert.deepEqual(getAdjacentCropConnections(turnipTargetBlueprint, 2), [
+    { index: 0, adjacencyDistance: 1 },
+  ])
+  assert.deepEqual(
+    getBlueprintCropStats(turnipTargetBlueprint, 2, ['enrichingLeek']),
+    {
+      crop: 'turnip',
+      baseYield: 0.5,
+      harvestYield: 7.7,
+      hamsterEfficiencyBonus: 0,
+      harvestDestroyedByAppleTree: false,
+      externalCropBuffMultiplier: null,
+      receivedEffects: [
+        {
+          type: 'crop-yield',
+          sourceCropId: 'leek',
+          count: 1,
+          bonus: 7.2,
+          adjacencyDistances: [1],
+        },
+      ],
+    },
+  )
   assert.deepEqual(
     getBlueprintCropStats(turnipBlueprint, 2).receivedEffects,
     [

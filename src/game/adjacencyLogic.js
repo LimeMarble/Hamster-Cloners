@@ -174,16 +174,21 @@ export function getLeechingGourdAdjacentCropIndexes(blueprint) {
   )
 }
 
+function canParticipateInTunnelAdjacency(crop) {
+  return !isCropEffectModifier(crop) || crop === 'turnip'
+}
+
 export function getAdjacentCropConnections(blueprint, index) {
   const crop = blueprint.cells[index]
   const transferThroughTunnels =
-    Boolean(crop) && !isRootTunnel(crop) && !isCropEffectModifier(crop)
+    Boolean(crop) &&
+    !isRootTunnel(crop) &&
+    canParticipateInTunnelAdjacency(crop)
 
   return getCropConnectionsFromOrigins(blueprint, [index], {
     excludedIndexes: new Set([index]),
     transferThroughTunnels,
-    canTransferCrop: (sourceCrop) =>
-      !isCropEffectModifier(sourceCrop) || sourceCrop === 'turnip',
+    canTransferCrop: canParticipateInTunnelAdjacency,
   })
 }
 
