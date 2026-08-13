@@ -27,6 +27,9 @@ export function useGameController() {
     hasMirrorCorn: derived.hasMirrorCorn,
     hasLeechingGourd: derived.hasLeechingGourd,
     rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
+    showMonocropLimit: derived.showMonocropLimit,
+    monocropLimit: derived.monocropLimit,
+    monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
   })
   const actions = useGameActions({
     gameRef,
@@ -43,6 +46,9 @@ export function useGameController() {
   })
 
   return {
+    progression: {
+      goal: derived.majorProgressionGoal,
+    },
     navigation: {
       activeTab: actions.activeTab,
       areInventionsUnlocked: derived.areInventionsUnlocked,
@@ -58,7 +64,8 @@ export function useGameController() {
         blueprint: {
           game,
           showMonocropLimit: derived.showMonocropLimit,
-          monocropThreshold: derived.monocropThreshold,
+          monocropLimit: derived.monocropLimit,
+          monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
           blueprintSlots: derived.blueprintSlots,
           unlockedBlueprintSlotCount: derived.unlockedBlueprintSlotCount,
           onSelectBlueprintSlot: blueprintEditor.onSelectBlueprintSlot,

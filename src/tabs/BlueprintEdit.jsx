@@ -6,6 +6,7 @@ import {
 import {
   CropHoverInspector,
   MirrorCornConnectionLines,
+  MonocropStatus,
 } from './ui.jsx'
 import { getCropMark } from './uiHelpers.js'
 
@@ -18,6 +19,9 @@ export function BlueprintEdit({
   visibleCropIds,
   unlockedCropIds,
   rowsBuiltPerSecond,
+  showMonocropLimit,
+  monocropLimit,
+  monocropPenaltyMultiplier,
   mirrorCornLinks,
   pendingMirrorCornLinks,
   hasMirrorCorn,
@@ -52,6 +56,13 @@ export function BlueprintEdit({
             ×
           </button>
         </div>
+
+        {showMonocropLimit ? (
+          <MonocropStatus
+            limit={monocropLimit}
+            multiplier={monocropPenaltyMultiplier}
+          />
+        ) : null}
 
         <p className="editing-notice">
           Harvesting is paused while you modify this blueprint. Right-click a

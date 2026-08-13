@@ -1,11 +1,12 @@
 import { getFieldsPlanted } from '../game/gameLogic.js'
-import { FormattedNumber } from './ui.jsx'
+import { FormattedNumber, MonocropStatus } from './ui.jsx'
 import { getCropMark } from './uiHelpers.js'
 
 export function Blueprint({
   game,
   showMonocropLimit,
-  monocropThreshold,
+  monocropLimit,
+  monocropPenaltyMultiplier,
   blueprintSlots,
   unlockedBlueprintSlotCount,
   onSelectBlueprintSlot,
@@ -19,12 +20,10 @@ export function Blueprint({
           <h2>Your clonable field</h2>
         </div>
         {showMonocropLimit ? (
-          <span className="monocrop-pill">
-            <span>Monocrop limit</span>
-            <strong>
-              <FormattedNumber value={monocropThreshold} /> plots
-            </strong>
-          </span>
+          <MonocropStatus
+            limit={monocropLimit}
+            multiplier={monocropPenaltyMultiplier}
+          />
         ) : null}
         <span className="size-pill">
           {game.blueprint.rows} × {game.blueprint.columns}

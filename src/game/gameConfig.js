@@ -52,6 +52,16 @@ const EXPANSION_ORDINAL_IDS = [
   'eighth',
   'ninth',
   'tenth',
+  'eleventh',
+  'twelfth',
+  'thirteenth',
+  'fourteenth',
+  'fifteenth',
+  'sixteenth',
+  'seventeenth',
+  'eighteenth',
+  'nineteenth',
+  'twentieth',
 ]
 
 function getExpansionStageCost(config, stageIndex) {

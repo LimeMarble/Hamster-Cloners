@@ -3,6 +3,7 @@ import {
   canUnlockCropPerfection,
   canUnlockRowDuplicators,
   getBlueprintExpansionTrackProgress,
+  getBlueprintMonocropMultiplier,
   getBlueprintSlots,
   getColumnsProducedPerSecond,
   getCropHamsterEfficiencyMultiplier,
@@ -11,6 +12,7 @@ import {
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
   getNextHamsterCost,
+  getNextMajorProgressionGoal,
   getNextRowDuplicatorCost,
   getRowDuplicatorEffectivenessMultiplier,
   getRowsProducedPerSecond,
@@ -120,7 +122,7 @@ export function useGameDerivedState(game) {
         game.hasUnlockedLentil,
         game.hasUnlockedKnotweed,
         game.hasUnlockedRootTunnel,
-        game.hasUnlockedRowDuplicators,
+        game.hasUnlockedSunflower,
       ),
     [
       game.blueprint,
@@ -131,7 +133,7 @@ export function useGameDerivedState(game) {
       game.hasUnlockedLentil,
       game.hasUnlockedKnotweed,
       game.hasUnlockedRootTunnel,
-      game.hasUnlockedRowDuplicators,
+      game.hasUnlockedSunflower,
     ],
   )
   const visibleCropIds = useMemo(
@@ -145,9 +147,13 @@ export function useGameDerivedState(game) {
   )
   const blueprintSlots = useMemo(() => getBlueprintSlots(game), [game])
   const unlockedBlueprintSlotCount = getUnlockedBlueprintSlotCount(game)
-  const monocropThreshold = getMonocropThreshold(
-    game.blueprint.rows * game.blueprint.columns,
+  const monocropLimit = Math.ceil(
+    getMonocropThreshold(
+      game.blueprint.rows * game.blueprint.columns,
+    ),
   )
+  const monocropPenaltyMultiplier =
+    getBlueprintMonocropMultiplier(game.blueprint)
   const showMonocropLimit =
     game.hasSeenMonocropLimit || hasReachedMonocropLimit(game.blueprint)
   const formattedTotalHamstersHired = getCachedFormattedNumber(
@@ -167,9 +173,14 @@ export function useGameDerivedState(game) {
             : null
   const blueprintExpansionTracks = getBlueprintExpansionTrackProgress(game)
   const completedCropPerfections = game.completedCropPerfections
+  const majorProgressionGoal = useMemo(
+    () => getNextMajorProgressionGoal(game),
+    [game],
+  )
 
   return {
     nextHamsterCost,
+    majorProgressionGoal,
     productionPerSecond,
     cropHamsterEfficiencyMultiplier,
     hamsterCoordinationMultiplier,
@@ -184,7 +195,8 @@ export function useGameDerivedState(game) {
     visibleUnlockedCropIds,
     blueprintSlots,
     unlockedBlueprintSlotCount,
-    monocropThreshold,
+    monocropLimit,
+    monocropPenaltyMultiplier,
     showMonocropLimit,
     unionStatus,
     canHireMax:

@@ -4,10 +4,16 @@ export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
 export const APPLE_TREE_UNLOCK_CROP_COUNT = 1e15
 export const LENTIL_UNLOCK_CROP_COUNT = 8e16
 export const KNOTWEED_UNLOCK_CROP_COUNT = 2e19
+export const SUNFLOWER_UNLOCK_CROP_COUNT = 1.42e42
 // The requested 1.8e308 cost exceeds the native Number range.
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
 export const CORN_REVEAL_HAMSTER_COUNT = 50
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
+
+export const CROP_EFFECT_BYPASS_TIERS = Object.freeze({
+  STANDARD: 1,
+  MONOCROP: 5,
+})
 
 export const CROP_DEFINITIONS = {
   leek: {
@@ -33,6 +39,7 @@ export const CROP_DEFINITIONS = {
     baseYield: 5,
     hamsterEfficiencyBonus: 0,
     adjacentCropEffectModifier: 0.5,
+    passiveProtectionTier: 2,
     modifiesDebuffs: true,
     hasDebuff: true,
     effectDescription: '5 Crops per slot · halves adjacent crop buffs and debuffs',
@@ -52,6 +59,7 @@ export const CROP_DEFINITIONS = {
     baseYield: 0.5,
     hamsterEfficiencyBonus: 0,
     adjacentCropEffectModifier: 2,
+    passiveProtectionTier: 2,
     effectDescription: '0.5 Crops per slot · doubles adjacent crop buffs',
     unlockDescription: `Unlocks at ${TURNIP_UNLOCK_CROP_COUNT.toLocaleString()} Crops`,
   },
@@ -75,7 +83,7 @@ export const CROP_DEFINITIONS = {
     globalHarvestMultiplier: 1.25,
     canBeMirrorCornTarget: false,
     effectDescription: '25 Crops per slot · ×1.25 all Crop harvest',
-    unlockDescription: 'Unlocks at 8 Qd Crops',
+    unlockDescription: 'Unlocks at 80 Qd Crops',
   },
   knotweed: {
     name: 'Knotweed',
@@ -87,7 +95,7 @@ export const CROP_DEFINITIONS = {
     hasDebuff: true,
     isHarmful: true,
     effectDescription: '0 Crops per slot · −10 adjacent Crop harvest',
-    unlockDescription: 'Unlocks at 2 Qn Crops',
+    unlockDescription: 'Unlocks at 20 Qn Crops',
   },
   rootTunnel: {
     name: 'Root Tunnel',
@@ -110,7 +118,7 @@ export const CROP_DEFINITIONS = {
     rowDuplicatorEffectivenessBonus: 0.2,
     effectDescription:
       '1 Crop per slot · +20% Row Duplicator effectiveness',
-    unlockDescription: 'Unlocks with Row Duplicators',
+    unlockDescription: 'Unlocks at 1.42e42 Crops',
   },
   leechingGourd: {
     name: 'Leeching Gourd',
@@ -276,6 +284,13 @@ export function isCropEffectModifier(cropId) {
   return Boolean(CROP_DEFINITIONS[cropId]?.adjacentCropEffectModifier)
 }
 
+export function canCropPassiveBeAffectedBy(cropId, bypassTier) {
+  const protectionTier =
+    CROP_DEFINITIONS[cropId]?.passiveProtectionTier ?? 0
+
+  return bypassTier >= protectionTier
+}
+
 export function canBeMirrorCornTarget(cropId) {
   return CROP_DEFINITIONS[cropId]?.canBeMirrorCornTarget !== false
 }
@@ -296,7 +311,7 @@ export function getUnlockedCropIds(
   hasUnlockedLentil = false,
   hasUnlockedKnotweed = false,
   hasUnlockedRootTunnel = false,
-  hasUnlockedRowDuplicators = false,
+  hasUnlockedSunflower = false,
 ) {
   const unlockedCrops = ['leek']
 
@@ -324,7 +339,7 @@ export function getUnlockedCropIds(
   if (hasUnlockedRootTunnel && !isCropTemporarilyUnavailable('rootTunnel')) {
     unlockedCrops.push('rootTunnel')
   }
-  if (hasUnlockedRowDuplicators) {
+  if (hasUnlockedSunflower) {
     unlockedCrops.push('sunflower')
   }
 

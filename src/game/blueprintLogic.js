@@ -160,6 +160,7 @@ export function createInitialGame() {
     hasUnlockedLentil: false,
     hasUnlockedKnotweed: false,
     hasUnlockedRootTunnel: false,
+    hasUnlockedSunflower: false,
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
     rowDuplicators: 0,
@@ -181,7 +182,7 @@ export function createInitialGame() {
 }
 
 export function getUnlockedBlueprintSlotCount(game) {
-  if (game.hasUnlockedRowDuplicators === true) {
+  if (game.hasUnlockedSunflower === true) {
     return 3
   }
 

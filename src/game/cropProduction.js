@@ -166,6 +166,7 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
       (totalBonus, { index: neighborIndex, adjacencyDistance }) => {
         const neighborCrop = blueprint.cells[neighborIndex]
         const baseCropYieldBonus = getAdjacentHarvestModifier(
+          blueprint,
           neighborCrop,
           completedCropPerfections,
         )

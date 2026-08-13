@@ -16,6 +16,7 @@ import {
   KNOTWEED_UNLOCK_CROP_COUNT,
   LENTIL_UNLOCK_CROP_COUNT,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
+  SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
 } from '../game/crops.js'
 import { loadGame, saveGame } from '../game/storage.js'
@@ -97,6 +98,9 @@ export function useGameState(isEditingBlueprintRef) {
         const hasUnlockedRootTunnel =
           currentGame.hasUnlockedRootTunnel ||
           nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT
+        const hasUnlockedSunflower =
+          currentGame.hasUnlockedSunflower ||
+          nextCrops >= SUNFLOWER_UNLOCK_CROP_COUNT
         const currentBlueprintSlots = getBlueprintSlots(currentGame)
         const activeBlueprintSlot = Math.min(
           Math.max(0, Math.floor(Number(currentGame.activeBlueprintSlot) || 0)),
@@ -105,6 +109,7 @@ export function useGameState(isEditingBlueprintRef) {
         const requiredBlueprintSlotCount = getUnlockedBlueprintSlotCount({
           ...currentGame,
           hasUnlockedRootTunnel,
+          hasUnlockedSunflower,
         })
         const nextBlueprintSlots = [...currentBlueprintSlots]
 
@@ -132,6 +137,7 @@ export function useGameState(isEditingBlueprintRef) {
             currentGame.hasUnlockedKnotweed ||
             nextCrops >= KNOTWEED_UNLOCK_CROP_COUNT,
           hasUnlockedRootTunnel,
+          hasUnlockedSunflower,
           hasUnlockedCropPerfection:
             currentGame.hasUnlockedCropPerfection ||
             nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT,

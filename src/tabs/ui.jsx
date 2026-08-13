@@ -10,6 +10,23 @@ export function FormattedNumber({ value, maximumFractionDigits = 1 }) {
   return getCachedFormattedNumber(value, maximumFractionDigits)
 }
 
+export function MonocropStatus({ limit, multiplier }) {
+  return (
+    <span className="monocrop-pill">
+      <span>Monocrop limit</span>
+      <strong>
+        <FormattedNumber value={limit} maximumFractionDigits={0} /> plots
+      </strong>
+      <span className="monocrop-penalty-label">
+        Monocrop penalty to harvest and crop passives
+      </span>
+      <strong>
+        ×<FormattedNumber value={multiplier} maximumFractionDigits={3} />
+      </strong>
+    </span>
+  )
+}
+
 export function SignedPercentage({ value }) {
   const sign = value > 0 ? '+' : value < 0 ? '−' : ''
 
@@ -202,7 +219,7 @@ export function CropHoverInspector({
             if (effect.type === 'monocrop') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> monocrop harvest multiplier
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> monocrop multiplier to harvest and crop passives
                 </li>
               )
             }

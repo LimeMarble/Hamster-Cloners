@@ -14,6 +14,7 @@ import {
   LENTIL_UNLOCK_CROP_COUNT,
   KNOTWEED_UNLOCK_CROP_COUNT,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
+  SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
   isCropTemporarilyUnavailable,
 } from './crops.js'
@@ -63,11 +64,14 @@ function toNonNegativeInteger(value, fallback) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback
 }
 
-function removeTemporarilyUnavailableCrops(blueprint) {
+function removeUnavailableCrops(blueprint, hasUnlockedSunflower) {
   return createBlueprint({
     ...blueprint,
     cells: blueprint.cells.map((cropId) =>
-      isCropTemporarilyUnavailable(cropId) ? null : cropId,
+      isCropTemporarilyUnavailable(cropId) ||
+      (cropId === 'sunflower' && !hasUnlockedSunflower)
+        ? null
+        : cropId,
     ),
   })
 }
@@ -80,8 +84,15 @@ export function normalizeGame(rawGame) {
   }
 
   const hasCurrentBlueprintAxes = rawGame.blueprintExpansionAxesSwapped === true
+  const currentCrops = toNonNegativeNumber(rawGame.crops, initialGame.crops)
+  const hasUnlockedSunflower =
+    rawGame.hasUnlockedSunflower === true ||
+    currentCrops >= SUNFLOWER_UNLOCK_CROP_COUNT
   const blueprint = hasCurrentBlueprintAxes
-    ? removeTemporarilyUnavailableCrops(createBlueprint(rawGame.blueprint))
+    ? removeUnavailableCrops(
+        createBlueprint(rawGame.blueprint),
+        hasUnlockedSunflower,
+      )
     : createBlueprint({ cells: ['leek'] })
   const validExpansionIds = new Set(
     BLUEPRINT_EXPANSIONS.map((expansion) => expansion.id),
@@ -112,7 +123,7 @@ export function normalizeGame(rawGame) {
     blueprint,
     unionized: rawGame.unionized === true,
     hamsters: toNonNegativeInteger(rawGame.hamsters, initialGame.hamsters),
-    hasUnlockedRowDuplicators: rawGame.hasUnlockedRowDuplicators === true,
+    hasUnlockedSunflower,
   })
   const blueprintSlotCount = Math.max(
     unlockedBlueprintSlotCount,
@@ -124,13 +135,14 @@ export function normalizeGame(rawGame) {
       const rawSlot = rawBlueprintSlots[slotIndex]
 
       return rawSlot && typeof rawSlot === 'object'
-        ? removeTemporarilyUnavailableCrops(
+        ? removeUnavailableCrops(
             createBlueprint({
               rows: blueprint.rows,
               columns: blueprint.columns,
               cells: rawSlot.cells,
               mirrorCornTargets: rawSlot.mirrorCornTargets,
             }),
+            hasUnlockedSunflower,
           )
         : createBlueprint(blueprint)
     },
@@ -171,7 +183,7 @@ export function normalizeGame(rawGame) {
   }
 
   return {
-    crops: toNonNegativeNumber(rawGame.crops, initialGame.crops),
+    crops: currentCrops,
     totalCropsMade: toNonNegativeNumber(
       rawGame.totalCropsMade,
       toNonNegativeNumber(rawGame.crops, 0),
@@ -208,6 +220,7 @@ export function normalizeGame(rawGame) {
       toNonNegativeNumber(rawGame.crops, 0) >= KNOTWEED_UNLOCK_CROP_COUNT,
     hasUnlockedRootTunnel:
       hasUnlockedRootTunnel,
+    hasUnlockedSunflower,
     hasUnlockedCropPerfection:
       rawGame.hasUnlockedCropPerfection === true ||
       toNonNegativeNumber(rawGame.crops, 0) >= CROP_PERFECTION_UNLOCK_CROP_COUNT,

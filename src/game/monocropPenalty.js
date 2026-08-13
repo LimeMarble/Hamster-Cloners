@@ -24,3 +24,34 @@ export function getMonocropYieldMultiplier(cropCount, fieldSize) {
   const overage = (safeCropCount - threshold) / safeFieldSize
   return 1 / (2 * (overage + 1) ** 10)
 }
+
+export function applyMonocropPenaltyToBonus(bonus, cropCount, fieldSize) {
+  const safeBonus = Number(bonus) || 0
+  const multiplier = getMonocropYieldMultiplier(cropCount, fieldSize)
+
+  return safeBonus >= 0
+    ? safeBonus * multiplier
+    : safeBonus / multiplier
+}
+
+export function applyMonocropPenaltyToEffectMultiplier(
+  effectMultiplier,
+  cropCount,
+  fieldSize,
+) {
+  const safeMultiplier = Number(effectMultiplier)
+
+  if (!Number.isFinite(safeMultiplier)) {
+    return 1
+  }
+
+  return Math.max(
+    0,
+    1 +
+      applyMonocropPenaltyToBonus(
+        safeMultiplier - 1,
+        cropCount,
+        fieldSize,
+      ),
+  )
+}

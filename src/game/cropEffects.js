@@ -1,13 +1,16 @@
 import {
+  applyMonocropPenaltyToBonus,
+  applyMonocropPenaltyToEffectMultiplier,
   getMonocropThreshold,
   getMonocropYieldMultiplier,
 } from './monocropPenalty.js'
 import {
   CROP_DEFINITIONS,
+  CROP_EFFECT_BYPASS_TIERS,
   canBeMirrorCornTarget,
+  canCropPassiveBeAffectedBy,
   getAdjacentCropYieldBonus,
   getCropPerfection,
-  isCropEffectModifier,
 } from './crops.js'
 import {
   getAdjacentCropConnections,
@@ -27,6 +30,62 @@ export {
 
 export function getPlantedCropCount(blueprint, crop = 'leek') {
   return blueprint.cells.filter((cell) => cell === crop).length
+}
+
+function getMonocropAdjustedCropBonus(blueprint, crop, bonus) {
+  if (
+    !canCropPassiveBeAffectedBy(
+      crop,
+      CROP_EFFECT_BYPASS_TIERS.MONOCROP,
+    )
+  ) {
+    return bonus
+  }
+
+  return applyMonocropPenaltyToBonus(
+    bonus,
+    getPlantedCropCount(blueprint, crop),
+    blueprint.rows * blueprint.columns,
+  )
+}
+
+function getMonocropAdjustedCropEffectMultiplier(
+  blueprint,
+  crop,
+  effectMultiplier,
+) {
+  if (
+    !canCropPassiveBeAffectedBy(
+      crop,
+      CROP_EFFECT_BYPASS_TIERS.MONOCROP,
+    )
+  ) {
+    return effectMultiplier
+  }
+
+  return applyMonocropPenaltyToEffectMultiplier(
+    effectMultiplier,
+    getPlantedCropCount(blueprint, crop),
+    blueprint.rows * blueprint.columns,
+  )
+}
+
+export function getBlueprintMonocropMultiplier(blueprint) {
+  const fieldSize = blueprint.rows * blueprint.columns
+
+  return Object.keys(CROP_DEFINITIONS)
+    .filter((crop) => CROP_DEFINITIONS[crop].internalOnly !== true)
+    .reduce(
+      (lowestMultiplier, crop) =>
+        Math.min(
+          lowestMultiplier,
+          getMonocropYieldMultiplier(
+            getPlantedCropCount(blueprint, crop),
+            fieldSize,
+          ),
+        ),
+      1,
+    )
 }
 
 export function hasReachedMonocropLimit(blueprint) {
@@ -120,7 +179,12 @@ export function getAdjacentCropEffectMultiplier(
     ? getLeechingGourdDebuffMultiplier(blueprint, index)
     : 1
 
-  if (isCropEffectModifier(crop)) {
+  if (
+    !canCropPassiveBeAffectedBy(
+      crop,
+      CROP_EFFECT_BYPASS_TIERS.STANDARD,
+    )
+  ) {
     return gourdDebuffMultiplier
   }
 
@@ -156,12 +220,19 @@ export function getAdjacentHarvestDestructionEffects(blueprint, index) {
         return []
       }
 
+      const sourceCrop = blueprint.cells[sourceIndex]
+      const baseDestructionMultiplier =
+        getMonocropAdjustedCropEffectMultiplier(
+          blueprint,
+          sourceCrop,
+          1 - getRootTunnelAdjacencyStrength(adjacencyDistance),
+        )
       const strength =
-        getRootTunnelAdjacencyStrength(adjacencyDistance) *
+        (1 - baseDestructionMultiplier) *
         getAdjacentCropEffectMultiplier(
           blueprint,
           sourceIndex,
-          blueprint.cells[sourceIndex],
+          sourceCrop,
           true,
         )
       return [
@@ -169,7 +240,7 @@ export function getAdjacentHarvestDestructionEffects(blueprint, index) {
           sourceIndex,
           adjacencyDistance,
           strength,
-          multiplier: 1 - strength,
+          multiplier: Math.max(0, 1 - strength),
         },
       ]
     },
@@ -196,7 +267,12 @@ export function getMirrorCornTargetCount(
 
   // Percentage passives which modify other crop effects (such as Turnip and
   // Pumpkin) are protected from other crop buffs, including Mirror Corn.
-  if (isCropEffectModifier(blueprint.cells[targetIndex])) {
+  if (
+    !canCropPassiveBeAffectedBy(
+      blueprint.cells[targetIndex],
+      CROP_EFFECT_BYPASS_TIERS.STANDARD,
+    )
+  ) {
     return 0
   }
 
@@ -227,8 +303,10 @@ export function getMirrorCornEffectMultiplier(
     completedCropPerfections,
   )
 
-  return (
-    mirrorCorn?.diagonalTargetEffectMultiplier ?? 1
+  return getMonocropAdjustedCropEffectMultiplier(
+    blueprint,
+    'corn',
+    mirrorCorn?.diagonalTargetEffectMultiplier ?? 1,
   ) ** mirrorCornTargetCount
 }
 
@@ -272,12 +350,18 @@ export function getGlobalHamsterEfficiencyEffects(
     return []
   }
 
+  const bonus = getMonocropAdjustedCropBonus(
+    blueprint,
+    sourceCropId,
+    count * Math.log10(safeRowsProducedPerSecond),
+  )
+
   return [
     {
       sourceCropId,
       count,
-      bonus: count * Math.log10(safeRowsProducedPerSecond),
-      multiplier: 1 + count * Math.log10(safeRowsProducedPerSecond),
+      bonus,
+      multiplier: 1 + bonus,
     },
   ]
 }
@@ -312,6 +396,10 @@ export function getAdjacentCropEffectModifier(
   // negative effects; Turnip remains a bonus-only effect enhancer.
   if (
     adjacentCropEffectModifier === undefined ||
+    !canCropPassiveBeAffectedBy(
+      targetCrop,
+      CROP_EFFECT_BYPASS_TIERS.STANDARD,
+    ) ||
     (isDebuff && cropDefinition.modifiesDebuffs !== true)
   ) {
     return 1
@@ -326,14 +414,20 @@ export function getAdjacentCropEffectModifier(
       ? adjacentCropEffectModifier *
         getLeechingGourdTurnipEffect(blueprint).multiplier
       : adjacentCropEffectModifier
+  const monocropAdjustedBaseMultiplier =
+    getMonocropAdjustedCropEffectMultiplier(
+      blueprint,
+      crop,
+      baseMultiplier,
+    )
   const strength = getRootTunnelAdjacencyStrength(adjacencyDistance)
 
   // Turnip's entire ×2-style modifier travels through the tunnel, rather
   // than only its +1 above baseline. At ×0.8 per tile it remains a small buff
   // at distance 3, then becomes a debuff from distance 4 onward.
   return crop === 'turnip'
-    ? baseMultiplier * strength
-    : 1 + (baseMultiplier - 1) * strength
+    ? monocropAdjustedBaseMultiplier * strength
+    : 1 + (monocropAdjustedBaseMultiplier - 1) * strength
 }
 
 export function getGlobalHarvestEffects(blueprint) {
@@ -353,13 +447,12 @@ export function getGlobalHarvestEffects(blueprint) {
       return []
     }
 
-    const monocropMultiplier = getMonocropYieldMultiplier(
-      cropCounts[crop],
-      fieldSize,
-    )
     const adjustedBonus =
-      (globalHarvestMultiplier - 1) *
-      monocropMultiplier *
+      applyMonocropPenaltyToBonus(
+        globalHarvestMultiplier - 1,
+        cropCounts[crop],
+        fieldSize,
+      ) *
       getAdjacentCropEffectMultiplier(
         blueprint,
         index,
@@ -405,10 +498,16 @@ export function getGroupedGlobalHarvestEffects(blueprint) {
   }))
 }
 
-export function getAdjacentHarvestModifier(crop, completedCropPerfections) {
-  return (
+export function getAdjacentHarvestModifier(
+  blueprint,
+  crop,
+  completedCropPerfections,
+) {
+  return getMonocropAdjustedCropBonus(
+    blueprint,
+    crop,
     getAdjacentCropYieldBonus(crop, completedCropPerfections) +
-    (CROP_DEFINITIONS[crop]?.adjacentHarvestModifier ?? 0)
+      (CROP_DEFINITIONS[crop]?.adjacentHarvestModifier ?? 0),
   )
 }
 
@@ -425,6 +524,13 @@ export function getExternalCropBuffMultiplier(
     return 1
   }
 
+  const adjustedExternalCropBuffMultiplier =
+    getMonocropAdjustedCropEffectMultiplier(
+      blueprint,
+      crop,
+      baseExternalCropBuffMultiplier,
+    )
+
   const adjacentEffectSourceMultipliers = getAdjacentCropConnections(
     blueprint,
     index,
@@ -436,7 +542,7 @@ export function getExternalCropBuffMultiplier(
     return baseAdjacentCropEffectModifier === undefined
       ? []
       : [
-          baseExternalCropBuffMultiplier *
+          adjustedExternalCropBuffMultiplier *
             getAdjacentCropEffectModifier(
               blueprint,
               blueprint.cells[neighborIndex],
@@ -452,8 +558,12 @@ export function getExternalCropBuffMultiplier(
     completedCropPerfections,
   )
   const mirrorCornSourceMultiplier =
-    baseExternalCropBuffMultiplier *
-    (mirrorCorn?.diagonalTargetEffectMultiplier ?? 1)
+    adjustedExternalCropBuffMultiplier *
+    getMonocropAdjustedCropEffectMultiplier(
+      blueprint,
+      'corn',
+      mirrorCorn?.diagonalTargetEffectMultiplier ?? 1,
+    )
   const externalEffectSourceMultipliers = [
     ...adjacentEffectSourceMultipliers,
     ...Array(mirrorCornTargetCount).fill(mirrorCornSourceMultiplier),
@@ -468,5 +578,5 @@ export function getExternalCropBuffMultiplier(
         (multiplier, sourceMultiplier) => multiplier * sourceMultiplier,
         1,
       )
-    : baseExternalCropBuffMultiplier
+    : adjustedExternalCropBuffMultiplier
 }

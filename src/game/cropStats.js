@@ -144,6 +144,7 @@ export function getBlueprintCropStats(
     ({ index: neighborIndex, adjacencyDistance }) => {
       const sourceCropId = blueprint.cells[neighborIndex]
       const baseCropYieldBonus = getAdjacentHarvestModifier(
+        blueprint,
         sourceCropId,
         completedCropPerfections,
       )
@@ -209,6 +210,7 @@ export function getBlueprintCropStats(
     (totalBonus, { index: neighborIndex, adjacencyDistance }) => {
       const sourceCropId = blueprint.cells[neighborIndex]
       const baseCropYieldBonus = getAdjacentHarvestModifier(
+        blueprint,
         sourceCropId,
         completedCropPerfections,
       )

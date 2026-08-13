@@ -6,6 +6,7 @@ import {
   normalizeGame,
   SAVE_FORMAT_VERSION,
 } from '../src/game/storage.js'
+import { SUNFLOWER_UNLOCK_CROP_COUNT } from '../src/game/crops.js'
 
 test('legacy saves reset blueprint progress after the expansion axes swap', () => {
   const migratedGame = normalizeGame({
@@ -86,6 +87,7 @@ test('current saves remove temporarily unavailable crops from every blueprint sl
     blueprintExpansionAxesSwapped: true,
     hasUnlockedRootTunnel: true,
     hasUnlockedRowDuplicators: true,
+    hasUnlockedSunflower: true,
     blueprint: {
       rows: 1,
       columns: 3,
@@ -110,6 +112,47 @@ test('current saves remove temporarily unavailable crops from every blueprint sl
   )
   assert.deepEqual(migratedGame.blueprint.cells, ['leek', null, 'corn'])
 })
+
+test('Sunflower unlock migration ignores Row Duplicators and uses its Crop milestone', () => {
+  const rowDuplicatorSave = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    crops: 1e30,
+    hasUnlockedKnotweed: true,
+    hasUnlockedRowDuplicators: true,
+    blueprint: {
+      rows: 1,
+      columns: 2,
+      cells: ['sunflower', 'leek'],
+    },
+    blueprintSlots: [
+      { rows: 1, columns: 2, cells: ['sunflower', 'leek'] },
+      { rows: 1, columns: 2, cells: ['leek', 'sunflower'] },
+      { rows: 1, columns: 2, cells: ['sunflower', 'sunflower'] },
+    ],
+    activeBlueprintSlot: 2,
+  })
+  const milestoneSave = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    crops: SUNFLOWER_UNLOCK_CROP_COUNT,
+    blueprint: {
+      rows: 1,
+      columns: 2,
+      cells: ['sunflower', 'leek'],
+    },
+  })
+
+  assert.equal(rowDuplicatorSave.hasUnlockedSunflower, false)
+  assert.equal(rowDuplicatorSave.activeBlueprintSlot, 0)
+  assert.equal(rowDuplicatorSave.blueprintSlots.length, 3)
+  assert.ok(
+    rowDuplicatorSave.blueprintSlots.every((blueprint) =>
+      blueprint.cells.every((cropId) => cropId !== 'sunflower'),
+    ),
+  )
+  assert.equal(milestoneSave.hasUnlockedSunflower, true)
+  assert.deepEqual(milestoneSave.blueprint.cells, ['sunflower', 'leek'])
+})
+
 test('locked migrated blueprint layouts remain stored but cannot stay active', () => {
   const migratedGame = normalizeGame({
     blueprintExpansionAxesSwapped: true,

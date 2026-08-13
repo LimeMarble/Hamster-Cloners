@@ -19,6 +19,9 @@ export function useBlueprintEditor({
   hasMirrorCorn,
   hasLeechingGourd,
   rowsBuiltPerSecond,
+  showMonocropLimit,
+  monocropLimit,
+  monocropPenaltyMultiplier,
 }) {
   const [isEditingBlueprint, setIsEditingBlueprint] = useState(false)
   const [selectedCrop, setSelectedCrop] = useState('leek')
@@ -314,6 +317,9 @@ export function useBlueprintEditor({
           visibleCropIds,
           unlockedCropIds,
           rowsBuiltPerSecond,
+          showMonocropLimit,
+          monocropLimit,
+          monocropPenaltyMultiplier,
           mirrorCornLinks,
           pendingMirrorCornLinks,
           hasMirrorCorn,
