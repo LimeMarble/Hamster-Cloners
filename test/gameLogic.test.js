@@ -38,6 +38,7 @@ import {
   POST_UNION_HAMSTER_EFFICIENCY_GROWTH,
   canUnlockRowDuplicators,
   resetForBlueprintExpansion,
+  revokeLastBlueprintExpansion,
   resetForRowDuplicators,
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   ROW_DUPLICATOR_BASE_COST,
@@ -1385,6 +1386,26 @@ test('testing expansion grants follow each configured track and stop at its cap'
   assert.equal(game.completedBlueprintExpansions.length, 14)
   assert.equal(grantNextBlueprintExpansion(game, 'column'), null)
   assert.equal(grantNextBlueprintExpansion(game, 'row'), null)
+
+  game = revokeLastBlueprintExpansion(game, 'column')
+  game = revokeLastBlueprintExpansion(game, 'row')
+
+  assert.equal(game.blueprint.columns, 6)
+  assert.equal(game.blueprint.rows, 8)
+  assert.equal(game.completedBlueprintExpansions.length, 12)
+
+  for (let index = 0; index < 5; index += 1) {
+    game = revokeLastBlueprintExpansion(game, 'column')
+  }
+  for (let index = 0; index < 7; index += 1) {
+    game = revokeLastBlueprintExpansion(game, 'row')
+  }
+
+  assert.equal(game.blueprint.columns, 1)
+  assert.equal(game.blueprint.rows, 1)
+  assert.equal(game.completedBlueprintExpansions.length, 0)
+  assert.equal(revokeLastBlueprintExpansion(game, 'column'), null)
+  assert.equal(revokeLastBlueprintExpansion(game, 'row'), null)
 })
 
 test('blueprint slots unlock with Corn and Root Tunnel and retain separate layouts', () => {

@@ -8,8 +8,11 @@ export function TestingPanel({
   onToggleCropMultiplier,
   onToggleHamsterEfficiency,
   onMultiplyCurrentCrops,
+  onDivideCurrentCrops,
   onGrantColumnExpansion,
   onGrantRowExpansion,
+  onRevokeColumnExpansion,
+  onRevokeRowExpansion,
 }) {
   const columnsMaxed = columnExpansionCount >= maximumColumnExpansions
   const rowsMaxed = rowExpansionCount >= maximumRowExpansions
@@ -48,6 +51,13 @@ export function TestingPanel({
         <button
           type="button"
           className="testing-action"
+          onClick={onDivideCurrentCrops}
+        >
+          /1,000 current Crops
+        </button>
+        <button
+          type="button"
+          className="testing-action"
           onClick={onGrantColumnExpansion}
           disabled={columnsMaxed}
         >
@@ -56,10 +66,26 @@ export function TestingPanel({
         <button
           type="button"
           className="testing-action"
+          onClick={onRevokeColumnExpansion}
+          disabled={columnExpansionCount <= 0}
+        >
+          -1 Column expansion ({columnExpansionCount}/{maximumColumnExpansions})
+        </button>
+        <button
+          type="button"
+          className="testing-action"
           onClick={onGrantRowExpansion}
           disabled={rowsMaxed}
         >
           +1 Row expansion ({rowExpansionCount}/{maximumRowExpansions})
+        </button>
+        <button
+          type="button"
+          className="testing-action"
+          onClick={onRevokeRowExpansion}
+          disabled={rowExpansionCount <= 0}
+        >
+          -1 Row expansion ({rowExpansionCount}/{maximumRowExpansions})
         </button>
       </div>
     </aside>

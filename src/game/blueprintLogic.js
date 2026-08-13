@@ -383,6 +383,57 @@ function addBlueprintColumn(blueprint) {
   }
 }
 
+function removeBlueprintRow(blueprint) {
+  if (blueprint.rows <= 1) {
+    return blueprint
+  }
+
+  const totalCells = (blueprint.rows - 1) * blueprint.columns
+
+  return createBlueprint({
+    rows: blueprint.rows - 1,
+    columns: blueprint.columns,
+    cells: blueprint.cells.slice(0, totalCells),
+    mirrorCornTargets: blueprint.mirrorCornTargets.slice(0, totalCells),
+  })
+}
+
+function removeBlueprintColumn(blueprint) {
+  if (blueprint.columns <= 1) {
+    return blueprint
+  }
+
+  const nextColumnCount = blueprint.columns - 1
+  const cells = []
+  const mirrorCornTargets = []
+
+  blueprint.cells.forEach((crop, sourceIndex) => {
+    const sourceColumn = sourceIndex % blueprint.columns
+
+    if (sourceColumn >= nextColumnCount) {
+      return
+    }
+
+    const targetIndex = blueprint.mirrorCornTargets[sourceIndex]
+    const targetRow = Math.floor(targetIndex / blueprint.columns)
+    const targetColumn = targetIndex % blueprint.columns
+
+    cells.push(crop)
+    mirrorCornTargets.push(
+      Number.isInteger(targetIndex) && targetColumn < nextColumnCount
+        ? targetRow * nextColumnCount + targetColumn
+        : null,
+    )
+  })
+
+  return createBlueprint({
+    rows: blueprint.rows,
+    columns: nextColumnCount,
+    cells,
+    mirrorCornTargets,
+  })
+}
+
 function applyBlueprintExpansion(game, expansion) {
   const currentBlueprint = createBlueprint(game.blueprint)
   const storedBlueprintSlots = getBlueprintSlots(game)
@@ -432,6 +483,48 @@ export function grantNextBlueprintExpansion(game, trackId) {
   return nextExpansion
     ? { ...game, ...applyBlueprintExpansion(game, nextExpansion) }
     : null
+}
+
+export function revokeLastBlueprintExpansion(game, trackId) {
+  const track = BLUEPRINT_EXPANSION_TRACKS.find(
+    (candidateTrack) => candidateTrack.id === trackId,
+  )
+  const completedExpansion = [...(track?.stages ?? [])]
+    .reverse()
+    .find((stage) => hasCompletedBlueprintExpansion(game, stage.id))
+
+  if (!completedExpansion) {
+    return null
+  }
+
+  const shrinkBlueprint =
+    trackId === 'row' ? removeBlueprintRow : removeBlueprintColumn
+  const currentSlots = getBlueprintSlots(game)
+  const shrunkSlots = currentSlots.map(shrinkBlueprint)
+  const previousActiveSlot = Math.min(
+    Math.max(0, Math.floor(Number(game.activeBlueprintSlot) || 0)),
+    shrunkSlots.length - 1,
+  )
+  const previousActiveBlueprint = shrunkSlots[previousActiveSlot]
+  const unlockedSlotCount = getUnlockedBlueprintSlotCount({
+    ...game,
+    blueprint: previousActiveBlueprint,
+  })
+  const blueprintSlots = shrunkSlots.slice(0, unlockedSlotCount)
+  const activeBlueprintSlot = Math.min(
+    previousActiveSlot,
+    blueprintSlots.length - 1,
+  )
+
+  return {
+    ...game,
+    blueprint: blueprintSlots[activeBlueprintSlot],
+    blueprintSlots,
+    activeBlueprintSlot,
+    completedBlueprintExpansions: getCompletedBlueprintExpansions(game).filter(
+      (expansionId) => expansionId !== completedExpansion.id,
+    ),
+  }
 }
 
 export function resetForBlueprintExpansion(game, expansionId) {
