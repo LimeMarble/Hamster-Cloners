@@ -7,7 +7,7 @@ import { FormattedNumber } from './ui.jsx'
 export function HamsterPurchase({
   game,
   nextHamsterCost,
-  fieldsPlantedPerSecond,
+  columnsBuiltPerSecond,
   hamsterCoordinationMultiplier,
   cropHamsterEfficiencyMultiplier,
   hamsterExternalMultiplier,
@@ -43,9 +43,9 @@ export function HamsterPurchase({
       ) : null}
       <dl className="replicator-stats">
         <div>
-          <dt>Fields planted / sec</dt>
+          <dt>Columns planted / sec</dt>
           <dd>
-            <FormattedNumber value={fieldsPlantedPerSecond} maximumFractionDigits={2} />
+            <FormattedNumber value={columnsBuiltPerSecond} maximumFractionDigits={2} />
           </dd>
         </div>
         <div>

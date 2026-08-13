@@ -26,6 +26,7 @@ export const BLUEPRINT_EXPANSION_CONFIG = [
     baseCost: 1e4,
     costScale: 1e4,
     acceleratedScalingAfter: 4,
+    acceleratedCostScale: 1e3,
     initialPrerequisiteIds: [],
   },
   {
@@ -35,6 +36,7 @@ export const BLUEPRINT_EXPANSION_CONFIG = [
     baseCost: 1e7,
     costScale: 1e2,
     acceleratedScalingAfter: 5,
+    acceleratedCostScale: 1e3,
     initialPrerequisiteIds: ['firstColumn'],
   },
 ]
@@ -62,13 +64,17 @@ function getExpansionStageCost(config, stageIndex) {
     stageIndex - config.acceleratedScalingAfter + 1,
   )
   const acceleratedScalePowers =
-    (acceleratedScaleStepCount * (acceleratedScaleStepCount + 3)) / 2
+    (acceleratedScaleStepCount * (acceleratedScaleStepCount + 1)) / 2
   const baseCostExponent = Math.round(Math.log10(config.baseCost))
   const costScaleExponent = Math.round(Math.log10(config.costScale))
+  const accelerationExponent = Math.round(
+    Math.log10(config.acceleratedCostScale),
+  )
   const totalCostExponent =
     baseCostExponent +
     regularScaleSteps * costScaleExponent +
-    acceleratedScalePowers * costScaleExponent
+    acceleratedScaleStepCount * costScaleExponent +
+    acceleratedScalePowers * accelerationExponent
 
   return Number.parseFloat(`1e${totalCostExponent}`)
 }

@@ -1340,10 +1340,10 @@ test('blueprint expansions use the ordered milestone configuration', () => {
       costs: stages.map((stage) => stage.cost),
     })),
     [
-      { id: 'column', costs: [1e4, 1e8, 1e12, 1e16, 1e24, 1e36] },
+      { id: 'column', costs: [1e4, 1e8, 1e12, 1e16, 1e23, 1e33] },
       {
         id: 'row',
-        costs: [1e7, 1e9, 1e11, 1e13, 1e15, 1e19, 1e25, 1e33],
+        costs: [1e7, 1e9, 1e11, 1e13, 1e15, 1e20, 1e28, 1e39],
       },
     ],
   )

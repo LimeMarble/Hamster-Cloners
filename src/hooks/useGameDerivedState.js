@@ -7,7 +7,7 @@ import {
   getColumnsProducedPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getCropProductionPerSecond,
-  getEffectiveFarmlandMultipliers,
+
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
   getNextHamsterCost,
@@ -79,22 +79,6 @@ export function useGameDerivedState(game) {
       hamsterExternalMultiplier,
     ],
   )
-  const fieldsPlantedPerSecond = useMemo(
-    () => {
-      const farmland = getEffectiveFarmlandMultipliers(game.farmland)
-
-      return (
-        columnsBuiltPerSecond *
-        farmland.rows *
-        farmland.floors *
-        farmland.farms
-      )
-    },
-    [
-      columnsBuiltPerSecond,
-      game.farmland,
-    ],
-  )
   const nextRowDuplicatorCost = useMemo(
     () => getNextRowDuplicatorCost(game.rowDuplicators),
     [game.rowDuplicators],
@@ -123,16 +107,6 @@ export function useGameDerivedState(game) {
       rowDuplicatorEffectivenessMultiplier,
     ],
   )
-  const rowDuplicatorFieldsPlantedPerSecond = useMemo(() => {
-    const farmland = getEffectiveFarmlandMultipliers(game.farmland)
-
-    return (
-      rowsBuiltPerSecond *
-      farmland.columns *
-      farmland.floors *
-      farmland.farms
-    )
-  }, [game.farmland, rowsBuiltPerSecond])
   const unlockedCropIds = useMemo(
     () =>
       getUnlockedCropIds(
@@ -198,12 +172,11 @@ export function useGameDerivedState(game) {
     cropHamsterEfficiencyMultiplier,
     hamsterCoordinationMultiplier,
     hamsterExternalMultiplier,
-    fieldsPlantedPerSecond,
+    columnsBuiltPerSecond,
     nextRowDuplicatorCost,
     rowDuplicatorEffectivenessMultiplier,
     rowDuplicatorCoordinationMultiplier,
     rowsBuiltPerSecond,
-    rowDuplicatorFieldsPlantedPerSecond,
     unlockedCropIds,
     visibleCropIds,
     visibleUnlockedCropIds,

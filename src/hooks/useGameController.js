@@ -66,7 +66,7 @@ export function useGameController() {
         hamsterPurchase: {
           game,
           nextHamsterCost: derived.nextHamsterCost,
-          fieldsPlantedPerSecond: derived.fieldsPlantedPerSecond,
+          columnsBuiltPerSecond: derived.columnsBuiltPerSecond,
           hamsterCoordinationMultiplier:
             derived.hamsterCoordinationMultiplier,
           cropHamsterEfficiencyMultiplier:
@@ -86,8 +86,6 @@ export function useGameController() {
               rowDuplicatorCoordinationMultiplier:
                 derived.rowDuplicatorCoordinationMultiplier,
               rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
-              fieldsPlantedPerSecond:
-                derived.rowDuplicatorFieldsPlantedPerSecond,
               onBuyRowDuplicator:
                 actions.purchaseActions.onBuyRowDuplicator,
               onBuyMaxRowDuplicators:
