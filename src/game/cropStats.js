@@ -13,10 +13,12 @@ import {
   getExternalCropBuffMultiplier,
   getGlobalHamsterEfficiencyEffects,
   getGlobalHarvestMultiplier,
+  getGlobalPassiveEffectMultiplier,
   getGroupedGlobalHarvestEffects,
   getLeechingGourdTurnipEffect,
   getMirrorCornEffectMultiplier,
   getMirrorCornTargetCount,
+  getMonocropThresholdBonus,
   getPlantedCropCount,
   getRootTunnelAdjacencyStrength,
 } from './cropEffects.js'
@@ -42,7 +44,11 @@ export function getBlueprintCropStats(
   const receivedEffects = []
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCount = getPlantedCropCount(blueprint, crop)
-  const monocropMultiplier = getMonocropYieldMultiplier(cropCount, fieldSize)
+  const monocropMultiplier = getMonocropYieldMultiplier(
+    cropCount,
+    fieldSize,
+    getMonocropThresholdBonus(blueprint, completedCropPerfections),
+  )
 
   if (!isCropEffectModifier(crop)) {
     const modifierStacksByCrop = new Map()
@@ -59,6 +65,8 @@ export function getBlueprintCropStats(
             sourceCropId,
             crop,
             adjacencyDistance,
+            false,
+            completedCropPerfections,
           )
 
           if (multiplier === 1) {
@@ -103,7 +111,10 @@ export function getBlueprintCropStats(
   }
 
   if (crop === 'turnip') {
-    const leechingGourdEffect = getLeechingGourdTurnipEffect(blueprint)
+    const leechingGourdEffect = getLeechingGourdTurnipEffect(
+      blueprint,
+      completedCropPerfections,
+    )
 
     if (leechingGourdEffect.debuffContribution > 0) {
       const tunneledDistances = leechingGourdEffect.adjacencyEffects
@@ -157,6 +168,7 @@ export function getBlueprintCropStats(
           neighborIndex,
           sourceCropId,
           baseCropYieldBonus < 0,
+          completedCropPerfections,
         ) *
         getMirrorCornEffectMultiplier(
           blueprint,
@@ -202,9 +214,17 @@ export function getBlueprintCropStats(
   )
 
   const harvestDestructionEffects =
-    getAdjacentHarvestDestructionEffects(blueprint, index)
+    getAdjacentHarvestDestructionEffects(
+      blueprint,
+      index,
+      completedCropPerfections,
+    )
   const harvestDestructionMultiplier =
-    getAdjacentHarvestDestructionMultiplier(blueprint, index)
+    getAdjacentHarvestDestructionMultiplier(
+      blueprint,
+      index,
+      completedCropPerfections,
+    )
   const harvestDestroyedByAppleTree = harvestDestructionMultiplier === 0
   const adjacentYieldBonus = neighboringConnections.reduce(
     (totalBonus, { index: neighborIndex, adjacencyDistance }) => {
@@ -225,6 +245,7 @@ export function getBlueprintCropStats(
             neighborIndex,
             sourceCropId,
             baseCropYieldBonus < 0,
+            completedCropPerfections,
           ) *
           getMirrorCornEffectMultiplier(
             blueprint,
@@ -250,6 +271,7 @@ export function getBlueprintCropStats(
           index,
           crop,
           baseHamsterEfficiencyBonus < 0,
+          completedCropPerfections,
         )
       : 1
   const adjustForMonocrop = (bonus) =>
@@ -262,14 +284,25 @@ export function getBlueprintCropStats(
       index,
       completedCropPerfections,
     )
-  const globalHarvestEffects = getGroupedGlobalHarvestEffects(blueprint)
+  const globalPassiveEffectMultiplier =
+    getGlobalPassiveEffectMultiplier(
+      blueprint,
+      completedCropPerfections,
+    )
+  const globalHarvestEffects = getGroupedGlobalHarvestEffects(
+    blueprint,
+    completedCropPerfections,
+  )
   const globalHamsterEfficiencyEffects =
     getGlobalHamsterEfficiencyEffects(
       blueprint,
       completedCropPerfections,
       rowsProducedPerSecond,
     )
-  const globalHarvestMultiplier = getGlobalHarvestMultiplier(blueprint)
+  const globalHarvestMultiplier = getGlobalHarvestMultiplier(
+    blueprint,
+    completedCropPerfections,
+  )
   const harvestYield = doesNotHarvest(crop) || harvestDestroyedByAppleTree
     ? 0
     : (getCropBaseYield(crop, completedCropPerfections) +
@@ -277,6 +310,13 @@ export function getBlueprintCropStats(
       monocropMultiplier *
       globalHarvestMultiplier *
       harvestDestructionMultiplier
+
+  if (globalPassiveEffectMultiplier !== 1) {
+    receivedEffects.push({
+      type: 'global-passive-suppression',
+      multiplier: globalPassiveEffectMultiplier,
+    })
+  }
 
   globalHarvestEffects.forEach((effect) => {
     receivedEffects.push({ type: 'global-harvest', ...effect })

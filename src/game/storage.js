@@ -152,7 +152,10 @@ export function normalizeGame(rawGame) {
     unlockedBlueprintSlotCount - 1,
   )
   const activeBlueprint = blueprintSlots[activeBlueprintSlot]
-  const hasReachedLimit = hasReachedMonocropLimit(activeBlueprint)
+  const hasReachedLimit = hasReachedMonocropLimit(
+    activeBlueprint,
+    completedCropPerfections,
+  )
   const rawFarmland =
     rawGame.farmland && typeof rawGame.farmland === 'object'
       ? rawGame.farmland

@@ -25,9 +25,11 @@ import {
   getColumnsProducedPerSecond,
   getColumnsProducedForTick,
   getFieldsPlanted,
+  getGlobalPassiveEffectMultiplier,
   grantNextBlueprintExpansion,
   getLeechingGourdFootprint,
   getLeechingGourdTurnipEffect,
+  getMonocropThresholdBonus,
   getProductionForTick,
   getRowDuplicatorEffectivenessMultiplier,
   getRowsProducedForTick,
@@ -930,6 +932,85 @@ test('Sweet Potato perfection adds an unboostable Rows-per-second bonus', () => 
       multiplier: 3,
     },
   )
+})
+test('Splitweed costs 6e39 Crops and stays locked before Row Duplicators', () => {
+  const lockedGame = {
+    crops: CROP_PERFECTIONS.splitweed.cost,
+    hasUnlockedCropPerfection: true,
+    hasUnlockedRowDuplicators: false,
+    completedCropPerfections: [],
+  }
+  const eligibleGame = {
+    ...lockedGame,
+    hasUnlockedRowDuplicators: true,
+  }
+
+  assert.equal(CROP_PERFECTIONS.splitweed.cost, 6e39)
+  assert.equal(CROP_PERFECTIONS.splitweed.requiresRowDuplicators, true)
+  assert.equal(getCropName('knotweed'), 'Knotweed')
+  assert.equal(getCropName('knotweed', ['splitweed']), 'Splitweed')
+  assert.equal(canUnlockCropPerfection(lockedGame, 'splitweed'), false)
+  assert.equal(canUnlockCropPerfection(eligibleGame, 'splitweed'), true)
+  assert.deepEqual(unlockCropPerfection(eligibleGame, 'splitweed'), {
+    ...eligibleGame,
+    crops: 0,
+    completedCropPerfections: ['splitweed'],
+  })
+})
+
+test('Splitweed suppresses global Crop passives unless Gourd nullifies it', () => {
+  const unprotectedBlueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['lentil', 'leek', 'knotweed'],
+  })
+  const gourdProtectedBlueprint = createBlueprint({
+    rows: 3,
+    columns: 3,
+    cells: [
+      'leechingGourd',
+      'leechingGourdPart',
+      'knotweed',
+      'leechingGourdPart',
+      'leechingGourdPart',
+      null,
+      'lentil',
+      null,
+      'leek',
+    ],
+  })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(
+    getGlobalPassiveEffectMultiplier(unprotectedBlueprint, ['splitweed']),
+    0,
+  )
+  assert.equal(
+    getCropProductionPerSecond(unprotectedBlueprint, farmland, ['splitweed']),
+    16,
+  )
+  assert.equal(
+    getGlobalPassiveEffectMultiplier(gourdProtectedBlueprint, ['splitweed']),
+    1,
+  )
+  assert.equal(
+    getLeechingGourdTurnipEffect(gourdProtectedBlueprint, ['splitweed'])
+      .debuffContribution,
+    4,
+  )
+})
+
+test('each Splitweed raises the monocrop threshold by one', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['leek', 'leek', 'leek', 'knotweed'],
+  })
+
+  assert.equal(getMonocropThresholdBonus(blueprint), 0)
+  assert.equal(getMonocropThresholdBonus(blueprint, ['splitweed']), 1)
+  assert.equal(getBlueprintMonocropMultiplier(blueprint), 0.5)
+  assert.equal(getBlueprintMonocropMultiplier(blueprint, ['splitweed']), 1)
 })
 test('Pumpkins yield five Crops and halve adjacent crop buffs and debuffs', () => {
   const blueprint = createBlueprint({

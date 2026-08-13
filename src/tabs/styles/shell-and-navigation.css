@@ -274,33 +274,6 @@ h2 {
   background: var(--panel-raised);
 }
 
-.milestone-invention-card {
-  border-color: #a88a32;
-  background: linear-gradient(135deg, #29230f, var(--panel-raised) 58%);
-}
-
-.milestone-invention-card h2,
-.milestone-invention-card .eyebrow {
-  color: var(--crop-gold);
-}
-
-.milestone-invention-card .primary-button {
-  border-color: #d4af37;
-  color: #fff4bf;
-  background: #755b13;
-}
-
-.milestone-invention-card .primary-button:hover:not(:disabled) {
-  border-color: #ffe27a;
-  background: #92731b;
-}
-
-.milestone-invention-card .primary-button:disabled {
-  border-color: #685b31;
-  color: #9c916a;
-  background: #352f1e;
-}
-
 .invention-card p:last-child {
   max-width: 530px;
   margin: 9px 0 0;

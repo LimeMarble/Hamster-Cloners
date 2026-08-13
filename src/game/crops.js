@@ -195,6 +195,21 @@ export const CROP_PERFECTIONS = {
     effectDescription:
       'Globally multiplies Hamster Efficiency by 1 + Sweet Potatoes × log10(Rows/sec) · this multiplier cannot be boosted',
   },
+  splitweed: {
+    id: 'splitweed',
+    cropId: 'knotweed',
+    name: 'Splitweed',
+    cost: 6e39,
+    hasDebuff: true,
+    isHarmful: false,
+    globalPassiveEffectMultiplier: 0,
+    gourdAdjacencyContribution: 4,
+    requiresRowDuplicators: true,
+    monocropThresholdBonusPerCrop: 1,
+    baseEffectDescription: '0 Crops per slot · −10 adjacent Crop harvest',
+    effectDescription:
+      '×0 global Crop passive effects unless nullified by Leeching Gourd · counts as 4 debuff crops for Leeching Gourd adjacency · +1 Monocrop limit per Splitweed · cannot be boosted',
+  },
 }
 
 export const CROP_PERFECTION_IDS = Object.keys(CROP_PERFECTIONS)

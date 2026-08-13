@@ -195,6 +195,14 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'global-passive-suppression') {
+              return (
+                <li key={effect.type + '-' + effectIndex}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Crop passive effects from Splitweed (cannot be boosted)
+                </li>
+              )
+            }
+
             if (effect.type === 'global-hamster-efficiency') {
               return (
                 <li key={effectIndex}>

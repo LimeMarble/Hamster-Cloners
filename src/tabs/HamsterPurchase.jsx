@@ -21,9 +21,9 @@ export function HamsterPurchase({
       <div className="section-heading">
         <div>
           <p className="eyebrow">Workforce</p>
-          <h2>Hamster Replicators</h2>
+          <h2>Hamster Cloners</h2>
         </div>
-        <span className="hamster-badge" aria-label={`${game.hamsters} hamster replicators`}>
+        <span className="hamster-badge" aria-label={`${game.hamsters} hamster cloners`}>
           {game.hamsters}
         </span>
       </div>

@@ -14,6 +14,7 @@ import {
   getNextHamsterCost,
   getNextMajorProgressionGoal,
   getNextRowDuplicatorCost,
+  getMonocropThresholdBonus,
   getRowDuplicatorEffectivenessMultiplier,
   getRowsProducedPerSecond,
   getRowDuplicatorCoordinationMultiplier,
@@ -147,15 +148,26 @@ export function useGameDerivedState(game) {
   )
   const blueprintSlots = useMemo(() => getBlueprintSlots(game), [game])
   const unlockedBlueprintSlotCount = getUnlockedBlueprintSlotCount(game)
+  const monocropThresholdBonus = getMonocropThresholdBonus(
+    game.blueprint,
+    game.completedCropPerfections,
+  )
   const monocropLimit = Math.ceil(
     getMonocropThreshold(
       game.blueprint.rows * game.blueprint.columns,
+      monocropThresholdBonus,
     ),
   )
-  const monocropPenaltyMultiplier =
-    getBlueprintMonocropMultiplier(game.blueprint)
+  const monocropPenaltyMultiplier = getBlueprintMonocropMultiplier(
+    game.blueprint,
+    game.completedCropPerfections,
+  )
   const showMonocropLimit =
-    game.hasSeenMonocropLimit || hasReachedMonocropLimit(game.blueprint)
+    game.hasSeenMonocropLimit ||
+    hasReachedMonocropLimit(
+      game.blueprint,
+      game.completedCropPerfections,
+    )
   const formattedTotalHamstersHired = getCachedFormattedNumber(
     game.totalHamstersHired,
     0,
@@ -216,10 +228,12 @@ export function useGameDerivedState(game) {
     canUnlockMirrorCorn: canUnlockCropPerfection(game, 'mirrorCorn'),
     canUnlockLeechingGourd: canUnlockCropPerfection(game, 'leechingGourd'),
     canUnlockSweetPotato: canUnlockCropPerfection(game, 'sweetPotato'),
+    canUnlockSplitweed: canUnlockCropPerfection(game, 'splitweed'),
     canUnlockRows: canUnlockRowDuplicators(game),
     hasEnrichingLeek: completedCropPerfections.includes('enrichingLeek'),
     hasMirrorCorn: completedCropPerfections.includes('mirrorCorn'),
     hasLeechingGourd: completedCropPerfections.includes('leechingGourd'),
     hasSweetPotato: completedCropPerfections.includes('sweetPotato'),
+    hasSplitweed: completedCropPerfections.includes('splitweed'),
   }
 }

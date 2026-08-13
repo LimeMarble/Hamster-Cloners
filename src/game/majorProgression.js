@@ -178,6 +178,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     requiresAction: true,
   },
   createPerfectionGoal('sweetPotato'),
+  createPerfectionGoal('splitweed'),
   createCropGoal({
     id: 'crop-sunflower',
     title: 'Unlock Sunflower',

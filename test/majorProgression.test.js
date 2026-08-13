@@ -25,6 +25,7 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'perfection-leechingGourd',
       'row-duplicators',
       'perfection-sweetPotato',
+      'perfection-splitweed',
       'crop-sunflower',
     ],
   )
@@ -92,6 +93,20 @@ test('major progression advances to the earliest unfinished goal', () => {
   const sweetPotatoGoal = getNextMajorProgressionGoal(game)
   assert.equal(sweetPotatoGoal.id, 'perfection-sweetPotato')
   assert.equal(sweetPotatoGoal.isReady, true)
+
+  game = {
+    ...game,
+    completedCropPerfections: [
+      'enrichingLeek',
+      'mirrorCorn',
+      'leechingGourd',
+      'sweetPotato',
+    ],
+    crops: 6e39,
+  }
+  const splitweedGoal = getNextMajorProgressionGoal(game)
+  assert.equal(splitweedGoal.id, 'perfection-splitweed')
+  assert.equal(splitweedGoal.isReady, true)
 
   game = {
     ...game,

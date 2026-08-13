@@ -51,10 +51,16 @@ export function useBlueprintEditor({
       Math.max(0, Math.floor(Number(currentGame.activeBlueprintSlot) || 0)),
       currentBlueprintSlots.length - 1,
     )
-    const hasReachedLimit = hasReachedMonocropLimit(nextBlueprint)
+    const hasReachedLimit = hasReachedMonocropLimit(
+      nextBlueprint,
+      currentGame.completedCropPerfections,
+    )
     const hasJustReachedLimit =
       !currentGame.hasSeenMonocropLimit &&
-      !hasReachedMonocropLimit(currentGame.blueprint) &&
+      !hasReachedMonocropLimit(
+        currentGame.blueprint,
+        currentGame.completedCropPerfections,
+      ) &&
       hasReachedLimit
 
     updateGame(() => ({

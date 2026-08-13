@@ -11,15 +11,18 @@ export function Inventions({
   canUnlockMirrorCorn,
   canUnlockLeechingGourd,
   canUnlockSweetPotato,
+  canUnlockSplitweed,
   canUnlockRows,
   hasEnrichingLeek,
   hasMirrorCorn,
   hasLeechingGourd,
   hasSweetPotato,
+  hasSplitweed,
   onUnlockEnrichingLeek,
   onUnlockMirrorCorn,
   onUnlockLeechingGourd,
   onUnlockSweetPotato,
+  onUnlockSplitweed,
   onRequestRowDuplicatorUnlock,
   onRequestBlueprintExpansion,
   pendingBlueprintExpansion,
@@ -213,6 +216,52 @@ export function Inventions({
                     /{' '}
                     <FormattedNumber
                       value={CROP_PERFECTIONS.sweetPotato.cost}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    Crops
+                  </p>
+                ) : null}
+                <article className="invention-card crop-perfection-card">
+                  <div>
+                    <p className="eyebrow">Knotweed perfection</p>
+                    <h2>{CROP_PERFECTIONS.splitweed.name}</h2>
+                    <p>
+                      Suppress global Crop passives to ×0 unless Leeching Gourd
+                      nullifies the debuff. Splitweed counts as four debuff
+                      crops for Gourd adjacency and raises the Monocrop limit
+                      by 1 per planted Splitweed. This effect cannot be boosted.
+                    </p>
+                  </div>
+                  {hasSplitweed ? (
+                    <span className="invention-complete">Perfected</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={onUnlockSplitweed}
+                      disabled={!canUnlockSplitweed}
+                    >
+                      Spend{' '}
+                      <FormattedNumber
+                        value={CROP_PERFECTIONS.splitweed.cost}
+                        maximumFractionDigits={0}
+                      />{' '}
+                      Crops
+                    </button>
+                  )}
+                </article>
+                {!hasSplitweed ? (
+                  <p className="invention-progress">
+                    <FormattedNumber
+                      value={Math.min(
+                        game.crops,
+                        CROP_PERFECTIONS.splitweed.cost,
+                      )}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    /{' '}
+                    <FormattedNumber
+                      value={CROP_PERFECTIONS.splitweed.cost}
                       maximumFractionDigits={0}
                     />{' '}
                     Crops

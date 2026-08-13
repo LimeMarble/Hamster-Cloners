@@ -21,6 +21,7 @@ import {
   getGlobalHamsterEfficiencyMultiplier,
   getGlobalHarvestMultiplier,
   getMirrorCornEffectMultiplier,
+  getMonocropThresholdBonus,
   getPlantedCropCount,
   getRootTunnelAdjacencyStrength,
 } from './cropEffects.js'
@@ -31,6 +32,10 @@ export function getCropHamsterEfficiencyMultiplier(
   rowsProducedPerSecond = 0,
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
+  const monocropThresholdBonus = getMonocropThresholdBonus(
+    blueprint,
+    completedCropPerfections,
+  )
   const cropCounts = Object.fromEntries(
     Object.keys(CROP_DEFINITIONS).map((crop) => [
       crop,
@@ -50,6 +55,7 @@ export function getCropHamsterEfficiencyMultiplier(
     const monocropMultiplier = getMonocropYieldMultiplier(
       cropCounts[crop],
       fieldSize,
+      monocropThresholdBonus,
     )
     const adjustForMonocrop = (bonus) =>
       bonus > 0 ? bonus * monocropMultiplier : bonus / monocropMultiplier
@@ -58,6 +64,7 @@ export function getCropHamsterEfficiencyMultiplier(
       index,
       crop,
       baseHamsterEfficiencyBonus < 0,
+      completedCropPerfections,
     )
     const mirrorCornEffectMultiplier = getMirrorCornEffectMultiplier(
       blueprint,
@@ -91,6 +98,10 @@ export function getRowDuplicatorEffectivenessMultiplier(
   completedCropPerfections = [],
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
+  const monocropThresholdBonus = getMonocropThresholdBonus(
+    blueprint,
+    completedCropPerfections,
+  )
   const cropCounts = Object.fromEntries(
     Object.keys(CROP_DEFINITIONS).map((crop) => [
       crop,
@@ -109,6 +120,7 @@ export function getRowDuplicatorEffectivenessMultiplier(
       const monocropMultiplier = getMonocropYieldMultiplier(
         cropCounts[crop],
         fieldSize,
+        monocropThresholdBonus,
       )
       const adjustedBonus =
         baseEffectivenessBonus > 0
@@ -119,6 +131,7 @@ export function getRowDuplicatorEffectivenessMultiplier(
         index,
         crop,
         baseEffectivenessBonus < 0,
+        completedCropPerfections,
       )
       const mirrorCornEffectMultiplier = getMirrorCornEffectMultiplier(
         blueprint,
@@ -141,6 +154,10 @@ export function getRowDuplicatorEffectivenessMultiplier(
 
 export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
   const fieldSize = blueprint.rows * blueprint.columns
+  const monocropThresholdBonus = getMonocropThresholdBonus(
+    blueprint,
+    completedCropPerfections,
+  )
   const cropCounts = Object.fromEntries(
     Object.keys(CROP_DEFINITIONS).map((crop) => [
       crop,
@@ -161,7 +178,11 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
 
     const adjacentConnections = getAdjacentCropConnections(blueprint, index)
     const harvestDestructionMultiplier =
-      getAdjacentHarvestDestructionMultiplier(blueprint, index)
+      getAdjacentHarvestDestructionMultiplier(
+        blueprint,
+        index,
+        completedCropPerfections,
+      )
     const adjacentYieldBonus = adjacentConnections.reduce(
       (totalBonus, { index: neighborIndex, adjacencyDistance }) => {
         const neighborCrop = blueprint.cells[neighborIndex]
@@ -182,6 +203,7 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
               neighborIndex,
               neighborCrop,
               baseCropYieldBonus < 0,
+              completedCropPerfections,
             ) *
             getMirrorCornEffectMultiplier(
               blueprint,
@@ -201,6 +223,7 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
     const monocropMultiplier = getMonocropYieldMultiplier(
       cropCounts[crop],
       fieldSize,
+      monocropThresholdBonus,
     )
 
     return (
@@ -213,7 +236,13 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
     )
   }, 0)
 
-  return baseIncome * getGlobalHarvestMultiplier(blueprint)
+  return (
+    baseIncome *
+    getGlobalHarvestMultiplier(
+      blueprint,
+      completedCropPerfections,
+    )
+  )
 }
 
 
