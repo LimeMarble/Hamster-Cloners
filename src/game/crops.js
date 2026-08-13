@@ -157,7 +157,7 @@ export const CROP_PERFECTIONS = {
     id: 'mirrorCorn',
     cropId: 'corn',
     name: 'Mirror Corn',
-    cost: 8e13,
+    cost: 4e12,
     baseYield: 5,
     hamsterEfficiencyBonus: -0.5,
     diagonalTargetEffectMultiplier: 4,
