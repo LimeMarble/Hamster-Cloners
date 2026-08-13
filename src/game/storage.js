@@ -15,6 +15,7 @@ import {
   KNOTWEED_UNLOCK_CROP_COUNT,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
+  isCropTemporarilyUnavailable,
 } from './crops.js'
 
 export const DEFAULT_SAVE_KEY = 'hamster-cloners-save-v1'
@@ -62,6 +63,15 @@ function toNonNegativeInteger(value, fallback) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback
 }
 
+function removeTemporarilyUnavailableCrops(blueprint) {
+  return createBlueprint({
+    ...blueprint,
+    cells: blueprint.cells.map((cropId) =>
+      isCropTemporarilyUnavailable(cropId) ? null : cropId,
+    ),
+  })
+}
+
 export function normalizeGame(rawGame) {
   const initialGame = createInitialGame()
 
@@ -71,7 +81,7 @@ export function normalizeGame(rawGame) {
 
   const hasCurrentBlueprintAxes = rawGame.blueprintExpansionAxesSwapped === true
   const blueprint = hasCurrentBlueprintAxes
-    ? createBlueprint(rawGame.blueprint)
+    ? removeTemporarilyUnavailableCrops(createBlueprint(rawGame.blueprint))
     : createBlueprint({ cells: ['leek'] })
   const validExpansionIds = new Set(
     BLUEPRINT_EXPANSIONS.map((expansion) => expansion.id),
@@ -98,28 +108,36 @@ export function normalizeGame(rawGame) {
     hasCurrentBlueprintAxes && Array.isArray(rawGame.blueprintSlots)
       ? rawGame.blueprintSlots
       : []
-  const blueprintSlotCount = getUnlockedBlueprintSlotCount({
+  const unlockedBlueprintSlotCount = getUnlockedBlueprintSlotCount({
     blueprint,
-    hasUnlockedRootTunnel,
+    unionized: rawGame.unionized === true,
+    hamsters: toNonNegativeInteger(rawGame.hamsters, initialGame.hamsters),
+    hasUnlockedRowDuplicators: rawGame.hasUnlockedRowDuplicators === true,
   })
+  const blueprintSlotCount = Math.max(
+    unlockedBlueprintSlotCount,
+    Math.min(3, rawBlueprintSlots.length),
+  )
   const blueprintSlots = Array.from(
     { length: blueprintSlotCount },
     (_, slotIndex) => {
       const rawSlot = rawBlueprintSlots[slotIndex]
 
       return rawSlot && typeof rawSlot === 'object'
-        ? createBlueprint({
-            rows: blueprint.rows,
-            columns: blueprint.columns,
-            cells: rawSlot.cells,
-            mirrorCornTargets: rawSlot.mirrorCornTargets,
-          })
+        ? removeTemporarilyUnavailableCrops(
+            createBlueprint({
+              rows: blueprint.rows,
+              columns: blueprint.columns,
+              cells: rawSlot.cells,
+              mirrorCornTargets: rawSlot.mirrorCornTargets,
+            }),
+          )
         : createBlueprint(blueprint)
     },
   )
   const activeBlueprintSlot = Math.min(
     Math.max(0, Math.floor(Number(rawGame.activeBlueprintSlot) || 0)),
-    blueprintSlots.length - 1,
+    unlockedBlueprintSlotCount - 1,
   )
   const activeBlueprint = blueprintSlots[activeBlueprintSlot]
   const hasReachedLimit = hasReachedMonocropLimit(activeBlueprint)

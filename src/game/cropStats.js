@@ -153,6 +153,7 @@ export function getBlueprintCropStats(
           blueprint,
           neighborIndex,
           sourceCropId,
+          baseCropYieldBonus < 0,
         ) *
         getMirrorCornEffectMultiplier(
           blueprint,
@@ -219,6 +220,7 @@ export function getBlueprintCropStats(
             blueprint,
             neighborIndex,
             sourceCropId,
+            baseCropYieldBonus < 0,
           ) *
           getMirrorCornEffectMultiplier(
             blueprint,
@@ -238,8 +240,13 @@ export function getBlueprintCropStats(
       )
     : null
   const cropEffectMultiplier =
-    baseHamsterEfficiencyBonus > 0
-      ? getAdjacentCropEffectMultiplier(blueprint, index, crop)
+    baseHamsterEfficiencyBonus !== 0
+      ? getAdjacentCropEffectMultiplier(
+          blueprint,
+          index,
+          crop,
+          baseHamsterEfficiencyBonus < 0,
+        )
       : 1
   const adjustForMonocrop = (bonus) =>
     bonus > 0 ? bonus * monocropMultiplier : bonus / monocropMultiplier

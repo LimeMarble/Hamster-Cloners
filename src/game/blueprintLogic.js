@@ -2,6 +2,7 @@ import {
   CROP_DEFINITIONS,
   CROP_PERFECTIONS,
   CROP_PERFECTION_IDS,
+  SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
   hasCropPerfection,
   isKnownCrop,
 } from './crops.js'
@@ -180,13 +181,15 @@ export function createInitialGame() {
 }
 
 export function getUnlockedBlueprintSlotCount(game) {
-  const blueprint = createBlueprint(game.blueprint)
-
-  if (game.hasUnlockedRootTunnel === true) {
+  if (game.hasUnlockedRowDuplicators === true) {
     return 3
   }
 
-  return blueprint.columns > 1 ? 2 : 1
+  return game.unionized === true &&
+    Math.max(0, Math.floor(Number(game.hamsters) || 0)) >=
+      SWEET_POTATO_UNLOCK_HAMSTER_COUNT
+    ? 2
+    : 1
 }
 
 export function getBlueprintSlots(game) {
@@ -450,8 +453,8 @@ function applyBlueprintExpansion(game, expansion) {
   const nextBlueprint = expandedBlueprintSlots[activeBlueprintSlot] ??
     expandBlueprint(currentBlueprint)
   const nextBlueprintSlotCount = getUnlockedBlueprintSlotCount({
+    ...game,
     blueprint: nextBlueprint,
-    hasUnlockedRootTunnel: game.hasUnlockedRootTunnel,
   })
 
   while (expandedBlueprintSlots.length < nextBlueprintSlotCount) {

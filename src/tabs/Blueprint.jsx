@@ -32,13 +32,13 @@ export function Blueprint({
       </div>
 
       <nav className="blueprint-slots" aria-label="Blueprint slots">
-        {[0, 1, 2].map((slotIndex) => {
+        {(game.hasUnlockedKnotweed ? [0, 1, 2] : [0, 1]).map((slotIndex) => {
           const unlocked =
             slotIndex < unlockedBlueprintSlotCount &&
             Boolean(blueprintSlots[slotIndex])
           const active = game.activeBlueprintSlot === slotIndex
           const unlockHint =
-            slotIndex === 1 ? 'Unlocks with Corn' : 'Unlocks with Root Tunnel'
+            slotIndex === 1 ? 'Unlocks with Potato' : 'Unlocks with Sunflower'
 
           return (
             <button

@@ -98,7 +98,7 @@ export function useGameState(isEditingBlueprintRef) {
           currentBlueprintSlots.length - 1,
         )
         const requiredBlueprintSlotCount = getUnlockedBlueprintSlotCount({
-          blueprint: currentGame.blueprint,
+          ...currentGame,
           hasUnlockedRootTunnel,
         })
         const nextBlueprintSlots = [...currentBlueprintSlots]

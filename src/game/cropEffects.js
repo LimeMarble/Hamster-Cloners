@@ -100,21 +100,44 @@ export function getDiagonalTileIndexes(blueprint, index) {
   return diagonalIndexes
 }
 
-export function getAdjacentCropEffectMultiplier(blueprint, index, crop) {
+export function getLeechingGourdDebuffMultiplier(blueprint, index) {
+  const connection = getLeechingGourdAdjacentCropConnections(blueprint).find(
+    ({ index: cropIndex }) => cropIndex === index,
+  )
+
+  return connection
+    ? 1 - getRootTunnelAdjacencyStrength(connection.adjacencyDistance)
+    : 1
+}
+
+export function getAdjacentCropEffectMultiplier(
+  blueprint,
+  index,
+  crop,
+  isDebuff = false,
+) {
+  const gourdDebuffMultiplier = isDebuff
+    ? getLeechingGourdDebuffMultiplier(blueprint, index)
+    : 1
+
   if (isCropEffectModifier(crop)) {
-    return 1
+    return gourdDebuffMultiplier
   }
 
-  return getAdjacentCropConnections(blueprint, index).reduce(
-    (multiplier, { index: neighborIndex, adjacencyDistance }) =>
-      multiplier *
-      getAdjacentCropEffectModifier(
-        blueprint,
-        blueprint.cells[neighborIndex],
-        crop,
-        adjacencyDistance,
-      ),
-    1,
+  return (
+    gourdDebuffMultiplier *
+    getAdjacentCropConnections(blueprint, index).reduce(
+      (multiplier, { index: neighborIndex, adjacencyDistance }) =>
+        multiplier *
+        getAdjacentCropEffectModifier(
+          blueprint,
+          blueprint.cells[neighborIndex],
+          crop,
+          adjacencyDistance,
+          isDebuff,
+        ),
+      1,
+    )
   )
 }
 
@@ -133,7 +156,14 @@ export function getAdjacentHarvestDestructionEffects(blueprint, index) {
         return []
       }
 
-      const strength = getRootTunnelAdjacencyStrength(adjacencyDistance)
+      const strength =
+        getRootTunnelAdjacencyStrength(adjacencyDistance) *
+        getAdjacentCropEffectMultiplier(
+          blueprint,
+          sourceIndex,
+          blueprint.cells[sourceIndex],
+          true,
+        )
       return [
         {
           sourceIndex,
@@ -223,13 +253,18 @@ export function getAdjacentCropEffectModifier(
   crop,
   targetCrop,
   adjacencyDistance = 0,
+  isDebuff = false,
 ) {
-  const adjacentCropEffectModifier =
-    CROP_DEFINITIONS[crop]?.adjacentCropEffectModifier
+  const cropDefinition = CROP_DEFINITIONS[crop]
+  const adjacentCropEffectModifier = cropDefinition?.adjacentCropEffectModifier
 
   // These effect modifiers are protected passive effects, so they never
-  // receive a Mirror Corn boost.
-  if (adjacentCropEffectModifier === undefined) {
+  // receive a Mirror Corn boost. Only explicit debuff modifiers affect
+  // negative effects; Turnip remains a bonus-only effect enhancer.
+  if (
+    adjacentCropEffectModifier === undefined ||
+    (isDebuff && cropDefinition.modifiesDebuffs !== true)
+  ) {
     return 1
   }
 
@@ -276,7 +311,12 @@ export function getGlobalHarvestEffects(blueprint) {
     const adjustedBonus =
       (globalHarvestMultiplier - 1) *
       monocropMultiplier *
-      getAdjacentCropEffectMultiplier(blueprint, index, crop)
+      getAdjacentCropEffectMultiplier(
+        blueprint,
+        index,
+        crop,
+        globalHarvestMultiplier < 1,
+      )
 
     return [
       {

@@ -761,7 +761,7 @@ test('Turnips and Pumpkins modify Apple Tree external Crop buffs', () => {
   )
   assert.equal(
     getCropProductionPerSecond(pumpkinBlueprint, farmland, ['enrichingLeek']),
-    14.5,
+    17.5,
   )
 })
 
@@ -849,7 +849,7 @@ test('Enriching Leek costs 20 billion Crops to unlock', () => {
   })
 })
 
-test('Pumpkins yield five Crops and halve adjacent crop buffs', () => {
+test('Pumpkins yield five Crops and halve adjacent crop buffs and debuffs', () => {
   const blueprint = createBlueprint({
     rows: 1,
     columns: 2,
@@ -864,6 +864,55 @@ test('Pumpkins yield five Crops and halve adjacent crop buffs', () => {
     ),
     6,
   )
+})
+
+test('Pumpkins halve adjacent Hamster, harvest, and destruction debuffs', () => {
+  const cornBlueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['pumpkin', 'corn'],
+  })
+  const knotweedBlueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['pumpkin', 'knotweed', 'leek'],
+  })
+  const appleTreeBlueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['pumpkin', 'appleTree', 'leek'],
+  })
+
+  assert.equal(getCropHamsterEfficiencyMultiplier(cornBlueprint), 0.95)
+  assert.equal(getBlueprintCropStats(knotweedBlueprint, 2).harvestYield, -4)
+  assert.equal(getBlueprintCropStats(appleTreeBlueprint, 2).harvestYield, 0.5)
+})
+
+test('Leeching Gourd nullifies adjacent debuffs without losing their contribution', () => {
+  const createGourdBlueprint = (sourceCrop, targetCrop) =>
+    createBlueprint({
+      rows: 3,
+      columns: 3,
+      cells: [
+        'leechingGourd',
+        'leechingGourdPart',
+        sourceCrop,
+        'leechingGourdPart',
+        'leechingGourdPart',
+        targetCrop,
+        null,
+        null,
+        null,
+      ],
+    })
+  const cornBlueprint = createGourdBlueprint('corn', 'leek')
+  const knotweedBlueprint = createGourdBlueprint('knotweed', 'leek')
+  const appleTreeBlueprint = createGourdBlueprint('appleTree', 'leek')
+
+  assert.equal(getCropHamsterEfficiencyMultiplier(cornBlueprint), 1)
+  assert.equal(getBlueprintCropStats(knotweedBlueprint, 5).harvestYield, 1)
+  assert.equal(getBlueprintCropStats(appleTreeBlueprint, 5).harvestYield, 1)
+  assert.equal(getLeechingGourdTurnipEffect(knotweedBlueprint).debuffContribution, 2)
 })
 
 test('Leeching Gourd uses a single valid 2×2 footprint', () => {
@@ -919,10 +968,10 @@ test('Leeching Gourd boosts all Turnips from adjacent debuffs, with harmful crop
   })
 
   // Corn contributes one +5% stack and harmful Knotweed contributes two,
-  // raising Turnip's ×2 effect to ×2.3 on the adjacent Potato. Corn's own
-  // −10% Hamster Efficiency effect remains additive alongside that bonus.
+  // raising Turnip's ×2 effect to ×2.3 on the adjacent Potato. The Gourd
+  // nullifies Corn's adjacent −10% Hamster Efficiency effect.
   assert.ok(
-    Math.abs(getCropHamsterEfficiencyMultiplier(blueprint) - 1.475) < 1e-12,
+    Math.abs(getCropHamsterEfficiencyMultiplier(blueprint) - 1.575) < 1e-12,
   )
   assert.deepEqual(
     getBlueprintCropStats(blueprint, 12).receivedEffects,
@@ -950,7 +999,7 @@ test('Leeching Gourd debuff contributions decay through Root Tunnels', () => {
       'leechingGourd',
       'leechingGourdPart',
       null,
-      null,
+      'leek',
       null,
       'leechingGourdPart',
       'leechingGourdPart',
@@ -991,8 +1040,9 @@ test('Leeching Gourd debuff contributions decay through Root Tunnels', () => {
     },
   ])
   assert.ok(
-    Math.abs(getCropHamsterEfficiencyMultiplier(blueprint) - 1.465) < 1e-12,
+    Math.abs(getCropHamsterEfficiencyMultiplier(blueprint) - 1.565) < 1e-12,
   )
+  assert.ok(Math.abs(getBlueprintCropStats(blueprint, 15).harvestYield + 1) < 1e-12)
 })
 test('Leeching Gourd costs 2 Qn Crops and receives no Mirror Corn effect', () => {
   const game = {
@@ -1137,7 +1187,7 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
   ])
   assert.equal(LENTIL_UNLOCK_CROP_COUNT, 8e15)
   assert.equal(KNOTWEED_UNLOCK_CROP_COUNT, 2e18)
-  assert.equal(ROOT_TUNNEL_UNLOCK_CROP_COUNT, 216e18)
+  assert.equal(ROOT_TUNNEL_UNLOCK_CROP_COUNT, Number.POSITIVE_INFINITY)
   assert.deepEqual(
     getUnlockedCropIds(expandedBlueprint, true, 125, true, true, true),
     ['leek', 'corn', 'pumpkin', 'sweetPotato', 'turnip', 'appleTree', 'lentil'],
@@ -1163,7 +1213,6 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
       'appleTree',
       'lentil',
       'knotweed',
-      'rootTunnel',
       'sunflower',
     ],
   )
@@ -1408,7 +1457,7 @@ test('testing expansion grants follow each configured track and stop at its cap'
   assert.equal(revokeLastBlueprintExpansion(game, 'row'), null)
 })
 
-test('blueprint slots unlock with Corn and Root Tunnel and retain separate layouts', () => {
+test('blueprint slots unlock with Potato and Sunflower and retain separate layouts', () => {
   const startingBlueprint = createBlueprint({ cells: ['leek'] })
   const cornBlueprint = createBlueprint({
     rows: 1,
@@ -1421,13 +1470,25 @@ test('blueprint slots unlock with Corn and Root Tunnel and retain separate layou
     1,
   )
   assert.equal(
-    getUnlockedBlueprintSlotCount({ blueprint: cornBlueprint }),
+    getUnlockedBlueprintSlotCount({
+      blueprint: cornBlueprint,
+      unionized: true,
+      hamsters: 124,
+    }),
+    1,
+  )
+  assert.equal(
+    getUnlockedBlueprintSlotCount({
+      blueprint: cornBlueprint,
+      unionized: true,
+      hamsters: 125,
+    }),
     2,
   )
   assert.equal(
     getUnlockedBlueprintSlotCount({
       blueprint: cornBlueprint,
-      hasUnlockedRootTunnel: true,
+      hasUnlockedRowDuplicators: true,
     }),
     3,
   )
@@ -1435,6 +1496,8 @@ test('blueprint slots unlock with Corn and Root Tunnel and retain separate layou
   const firstColumnResult = resetForBlueprintExpansion(
     {
       crops: 1e4,
+      unionized: true,
+      hamsters: 125,
       blueprint: startingBlueprint,
       blueprintSlots: [startingBlueprint],
       activeBlueprintSlot: 0,

@@ -51,14 +51,12 @@ export function getCropHamsterEfficiencyMultiplier(
     )
     const adjustForMonocrop = (bonus) =>
       bonus > 0 ? bonus * monocropMultiplier : bonus / monocropMultiplier
-    const adjacentCropBonusMultiplier =
-      baseHamsterEfficiencyBonus > 0
-        ? getAdjacentCropEffectMultiplier(
-            blueprint,
-            index,
-            crop,
-          )
-        : 1
+    const adjacentCropBonusMultiplier = getAdjacentCropEffectMultiplier(
+      blueprint,
+      index,
+      crop,
+      baseHamsterEfficiencyBonus < 0,
+    )
     const mirrorCornEffectMultiplier = getMirrorCornEffectMultiplier(
       blueprint,
       index,
@@ -104,10 +102,12 @@ export function getRowDuplicatorEffectivenessMultiplier(
         baseEffectivenessBonus > 0
           ? baseEffectivenessBonus * monocropMultiplier
           : baseEffectivenessBonus / monocropMultiplier
-      const adjacentCropBonusMultiplier =
-        baseEffectivenessBonus > 0
-          ? getAdjacentCropEffectMultiplier(blueprint, index, crop)
-          : 1
+      const adjacentCropBonusMultiplier = getAdjacentCropEffectMultiplier(
+        blueprint,
+        index,
+        crop,
+        baseEffectivenessBonus < 0,
+      )
       const mirrorCornEffectMultiplier = getMirrorCornEffectMultiplier(
         blueprint,
         index,
@@ -168,6 +168,7 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
               blueprint,
               neighborIndex,
               neighborCrop,
+              baseCropYieldBonus < 0,
             ) *
             getMirrorCornEffectMultiplier(
               blueprint,

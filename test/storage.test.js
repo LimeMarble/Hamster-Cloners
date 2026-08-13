@@ -61,6 +61,8 @@ test('current saves retain valid Mirror Corn diagonal tile targets', () => {
 test('current saves retain independent unlocked blueprint slots', () => {
   const migratedGame = normalizeGame({
     blueprintExpansionAxesSwapped: true,
+    unionized: true,
+    hamsters: 125,
     blueprint: {
       rows: 1,
       columns: 2,
@@ -77,6 +79,52 @@ test('current saves retain independent unlocked blueprint slots', () => {
   assert.equal(migratedGame.activeBlueprintSlot, 1)
   assert.deepEqual(migratedGame.blueprint.cells, ['corn', 'leek'])
   assert.deepEqual(migratedGame.blueprintSlots[0].cells, ['leek', 'corn'])
+})
+
+test('current saves remove temporarily unavailable crops from every blueprint slot', () => {
+  const migratedGame = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    hasUnlockedRootTunnel: true,
+    hasUnlockedRowDuplicators: true,
+    blueprint: {
+      rows: 1,
+      columns: 3,
+      cells: ['leek', 'rootTunnel', 'corn'],
+    },
+    blueprintSlots: [
+      { rows: 1, columns: 3, cells: ['rootTunnel', 'corn', 'leek'] },
+      { rows: 1, columns: 3, cells: ['leek', 'rootTunnel', 'corn'] },
+      { rows: 1, columns: 3, cells: ['corn', 'leek', 'rootTunnel'] },
+    ],
+    activeBlueprintSlot: 1,
+  })
+
+  assert.equal(migratedGame.blueprintSlots.length, 3)
+  assert.deepEqual(
+    migratedGame.blueprintSlots.map((blueprint) => blueprint.cells),
+    [
+      [null, 'corn', 'leek'],
+      ['leek', null, 'corn'],
+      ['corn', 'leek', null],
+    ],
+  )
+  assert.deepEqual(migratedGame.blueprint.cells, ['leek', null, 'corn'])
+})
+test('locked migrated blueprint layouts remain stored but cannot stay active', () => {
+  const migratedGame = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    blueprint: { rows: 1, columns: 2, cells: ['leek', 'corn'] },
+    blueprintSlots: [
+      { rows: 1, columns: 2, cells: ['leek', 'corn'] },
+      { rows: 1, columns: 2, cells: ['corn', 'leek'] },
+      { rows: 1, columns: 2, cells: ['leek', 'leek'] },
+    ],
+    activeBlueprintSlot: 2,
+  })
+
+  assert.equal(migratedGame.blueprintSlots.length, 3)
+  assert.equal(migratedGame.activeBlueprintSlot, 0)
+  assert.deepEqual(migratedGame.blueprint.cells, ['leek', 'corn'])
 })
 
 test('statistics persist and older saves receive safe lifetime defaults', () => {

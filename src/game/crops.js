@@ -4,7 +4,8 @@ export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
 export const APPLE_TREE_UNLOCK_CROP_COUNT = 1e15
 export const LENTIL_UNLOCK_CROP_COUNT = 8e15
 export const KNOTWEED_UNLOCK_CROP_COUNT = 2e18
-export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = 216e18
+// The requested 1.8e308 cost exceeds the native Number range.
+export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
 export const CORN_REVEAL_HAMSTER_COUNT = 50
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
 
@@ -32,8 +33,9 @@ export const CROP_DEFINITIONS = {
     baseYield: 5,
     hamsterEfficiencyBonus: 0,
     adjacentCropEffectModifier: 0.5,
+    modifiesDebuffs: true,
     hasDebuff: true,
-    effectDescription: '5 Crops per slot · halves adjacent crop buffs',
+    effectDescription: '5 Crops per slot · halves adjacent crop buffs and debuffs',
     unlockDescription: 'Unlocks after unionization',
   },
   sweetPotato: {
@@ -95,9 +97,10 @@ export const CROP_DEFINITIONS = {
     doesNotHarvest: true,
     transfersAdjacencies: true,
     canBeMirrorCornTarget: false,
+    temporarilyUnavailable: true,
     effectDescription:
       'Transfers crop adjacencies at ×0.8 strength per tunnel tile; carries all effects except Mirror Corn.',
-    unlockDescription: 'Unlocks at 216 Qn Crops',
+    unlockDescription: 'Unlocks at 1.8e308 Crops',
   },
   sunflower: {
     name: 'Sunflower',
@@ -119,7 +122,7 @@ export const CROP_DEFINITIONS = {
     canBeMirrorCornTarget: false,
     internalOnly: true,
     effectDescription:
-      '+5% all Turnip effectiveness per adjacent debuff; harmful crops count twice',
+      'Nullifies adjacent crop debuffs · +5% all Turnip effectiveness per adjacent debuff; harmful crops count twice',
   },
   leechingGourdPart: {
     name: 'Leeching Gourd',
@@ -136,7 +139,9 @@ export const CROP_DEFINITIONS = {
 
 const KNOWN_CROP_IDS = Object.keys(CROP_DEFINITIONS)
 export const CROP_IDS = KNOWN_CROP_IDS.filter(
-  (cropId) => CROP_DEFINITIONS[cropId].internalOnly !== true,
+  (cropId) =>
+    CROP_DEFINITIONS[cropId].internalOnly !== true &&
+    !isCropTemporarilyUnavailable(cropId),
 )
 
 export const CROP_PERFECTIONS = {
@@ -168,7 +173,7 @@ export const CROP_PERFECTIONS = {
     cost: 2e18,
     baseEffectDescription: 'Occupies one 2×2 block and produces no Crops',
     effectDescription:
-      '+5% all Turnip effectiveness per adjacent debuff; harmful crops count twice',
+      'Nullifies adjacent crop debuffs · +5% all Turnip effectiveness per adjacent debuff; harmful crops count twice',
   },
 }
 
@@ -176,6 +181,10 @@ export const CROP_PERFECTION_IDS = Object.keys(CROP_PERFECTIONS)
 
 export function isKnownCrop(crop) {
   return KNOWN_CROP_IDS.includes(crop)
+}
+
+export function isCropTemporarilyUnavailable(cropId) {
+  return CROP_DEFINITIONS[cropId]?.temporarilyUnavailable === true
 }
 
 export function hasCropPerfection(completedCropPerfections, perfectionId) {
@@ -300,7 +309,7 @@ export function getUnlockedCropIds(
   if (hasUnlockedKnotweed) {
     unlockedCrops.push('knotweed')
   }
-  if (hasUnlockedRootTunnel) {
+  if (hasUnlockedRootTunnel && !isCropTemporarilyUnavailable('rootTunnel')) {
     unlockedCrops.push('rootTunnel')
   }
   if (hasUnlockedRowDuplicators) {
