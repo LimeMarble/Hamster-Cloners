@@ -22,7 +22,7 @@ export const BLUEPRINT_EXPANSION_CONFIG = [
   {
     id: 'column',
     title: 'Blueprint Column Expansion',
-    maximumExpansions: 6,
+    maximumExpansions: 16,
     baseCost: 1e4,
     costScale: 1e4,
     acceleratedScalingAfter: 5,
@@ -32,7 +32,7 @@ export const BLUEPRINT_EXPANSION_CONFIG = [
   {
     id: 'row',
     title: 'Blueprint Row Expansion',
-    maximumExpansions: 8,
+    maximumExpansions: 20,
     baseCost: 1e7,
     costScale: 1e2,
     acceleratedScalingAfter: 5,
