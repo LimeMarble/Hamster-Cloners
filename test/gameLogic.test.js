@@ -437,7 +437,7 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
     mirrorCornTargets: [3],
   })
 
-  assert.equal(ROOT_TUNNEL_ADJACENCY_DECAY, 0.7)
+  assert.equal(ROOT_TUNNEL_ADJACENCY_DECAY, 0.8)
   assert.deepEqual(getAdjacentCropConnections(transferBlueprint, 2), [
     { index: 0, adjacencyDistance: 1 },
   ])
@@ -450,7 +450,7 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
     7,
   )
   assert.ok(
-    Math.abs(getCropHamsterEfficiencyMultiplier(turnipBlueprint) - 1.45) <
+    Math.abs(getCropHamsterEfficiencyMultiplier(turnipBlueprint) - 1.4) <
       1e-12,
   )
   assert.equal(getCropHamsterEfficiencyMultiplier(pumpkinBlueprint), 1.25)
@@ -462,7 +462,7 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
     {
       crop: 'turnip',
       baseYield: 0.5,
-      harvestYield: 7.7,
+      harvestYield: 6.9,
       hamsterEfficiencyBonus: 0,
       harvestDestroyedByAppleTree: false,
       externalCropBuffMultiplier: null,
@@ -471,7 +471,7 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
           type: 'crop-yield',
           sourceCropId: 'leek',
           count: 1,
-          bonus: 7.2,
+          bonus: 6.4,
           adjacencyDistances: [1],
         },
       ],
@@ -484,7 +484,7 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
         type: 'crop-effect-modifier',
         sourceCropId: 'turnip',
         count: 1,
-        multiplier: 1.8,
+        multiplier: 1.6,
         adjacencyDistances: [1],
       },
     ],
@@ -492,7 +492,7 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
   assert.deepEqual(mirrorBlueprint.mirrorCornTargets, [3, null, null, null])
 })
 
-test('Root Tunnel effects decay by 0.7 for every tunnel tile crossed', () => {
+test('Root Tunnel effects decay by 0.8 for every tunnel tile crossed', () => {
   const blueprint = createBlueprint({
     rows: 1,
     columns: 4,
@@ -513,6 +513,56 @@ test('Root Tunnel effects decay by 0.7 for every tunnel tile crossed', () => {
   )
 })
 
+test('Turnip becomes a tunnel debuff after adjacency distance 3', () => {
+  const distanceThreeBlueprint = createBlueprint({
+    rows: 1,
+    columns: 5,
+    cells: [
+      'turnip',
+      'rootTunnel',
+      'rootTunnel',
+      'rootTunnel',
+      'sweetPotato',
+    ],
+  })
+  const distanceFourBlueprint = createBlueprint({
+    rows: 1,
+    columns: 6,
+    cells: [
+      'turnip',
+      'rootTunnel',
+      'rootTunnel',
+      'rootTunnel',
+      'rootTunnel',
+      'sweetPotato',
+    ],
+  })
+  const distanceThreeEffect = getBlueprintCropStats(
+    distanceThreeBlueprint,
+    4,
+  ).receivedEffects[0]
+  const distanceFourEffect = getBlueprintCropStats(
+    distanceFourBlueprint,
+    5,
+  ).receivedEffects[0]
+
+  assert.ok(
+    Math.abs(
+      distanceThreeEffect.multiplier -
+        2 * ROOT_TUNNEL_ADJACENCY_DECAY ** 3,
+    ) < 1e-12,
+  )
+  assert.ok(distanceThreeEffect.multiplier > 1)
+  assert.deepEqual(distanceThreeEffect.adjacencyDistances, [3])
+  assert.ok(
+    Math.abs(
+      distanceFourEffect.multiplier -
+        2 * ROOT_TUNNEL_ADJACENCY_DECAY ** 4,
+    ) < 1e-12,
+  )
+  assert.ok(distanceFourEffect.multiplier < 1)
+  assert.deepEqual(distanceFourEffect.adjacencyDistances, [4])
+})
 test('Root Tunnel distance attenuates Apple Tree harvest destruction', () => {
   const blueprint = createBlueprint({
     rows: 1,

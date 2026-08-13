@@ -242,7 +242,12 @@ export function getAdjacentCropEffectModifier(
       : adjacentCropEffectModifier
   const strength = getRootTunnelAdjacencyStrength(adjacencyDistance)
 
-  return 1 + (baseMultiplier - 1) * strength
+  // Turnip's entire ×2-style modifier travels through the tunnel, rather
+  // than only its +1 above baseline. At ×0.8 per tile it remains a small buff
+  // at distance 3, then becomes a debuff from distance 4 onward.
+  return crop === 'turnip'
+    ? baseMultiplier * strength
+    : 1 + (baseMultiplier - 1) * strength
 }
 
 export function getGlobalHarvestEffects(blueprint) {
