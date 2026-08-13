@@ -437,7 +437,7 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
     mirrorCornTargets: [3],
   })
 
-  assert.equal(ROOT_TUNNEL_ADJACENCY_DECAY, 0.8)
+  assert.equal(ROOT_TUNNEL_ADJACENCY_DECAY, 0.7)
   assert.deepEqual(getAdjacentCropConnections(transferBlueprint, 2), [
     { index: 0, adjacencyDistance: 1 },
   ])
@@ -492,7 +492,7 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
   assert.deepEqual(mirrorBlueprint.mirrorCornTargets, [3, null, null, null])
 })
 
-test('Root Tunnel effects decay by 0.8 for every tunnel tile crossed', () => {
+test('Root Tunnel effects decay by 0.7 for every tunnel tile crossed', () => {
   const blueprint = createBlueprint({
     rows: 1,
     columns: 4,

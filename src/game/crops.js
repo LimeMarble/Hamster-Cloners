@@ -96,7 +96,7 @@ export const CROP_DEFINITIONS = {
     transfersAdjacencies: true,
     canBeMirrorCornTarget: false,
     effectDescription:
-      'Transfers crop adjacencies at ×0.8 strength per tunnel tile; carries Turnip effects',
+      'Transfers crop adjacencies at ×0.7 strength per tunnel tile; carries Turnip effects',
     unlockDescription: 'Unlocks at 216 Qn Crops',
   },
   sunflower: {
