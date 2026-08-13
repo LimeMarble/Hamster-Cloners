@@ -10,10 +10,10 @@ import {
 } from './gameConfig.js'
 import { createFarmlandMultipliers } from './blueprintLogic.js'
 import {
-  destroysAdjacentHarvests,
   doesNotHarvest,
+  getAdjacentCropConnections,
   getAdjacentCropEffectMultiplier,
-  getAdjacentCropIndexes,
+  getAdjacentHarvestDestructionMultiplier,
   getAdjacentHarvestModifier,
   getCropBaseYield,
   getCropHamsterEfficiencyBonus,
@@ -21,6 +21,7 @@ import {
   getGlobalHarvestMultiplier,
   getMirrorCornEffectMultiplier,
   getPlantedCropCount,
+  getRootTunnelAdjacencyStrength,
 } from './cropEffects.js'
 
 export function getCropHamsterEfficiencyMultiplier(
@@ -146,39 +147,37 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
       return totalIncome
     }
 
-    if (
-      getAdjacentCropIndexes(blueprint, index).some((neighborIndex) =>
-        destroysAdjacentHarvests(blueprint.cells[neighborIndex]),
-      )
-    ) {
-      return totalIncome
-    }
+    const adjacentConnections = getAdjacentCropConnections(blueprint, index)
+    const harvestDestructionMultiplier =
+      getAdjacentHarvestDestructionMultiplier(blueprint, index)
+    const adjacentYieldBonus = adjacentConnections.reduce(
+      (totalBonus, { index: neighborIndex, adjacencyDistance }) => {
+        const neighborCrop = blueprint.cells[neighborIndex]
+        const baseCropYieldBonus = getAdjacentHarvestModifier(
+          neighborCrop,
+          completedCropPerfections,
+        )
+        const adjacencyStrength =
+          getRootTunnelAdjacencyStrength(adjacencyDistance)
 
-    const adjacentYieldBonus = getAdjacentCropIndexes(
-      blueprint,
-      index,
-    ).reduce((totalBonus, neighborIndex) => {
-      const neighborCrop = blueprint.cells[neighborIndex]
-      const baseCropYieldBonus = getAdjacentHarvestModifier(
-        neighborCrop,
-        completedCropPerfections,
-      )
-
-      return (
-        totalBonus +
-        baseCropYieldBonus *
-          getAdjacentCropEffectMultiplier(
-            blueprint,
-            neighborIndex,
-            neighborCrop,
-          ) *
-          getMirrorCornEffectMultiplier(
-            blueprint,
-            neighborIndex,
-            completedCropPerfections,
-          )
-      )
-    }, 0)
+        return (
+          totalBonus +
+          baseCropYieldBonus *
+            adjacencyStrength *
+            getAdjacentCropEffectMultiplier(
+              blueprint,
+              neighborIndex,
+              neighborCrop,
+            ) *
+            getMirrorCornEffectMultiplier(
+              blueprint,
+              neighborIndex,
+              completedCropPerfections,
+            )
+        )
+      },
+      0,
+    )
     const externalCropBuffMultiplier = getExternalCropBuffMultiplier(
       blueprint,
       index,
@@ -195,7 +194,8 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
       (getCropBaseYield(crop, completedCropPerfections) +
         adjacentYieldBonus * externalCropBuffMultiplier) *
         BASE_CROP_YIELD_PER_PLOT *
-        monocropMultiplier
+        monocropMultiplier *
+        harvestDestructionMultiplier
     )
   }, 0)
 

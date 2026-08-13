@@ -1,11 +1,12 @@
 import { getMonocropYieldMultiplier } from './monocropPenalty.js'
 import { CROP_DEFINITIONS, isCropEffectModifier } from './crops.js'
 import {
-  destroysAdjacentHarvests,
   doesNotHarvest,
+  getAdjacentCropConnections,
   getAdjacentCropEffectModifier,
   getAdjacentCropEffectMultiplier,
-  getAdjacentCropIndexes,
+  getAdjacentHarvestDestructionEffects,
+  getAdjacentHarvestDestructionMultiplier,
   getAdjacentHarvestModifier,
   getCropBaseYield,
   getCropHamsterEfficiencyBonus,
@@ -16,6 +17,7 @@ import {
   getMirrorCornEffectMultiplier,
   getMirrorCornTargetCount,
   getPlantedCropCount,
+  getRootTunnelAdjacencyStrength,
 } from './cropEffects.js'
 
 export function getBlueprintCropStats(
@@ -30,7 +32,7 @@ export function getBlueprintCropStats(
     return null
   }
 
-  const neighboringIndexes = getAdjacentCropIndexes(blueprint, index)
+  const neighboringConnections = getAdjacentCropConnections(blueprint, index)
   const baseHamsterEfficiencyBonus = getCropHamsterEfficiencyBonus(
     crop,
     completedCropPerfections,
@@ -43,52 +45,76 @@ export function getBlueprintCropStats(
   if (!isCropEffectModifier(crop)) {
     const modifierStacksByCrop = new Map()
 
-    neighboringIndexes.forEach((neighborIndex) => {
-      const sourceCropId = blueprint.cells[neighborIndex]
-      const baseMultiplier =
-        CROP_DEFINITIONS[sourceCropId]?.adjacentCropEffectModifier
+    neighboringConnections.forEach(
+      ({ index: neighborIndex, adjacencyDistance }) => {
+        const sourceCropId = blueprint.cells[neighborIndex]
+        const baseMultiplier =
+          CROP_DEFINITIONS[sourceCropId]?.adjacentCropEffectModifier
 
-      if (baseMultiplier !== undefined) {
-        const multiplier = getAdjacentCropEffectModifier(
-          blueprint,
-          sourceCropId,
-          crop,
+        if (baseMultiplier !== undefined) {
+          const multiplier = getAdjacentCropEffectModifier(
+            blueprint,
+            sourceCropId,
+            crop,
+            adjacencyDistance,
+          )
+
+          if (multiplier === 1) {
+            return
+          }
+
+          const currentStack = modifierStacksByCrop.get(sourceCropId) ?? {
+            count: 0,
+            multiplier: 1,
+            adjacencyDistances: [],
+          }
+
+          modifierStacksByCrop.set(sourceCropId, {
+            count: currentStack.count + 1,
+            multiplier: currentStack.multiplier * multiplier,
+            adjacencyDistances: [
+              ...currentStack.adjacencyDistances,
+              adjacencyDistance,
+            ],
+          })
+        }
+      },
+    )
+
+    modifierStacksByCrop.forEach(
+      ({ count, multiplier, adjacencyDistances }, sourceCropId) => {
+        const tunneledDistances = adjacencyDistances.filter(
+          (adjacencyDistance) => adjacencyDistance > 0,
         )
 
-        if (multiplier === 1) {
-          return
-        }
-
-        const currentStack = modifierStacksByCrop.get(sourceCropId) ?? {
-          count: 0,
+        receivedEffects.push({
+          type: 'crop-effect-modifier',
+          sourceCropId,
+          count,
           multiplier,
-        }
-
-        modifierStacksByCrop.set(sourceCropId, {
-          ...currentStack,
-          count: currentStack.count + 1,
+          ...(tunneledDistances.length > 0
+            ? { adjacencyDistances: tunneledDistances }
+            : {}),
         })
-      }
-    })
-
-    modifierStacksByCrop.forEach(({ count, multiplier }, sourceCropId) => {
-      receivedEffects.push({
-        type: 'crop-effect-modifier',
-        sourceCropId,
-        count,
-        multiplier: multiplier ** count,
-      })
-    })
+      },
+    )
   }
 
   if (crop === 'turnip') {
     const leechingGourdEffect = getLeechingGourdTurnipEffect(blueprint)
 
     if (leechingGourdEffect.debuffContribution > 0) {
+      const tunneledDistances = leechingGourdEffect.adjacencyEffects
+        .map((effect) => effect.adjacencyDistance)
+        .filter((adjacencyDistance) => adjacencyDistance > 0)
+
       receivedEffects.push({
         type: 'leeching-gourd',
         count: leechingGourdEffect.debuffContribution,
         multiplier: leechingGourdEffect.multiplier,
+        ...(tunneledDistances.length > 0
+          ? { adjacencyDistances: tunneledDistances }
+          : {}),
       })
     }
   }
@@ -112,14 +138,17 @@ export function getBlueprintCropStats(
 
   const cropYieldBonusesByCrop = new Map()
 
-  neighboringIndexes.forEach((neighborIndex) => {
-    const sourceCropId = blueprint.cells[neighborIndex]
-    const baseCropYieldBonus = getAdjacentHarvestModifier(
-      sourceCropId,
-      completedCropPerfections,
-    )
-    const cropYieldBonus =
-      baseCropYieldBonus *
+  neighboringConnections.forEach(
+    ({ index: neighborIndex, adjacencyDistance }) => {
+      const sourceCropId = blueprint.cells[neighborIndex]
+      const baseCropYieldBonus = getAdjacentHarvestModifier(
+        sourceCropId,
+        completedCropPerfections,
+      )
+      const adjacencyStrength = getRootTunnelAdjacencyStrength(adjacencyDistance)
+      const cropYieldBonus =
+        baseCropYieldBonus *
+        adjacencyStrength *
         getAdjacentCropEffectMultiplier(
           blueprint,
           neighborIndex,
@@ -131,42 +160,61 @@ export function getBlueprintCropStats(
           completedCropPerfections,
         )
 
-    if (cropYieldBonus !== 0) {
-      const currentBonus = cropYieldBonusesByCrop.get(sourceCropId) ?? {
-        count: 0,
-        bonus: 0,
+      if (cropYieldBonus !== 0) {
+        const currentBonus = cropYieldBonusesByCrop.get(sourceCropId) ?? {
+          count: 0,
+          bonus: 0,
+          adjacencyDistances: [],
+        }
+
+        cropYieldBonusesByCrop.set(sourceCropId, {
+          count: currentBonus.count + 1,
+          bonus: currentBonus.bonus + cropYieldBonus,
+          adjacencyDistances: [
+            ...currentBonus.adjacencyDistances,
+            adjacencyDistance,
+          ],
+        })
       }
-
-      cropYieldBonusesByCrop.set(sourceCropId, {
-        count: currentBonus.count + 1,
-        bonus: currentBonus.bonus + cropYieldBonus,
-      })
-    }
-  })
-
-  cropYieldBonusesByCrop.forEach(({ count, bonus }, sourceCropId) => {
-    receivedEffects.push({
-      type: 'crop-yield',
-      sourceCropId,
-      count,
-      bonus,
-    })
-  })
-
-  const harvestDestroyedByAppleTree = neighboringIndexes.some(
-    (neighborIndex) => destroysAdjacentHarvests(blueprint.cells[neighborIndex]),
+    },
   )
-  const adjacentYieldBonus = neighboringIndexes.reduce(
-    (totalBonus, neighborIndex) => {
+
+  cropYieldBonusesByCrop.forEach(
+    ({ count, bonus, adjacencyDistances }, sourceCropId) => {
+      const tunneledDistances = adjacencyDistances.filter(
+        (adjacencyDistance) => adjacencyDistance > 0,
+      )
+
+      receivedEffects.push({
+        type: 'crop-yield',
+        sourceCropId,
+        count,
+        bonus,
+        ...(tunneledDistances.length > 0
+          ? { adjacencyDistances: tunneledDistances }
+          : {}),
+      })
+    },
+  )
+
+  const harvestDestructionEffects =
+    getAdjacentHarvestDestructionEffects(blueprint, index)
+  const harvestDestructionMultiplier =
+    getAdjacentHarvestDestructionMultiplier(blueprint, index)
+  const harvestDestroyedByAppleTree = harvestDestructionMultiplier === 0
+  const adjacentYieldBonus = neighboringConnections.reduce(
+    (totalBonus, { index: neighborIndex, adjacencyDistance }) => {
       const sourceCropId = blueprint.cells[neighborIndex]
       const baseCropYieldBonus = getAdjacentHarvestModifier(
         sourceCropId,
         completedCropPerfections,
       )
+      const adjacencyStrength = getRootTunnelAdjacencyStrength(adjacencyDistance)
 
       return (
         totalBonus +
         baseCropYieldBonus *
+          adjacencyStrength *
           getAdjacentCropEffectMultiplier(
             blueprint,
             neighborIndex,
@@ -210,14 +258,27 @@ export function getBlueprintCropStats(
     : (getCropBaseYield(crop, completedCropPerfections) +
         adjacentYieldBonus * (externalCropBuffMultiplier ?? 1)) *
       monocropMultiplier *
-      globalHarvestMultiplier
+      globalHarvestMultiplier *
+      harvestDestructionMultiplier
 
   globalHarvestEffects.forEach((effect) => {
     receivedEffects.push({ type: 'global-harvest', ...effect })
   })
 
-  if (harvestDestroyedByAppleTree) {
-    receivedEffects.push({ type: 'harvest-destruction' })
+  if (harvestDestructionEffects.length > 0) {
+    const tunneledDistances = harvestDestructionEffects
+      .map((effect) => effect.adjacencyDistance)
+      .filter((adjacencyDistance) => adjacencyDistance > 0)
+
+    receivedEffects.push({
+      type: 'harvest-destruction',
+      ...(harvestDestructionMultiplier > 0
+        ? { multiplier: harvestDestructionMultiplier }
+        : {}),
+      ...(tunneledDistances.length > 0
+        ? { adjacencyDistances: tunneledDistances }
+        : {}),
+    })
   }
 
   if (monocropMultiplier !== 1) {

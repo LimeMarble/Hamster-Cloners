@@ -10,10 +10,20 @@ import {
   isCropEffectModifier,
 } from './crops.js'
 import {
-  getLeechingGourdFootprint,
-  isLeechingGourdAnchor,
-  isLeechingGourdCell,
-} from './blueprintLogic.js'
+  getAdjacentCropConnections,
+  getLeechingGourdAdjacentCropConnections,
+  getRootTunnelAdjacencyStrength,
+} from './adjacencyLogic.js'
+
+export {
+  getAdjacentCropConnections,
+  getAdjacentCropIndexes,
+  getConnectedRootTunnelIndexes,
+  getLeechingGourdAdjacentCropIndexes,
+  getOrthogonalIndexes,
+  getRootTunnelAdjacencyStrength,
+  isRootTunnel,
+} from './adjacencyLogic.js'
 
 export function getPlantedCropCount(blueprint, crop = 'leek') {
   return blueprint.cells.filter((cell) => cell === crop).length
@@ -31,137 +41,38 @@ export function hasReachedMonocropLimit(blueprint) {
     )
 }
 
-export function getOrthogonalIndexes(blueprint, index) {
-  const { rows, columns } = blueprint
-  const row = Math.floor(index / columns)
-  const column = index % columns
-  const neighboringIndexes = []
-
-  if (row > 0) {
-    neighboringIndexes.push(index - columns)
-  }
-  if (row < rows - 1) {
-    neighboringIndexes.push(index + columns)
-  }
-  if (column > 0) {
-    neighboringIndexes.push(index - 1)
-  }
-  if (column < columns - 1) {
-    neighboringIndexes.push(index + 1)
-  }
-
-  return neighboringIndexes
-}
-
-export function isRootTunnel(crop) {
-  return CROP_DEFINITIONS[crop]?.transfersAdjacencies === true
-}
-
-export function getLeechingGourdAdjacentCropIndexes(blueprint) {
-  const anchorIndex = blueprint.cells.findIndex(isLeechingGourdAnchor)
-
-  if (anchorIndex === -1) {
-    return []
-  }
-
-  const footprint = getLeechingGourdFootprint(blueprint, anchorIndex)
-
-  if (footprint.length !== 4) {
-    return []
-  }
-
-  return [
-    ...new Set(
-      footprint.flatMap((footprintIndex) =>
-        getOrthogonalIndexes(blueprint, footprintIndex),
-      ),
-    ),
-  ].filter((index) => {
-    const crop = blueprint.cells[index]
-
-    return crop && !isLeechingGourdCell(crop)
-  })
-}
-
 export function getLeechingGourdTurnipEffect(blueprint) {
-  const debuffContribution = getLeechingGourdAdjacentCropIndexes(
+  const adjacencyEffects = getLeechingGourdAdjacentCropConnections(
     blueprint,
-  ).reduce((total, index) => {
-    const definition = CROP_DEFINITIONS[blueprint.cells[index]]
+  ).flatMap(({ index, adjacencyDistance }) => {
+    const crop = blueprint.cells[index]
+    const definition = CROP_DEFINITIONS[crop]
 
     if (!definition?.hasDebuff) {
-      return total
+      return []
     }
 
-    return total + (definition.isHarmful ? 2 : 1)
-  }, 0)
+    const strength = getRootTunnelAdjacencyStrength(adjacencyDistance)
+    return [
+      {
+        index,
+        crop,
+        adjacencyDistance,
+        strength,
+        contribution: (definition.isHarmful ? 2 : 1) * strength,
+      },
+    ]
+  })
+  const debuffContribution = adjacencyEffects.reduce(
+    (total, effect) => total + effect.contribution,
+    0,
+  )
 
   return {
+    adjacencyEffects,
     debuffContribution,
     multiplier: 1 + debuffContribution * 0.05,
   }
-}
-
-export function getConnectedRootTunnelIndexes(blueprint, startingIndexes) {
-  const { cells } = blueprint
-  const visitedIndexes = new Set()
-  const pendingIndexes = [...startingIndexes]
-
-  while (pendingIndexes.length > 0) {
-    const tunnelIndex = pendingIndexes.pop()
-
-    if (visitedIndexes.has(tunnelIndex) || !isRootTunnel(cells[tunnelIndex])) {
-      continue
-    }
-
-    visitedIndexes.add(tunnelIndex)
-    getOrthogonalIndexes(blueprint, tunnelIndex).forEach((neighborIndex) => {
-      if (isRootTunnel(cells[neighborIndex])) {
-        pendingIndexes.push(neighborIndex)
-      }
-    })
-  }
-
-  return [...visitedIndexes]
-}
-
-export function getAdjacentCropIndexes(blueprint, index) {
-  const { cells } = blueprint
-  const crop = cells[index]
-  const orthogonalIndexes = getOrthogonalIndexes(blueprint, index)
-  const directCropIndexes = orthogonalIndexes.filter(
-    (neighborIndex) =>
-      cells[neighborIndex] &&
-      !isRootTunnel(cells[neighborIndex]) &&
-      !isLeechingGourdCell(cells[neighborIndex]),
-  )
-
-  if (!crop || isCropEffectModifier(crop)) {
-    return directCropIndexes
-  }
-
-  const connectedRootTunnelIndexes = getConnectedRootTunnelIndexes(
-    blueprint,
-    orthogonalIndexes.filter((neighborIndex) => isRootTunnel(cells[neighborIndex])),
-  )
-  const transferredCropIndexes = connectedRootTunnelIndexes.flatMap(
-    (tunnelIndex) =>
-      getOrthogonalIndexes(blueprint, tunnelIndex).filter(
-      (tunnelNeighborIndex) => {
-        const tunnelNeighborCrop = cells[tunnelNeighborIndex]
-
-        return (
-          tunnelNeighborIndex !== index &&
-          tunnelNeighborCrop &&
-          !isRootTunnel(tunnelNeighborCrop) &&
-          !isLeechingGourdCell(tunnelNeighborCrop) &&
-          !isCropEffectModifier(tunnelNeighborCrop)
-        )
-      },
-      ),
-  )
-
-  return [...new Set([...directCropIndexes, ...transferredCropIndexes])]
 }
 
 export function getDiagonalTileIndexes(blueprint, index) {
@@ -194,13 +105,14 @@ export function getAdjacentCropEffectMultiplier(blueprint, index, crop) {
     return 1
   }
 
-  return getAdjacentCropIndexes(blueprint, index).reduce(
-    (multiplier, neighborIndex) =>
+  return getAdjacentCropConnections(blueprint, index).reduce(
+    (multiplier, { index: neighborIndex, adjacencyDistance }) =>
       multiplier *
       getAdjacentCropEffectModifier(
         blueprint,
         blueprint.cells[neighborIndex],
         crop,
+        adjacencyDistance,
       ),
     1,
   )
@@ -212,6 +124,33 @@ export function destroysAdjacentHarvests(crop) {
 
 export function doesNotHarvest(crop) {
   return CROP_DEFINITIONS[crop]?.doesNotHarvest === true
+}
+
+export function getAdjacentHarvestDestructionEffects(blueprint, index) {
+  return getAdjacentCropConnections(blueprint, index).flatMap(
+    ({ index: sourceIndex, adjacencyDistance }) => {
+      if (!destroysAdjacentHarvests(blueprint.cells[sourceIndex])) {
+        return []
+      }
+
+      const strength = getRootTunnelAdjacencyStrength(adjacencyDistance)
+      return [
+        {
+          sourceIndex,
+          adjacencyDistance,
+          strength,
+          multiplier: 1 - strength,
+        },
+      ]
+    },
+  )
+}
+
+export function getAdjacentHarvestDestructionMultiplier(blueprint, index) {
+  return getAdjacentHarvestDestructionEffects(blueprint, index).reduce(
+    (multiplier, effect) => multiplier * effect.multiplier,
+    1,
+  )
 }
 
 export function getMirrorCornTargetCount(
@@ -277,7 +216,12 @@ export function getCropHamsterEfficiencyBonus(crop, completedCropPerfections) {
   )
 }
 
-export function getAdjacentCropEffectModifier(blueprint, crop, targetCrop) {
+export function getAdjacentCropEffectModifier(
+  blueprint,
+  crop,
+  targetCrop,
+  adjacencyDistance = 0,
+) {
   const adjacentCropEffectModifier =
     CROP_DEFINITIONS[crop]?.adjacentCropEffectModifier
 
@@ -291,14 +235,14 @@ export function getAdjacentCropEffectModifier(blueprint, crop, targetCrop) {
     return 1
   }
 
-  if (crop === 'turnip') {
-    return (
-      adjacentCropEffectModifier *
-      getLeechingGourdTurnipEffect(blueprint).multiplier
-    )
-  }
+  const baseMultiplier =
+    crop === 'turnip'
+      ? adjacentCropEffectModifier *
+        getLeechingGourdTurnipEffect(blueprint).multiplier
+      : adjacentCropEffectModifier
+  const strength = getRootTunnelAdjacencyStrength(adjacencyDistance)
 
-  return adjacentCropEffectModifier
+  return 1 + (baseMultiplier - 1) * strength
 }
 
 export function getGlobalHarvestEffects(blueprint) {
@@ -385,10 +329,10 @@ export function getExternalCropBuffMultiplier(
     return 1
   }
 
-  const adjacentEffectSourceMultipliers = getAdjacentCropIndexes(
+  const adjacentEffectSourceMultipliers = getAdjacentCropConnections(
     blueprint,
     index,
-  ).flatMap((neighborIndex) => {
+  ).flatMap(({ index: neighborIndex, adjacencyDistance }) => {
     const baseAdjacentCropEffectModifier =
       CROP_DEFINITIONS[blueprint.cells[neighborIndex]]
         ?.adjacentCropEffectModifier
@@ -401,6 +345,7 @@ export function getExternalCropBuffMultiplier(
               blueprint,
               blueprint.cells[neighborIndex],
               crop,
+              adjacencyDistance,
             ),
         ]
   })

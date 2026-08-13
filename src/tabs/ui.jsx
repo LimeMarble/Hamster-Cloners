@@ -21,6 +21,19 @@ export function SignedPercentage({ value }) {
   )
 }
 
+function RootTunnelDistance({ distances }) {
+  if (!distances || distances.length === 0) {
+    return null
+  }
+
+  return (
+    <span className="crop-hover-tunnel-distance">
+      {' '}via Root Tunnel (distance{distances.length === 1 ? '' : 's'}{' '}
+      {distances.join(', ')})
+    </span>
+  )
+}
+
 export function MirrorCornConnectionLines({ blueprint, links, pending = false }) {
   if (links.length === 0) {
     return null
@@ -125,6 +138,7 @@ export function CropHoverInspector({
                   ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop effects from {effect.count}{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
                   {effect.count === 1 ? '' : 's'}
+                  <RootTunnelDistance distances={effect.adjacencyDistances} />
                 </li>
               )
             }
@@ -142,6 +156,7 @@ export function CropHoverInspector({
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
                   ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Turnip effectiveness from Leeching Gourd
+                  <RootTunnelDistance distances={effect.adjacencyDistances} />
                 </li>
               )
             }
@@ -149,7 +164,14 @@ export function CropHoverInspector({
             if (effect.type === 'harvest-destruction') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  Harvest destroyed by an adjacent Apple Tree
+                  {effect.multiplier === undefined ? (
+                    'Harvest destroyed by an adjacent Apple Tree'
+                  ) : (
+                    <>
+                      ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> harvest from Apple Tree
+                    </>
+                  )}
+                  <RootTunnelDistance distances={effect.adjacencyDistances} />
                 </li>
               )
             }
@@ -160,6 +182,7 @@ export function CropHoverInspector({
                   ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from {effect.count}{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
                   {effect.count === 1 ? '' : 's'}
+
                 </li>
               )
             }
@@ -178,6 +201,7 @@ export function CropHoverInspector({
                 <FormattedNumber value={Math.abs(effect.bonus)} maximumFractionDigits={2} /> Crop yield from {effect.count}{' '}
                 {getCropName(effect.sourceCropId, completedCropPerfections)}
                 {effect.count === 1 ? '' : 's'}
+                <RootTunnelDistance distances={effect.adjacencyDistances} />
               </li>
             )
           })}

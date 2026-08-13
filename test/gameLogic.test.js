@@ -5,6 +5,7 @@ import {
   createBlueprint,
   createFarmlandMultipliers,
   createInitialGame,
+  getAdjacentCropConnections,
   getCropProductionPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getBlueprintExpansionCost,
@@ -25,6 +26,7 @@ import {
   getFieldsPlanted,
   grantNextBlueprintExpansion,
   getLeechingGourdFootprint,
+  getLeechingGourdTurnipEffect,
   getProductionForTick,
   getRowDuplicatorEffectivenessMultiplier,
   getRowsProducedForTick,
@@ -42,6 +44,7 @@ import {
   ROW_DUPLICATOR_COST_GROWTH,
   ROWS_PER_ROW_DUPLICATOR_PER_SECOND,
   ROW_DUPLICATOR_COORDINATION_GROWTH,
+  ROOT_TUNNEL_ADJACENCY_DECAY,
   SIMULATION_TICK_INTERVAL_MS,
   unlockCropPerfection,
   VISUAL_UPDATE_INTERVAL_MS,
@@ -406,16 +409,21 @@ test('Mirror Corn tile targets persist through empty and replacement crops', () 
   )
 })
 
-test('Root Tunnels transfer ordinary crop adjacencies but not modifier crops', () => {
+test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
   const transferBlueprint = createBlueprint({
     rows: 1,
     columns: 3,
     cells: ['leek', 'rootTunnel', 'corn'],
   })
-  const modifierBlueprint = createBlueprint({
+  const turnipBlueprint = createBlueprint({
     rows: 1,
     columns: 3,
     cells: ['turnip', 'rootTunnel', 'sweetPotato'],
+  })
+  const pumpkinBlueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['pumpkin', 'rootTunnel', 'sweetPotato'],
   })
   const mirrorBlueprint = createBlueprint({
     rows: 2,
@@ -424,35 +432,77 @@ test('Root Tunnels transfer ordinary crop adjacencies but not modifier crops', (
     mirrorCornTargets: [3],
   })
 
+  assert.equal(ROOT_TUNNEL_ADJACENCY_DECAY, 0.8)
+  assert.deepEqual(getAdjacentCropConnections(transferBlueprint, 2), [
+    { index: 0, adjacencyDistance: 1 },
+  ])
   assert.equal(
     getCropProductionPerSecond(
       transferBlueprint,
       createFarmlandMultipliers({ rows: 1, columns: 1 }),
       ['enrichingLeek'],
     ),
-    8,
+    7,
   )
-  assert.equal(getCropHamsterEfficiencyMultiplier(modifierBlueprint), 1.25)
+  assert.ok(
+    Math.abs(getCropHamsterEfficiencyMultiplier(turnipBlueprint) - 1.45) <
+      1e-12,
+  )
+  assert.equal(getCropHamsterEfficiencyMultiplier(pumpkinBlueprint), 1.25)
+  assert.deepEqual(
+    getBlueprintCropStats(turnipBlueprint, 2).receivedEffects,
+    [
+      {
+        type: 'crop-effect-modifier',
+        sourceCropId: 'turnip',
+        count: 1,
+        multiplier: 1.8,
+        adjacencyDistances: [1],
+      },
+    ],
+  )
   assert.deepEqual(mirrorBlueprint.mirrorCornTargets, [3, null, null, null])
 })
 
-test('Root Tunnels transfer adjacencies through connected tunnel chains', () => {
+test('Root Tunnel effects decay by 0.8 for every tunnel tile crossed', () => {
   const blueprint = createBlueprint({
     rows: 1,
     columns: 4,
     cells: ['leek', 'rootTunnel', 'rootTunnel', 'corn'],
   })
 
-  assert.equal(
-    getCropProductionPerSecond(
-      blueprint,
-      createFarmlandMultipliers({ rows: 1, columns: 1 }),
-      ['enrichingLeek'],
-    ),
-    8,
+  assert.deepEqual(getAdjacentCropConnections(blueprint, 3), [
+    { index: 0, adjacencyDistance: 2 },
+  ])
+  assert.ok(
+    Math.abs(
+      getCropProductionPerSecond(
+        blueprint,
+        createFarmlandMultipliers({ rows: 1, columns: 1 }),
+        ['enrichingLeek'],
+      ) - 6.2,
+    ) < 1e-12,
   )
 })
 
+test('Root Tunnel distance attenuates Apple Tree harvest destruction', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 3,
+    cells: ['leek', 'rootTunnel', 'appleTree'],
+  })
+  const leekStats = getBlueprintCropStats(blueprint, 0, ['enrichingLeek'])
+
+  assert.equal(leekStats.harvestDestroyedByAppleTree, false)
+  assert.ok(Math.abs(leekStats.harvestYield - 0.2) < 1e-12)
+  assert.deepEqual(leekStats.receivedEffects, [
+    {
+      type: 'harvest-destruction',
+      multiplier: 1 - ROOT_TUNNEL_ADJACENCY_DECAY,
+      adjacencyDistances: [1],
+    },
+  ])
+})
 test('Mirror Corn passive boosts multiply with adjacent crop-effect modifiers', () => {
   const blueprint = createBlueprint({
     rows: 2,
@@ -766,6 +816,70 @@ test('Leeching Gourd boosts all Turnips from adjacent debuffs, with harmful crop
   )
 })
 
+test('Leeching Gourd debuff contributions decay through Root Tunnels', () => {
+  const blueprint = createBlueprint({
+    rows: 5,
+    columns: 5,
+    cells: [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      'corn',
+      null,
+      null,
+      'knotweed',
+      'rootTunnel',
+      'leechingGourd',
+      'leechingGourdPart',
+      null,
+      null,
+      null,
+      'leechingGourdPart',
+      'leechingGourdPart',
+      null,
+      'turnip',
+      'sweetPotato',
+      null,
+      null,
+      null,
+    ],
+  })
+  const gourdEffect = getLeechingGourdTurnipEffect(blueprint)
+
+  assert.deepEqual(gourdEffect.adjacencyEffects, [
+    {
+      index: 7,
+      crop: 'corn',
+      adjacencyDistance: 0,
+      strength: 1,
+      contribution: 1,
+    },
+    {
+      index: 10,
+      crop: 'knotweed',
+      adjacencyDistance: 1,
+      strength: ROOT_TUNNEL_ADJACENCY_DECAY,
+      contribution: 2 * ROOT_TUNNEL_ADJACENCY_DECAY,
+    },
+  ])
+  assert.ok(Math.abs(gourdEffect.debuffContribution - 2.6) < 1e-12)
+  assert.ok(Math.abs(gourdEffect.multiplier - 1.13) < 1e-12)
+  assert.deepEqual(getBlueprintCropStats(blueprint, 20).receivedEffects, [
+    {
+      type: 'leeching-gourd',
+      count: gourdEffect.debuffContribution,
+      multiplier: gourdEffect.multiplier,
+      adjacencyDistances: [1],
+    },
+  ])
+  assert.ok(
+    Math.abs(getCropHamsterEfficiencyMultiplier(blueprint) - 1.465) < 1e-12,
+  )
+})
 test('Leeching Gourd costs 2 Qn Crops and receives no Mirror Corn effect', () => {
   const game = {
     crops: CROP_PERFECTIONS.leechingGourd.cost,
