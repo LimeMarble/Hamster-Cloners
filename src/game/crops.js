@@ -179,7 +179,7 @@ export const CROP_PERFECTIONS = {
     id: 'sweetPotato',
     cropId: 'sweetPotato',
     name: 'Sweet Potato',
-    cost: 1.25e32,
+    cost: 1.25e33,
     hamsterEfficiencyBonus: 1.25,
     hasUnboostableRowsPerSecondBonus: true,
     requiresRowDuplicators: true,
