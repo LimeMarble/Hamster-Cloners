@@ -2,8 +2,8 @@ export const SWEET_POTATO_UNLOCK_HAMSTER_COUNT = 125
 export const TURNIP_UNLOCK_CROP_COUNT = 1e8
 export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
 export const APPLE_TREE_UNLOCK_CROP_COUNT = 1e15
-export const LENTIL_UNLOCK_CROP_COUNT = 8e15
-export const KNOTWEED_UNLOCK_CROP_COUNT = 2e18
+export const LENTIL_UNLOCK_CROP_COUNT = 8e16
+export const KNOTWEED_UNLOCK_CROP_COUNT = 2e19
 // The requested 1.8e308 cost exceeds the native Number range.
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
 export const CORN_REVEAL_HAMSTER_COUNT = 50
@@ -170,7 +170,7 @@ export const CROP_PERFECTIONS = {
     id: 'leechingGourd',
     cropId: 'pumpkin',
     name: 'Leeching Gourd',
-    cost: 2e18,
+    cost: 2e19,
     baseEffectDescription: 'Occupies one 2×2 block and produces no Crops',
     effectDescription:
       'Nullifies adjacent crop debuffs · +5% all Turnip effectiveness per adjacent debuff; harmful crops count twice',
