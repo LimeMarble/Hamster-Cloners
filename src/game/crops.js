@@ -46,7 +46,7 @@ export const CROP_DEFINITIONS = {
   },
   turnip: {
     name: 'Turnip',
-    icon: '🫜',
+    icon: '🥕',
     baseYield: 0.5,
     hamsterEfficiencyBonus: 0,
     adjacentCropEffectModifier: 2,
@@ -67,7 +67,7 @@ export const CROP_DEFINITIONS = {
   },
   lentil: {
     name: 'Lentil',
-    icon: '🫘',
+    icon: '🌱',
     baseYield: 25,
     hamsterEfficiencyBonus: 0,
     globalHarvestMultiplier: 1.25,
