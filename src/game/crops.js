@@ -181,11 +181,11 @@ export const CROP_PERFECTIONS = {
     name: 'Sweet Potato',
     cost: 1.25e33,
     hamsterEfficiencyBonus: 1.25,
-    hasUnboostableRowsPerSecondBonus: true,
+    hasUnboostableRowsPerSecondMultiplier: true,
     requiresRowDuplicators: true,
     baseEffectDescription: '1 Crop per slot · +125% Hamster Efficiency',
     effectDescription:
-      'Globally adds log10(Rows/sec) Hamster Efficiency per Sweet Potato · this global bonus cannot be boosted',
+      'Globally multiplies Hamster Efficiency by 1 + Sweet Potatoes × log10(Rows/sec) · this multiplier cannot be boosted',
   },
 }
 

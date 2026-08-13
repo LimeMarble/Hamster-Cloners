@@ -877,11 +877,11 @@ test('Sweet Potato perfection adds an unboostable Rows-per-second bonus', () => 
     completedCropPerfections: ['sweetPotato'],
   })
 
-  // Turnip doubles the perfected +125% base bonus, but the +2 from
-  // log10(100 Rows/sec) is added afterward and cannot be boosted.
+  // Turnip doubles the perfected +125% base bonus to produce ×3.5, then
+  // the unboostable global ×3 from 1 + log10(100 Rows/sec) multiplies it.
   assert.equal(
     getCropHamsterEfficiencyMultiplier(blueprint, ['sweetPotato'], 100),
-    5.5,
+    10.5,
   )
   assert.equal(
     getCropHamsterEfficiencyMultiplier(blueprint, ['sweetPotato'], 0.1),
@@ -910,6 +910,7 @@ test('Sweet Potato perfection adds an unboostable Rows-per-second bonus', () => 
       sourceCropId: 'sweetPotato',
       count: 1,
       bonus: 2,
+      multiplier: 3,
     },
   )
   assert.deepEqual(
@@ -921,6 +922,7 @@ test('Sweet Potato perfection adds an unboostable Rows-per-second bonus', () => 
       sourceCropId: 'sweetPotato',
       count: 1,
       bonus: 2,
+      multiplier: 3,
     },
   )
 })

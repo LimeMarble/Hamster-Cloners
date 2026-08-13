@@ -178,8 +178,8 @@ export function Inventions({
                     <h2>{CROP_PERFECTIONS.sweetPotato.name}</h2>
                     <p>
                       Raise Potato&apos;s Hamster Efficiency bonus from +25% to
-                      +125%, then globally add log10(Rows/sec) Hamster
-                      Efficiency per planted Sweet Potato. This global bonus
+                      +125%, then multiply Hamster Efficiency by 1 + planted
+                      Sweet Potatoes × log10(Rows/sec). This global multiplier
                       cannot be boosted.
                     </p>
                   </div>

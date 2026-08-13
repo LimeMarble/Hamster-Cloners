@@ -181,7 +181,7 @@ export function CropHoverInspector({
             if (effect.type === 'global-hamster-efficiency') {
               return (
                 <li key={effectIndex}>
-                  +<FormattedNumber value={effect.bonus} maximumFractionDigits={2} /> global Hamster Efficiency from {effect.count}{' '}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Hamster Efficiency from {effect.count}{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
 {effect.count === 1 ? '' : 's'} (cannot be boosted)
                 </li>

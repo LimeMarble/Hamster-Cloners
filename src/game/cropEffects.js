@@ -265,7 +265,7 @@ export function getGlobalHamsterEfficiencyEffects(
   )
 
   if (
-    perfection?.hasUnboostableRowsPerSecondBonus !== true ||
+    perfection?.hasUnboostableRowsPerSecondMultiplier !== true ||
     count === 0 ||
     safeRowsProducedPerSecond <= 1
   ) {
@@ -277,20 +277,24 @@ export function getGlobalHamsterEfficiencyEffects(
       sourceCropId,
       count,
       bonus: count * Math.log10(safeRowsProducedPerSecond),
+      multiplier: 1 + count * Math.log10(safeRowsProducedPerSecond),
     },
   ]
 }
 
-export function getGlobalHamsterEfficiencyBonus(
+export function getGlobalHamsterEfficiencyMultiplier(
   blueprint,
   completedCropPerfections = [],
   rowsProducedPerSecond = 0,
 ) {
-  return getGlobalHamsterEfficiencyEffects(
-    blueprint,
-    completedCropPerfections,
-    rowsProducedPerSecond,
-  ).reduce((totalBonus, effect) => totalBonus + effect.bonus, 0)
+  return (
+    1 +
+    getGlobalHamsterEfficiencyEffects(
+      blueprint,
+      completedCropPerfections,
+      rowsProducedPerSecond,
+    ).reduce((totalBonus, effect) => totalBonus + effect.bonus, 0)
+  )
 }
 
 export function getAdjacentCropEffectModifier(
