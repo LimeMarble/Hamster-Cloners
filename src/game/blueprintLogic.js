@@ -79,29 +79,37 @@ export function createBlueprint({
   const sourceMirrorCornTargets = Array.isArray(mirrorCornTargets)
     ? mirrorCornTargets
     : []
+  const mirrorCornTargetCounts = new Map()
+  const maximumReflectionsPerTile =
+    CROP_PERFECTIONS.mirrorCorn.maximumReflectionsPerTile
+  const normalizedMirrorCornTargets = normalizedCells.map((crop, sourceIndex) => {
+    const targetIndex = sourceMirrorCornTargets[sourceIndex]
+    const sourceRow = Math.floor(sourceIndex / safeColumns)
+    const sourceColumn = sourceIndex % safeColumns
+    const targetRow = Math.floor(targetIndex / safeColumns)
+    const targetColumn = targetIndex % safeColumns
+    const hasValidTarget =
+      crop === 'corn' &&
+      Number.isInteger(targetIndex) &&
+      targetIndex >= 0 &&
+      targetIndex < totalCells &&
+      Math.abs(sourceRow - targetRow) === 1 &&
+      Math.abs(sourceColumn - targetColumn) === 1
+
+    if (!hasValidTarget) return null
+
+    const currentTargetCount = mirrorCornTargetCounts.get(targetIndex) ?? 0
+    if (currentTargetCount >= maximumReflectionsPerTile) return null
+
+    mirrorCornTargetCounts.set(targetIndex, currentTargetCount + 1)
+    return targetIndex
+  })
 
   return {
     rows: safeRows,
     columns: safeColumns,
     cells: normalizedCells,
-    mirrorCornTargets: normalizedCells.map((crop, sourceIndex) => {
-      const targetIndex = sourceMirrorCornTargets[sourceIndex]
-      const sourceRow = Math.floor(sourceIndex / safeColumns)
-      const sourceColumn = sourceIndex % safeColumns
-      const targetRow = Math.floor(targetIndex / safeColumns)
-      const targetColumn = targetIndex % safeColumns
-
-      return (
-        crop === 'corn' &&
-        Number.isInteger(targetIndex) &&
-        targetIndex >= 0 &&
-        targetIndex < totalCells &&
-        Math.abs(sourceRow - targetRow) === 1 &&
-        Math.abs(sourceColumn - targetColumn) === 1
-      )
-        ? targetIndex
-        : null
-    }),
+    mirrorCornTargets: normalizedMirrorCornTargets,
   }
 }
 

@@ -102,8 +102,8 @@ export function Inventions({
                 <p className="eyebrow">Corn perfection</p>
                 <h2>{CROP_PERFECTIONS.mirrorCorn.name}</h2>
                 <p>
-                  Harvest 5 Crops, apply −50% Hamster Efficiency, and boost
-                  one diagonally selected crop effect by 100%.
+                  {CROP_PERFECTIONS.mirrorCorn.baseEffectDescription}.{' '}
+                  {CROP_PERFECTIONS.mirrorCorn.effectDescription}.
                 </p>
               </div>
               {hasMirrorCorn ? (

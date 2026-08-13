@@ -362,6 +362,38 @@ test('Mirror Corn quadruples selected diagonal crop effects', () => {
   )
 })
 
+test('Mirror Corn limits each target tile to two reflections', () => {
+  const overlinkedBlueprint = {
+    rows: 3,
+    columns: 3,
+    cells: ['corn', null, 'corn', null, 'leek', null, 'corn', null, null],
+    mirrorCornTargets: [4, null, 4, null, null, null, 4, null, null],
+  }
+  const normalizedBlueprint = createBlueprint(overlinkedBlueprint)
+
+  assert.equal(CROP_PERFECTIONS.mirrorCorn.maximumReflectionsPerTile, 2)
+  assert.match(
+    CROP_PERFECTIONS.mirrorCorn.effectDescription,
+    /burn any crop to a crisp/,
+  )
+  assert.deepEqual(normalizedBlueprint.mirrorCornTargets, [
+    4,
+    null,
+    4,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+  ])
+  assert.deepEqual(
+    getBlueprintCropStats(overlinkedBlueprint, 4, ['mirrorCorn'])
+      .receivedEffects,
+    [{ type: 'mirror-corn', count: 2, multiplier: 16 }],
+  )
+})
+
 test('Mirror Corn targets tiles but gives Lentil no effect', () => {
   const blueprint = createBlueprint({
     rows: 2,

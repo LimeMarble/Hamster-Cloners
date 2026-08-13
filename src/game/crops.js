@@ -156,8 +156,10 @@ export const CROP_PERFECTIONS = {
     baseYield: 5,
     hamsterEfficiencyBonus: -0.5,
     diagonalTargetEffectMultiplier: 4,
+    maximumReflectionsPerTile: 2,
     baseEffectDescription: '5 Crops per slot · −50% Hamster efficiency',
-    effectDescription: 'Multiplies one diagonally adjacent crop effect by ×4',
+    effectDescription:
+      'Multiplies one diagonally adjacent crop effect by ×4 · each tile can receive at most two reflections; harsh sunlight reflected by three or more Mirror Corns would burn any crop to a crisp',
   },
   leechingGourd: {
     id: 'leechingGourd',

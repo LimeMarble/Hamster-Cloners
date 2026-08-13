@@ -174,13 +174,15 @@ export function getMirrorCornTargetCount(
     return 0
   }
 
-  return (blueprint.mirrorCornTargets ?? []).reduce(
+  const targetCount = (blueprint.mirrorCornTargets ?? []).reduce(
     (targetCount, linkedTargetIndex, sourceIndex) =>
       linkedTargetIndex === targetIndex && blueprint.cells[sourceIndex] === 'corn'
         ? targetCount + 1
         : targetCount,
     0,
   )
+
+  return Math.min(targetCount, mirrorCorn.maximumReflectionsPerTile)
 }
 
 export function getMirrorCornEffectMultiplier(

@@ -65,7 +65,8 @@ export function BlueprintEdit({
         ) : hasMirrorCorn && selectedCrop === 'corn' ? (
           <p className="mirror-corn-notice">
             Place Mirror Corn where it has a diagonal tile, then choose that
-            tile. The link remains when its crop changes.
+            tile. The link remains when its crop changes, but each tile can
+            receive at most two reflections.
           </p>
         ) : null}
 
