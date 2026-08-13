@@ -178,6 +178,16 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'global-hamster-efficiency') {
+              return (
+                <li key={effectIndex}>
+                  +<FormattedNumber value={effect.bonus} maximumFractionDigits={2} /> global Hamster Efficiency from {effect.count}{' '}
+                  {getCropName(effect.sourceCropId, completedCropPerfections)}
+{effect.count === 1 ? '' : 's'} (cannot be boosted)
+                </li>
+              )
+            }
+
             if (effect.type === 'global-harvest') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>

@@ -10,8 +10,8 @@ import {
   getAdjacentHarvestModifier,
   getCropBaseYield,
   getCropHamsterEfficiencyBonus,
-  getUnboostableCropHamsterEfficiencyBonus,
   getExternalCropBuffMultiplier,
+  getGlobalHamsterEfficiencyEffects,
   getGlobalHarvestMultiplier,
   getGroupedGlobalHarvestEffects,
   getLeechingGourdTurnipEffect,
@@ -39,12 +39,6 @@ export function getBlueprintCropStats(
     crop,
     completedCropPerfections,
   )
-  const unboostableHamsterEfficiencyBonus =
-    getUnboostableCropHamsterEfficiencyBonus(
-      crop,
-      completedCropPerfections,
-      rowsProducedPerSecond,
-    )
   const receivedEffects = []
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCount = getPlantedCropCount(blueprint, crop)
@@ -265,9 +259,14 @@ export function getBlueprintCropStats(
       blueprint,
       index,
       completedCropPerfections,
-    ) +
-    unboostableHamsterEfficiencyBonus
+    )
   const globalHarvestEffects = getGroupedGlobalHarvestEffects(blueprint)
+  const globalHamsterEfficiencyEffects =
+    getGlobalHamsterEfficiencyEffects(
+      blueprint,
+      completedCropPerfections,
+      rowsProducedPerSecond,
+    )
   const globalHarvestMultiplier = getGlobalHarvestMultiplier(blueprint)
   const harvestYield = doesNotHarvest(crop) || harvestDestroyedByAppleTree
     ? 0
@@ -279,6 +278,9 @@ export function getBlueprintCropStats(
 
   globalHarvestEffects.forEach((effect) => {
     receivedEffects.push({ type: 'global-harvest', ...effect })
+  })
+  globalHamsterEfficiencyEffects.forEach((effect) => {
+    receivedEffects.push({ type: 'global-hamster-efficiency', ...effect })
   })
 
   if (harvestDestructionEffects.length > 0) {

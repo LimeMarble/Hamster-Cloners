@@ -17,8 +17,8 @@ import {
   getAdjacentHarvestModifier,
   getCropBaseYield,
   getCropHamsterEfficiencyBonus,
-  getUnboostableCropHamsterEfficiencyBonus,
   getExternalCropBuffMultiplier,
+  getGlobalHamsterEfficiencyBonus,
   getGlobalHarvestMultiplier,
   getMirrorCornEffectMultiplier,
   getPlantedCropCount,
@@ -42,14 +42,8 @@ export function getCropHamsterEfficiencyMultiplier(
       crop,
       completedCropPerfections,
     )
-    const unboostableHamsterEfficiencyBonus =
-      getUnboostableCropHamsterEfficiencyBonus(
-        crop,
-        completedCropPerfections,
-        rowsProducedPerSecond,
-      )
 
-    if (baseHamsterEfficiencyBonus === 0 && unboostableHamsterEfficiencyBonus === 0) {
+    if (baseHamsterEfficiencyBonus === 0) {
       return totalBonus
     }
 
@@ -75,12 +69,17 @@ export function getCropHamsterEfficiencyMultiplier(
       totalBonus +
       adjustForMonocrop(baseHamsterEfficiencyBonus) *
         adjacentCropBonusMultiplier *
-        mirrorCornEffectMultiplier +
-      unboostableHamsterEfficiencyBonus
+        mirrorCornEffectMultiplier
     )
   }, 0)
 
-  return Math.max(0, 1 + additiveCropBonus)
+  const globalHamsterEfficiencyBonus = getGlobalHamsterEfficiencyBonus(
+    blueprint,
+    completedCropPerfections,
+    rowsProducedPerSecond,
+  )
+
+  return Math.max(0, 1 + additiveCropBonus + globalHamsterEfficiencyBonus)
 }
 
 export function getRowDuplicatorEffectivenessMultiplier(

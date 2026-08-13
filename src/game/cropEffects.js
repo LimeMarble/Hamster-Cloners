@@ -248,25 +248,49 @@ export function getCropHamsterEfficiencyBonus(crop, completedCropPerfections) {
   )
 }
 
-export function getUnboostableCropHamsterEfficiencyBonus(
-  crop,
-  completedCropPerfections,
+export function getGlobalHamsterEfficiencyEffects(
+  blueprint,
+  completedCropPerfections = [],
   rowsProducedPerSecond = 0,
 ) {
-  const perfection = getCropPerfection(crop, completedCropPerfections)
-
-  if (perfection?.hasUnboostableRowsPerSecondBonus !== true) {
-    return 0
-  }
-
+  const sourceCropId = 'sweetPotato'
+  const perfection = getCropPerfection(
+    sourceCropId,
+    completedCropPerfections,
+  )
+  const count = getPlantedCropCount(blueprint, sourceCropId)
   const safeRowsProducedPerSecond = Math.max(
     0,
     Number(rowsProducedPerSecond) || 0,
   )
 
-  return safeRowsProducedPerSecond > 1
-    ? Math.log10(safeRowsProducedPerSecond)
-    : 0
+  if (
+    perfection?.hasUnboostableRowsPerSecondBonus !== true ||
+    count === 0 ||
+    safeRowsProducedPerSecond <= 1
+  ) {
+    return []
+  }
+
+  return [
+    {
+      sourceCropId,
+      count,
+      bonus: count * Math.log10(safeRowsProducedPerSecond),
+    },
+  ]
+}
+
+export function getGlobalHamsterEfficiencyBonus(
+  blueprint,
+  completedCropPerfections = [],
+  rowsProducedPerSecond = 0,
+) {
+  return getGlobalHamsterEfficiencyEffects(
+    blueprint,
+    completedCropPerfections,
+    rowsProducedPerSecond,
+  ).reduce((totalBonus, effect) => totalBonus + effect.bonus, 0)
 }
 
 export function getAdjacentCropEffectModifier(

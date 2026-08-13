@@ -866,7 +866,7 @@ test('Sweet Potato perfection adds an unboostable Rows-per-second bonus', () => 
     cells: ['sweetPotato', 'turnip'],
   })
 
-  assert.equal(CROP_PERFECTIONS.sweetPotato.cost, 1.25e32)
+  assert.equal(CROP_PERFECTIONS.sweetPotato.cost, 1.25e33)
   assert.equal(getCropName('sweetPotato'), 'Potato')
   assert.equal(getCropName('sweetPotato', ['sweetPotato']), 'Sweet Potato')
   assert.equal(canUnlockCropPerfection(lockedGame, 'sweetPotato'), false)
@@ -887,10 +887,41 @@ test('Sweet Potato perfection adds an unboostable Rows-per-second bonus', () => 
     getCropHamsterEfficiencyMultiplier(blueprint, ['sweetPotato'], 0.1),
     3.5,
   )
-  assert.equal(
-    getBlueprintCropStats(blueprint, 0, ['sweetPotato'], 100)
-      .hamsterEfficiencyBonus,
-    4.5,
+  const sweetPotatoStats = getBlueprintCropStats(
+    blueprint,
+    0,
+    ['sweetPotato'],
+    100,
+  )
+  const turnipStats = getBlueprintCropStats(
+    blueprint,
+    1,
+    ['sweetPotato'],
+    100,
+  )
+
+  assert.equal(sweetPotatoStats.hamsterEfficiencyBonus, 2.5)
+  assert.deepEqual(
+    sweetPotatoStats.receivedEffects.find(
+      (effect) => effect.type === 'global-hamster-efficiency',
+    ),
+    {
+      type: 'global-hamster-efficiency',
+      sourceCropId: 'sweetPotato',
+      count: 1,
+      bonus: 2,
+    },
+  )
+  assert.deepEqual(
+    turnipStats.receivedEffects.find(
+      (effect) => effect.type === 'global-hamster-efficiency',
+    ),
+    {
+      type: 'global-hamster-efficiency',
+      sourceCropId: 'sweetPotato',
+      count: 1,
+      bonus: 2,
+    },
   )
 })
 test('Pumpkins yield five Crops and halve adjacent crop buffs and debuffs', () => {

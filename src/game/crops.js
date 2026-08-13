@@ -185,7 +185,7 @@ export const CROP_PERFECTIONS = {
     requiresRowDuplicators: true,
     baseEffectDescription: '1 Crop per slot · +125% Hamster Efficiency',
     effectDescription:
-      'Adds log10(Rows/sec) Hamster Efficiency per Sweet Potato · the logarithmic bonus cannot be boosted',
+      'Globally adds log10(Rows/sec) Hamster Efficiency per Sweet Potato · this global bonus cannot be boosted',
   },
 }
 
