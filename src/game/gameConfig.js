@@ -15,7 +15,7 @@ export const UNIONIZED_HAMSTER_COUNT = 100
 export const HIRE_MAX_UNLOCK_COUNT = 10
 export const UNION_STATUS_RETIRE_HIRE_COUNT = 20
 export const INVENTIONS_HAMSTER_UNLOCK_COUNT = 50
-export const ROW_DUPLICATORS_UNLOCK_CROP_COUNT = 404e21
+export const ROW_DUPLICATORS_UNLOCK_CROP_COUNT = 4.04e38
 export const ROW_DUPLICATOR_BASE_COST = 1e12
 export const ROW_DUPLICATOR_COST_GROWTH = 1.2
 export const BLUEPRINT_EXPANSION_CONFIG = [
@@ -25,7 +25,7 @@ export const BLUEPRINT_EXPANSION_CONFIG = [
     maximumExpansions: 6,
     baseCost: 1e4,
     costScale: 1e4,
-    acceleratedScalingAfter: 4,
+    acceleratedScalingAfter: 3,
     initialPrerequisiteIds: [],
   },
   {
@@ -34,7 +34,7 @@ export const BLUEPRINT_EXPANSION_CONFIG = [
     maximumExpansions: 8,
     baseCost: 1e7,
     costScale: 1e2,
-    acceleratedScalingAfter: 4,
+    acceleratedScalingAfter: 3,
     initialPrerequisiteIds: ['firstColumn'],
   },
 ]
