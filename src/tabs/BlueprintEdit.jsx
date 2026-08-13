@@ -17,6 +17,7 @@ export function BlueprintEdit({
   hoveredEditorCrop,
   visibleCropIds,
   unlockedCropIds,
+  rowsBuiltPerSecond,
   mirrorCornLinks,
   pendingMirrorCornLinks,
   hasMirrorCorn,
@@ -234,6 +235,7 @@ export function BlueprintEdit({
             blueprint={game.blueprint}
             index={hoveredEditorCrop.index}
             completedCropPerfections={game.completedCropPerfections}
+            rowsProducedPerSecond={rowsBuiltPerSecond}
             cursor={hoveredEditorCrop}
           />
         ) : null}

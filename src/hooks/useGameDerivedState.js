@@ -45,14 +45,7 @@ export function useGameDerivedState(game) {
       game.testingCheats?.cropMultiplierEnabled,
     ],
   )
-  const cropHamsterEfficiencyMultiplier = useMemo(
-    () =>
-      getCropHamsterEfficiencyMultiplier(
-        game.blueprint,
-        game.completedCropPerfections,
-      ),
-    [game.blueprint, game.completedCropPerfections],
-  )
+
   const hamsterCoordinationMultiplier = useMemo(
     () =>
       getHamsterCoordinationMultiplier(
@@ -63,21 +56,6 @@ export function useGameDerivedState(game) {
   )
   const hamsterExternalMultiplier = getHamsterExternalMultiplier(
     game.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1,
-  )
-  const columnsBuiltPerSecond = useMemo(
-    () =>
-      getColumnsProducedPerSecond(
-        game.hamsters,
-        game.postUnionHamstersHired,
-        cropHamsterEfficiencyMultiplier,
-        hamsterExternalMultiplier,
-      ),
-    [
-      game.hamsters,
-      game.postUnionHamstersHired,
-      cropHamsterEfficiencyMultiplier,
-      hamsterExternalMultiplier,
-    ],
   )
   const nextRowDuplicatorCost = useMemo(
     () => getNextRowDuplicatorCost(game.rowDuplicators),
@@ -105,6 +83,30 @@ export function useGameDerivedState(game) {
       game.hasUnlockedRowDuplicators,
       game.rowDuplicators,
       rowDuplicatorEffectivenessMultiplier,
+    ],
+  )
+  const cropHamsterEfficiencyMultiplier = useMemo(
+    () =>
+      getCropHamsterEfficiencyMultiplier(
+        game.blueprint,
+        game.completedCropPerfections,
+        rowsBuiltPerSecond,
+      ),
+    [game.blueprint, game.completedCropPerfections, rowsBuiltPerSecond],
+  )
+  const columnsBuiltPerSecond = useMemo(
+    () =>
+      getColumnsProducedPerSecond(
+        game.hamsters,
+        game.postUnionHamstersHired,
+        cropHamsterEfficiencyMultiplier,
+        hamsterExternalMultiplier,
+      ),
+    [
+      game.hamsters,
+      game.postUnionHamstersHired,
+      cropHamsterEfficiencyMultiplier,
+      hamsterExternalMultiplier,
     ],
   )
   const unlockedCropIds = useMemo(
@@ -201,9 +203,11 @@ export function useGameDerivedState(game) {
     canUnlockEnrichingLeek: canUnlockCropPerfection(game, 'enrichingLeek'),
     canUnlockMirrorCorn: canUnlockCropPerfection(game, 'mirrorCorn'),
     canUnlockLeechingGourd: canUnlockCropPerfection(game, 'leechingGourd'),
+    canUnlockSweetPotato: canUnlockCropPerfection(game, 'sweetPotato'),
     canUnlockRows: canUnlockRowDuplicators(game),
     hasEnrichingLeek: completedCropPerfections.includes('enrichingLeek'),
     hasMirrorCorn: completedCropPerfections.includes('mirrorCorn'),
     hasLeechingGourd: completedCropPerfections.includes('leechingGourd'),
+    hasSweetPotato: completedCropPerfections.includes('sweetPotato'),
   }
 }

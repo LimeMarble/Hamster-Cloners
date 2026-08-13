@@ -74,12 +74,14 @@ export function CropHoverInspector({
   blueprint,
   index,
   completedCropPerfections,
+  rowsProducedPerSecond,
   cursor,
 }) {
   const stats = getBlueprintCropStats(
     blueprint,
     index,
     completedCropPerfections,
+    rowsProducedPerSecond,
   )
 
   if (!stats) {

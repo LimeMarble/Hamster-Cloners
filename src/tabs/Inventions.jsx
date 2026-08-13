@@ -10,13 +10,16 @@ export function Inventions({
   canUnlockEnrichingLeek,
   canUnlockMirrorCorn,
   canUnlockLeechingGourd,
+  canUnlockSweetPotato,
   canUnlockRows,
   hasEnrichingLeek,
   hasMirrorCorn,
   hasLeechingGourd,
+  hasSweetPotato,
   onUnlockEnrichingLeek,
   onUnlockMirrorCorn,
   onUnlockLeechingGourd,
+  onUnlockSweetPotato,
   onRequestRowDuplicatorUnlock,
   onRequestBlueprintExpansion,
   pendingBlueprintExpansion,
@@ -166,6 +169,56 @@ export function Inventions({
                 <FormattedNumber value={CROP_PERFECTIONS.leechingGourd.cost} maximumFractionDigits={0} />{' '}
                 Crops
               </p>
+            ) : null}
+            {game.hasUnlockedRowDuplicators ? (
+              <>
+                <article className="invention-card crop-perfection-card">
+                  <div>
+                    <p className="eyebrow">Potato perfection</p>
+                    <h2>{CROP_PERFECTIONS.sweetPotato.name}</h2>
+                    <p>
+                      Raise Potato&apos;s Hamster Efficiency bonus from +25% to
+                      +125%, then add log10(Rows/sec) Hamster Efficiency per
+                      planted Sweet Potato. The logarithmic bonus cannot be
+                      boosted.
+                    </p>
+                  </div>
+                  {hasSweetPotato ? (
+                    <span className="invention-complete">Perfected</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={onUnlockSweetPotato}
+                      disabled={!canUnlockSweetPotato}
+                    >
+                      Spend{' '}
+                      <FormattedNumber
+                        value={CROP_PERFECTIONS.sweetPotato.cost}
+                        maximumFractionDigits={0}
+                      />{' '}
+                      Crops
+                    </button>
+                  )}
+                </article>
+                {!hasSweetPotato ? (
+                  <p className="invention-progress">
+                    <FormattedNumber
+                      value={Math.min(
+                        game.crops,
+                        CROP_PERFECTIONS.sweetPotato.cost,
+                      )}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    /{' '}
+                    <FormattedNumber
+                      value={CROP_PERFECTIONS.sweetPotato.cost}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    Crops
+                  </p>
+                ) : null}
+              </>
             ) : null}
           </section>
         ) : (

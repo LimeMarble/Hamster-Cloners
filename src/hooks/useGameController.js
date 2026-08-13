@@ -26,6 +26,7 @@ export function useGameController() {
     unlockedBlueprintSlotCount: derived.unlockedBlueprintSlotCount,
     hasMirrorCorn: derived.hasMirrorCorn,
     hasLeechingGourd: derived.hasLeechingGourd,
+    rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
   })
   const actions = useGameActions({
     gameRef,
@@ -101,10 +102,12 @@ export function useGameController() {
         canUnlockEnrichingLeek: derived.canUnlockEnrichingLeek,
         canUnlockMirrorCorn: derived.canUnlockMirrorCorn,
         canUnlockLeechingGourd: derived.canUnlockLeechingGourd,
+        canUnlockSweetPotato: derived.canUnlockSweetPotato,
         canUnlockRows: derived.canUnlockRows,
         hasEnrichingLeek: derived.hasEnrichingLeek,
         hasMirrorCorn: derived.hasMirrorCorn,
         hasLeechingGourd: derived.hasLeechingGourd,
+        hasSweetPotato: derived.hasSweetPotato,
         pendingBlueprintExpansion: actions.pendingBlueprintExpansion,
         isRowDuplicatorUnlockPending:
           actions.isRowDuplicatorUnlockPending,

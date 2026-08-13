@@ -4,7 +4,7 @@ import {
   getColumnsProducedForTick,
   getCropHamsterEfficiencyMultiplier,
   getProductionForTick,
-  getRowsProducedForTick,
+  getRowsProducedPerSecond,
   getRowDuplicatorEffectivenessMultiplier,
   getUnlockedBlueprintSlotCount,
   SIMULATION_TICK_INTERVAL_MS,
@@ -70,25 +70,30 @@ export function useGameState(isEditingBlueprintRef) {
           currentGame.testingCheats?.cropMultiplierEnabled ? 10 : 1,
         )
         const nextCrops = currentGame.crops + productionForTick
+        const rowDuplicatorEffectivenessMultiplier =
+          getRowDuplicatorEffectivenessMultiplier(
+            currentGame.blueprint,
+            currentGame.completedCropPerfections,
+          )
+        const rowsBuiltPerSecond = currentGame.hasUnlockedRowDuplicators
+          ? getRowsProducedPerSecond(
+              currentGame.rowDuplicators,
+              rowDuplicatorEffectivenessMultiplier,
+            )
+          : 0
         const columnsProducedForTick = getColumnsProducedForTick(
           currentGame.hamsters,
           currentGame.postUnionHamstersHired,
           getCropHamsterEfficiencyMultiplier(
             currentGame.blueprint,
             currentGame.completedCropPerfections,
+            rowsBuiltPerSecond,
           ),
           SIMULATION_TICK_INTERVAL_MS,
           currentGame.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1,
         )
-        const rowsProducedForTick = currentGame.hasUnlockedRowDuplicators
-          ? getRowsProducedForTick(
-              currentGame.rowDuplicators,
-              getRowDuplicatorEffectivenessMultiplier(
-                currentGame.blueprint,
-                currentGame.completedCropPerfections,
-              ),
-            )
-          : 0
+        const rowsProducedForTick =
+          rowsBuiltPerSecond * (SIMULATION_TICK_INTERVAL_MS / 1000)
         const hasUnlockedRootTunnel =
           currentGame.hasUnlockedRootTunnel ||
           nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT

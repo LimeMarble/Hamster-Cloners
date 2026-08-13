@@ -10,6 +10,7 @@ import {
   getAdjacentHarvestModifier,
   getCropBaseYield,
   getCropHamsterEfficiencyBonus,
+  getUnboostableCropHamsterEfficiencyBonus,
   getExternalCropBuffMultiplier,
   getGlobalHarvestMultiplier,
   getGroupedGlobalHarvestEffects,
@@ -24,6 +25,7 @@ export function getBlueprintCropStats(
   blueprint,
   index,
   completedCropPerfections = [],
+  rowsProducedPerSecond = 0,
 ) {
   const crop = blueprint.cells[index]
   const definition = CROP_DEFINITIONS[crop]
@@ -37,6 +39,12 @@ export function getBlueprintCropStats(
     crop,
     completedCropPerfections,
   )
+  const unboostableHamsterEfficiencyBonus =
+    getUnboostableCropHamsterEfficiencyBonus(
+      crop,
+      completedCropPerfections,
+      rowsProducedPerSecond,
+    )
   const receivedEffects = []
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCount = getPlantedCropCount(blueprint, crop)
@@ -257,7 +265,8 @@ export function getBlueprintCropStats(
       blueprint,
       index,
       completedCropPerfections,
-    )
+    ) +
+    unboostableHamsterEfficiencyBonus
   const globalHarvestEffects = getGroupedGlobalHarvestEffects(blueprint)
   const globalHarvestMultiplier = getGlobalHarvestMultiplier(blueprint)
   const harvestYield = doesNotHarvest(crop) || harvestDestroyedByAppleTree

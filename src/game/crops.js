@@ -175,6 +175,18 @@ export const CROP_PERFECTIONS = {
     effectDescription:
       'Nullifies adjacent crop debuffs · +5% all Turnip effectiveness per adjacent debuff; harmful crops count twice',
   },
+  sweetPotato: {
+    id: 'sweetPotato',
+    cropId: 'sweetPotato',
+    name: 'Sweet Potato',
+    cost: 1.25e32,
+    hamsterEfficiencyBonus: 1.25,
+    hasUnboostableRowsPerSecondBonus: true,
+    requiresRowDuplicators: true,
+    baseEffectDescription: '1 Crop per slot · +125% Hamster Efficiency',
+    effectDescription:
+      'Adds log10(Rows/sec) Hamster Efficiency per Sweet Potato · the logarithmic bonus cannot be boosted',
+  },
 }
 
 export const CROP_PERFECTION_IDS = Object.keys(CROP_PERFECTIONS)

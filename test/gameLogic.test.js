@@ -849,6 +849,50 @@ test('Enriching Leek costs 20 billion Crops to unlock', () => {
   })
 })
 
+test('Sweet Potato perfection adds an unboostable Rows-per-second bonus', () => {
+  const lockedGame = {
+    crops: CROP_PERFECTIONS.sweetPotato.cost,
+    hasUnlockedCropPerfection: true,
+    hasUnlockedRowDuplicators: false,
+    completedCropPerfections: [],
+  }
+  const eligibleGame = {
+    ...lockedGame,
+    hasUnlockedRowDuplicators: true,
+  }
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['sweetPotato', 'turnip'],
+  })
+
+  assert.equal(CROP_PERFECTIONS.sweetPotato.cost, 1.25e32)
+  assert.equal(getCropName('sweetPotato'), 'Potato')
+  assert.equal(getCropName('sweetPotato', ['sweetPotato']), 'Sweet Potato')
+  assert.equal(canUnlockCropPerfection(lockedGame, 'sweetPotato'), false)
+  assert.equal(canUnlockCropPerfection(eligibleGame, 'sweetPotato'), true)
+  assert.deepEqual(unlockCropPerfection(eligibleGame, 'sweetPotato'), {
+    ...eligibleGame,
+    crops: 0,
+    completedCropPerfections: ['sweetPotato'],
+  })
+
+  // Turnip doubles the perfected +125% base bonus, but the +2 from
+  // log10(100 Rows/sec) is added afterward and cannot be boosted.
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(blueprint, ['sweetPotato'], 100),
+    5.5,
+  )
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(blueprint, ['sweetPotato'], 0.1),
+    3.5,
+  )
+  assert.equal(
+    getBlueprintCropStats(blueprint, 0, ['sweetPotato'], 100)
+      .hamsterEfficiencyBonus,
+    4.5,
+  )
+})
 test('Pumpkins yield five Crops and halve adjacent crop buffs and debuffs', () => {
   const blueprint = createBlueprint({
     rows: 1,

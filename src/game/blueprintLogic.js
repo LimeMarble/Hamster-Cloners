@@ -261,6 +261,8 @@ export function canUnlockCropPerfection(game, perfectionId) {
   return (
     game.hasUnlockedCropPerfection === true &&
     cost !== null &&
+    (CROP_PERFECTIONS[perfectionId]?.requiresRowDuplicators !== true ||
+      game.hasUnlockedRowDuplicators === true) &&
     !hasCropPerfection(getCompletedCropPerfections(game), perfectionId) &&
     Math.max(0, Number(game.crops) || 0) >= cost
   )

@@ -256,6 +256,7 @@ export function useGameActions({
       onUnlockEnrichingLeek: () => unlockPerfection('enrichingLeek'),
       onUnlockMirrorCorn: () => unlockPerfection('mirrorCorn'),
       onUnlockLeechingGourd: () => unlockPerfection('leechingGourd'),
+      onUnlockSweetPotato: () => unlockPerfection('sweetPotato'),
       onRequestRowDuplicatorUnlock: () =>
         setIsRowDuplicatorUnlockPending(true),
       onRequestBlueprintExpansion: setPendingBlueprintExpansionId,

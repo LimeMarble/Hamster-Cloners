@@ -17,6 +17,7 @@ import {
   getAdjacentHarvestModifier,
   getCropBaseYield,
   getCropHamsterEfficiencyBonus,
+  getUnboostableCropHamsterEfficiencyBonus,
   getExternalCropBuffMultiplier,
   getGlobalHarvestMultiplier,
   getMirrorCornEffectMultiplier,
@@ -27,6 +28,7 @@ import {
 export function getCropHamsterEfficiencyMultiplier(
   blueprint,
   completedCropPerfections = [],
+  rowsProducedPerSecond = 0,
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCounts = Object.fromEntries(
@@ -40,8 +42,14 @@ export function getCropHamsterEfficiencyMultiplier(
       crop,
       completedCropPerfections,
     )
+    const unboostableHamsterEfficiencyBonus =
+      getUnboostableCropHamsterEfficiencyBonus(
+        crop,
+        completedCropPerfections,
+        rowsProducedPerSecond,
+      )
 
-    if (baseHamsterEfficiencyBonus === 0) {
+    if (baseHamsterEfficiencyBonus === 0 && unboostableHamsterEfficiencyBonus === 0) {
       return totalBonus
     }
 
@@ -67,7 +75,8 @@ export function getCropHamsterEfficiencyMultiplier(
       totalBonus +
       adjustForMonocrop(baseHamsterEfficiencyBonus) *
         adjacentCropBonusMultiplier *
-        mirrorCornEffectMultiplier
+        mirrorCornEffectMultiplier +
+      unboostableHamsterEfficiencyBonus
     )
   }, 0)
 

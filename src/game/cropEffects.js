@@ -248,6 +248,27 @@ export function getCropHamsterEfficiencyBonus(crop, completedCropPerfections) {
   )
 }
 
+export function getUnboostableCropHamsterEfficiencyBonus(
+  crop,
+  completedCropPerfections,
+  rowsProducedPerSecond = 0,
+) {
+  const perfection = getCropPerfection(crop, completedCropPerfections)
+
+  if (perfection?.hasUnboostableRowsPerSecondBonus !== true) {
+    return 0
+  }
+
+  const safeRowsProducedPerSecond = Math.max(
+    0,
+    Number(rowsProducedPerSecond) || 0,
+  )
+
+  return safeRowsProducedPerSecond > 1
+    ? Math.log10(safeRowsProducedPerSecond)
+    : 0
+}
+
 export function getAdjacentCropEffectModifier(
   blueprint,
   crop,
