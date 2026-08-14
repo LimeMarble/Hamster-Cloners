@@ -2,6 +2,7 @@ export * from './gameConfig.js'
 export * from './blueprintLogic.js'
 export * from './purchaseLogic.js'
 export * from './majorProgression.js'
+export * from './tradeLogic.js'
 export {
   getAdjacentCropConnections,
   getBlueprintMonocropMultiplier,

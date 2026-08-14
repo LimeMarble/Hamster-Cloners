@@ -164,8 +164,15 @@ export function createInitialGame() {
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
     rowDuplicators: 0,
+    trade: {
+      established: false,
+      rabbitRelations: 0,
+      rabbitContract: null,
+      rabbitUnlocks: [],
+    },
     numberNotation: 'suffix',
     testingPanelUnlocked: false,
+    testingPanelVisible: false,
     testingCheats: {
       cropMultiplierEnabled: false,
       hamsterEfficiencyEnabled: false,

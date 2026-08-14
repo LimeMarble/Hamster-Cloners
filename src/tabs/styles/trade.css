@@ -1,0 +1,232 @@
+.trade-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.trade-header,
+.rabbit-contract-heading,
+.rabbit-contract-values,
+.trade-establishment-card,
+.trading-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.trade-header h1 {
+  margin-bottom: 8px;
+  font-size: 1.8rem;
+}
+
+.trade-copy,
+.trade-establishment-card p,
+.rabbit-unlock-card p,
+.rabbit-contract-card > p {
+  margin-bottom: 0;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.relations-balance {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 4px;
+  min-width: 150px;
+  padding: 12px 14px;
+  border: 1px solid #c49a42;
+  background: #211b0d;
+  text-align: right;
+}
+
+.relations-balance span {
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.relations-balance strong,
+.relations-reward {
+  color: var(--crop-gold);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.trade-establishment-card,
+.trading-group,
+.rabbit-unlocks {
+  padding: 18px;
+  border: 1px solid #67562f;
+  background: var(--panel-raised);
+}
+
+.trade-establishment-card h2,
+.trading-group h2,
+.rabbit-unlocks h2 {
+  margin-bottom: 7px;
+}
+
+.trade-establishment-action {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 9px;
+  text-align: right;
+}
+
+.trade-establishment-action strong {
+  color: var(--crop-gold);
+  font-size: 0.82rem;
+}
+
+.trade-primary-button,
+.rabbit-unlock-card button {
+  padding: 9px 13px;
+  border: 1px solid #b98f36;
+  color: #ffe3a4;
+  background: #4d3a12;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.trade-primary-button:hover:not(:disabled),
+.rabbit-unlock-card button:hover:not(:disabled) {
+  border-color: #f2c35c;
+  background: #654c17;
+}
+
+.trade-primary-button:disabled,
+.rabbit-unlock-card button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.trading-group {
+  display: grid;
+  gap: 14px;
+}
+
+.trading-group-title {
+  justify-content: flex-start;
+}
+
+.trading-group-title > span {
+  font-size: 2.2rem;
+}
+
+.rabbit-contract-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #52694a;
+  background: #0b150c;
+}
+
+.rabbit-contract-crop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rabbit-contract-crop > span {
+  font-size: 2rem;
+}
+
+.rabbit-contract-track {
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid #3e593d;
+  background: #070d08;
+}
+
+.rabbit-contract-track span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #4b863f, #8fcf65);
+  transition: width 100ms linear;
+}
+
+.rabbit-contract-values {
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.73rem;
+}
+
+.rabbit-contract-card .trade-primary-button {
+  justify-self: end;
+}
+
+.rabbit-unlocks {
+  display: grid;
+  gap: 14px;
+}
+
+.rabbit-unlock-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.rabbit-unlock-card {
+  display: grid;
+  gap: 13px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: #0d110d;
+}
+
+.rabbit-unlock-card h3 {
+  margin: 0 0 6px;
+  color: var(--text-strong);
+  font-size: 0.88rem;
+}
+
+.rabbit-unlock-card button {
+  justify-self: start;
+}
+
+.rabbit-unlock-purchased {
+  border-color: var(--field-green);
+  background: var(--field-green-muted);
+}
+
+.rabbit-unlock-purchased button {
+  border-color: var(--field-green);
+  color: var(--field-green);
+  background: transparent;
+  opacity: 1;
+}
+
+@media (max-width: 650px) {
+  .trade-header,
+  .trade-establishment-card,
+  .rabbit-contract-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .relations-balance,
+  .trade-establishment-action {
+    text-align: left;
+  }
+
+  .rabbit-unlock-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rabbit-contract-values {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .rabbit-contract-card .trade-primary-button {
+    justify-self: stretch;
+  }
+}

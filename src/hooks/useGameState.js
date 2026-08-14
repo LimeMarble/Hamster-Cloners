@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  advanceRabbitContract,
   getBlueprintSlots,
   getColumnsProducedForTick,
   getCropHamsterEfficiencyMultiplier,
-  getProductionForTick,
+  getProductionSnapshotForTick,
   getRowsProducedPerSecond,
   getRowDuplicatorEffectivenessMultiplier,
   getRowDuplicatorExternalMultiplier,
   getUnlockedBlueprintSlotCount,
+  hasRabbitUnlock,
+  RABBIT_UNLOCK_IDS,
   SIMULATION_TICK_INTERVAL_MS,
   VISUAL_UPDATE_INTERVAL_MS,
 } from '../game/gameLogic.js'
@@ -64,13 +67,14 @@ export function useGameState(isEditingBlueprintRef) {
         SIMULATION_TICK_INTERVAL_MS / 1000
 
       if (!isEditingBlueprintRef.current) {
-        const productionForTick = getProductionForTick(
+        const productionSnapshotForTick = getProductionSnapshotForTick(
           currentGame.blueprint,
           currentGame.farmland,
           currentGame.completedCropPerfections,
           SIMULATION_TICK_INTERVAL_MS,
           currentGame.testingCheats?.cropMultiplierEnabled ? 10 : 1,
         )
+        const productionForTick = productionSnapshotForTick.total
         const nextCrops = currentGame.crops + productionForTick
         const rowDuplicatorEffectivenessMultiplier =
           getRowDuplicatorEffectivenessMultiplier(
@@ -82,7 +86,14 @@ export function useGameState(isEditingBlueprintRef) {
           ? getRowsProducedPerSecond(
               currentGame.rowDuplicators,
               rowDuplicatorEffectivenessMultiplier,
-              getRowDuplicatorExternalMultiplier(),
+              getRowDuplicatorExternalMultiplier(
+                hasRabbitUnlock(
+                  currentGame,
+                  RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
+                )
+                  ? 2
+                  : 1,
+              ),
             )
           : 0
         const columnsProducedForTick = getColumnsProducedForTick(
@@ -94,7 +105,13 @@ export function useGameState(isEditingBlueprintRef) {
             rowsBuiltPerSecond,
           ),
           SIMULATION_TICK_INTERVAL_MS,
-          currentGame.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1,
+          (currentGame.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1) *
+            (hasRabbitUnlock(
+              currentGame,
+              RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY,
+            )
+              ? 3
+              : 1),
         )
         const rowsProducedForTick =
           rowsBuiltPerSecond * (SIMULATION_TICK_INTERVAL_MS / 1000)
@@ -144,6 +161,10 @@ export function useGameState(isEditingBlueprintRef) {
           hasUnlockedCropPerfection:
             currentGame.hasUnlockedCropPerfection ||
             nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
+          trade: advanceRabbitContract(
+            currentGame,
+            productionSnapshotForTick.byCrop,
+          ),
           farmland: {
             ...currentGame.farmland,
             columns: currentGame.farmland.columns + columnsProducedForTick,

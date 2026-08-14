@@ -4,6 +4,7 @@ import { HamsterPurchase } from './HamsterPurchase.jsx'
 import { Inventions } from './Inventions.jsx'
 import { Options } from './Options.jsx'
 import { Statistics } from './Statistics.jsx'
+import { Trade } from './Trade.jsx'
 import { FormattedNumber } from './ui.jsx'
 
 function FieldScreen({
@@ -42,6 +43,7 @@ export function GameScreen({
   activeTab,
   field,
   inventions,
+  trade,
   statistics,
   options,
 }) {
@@ -51,6 +53,10 @@ export function GameScreen({
 
   if (activeTab === 'inventions') {
     return <Inventions {...inventions} />
+  }
+
+  if (activeTab === 'trade') {
+    return <Trade {...trade} />
   }
 
   if (activeTab === 'statistics') {

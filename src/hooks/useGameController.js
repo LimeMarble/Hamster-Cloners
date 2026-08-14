@@ -36,6 +36,7 @@ export function useGameController() {
     setGame,
     updateGame,
     areInventionsUnlocked: derived.areInventionsUnlocked,
+    isTradeTabVisible: derived.isTradeTabVisible,
     resetBlueprintEditor: blueprintEditor.resetBlueprintEditor,
     clearCropUnlockNotices: notifications.clearCropUnlockNotices,
   })
@@ -52,6 +53,7 @@ export function useGameController() {
     navigation: {
       activeTab: actions.activeTab,
       areInventionsUnlocked: derived.areInventionsUnlocked,
+      isTradeTabVisible: derived.isTradeTabVisible,
       showInventionsUnlockPrompt: derived.showInventionsUnlockPrompt,
       inventionsUnlockCount: INVENTIONS_HAMSTER_UNLOCK_COUNT,
       ...actions.navigationActions,
@@ -102,6 +104,12 @@ export function useGameController() {
                 actions.purchaseActions.onBuyMaxRowDuplicators,
             }
           : null,
+      },
+      trade: {
+        game,
+        rabbitContractProductionPerSecond:
+          derived.rabbitContractProductionPerSecond,
+        ...actions.tradeActions,
       },
       inventions: {
         game,

@@ -23,12 +23,20 @@ export function useTestingCheats({
     updateGame((currentGame) => ({
       ...currentGame,
       testingPanelUnlocked: true,
+      testingPanelVisible: true,
     }))
     setCodeInput('')
     setCodeStatus({
       type: 'success',
       message: 'Testing panel unlocked.',
     })
+  }
+
+  function toggleTestingPanelVisibility() {
+    updateGame((currentGame) => ({
+      ...currentGame,
+      testingPanelVisible: !currentGame.testingPanelVisible,
+    }))
   }
 
   function toggleCheat(cheatId) {
@@ -86,6 +94,8 @@ export function useTestingCheats({
     },
     testingPanel: game.testingPanelUnlocked
       ? {
+          isVisible: game.testingPanelVisible === true,
+          onToggleVisibility: toggleTestingPanelVisibility,
           cropMultiplierEnabled:
             game.testingCheats?.cropMultiplierEnabled === true,
           hamsterEfficiencyEnabled:

@@ -15,6 +15,7 @@ import {
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   UNIONIZATION_HAMSTER_COUNT,
 } from './gameConfig.js'
+import { TRADE_ESTABLISHMENT_COST } from './tradeLogic.js'
 
 const FIRST_COLUMN_EXPANSION_COST =
   BLUEPRINT_EXPANSIONS.find((expansion) => expansion.id === 'firstColumn')
@@ -198,6 +199,18 @@ export const MAJOR_PROGRESSION_GOALS = [
       CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT,
     getCurrent: (game) => game.rowDuplicators,
   }),
+  {
+    id: 'trade-relations',
+    category: 'Milestone',
+    title: 'Establish Trade Relations',
+    target: TRADE_ESTABLISHMENT_COST,
+    unit: 'Crops',
+    description:
+      'Spend the cost in the Trade tab to establish relations without resetting.',
+    isComplete: (game) => game.trade?.established === true,
+    getCurrent: (game) => game.crops,
+    requiresAction: true,
+  },
 ]
 
 export function getNextMajorProgressionGoal(game) {

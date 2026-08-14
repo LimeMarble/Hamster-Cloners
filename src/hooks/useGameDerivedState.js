@@ -7,7 +7,7 @@ import {
   getBlueprintSlots,
   getColumnsProducedPerSecond,
   getCropHamsterEfficiencyMultiplier,
-  getCropProductionPerSecond,
+  getCropProductionSnapshotPerSecond,
 
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
@@ -21,7 +21,9 @@ import {
   getRowDuplicatorCoordinationMultiplier,
   getUnlockedBlueprintSlotCount,
   hasReachedMonocropLimit,
+  hasRabbitUnlock,
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
+  RABBIT_UNLOCK_IDS,
   UNIONIZATION_HAMSTER_COUNT,
   UNION_STATUS_RETIRE_HIRE_COUNT,
 } from '../game/gameLogic.js'
@@ -34,9 +36,9 @@ export function useGameDerivedState(game) {
     () => getNextHamsterCost(game.hamsters, game.unionized),
     [game.hamsters, game.unionized],
   )
-  const productionPerSecond = useMemo(
+  const cropProductionSnapshot = useMemo(
     () =>
-      getCropProductionPerSecond(
+      getCropProductionSnapshotPerSecond(
         game.blueprint,
         game.farmland,
         game.completedCropPerfections,
@@ -49,6 +51,7 @@ export function useGameDerivedState(game) {
       game.testingCheats?.cropMultiplierEnabled,
     ],
   )
+  const productionPerSecond = cropProductionSnapshot.total
 
   const hamsterCoordinationMultiplier = useMemo(
     () =>
@@ -59,7 +62,10 @@ export function useGameDerivedState(game) {
     [game.hamsters, game.postUnionHamstersHired],
   )
   const hamsterExternalMultiplier = getHamsterExternalMultiplier(
-    game.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1,
+    (game.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1) *
+      (hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY)
+        ? 3
+        : 1),
   )
   const nextRowDuplicatorCost = useMemo(
     () => getNextRowDuplicatorCost(game.rowDuplicators),
@@ -79,7 +85,14 @@ export function useGameDerivedState(game) {
     [game.rowDuplicators],
   )
   const rowDuplicatorExternalMultiplier =
-    getRowDuplicatorExternalMultiplier()
+    getRowDuplicatorExternalMultiplier(
+      hasRabbitUnlock(
+        game,
+        RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
+      )
+        ? 2
+        : 1,
+    )
   const rowsBuiltPerSecond = useMemo(
     () =>
       getRowsProducedPerSecond(
@@ -202,6 +215,13 @@ export function useGameDerivedState(game) {
     nextHamsterCost,
     majorProgressionGoal,
     productionPerSecond,
+    rabbitContractProductionPerSecond: Math.max(
+      0,
+      Number(
+        cropProductionSnapshot.byCrop[game.trade?.rabbitContract?.cropId],
+      ) || 0,
+    ),
+    isTradeTabVisible: game.hasUnlockedSunflower === true,
     cropHamsterEfficiencyMultiplier,
     hamsterCoordinationMultiplier,
     hamsterExternalMultiplier,

@@ -15,8 +15,10 @@ export function GameNavigation({
   areInventionsUnlocked,
   showInventionsUnlockPrompt,
   inventionsUnlockCount,
+  isTradeTabVisible,
   onShowField,
   onOpenInventions,
+  onShowTrade,
   onShowStatistics,
   onOpenOptions,
 }) {
@@ -54,6 +56,15 @@ export function GameNavigation({
           </aside>
         ) : null}
       </div>
+      {isTradeTabVisible ? (
+        <button
+          type="button"
+          className={`game-tab ${activeTab === 'trade' ? 'game-tab-active' : ''}`}
+          onClick={onShowTrade}
+        >
+          Trade
+        </button>
+      ) : null}
       <button
         type="button"
         className={`game-tab ${activeTab === 'statistics' ? 'game-tab-active' : ''}`}

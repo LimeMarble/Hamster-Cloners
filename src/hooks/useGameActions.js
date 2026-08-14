@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
+  claimRabbitContract,
   createInitialGame,
+  establishTradeRelations,
   getBlueprintExpansion,
   getHamsterStateAfterHire,
   getMaxDuplicatorPurchase,
@@ -9,6 +11,7 @@ import {
   getNextRowDuplicatorCost,
   resetForBlueprintExpansion,
   resetForRowDuplicators,
+  purchaseRabbitUnlock,
   UNIONIZATION_HAMSTER_COUNT,
   unlockCropPerfection,
 } from '../game/gameLogic.js'
@@ -19,6 +22,7 @@ export function useGameActions({
   setGame,
   updateGame,
   areInventionsUnlocked,
+  isTradeTabVisible,
   resetBlueprintEditor,
   clearCropUnlockNotices,
 }) {
@@ -224,6 +228,29 @@ export function useGameActions({
     }
   }
 
+  function establishTrade() {
+    updateGame((currentGame) =>
+      establishTradeRelations(currentGame) ?? currentGame,
+    )
+  }
+
+  function claimRabbitDelivery() {
+    updateGame((currentGame) =>
+      claimRabbitContract(currentGame) ?? currentGame,
+    )
+  }
+
+  function buyRabbitUnlock(unlockId) {
+    updateGame((currentGame) =>
+      purchaseRabbitUnlock(currentGame, unlockId) ?? currentGame,
+    )
+  }
+
+  function openTrade() {
+    if (isTradeTabVisible) {
+      setActiveTab('trade')
+    }
+  }
   function openInventions() {
     if (!areInventionsUnlocked) {
       return
@@ -242,6 +269,7 @@ export function useGameActions({
     setActiveInventionsTab,
     navigationActions: {
       onShowField: () => setActiveTab('field'),
+      onShowTrade: openTrade,
       onOpenInventions: openInventions,
       onShowStatistics: () => setActiveTab('statistics'),
       onOpenOptions: openOptions,
@@ -251,6 +279,11 @@ export function useGameActions({
       onBuyMaxHamsters: buyMaxHamsters,
       onBuyRowDuplicator: buyRowDuplicator,
       onBuyMaxRowDuplicators: buyMaxRowDuplicators,
+    },
+    tradeActions: {
+      onEstablishTrade: establishTrade,
+      onClaimRabbitContract: claimRabbitDelivery,
+      onPurchaseRabbitUnlock: buyRabbitUnlock,
     },
     inventionsActions: {
       onUnlockEnrichingLeek: () => unlockPerfection('enrichingLeek'),

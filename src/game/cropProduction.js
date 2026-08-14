@@ -161,7 +161,10 @@ export function getRowDuplicatorEffectivenessMultiplier(
   )
 }
 
-export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
+function getBaseFieldProductionSnapshot(
+  blueprint,
+  completedCropPerfections = [],
+) {
   const fieldSize = blueprint.rows * blueprint.columns
   const monocropThresholdBonus = getMonocropThresholdBonus(
     blueprint,
@@ -174,15 +177,11 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
     ]),
   )
 
-  const baseIncome = blueprint.cells.reduce((totalIncome, crop, index) => {
+  const contributions = blueprint.cells.map((crop, index) => {
     const definition = CROP_DEFINITIONS[crop]
 
-    if (!definition) {
-      return totalIncome
-    }
-
-    if (doesNotHarvest(crop)) {
-      return totalIncome
+    if (!definition || doesNotHarvest(crop)) {
+      return null
     }
 
     const adjacentConnections = getAdjacentCropConnections(blueprint, index)
@@ -235,26 +234,58 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
       monocropThresholdBonus,
     )
 
-    return (
-      totalIncome +
-      (getCropBaseYield(crop, completedCropPerfections) +
-        adjacentYieldBonus * externalCropBuffMultiplier) *
+    return {
+      cropId: crop,
+      amount:
+        (getCropBaseYield(crop, completedCropPerfections) +
+          adjacentYieldBonus * externalCropBuffMultiplier) *
         BASE_CROP_YIELD_PER_PLOT *
         monocropMultiplier *
-        harvestDestructionMultiplier
-    )
-  }, 0)
-
-  return (
-    baseIncome *
-    getGlobalHarvestMultiplier(
-      blueprint,
-      completedCropPerfections,
-    )
+        harvestDestructionMultiplier,
+    }
+  })
+  const globalHarvestMultiplier = getGlobalHarvestMultiplier(
+    blueprint,
+    completedCropPerfections,
   )
+  const byCrop = contributions.reduce((cropTotals, contribution) => {
+    if (!contribution) {
+      return cropTotals
+    }
+
+    cropTotals[contribution.cropId] =
+      (cropTotals[contribution.cropId] ?? 0) +
+      contribution.amount * globalHarvestMultiplier
+    return cropTotals
+  }, {})
+  const total = contributions.reduce(
+    (totalIncome, contribution) =>
+      totalIncome + (contribution?.amount ?? 0),
+    0,
+  )
+
+  return {
+    total: total * globalHarvestMultiplier,
+    byCrop,
+  }
 }
 
+export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
+  return getBaseFieldProductionSnapshot(
+    blueprint,
+    completedCropPerfections,
+  ).total
+}
 
+export function getBaseFieldIncomeByCrop(
+  blueprint,
+  completedCropPerfections = [],
+) {
+  return getBaseFieldProductionSnapshot(
+    blueprint,
+    completedCropPerfections,
+  ).byCrop
+}
 export function getIncomeMultiplier(farmland) {
   const multipliers = getEffectiveFarmlandMultipliers(farmland)
 
@@ -299,6 +330,30 @@ export function getCropProductionPerSecond(
   )
 }
 
+export function getCropProductionSnapshotPerSecond(
+  blueprint,
+  farmland,
+  completedCropPerfections = [],
+  externalCropMultiplier = 1,
+) {
+  const fieldSnapshot = getBaseFieldProductionSnapshot(
+    blueprint,
+    completedCropPerfections,
+  )
+  const multiplier =
+    getIncomeMultiplier(farmland) *
+    Math.max(0, Number(externalCropMultiplier) || 0)
+
+  return {
+    total: fieldSnapshot.total * multiplier,
+    byCrop: Object.fromEntries(
+      Object.entries(fieldSnapshot.byCrop).map(([cropId, amount]) => [
+        cropId,
+        amount * multiplier,
+      ]),
+    ),
+  }
+}
 export function getColumnsProducedPerSecond(
   hamsters,
   postUnionHamstersHired = 0,
@@ -385,6 +440,31 @@ export function getProductionForTick(
   )
 }
 
+export function getProductionSnapshotForTick(
+  blueprint,
+  farmland,
+  completedCropPerfections = [],
+  tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
+  externalCropMultiplier = 1,
+) {
+  const productionPerSecond = getCropProductionSnapshotPerSecond(
+    blueprint,
+    farmland,
+    completedCropPerfections,
+    externalCropMultiplier,
+  )
+  const tickLengthSeconds = tickIntervalMs / 1000
+
+  return {
+    total: productionPerSecond.total * tickLengthSeconds,
+    byCrop: Object.fromEntries(
+      Object.entries(productionPerSecond.byCrop).map(([cropId, amount]) => [
+        cropId,
+        amount * tickLengthSeconds,
+      ]),
+    ),
+  }
+}
 export function getColumnsProducedForTick(
   hamsters,
   postUnionHamstersHired = 0,

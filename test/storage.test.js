@@ -187,19 +187,24 @@ test('statistics persist and older saves receive safe lifetime defaults', () => 
 test('testing panel unlock and toggle states persist safely', () => {
   const testingSave = normalizeGame({
     testingPanelUnlocked: true,
+    testingPanelVisible: false,
     testingCheats: {
       cropMultiplierEnabled: true,
       hamsterEfficiencyEnabled: true,
     },
   })
+  const legacyUnlockedSave = normalizeGame({ testingPanelUnlocked: true })
   const ordinarySave = normalizeGame({})
 
   assert.equal(testingSave.testingPanelUnlocked, true)
+  assert.equal(testingSave.testingPanelVisible, false)
+  assert.equal(legacyUnlockedSave.testingPanelVisible, true)
   assert.deepEqual(testingSave.testingCheats, {
     cropMultiplierEnabled: true,
     hamsterEfficiencyEnabled: true,
   })
   assert.equal(ordinarySave.testingPanelUnlocked, false)
+  assert.equal(ordinarySave.testingPanelVisible, false)
   assert.deepEqual(ordinarySave.testingCheats, {
     cropMultiplierEnabled: false,
     hamsterEfficiencyEnabled: false,
@@ -212,6 +217,36 @@ test('number notation persists and defaults safely to suffix notation', () => {
   assert.equal(normalizeGame({}).numberNotation, 'suffix')
 })
 
+test('Trade state persists with safe migration defaults', () => {
+  const tradeSave = normalizeGame({
+    trade: {
+      established: true,
+      rabbitRelations: 4321,
+      rabbitUnlocks: ['hamsterEfficiency', 'hamsterEfficiency', 'invalid'],
+      rabbitContract: {
+        cropId: 'leek',
+        factor: 3e7,
+        fieldsPlanted: 1e40,
+        requiredAmount: 3e47,
+        progress: 2e47,
+        relationsReward: 120,
+      },
+    },
+  })
+  const olderSave = normalizeGame({})
+
+  assert.equal(tradeSave.trade.established, true)
+  assert.equal(tradeSave.trade.rabbitRelations, 4321)
+  assert.deepEqual(tradeSave.trade.rabbitUnlocks, ['hamsterEfficiency'])
+  assert.equal(tradeSave.trade.rabbitContract.cropId, 'leek')
+  assert.equal(tradeSave.trade.rabbitContract.progress, 2e47)
+  assert.deepEqual(olderSave.trade, {
+    established: false,
+    rabbitRelations: 0,
+    rabbitContract: null,
+    rabbitUnlocks: [],
+  })
+})
 test('exports and imports a versioned Base64 save code', () => {
   const saveCode = exportGame({
     crops: 12_345,
