@@ -92,6 +92,7 @@ export function CropHoverInspector({
   index,
   completedCropPerfections,
   rowsProducedPerSecond,
+  activeHamsters,
   cursor,
 }) {
   const stats = getBlueprintCropStats(
@@ -99,6 +100,7 @@ export function CropHoverInspector({
     index,
     completedCropPerfections,
     rowsProducedPerSecond,
+    activeHamsters,
   )
 
   if (!stats) {
@@ -213,6 +215,15 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'global-row-production') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Row production from {effect.count}{' '}
+                  {getCropName(effect.sourceCropId, completedCropPerfections)}
+                  {effect.count === 1 ? '' : 's'} (cannot be boosted)
+                </li>
+              )
+            }
             if (effect.type === 'global-harvest') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>

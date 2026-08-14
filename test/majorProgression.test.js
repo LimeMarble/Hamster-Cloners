@@ -27,6 +27,7 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'perfection-sweetPotato',
       'perfection-splitweed',
       'crop-sunflower',
+      'crop-canola',
     ],
   )
 })
@@ -112,6 +113,17 @@ test('major progression advances to the earliest unfinished goal', () => {
     ...game,
     completedCropPerfections: CROP_PERFECTION_IDS,
     hasUnlockedSunflower: true,
+    rowDuplicators: 499,
+  }
+  const canolaGoal = getNextMajorProgressionGoal(game)
+  assert.equal(canolaGoal.id, 'crop-canola')
+  assert.equal(canolaGoal.current, 499)
+  assert.equal(canolaGoal.target, 500)
+  assert.equal(canolaGoal.unit, 'Row Duplicators')
+
+  game = {
+    ...game,
+    rowDuplicators: 500,
   }
   const completedGoal = getNextMajorProgressionGoal(game)
   assert.equal(completedGoal.id, 'all-current-goals-complete')

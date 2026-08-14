@@ -16,6 +16,7 @@ import {
   getNextRowDuplicatorCost,
   getMonocropThresholdBonus,
   getRowDuplicatorEffectivenessMultiplier,
+  getRowDuplicatorExternalMultiplier,
   getRowsProducedPerSecond,
   getRowDuplicatorCoordinationMultiplier,
   getUnlockedBlueprintSlotCount,
@@ -69,23 +70,28 @@ export function useGameDerivedState(game) {
       getRowDuplicatorEffectivenessMultiplier(
         game.blueprint,
         game.completedCropPerfections,
+        game.hamsters,
       ),
-    [game.blueprint, game.completedCropPerfections],
+    [game.blueprint, game.completedCropPerfections, game.hamsters],
   )
   const rowDuplicatorCoordinationMultiplier = useMemo(
     () => getRowDuplicatorCoordinationMultiplier(game.rowDuplicators),
     [game.rowDuplicators],
   )
+  const rowDuplicatorExternalMultiplier =
+    getRowDuplicatorExternalMultiplier()
   const rowsBuiltPerSecond = useMemo(
     () =>
       getRowsProducedPerSecond(
         game.hasUnlockedRowDuplicators ? game.rowDuplicators : 0,
         rowDuplicatorEffectivenessMultiplier,
+        rowDuplicatorExternalMultiplier,
       ),
     [
       game.hasUnlockedRowDuplicators,
       game.rowDuplicators,
       rowDuplicatorEffectivenessMultiplier,
+      rowDuplicatorExternalMultiplier,
     ],
   )
   const cropHamsterEfficiencyMultiplier = useMemo(
@@ -124,6 +130,7 @@ export function useGameDerivedState(game) {
         game.hasUnlockedKnotweed,
         game.hasUnlockedRootTunnel,
         game.hasUnlockedSunflower,
+        game.rowDuplicators,
       ),
     [
       game.blueprint,
@@ -135,6 +142,7 @@ export function useGameDerivedState(game) {
       game.hasUnlockedKnotweed,
       game.hasUnlockedRootTunnel,
       game.hasUnlockedSunflower,
+      game.rowDuplicators,
     ],
   )
   const visibleCropIds = useMemo(
@@ -201,6 +209,7 @@ export function useGameDerivedState(game) {
     nextRowDuplicatorCost,
     rowDuplicatorEffectivenessMultiplier,
     rowDuplicatorCoordinationMultiplier,
+    rowDuplicatorExternalMultiplier,
     rowsBuiltPerSecond,
     unlockedCropIds,
     visibleCropIds,

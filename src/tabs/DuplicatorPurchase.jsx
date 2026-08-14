@@ -5,6 +5,7 @@ export function DuplicatorPurchase({
   nextRowDuplicatorCost,
   rowDuplicatorEffectivenessMultiplier,
   rowDuplicatorCoordinationMultiplier,
+  rowDuplicatorExternalMultiplier,
   rowsBuiltPerSecond,
   onBuyRowDuplicator,
   onBuyMaxRowDuplicators,
@@ -45,9 +46,9 @@ export function DuplicatorPurchase({
           </dd>
         </div>
         <div>
-          <dt>Next cost</dt>
+          <dt>External multipliers</dt>
           <dd>
-            <FormattedNumber value={nextRowDuplicatorCost} maximumFractionDigits={0} /> Crops
+            ×<FormattedNumber value={rowDuplicatorExternalMultiplier} maximumFractionDigits={2} />
           </dd>
         </div>
       </dl>

@@ -5,6 +5,7 @@ export const APPLE_TREE_UNLOCK_CROP_COUNT = 1e15
 export const LENTIL_UNLOCK_CROP_COUNT = 8e16
 export const KNOTWEED_UNLOCK_CROP_COUNT = 2e19
 export const SUNFLOWER_UNLOCK_CROP_COUNT = 1.42e44
+export const CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT = 500
 // The requested 1.8e308 cost exceeds the native Number range.
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
 export const CORN_REVEAL_HAMSTER_COUNT = 50
@@ -118,7 +119,19 @@ export const CROP_DEFINITIONS = {
     rowDuplicatorEffectivenessBonus: 0.2,
     effectDescription:
       '1 Crop per slot · +20% Row Duplicator effectiveness',
-    unlockDescription: 'Unlocks at 1.42e42 Crops',
+    unlockDescription: 'Unlocks at 1.42e44 Crops',
+  },
+  canola: {
+    name: 'Canola',
+    icon: '🌼',
+    baseYield: 1,
+    hamsterEfficiencyBonus: 0,
+    monocropCountWeight: 5,
+    globalRowProductionBonusPerHamster: 0.01,
+    hasUnboostableActiveHamsterRowMultiplier: true,
+    effectDescription:
+      '1 Crop per slot · +1% global Row production per active Hamster · counts as 5 crops toward its Monocrop limit · global Row boost cannot be boosted',
+    unlockDescription: `Unlocks at ${CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT.toLocaleString()} Row Duplicators`,
   },
   leechingGourd: {
     name: 'Leeching Gourd',
@@ -327,6 +340,7 @@ export function getUnlockedCropIds(
   hasUnlockedKnotweed = false,
   hasUnlockedRootTunnel = false,
   hasUnlockedSunflower = false,
+  rowDuplicators = 0,
 ) {
   const unlockedCrops = ['leek']
 
@@ -356,6 +370,9 @@ export function getUnlockedCropIds(
   }
   if (hasUnlockedSunflower) {
     unlockedCrops.push('sunflower')
+  }
+  if (rowDuplicators >= CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT) {
+    unlockedCrops.push('canola')
   }
 
   return unlockedCrops

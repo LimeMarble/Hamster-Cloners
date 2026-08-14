@@ -32,6 +32,13 @@ export function getPlantedCropCount(blueprint, crop = 'leek') {
   return blueprint.cells.filter((cell) => cell === crop).length
 }
 
+export function getMonocropCropCount(blueprint, crop) {
+  return (
+    getPlantedCropCount(blueprint, crop) *
+    (CROP_DEFINITIONS[crop]?.monocropCountWeight ?? 1)
+  )
+}
+
 export function getMonocropThresholdBonus(
   blueprint,
   completedCropPerfections = [],
@@ -64,7 +71,7 @@ function getMonocropAdjustedCropBonus(
 
   return applyMonocropPenaltyToBonus(
     bonus,
-    getPlantedCropCount(blueprint, crop),
+    getMonocropCropCount(blueprint, crop),
     blueprint.rows * blueprint.columns,
     getMonocropThresholdBonus(blueprint, completedCropPerfections),
   )
@@ -87,7 +94,7 @@ function getMonocropAdjustedCropEffectMultiplier(
 
   return applyMonocropPenaltyToEffectMultiplier(
     effectMultiplier,
-    getPlantedCropCount(blueprint, crop),
+    getMonocropCropCount(blueprint, crop),
     blueprint.rows * blueprint.columns,
     getMonocropThresholdBonus(blueprint, completedCropPerfections),
   )
@@ -110,7 +117,7 @@ export function getBlueprintMonocropMultiplier(
         Math.min(
           lowestMultiplier,
           getMonocropYieldMultiplier(
-            getPlantedCropCount(blueprint, crop),
+            getMonocropCropCount(blueprint, crop),
             fieldSize,
             thresholdBonus,
           ),
@@ -133,7 +140,7 @@ export function hasReachedMonocropLimit(
     .filter((crop) => CROP_DEFINITIONS[crop].internalOnly !== true)
     .some(
     (crop) =>
-      getPlantedCropCount(blueprint, crop) >=
+      getMonocropCropCount(blueprint, crop) >=
       getMonocropThreshold(fieldSize, thresholdBonus),
     )
 }
@@ -477,6 +484,66 @@ export function getGlobalHamsterEfficiencyMultiplier(
   )
 }
 
+export function getGlobalRowProductionEffects(
+  blueprint,
+  activeHamsters = 0,
+  completedCropPerfections = [],
+) {
+  const sourceCropId = 'canola'
+  const definition = CROP_DEFINITIONS[sourceCropId]
+  const count = getPlantedCropCount(blueprint, sourceCropId)
+  const safeActiveHamsters = Math.max(
+    0,
+    Math.floor(Number(activeHamsters) || 0),
+  )
+
+  if (
+    definition?.hasUnboostableActiveHamsterRowMultiplier !== true ||
+    count === 0 ||
+    safeActiveHamsters === 0
+  ) {
+    return []
+  }
+
+  const bonus =
+    getMonocropAdjustedCropBonus(
+      blueprint,
+      sourceCropId,
+      count *
+        safeActiveHamsters *
+        definition.globalRowProductionBonusPerHamster,
+      completedCropPerfections,
+    ) *
+    getGlobalPassiveEffectMultiplier(
+      blueprint,
+      completedCropPerfections,
+    )
+
+  return [
+    {
+      sourceCropId,
+      count,
+      bonus,
+      multiplier: 1 + bonus,
+    },
+  ]
+}
+
+export function getGlobalRowProductionMultiplier(
+  blueprint,
+  activeHamsters = 0,
+  completedCropPerfections = [],
+) {
+  return getGlobalRowProductionEffects(
+    blueprint,
+    activeHamsters,
+    completedCropPerfections,
+  ).reduce(
+    (multiplier, effect) => multiplier * effect.multiplier,
+    1,
+  )
+}
+
 export function getAdjacentCropEffectModifier(
   blueprint,
   crop,
@@ -539,7 +606,7 @@ export function getGlobalHarvestEffects(
   const cropCounts = Object.fromEntries(
     Object.keys(CROP_DEFINITIONS).map((crop) => [
       crop,
-      getPlantedCropCount(blueprint, crop),
+      getMonocropCropCount(blueprint, crop),
     ]),
   )
 

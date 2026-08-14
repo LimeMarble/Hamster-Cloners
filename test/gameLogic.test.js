@@ -26,12 +26,15 @@ import {
   getColumnsProducedForTick,
   getFieldsPlanted,
   getGlobalPassiveEffectMultiplier,
+  getGlobalRowProductionMultiplier,
   grantNextBlueprintExpansion,
   getLeechingGourdFootprint,
   getLeechingGourdTurnipEffect,
+  getMonocropCropCount,
   getMonocropThresholdBonus,
   getProductionForTick,
   getRowDuplicatorEffectivenessMultiplier,
+  getRowDuplicatorExternalMultiplier,
   getRowsProducedForTick,
   getRowsProducedPerSecond,
   getRowDuplicatorCoordinationMultiplier,
@@ -55,6 +58,7 @@ import {
 } from '../src/game/gameLogic.js'
 import {
   APPLE_TREE_UNLOCK_CROP_COUNT,
+  CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT,
   CROP_DEFINITIONS,
   CROP_EFFECT_BYPASS_TIERS,
   CROP_PERFECTIONS,
@@ -1399,7 +1403,7 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
   ])
   assert.equal(LENTIL_UNLOCK_CROP_COUNT, 8e16)
   assert.equal(KNOTWEED_UNLOCK_CROP_COUNT, 2e19)
-  assert.equal(SUNFLOWER_UNLOCK_CROP_COUNT, 1.42e42)
+  assert.equal(SUNFLOWER_UNLOCK_CROP_COUNT, 1.42e44)
   assert.equal(ROOT_TUNNEL_UNLOCK_CROP_COUNT, Number.POSITIVE_INFINITY)
   assert.deepEqual(
     getUnlockedCropIds(expandedBlueprint, true, 125, true, true, true),
@@ -1466,10 +1470,12 @@ test('Row Duplicators generate Rows independently from Hamster-built Columns', (
   assert.equal(ROWS_PER_ROW_DUPLICATOR_PER_SECOND, 0.1)
   assert.equal(ROW_DUPLICATOR_COORDINATION_GROWTH, 1.02)
   assert.equal(getRowDuplicatorCoordinationMultiplier(0), 1)
+  assert.equal(getRowDuplicatorExternalMultiplier(), 1)
   assert.equal(getRowDuplicatorCoordinationMultiplier(8), 1.02 ** 8)
   assert.equal(getRowsProducedPerSecond(0), 0)
   assert.equal(getRowsProducedPerSecond(1), 0.1 * 1.02)
   assert.equal(getRowsProducedPerSecond(8), 0.8 * 1.02 ** 8)
+  assert.equal(getRowsProducedPerSecond(1, 1, 10), 1.02)
   assert.ok(
     Math.abs(getRowsProducedForTick(8) * 60 - 0.8 * 1.02 ** 8) < 1e-12,
   )
@@ -1525,6 +1531,113 @@ test('Sunflowers boost Row Duplicators like Potatoes boost hamster efficiency', 
   )
 })
 
+test('Canola unlocks at 500 Row Duplicators', () => {
+  const expandedBlueprint = createBlueprint({ rows: 1, columns: 2 })
+  const unlockedBeforeCanola = getUnlockedCropIds(
+    expandedBlueprint,
+    true,
+    125,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    499,
+  )
+  const unlockedWithCanola = getUnlockedCropIds(
+    expandedBlueprint,
+    true,
+    125,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    500,
+  )
+
+  assert.equal(CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT, 500)
+  assert.equal(unlockedBeforeCanola.includes('canola'), false)
+  assert.equal(unlockedWithCanola.at(-1), 'canola')
+})
+
+test('Canola gives an unboostable global Row multiplier from active Hamsters', () => {
+  const canolaBlueprint = createBlueprint({
+    rows: 10,
+    columns: 10,
+    cells: ['canola', 'turnip', 'canola'],
+  })
+  const sunflowerBlueprint = createBlueprint({
+    rows: 10,
+    columns: 10,
+    cells: ['canola', 'sunflower'],
+  })
+
+  // Two Canolas give +100% each at 100 active Hamsters. The adjacent Turnip
+  // cannot boost this global effect, matching Sweet Potato's global passive.
+  assert.equal(getGlobalRowProductionMultiplier(canolaBlueprint, 100), 3)
+  assert.equal(
+    getRowDuplicatorEffectivenessMultiplier(canolaBlueprint, [], 100),
+    3,
+  )
+  assert.equal(getRowDuplicatorExternalMultiplier(), 1)
+
+  // Canola's ×2 multiplier appears inside Duplicator Effectiveness and
+  // stacks multiplicatively with Sunflower's ×1.2 effectiveness multiplier.
+  assert.ok(
+    Math.abs(
+      getRowsProducedPerSecond(
+        1,
+        getRowDuplicatorEffectivenessMultiplier(
+          sunflowerBlueprint,
+          [],
+          100,
+        ),
+        getRowDuplicatorExternalMultiplier(),
+      ) -
+        0.1 * 1.02 * 1.2 * 2,
+    ) < 1e-12,
+  )
+  assert.equal(
+    getGlobalRowProductionMultiplier(
+      createBlueprint({
+        rows: 10,
+        columns: 10,
+        cells: ['canola', 'knotweed'],
+      }),
+      100,
+      ['splitweed'],
+    ),
+    1,
+  )
+})
+
+test('each Canola counts as five crops toward its Monocrop limit', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['canola'],
+  })
+
+  const monocropMultiplier = getBlueprintMonocropMultiplier(blueprint)
+
+  assert.equal(getMonocropCropCount(blueprint, 'canola'), 5)
+  assert.ok(monocropMultiplier < 1)
+  assert.deepEqual(
+    getBlueprintCropStats(blueprint, 0, [], 0, 100).receivedEffects.find(
+      (effect) => effect.type === 'global-row-production',
+    ),
+    {
+      type: 'global-row-production',
+      sourceCropId: 'canola',
+      count: 1,
+      bonus: monocropMultiplier,
+      multiplier: 1 + monocropMultiplier,
+    },
+  )
+})
 test('crop visibility reveals each crop only after its discovery milestone', () => {
   assert.deepEqual(getVisibleCropIds(['leek', 'corn'], 49), ['leek'])
   assert.deepEqual(getVisibleCropIds(['leek', 'corn'], 50), ['leek', 'corn'])

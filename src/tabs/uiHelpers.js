@@ -21,3 +21,21 @@ export function formatPlaytime(seconds) {
 export function getCropMark(crop) {
   return crop ? CROP_DEFINITIONS[crop].icon : null
 }
+export function getBlueprintCropSummary(cells = []) {
+  const cropCounts = cells.reduce((counts, cropId) => {
+    if (
+      !cropId ||
+      cropId === 'leechingGourdPart' ||
+      !CROP_DEFINITIONS[cropId]
+    ) {
+      return counts
+    }
+
+    counts[cropId] = (counts[cropId] ?? 0) + 1
+    return counts
+  }, {})
+
+  return Object.keys(CROP_DEFINITIONS)
+    .filter((cropId) => cropCounts[cropId] > 0)
+    .map((cropId) => ({ cropId, count: cropCounts[cropId] }))
+}

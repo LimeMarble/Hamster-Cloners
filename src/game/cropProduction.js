@@ -19,10 +19,11 @@ import {
   getCropHamsterEfficiencyBonus,
   getExternalCropBuffMultiplier,
   getGlobalHamsterEfficiencyMultiplier,
+  getGlobalRowProductionMultiplier,
   getGlobalHarvestMultiplier,
   getMirrorCornEffectMultiplier,
+  getMonocropCropCount,
   getMonocropThresholdBonus,
-  getPlantedCropCount,
   getRootTunnelAdjacencyStrength,
 } from './cropEffects.js'
 
@@ -39,7 +40,7 @@ export function getCropHamsterEfficiencyMultiplier(
   const cropCounts = Object.fromEntries(
     Object.keys(CROP_DEFINITIONS).map((crop) => [
       crop,
-      getPlantedCropCount(blueprint, crop),
+      getMonocropCropCount(blueprint, crop),
     ]),
   )
   const additiveCropBonus = blueprint.cells.reduce((totalBonus, crop, index) => {
@@ -96,6 +97,7 @@ export function getCropHamsterEfficiencyMultiplier(
 export function getRowDuplicatorEffectivenessMultiplier(
   blueprint,
   completedCropPerfections = [],
+  activeHamsters = 0,
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const monocropThresholdBonus = getMonocropThresholdBonus(
@@ -105,7 +107,7 @@ export function getRowDuplicatorEffectivenessMultiplier(
   const cropCounts = Object.fromEntries(
     Object.keys(CROP_DEFINITIONS).map((crop) => [
       crop,
-      getPlantedCropCount(blueprint, crop),
+      getMonocropCropCount(blueprint, crop),
     ]),
   )
   const additiveEffectivenessBonus = blueprint.cells.reduce(
@@ -149,7 +151,14 @@ export function getRowDuplicatorEffectivenessMultiplier(
     0,
   )
 
-  return Math.max(0, 1 + additiveEffectivenessBonus)
+  return (
+    Math.max(0, 1 + additiveEffectivenessBonus) *
+    getGlobalRowProductionMultiplier(
+      blueprint,
+      activeHamsters,
+      completedCropPerfections,
+    )
+  )
 }
 
 export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
@@ -161,7 +170,7 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
   const cropCounts = Object.fromEntries(
     Object.keys(CROP_DEFINITIONS).map((crop) => [
       crop,
-      getPlantedCropCount(blueprint, crop),
+      getMonocropCropCount(blueprint, crop),
     ]),
   )
 
@@ -310,6 +319,7 @@ export function getColumnsProducedPerSecond(
 export function getRowsProducedPerSecond(
   rowDuplicators,
   rowDuplicatorEffectivenessMultiplier = 1,
+  rowDuplicatorExternalMultiplier = 1,
 ) {
   const safeRowDuplicators = Math.max(
     0,
@@ -320,7 +330,8 @@ export function getRowsProducedPerSecond(
     safeRowDuplicators *
     ROWS_PER_ROW_DUPLICATOR_PER_SECOND *
     getRowDuplicatorCoordinationMultiplier(safeRowDuplicators) *
-    Math.max(0, Number(rowDuplicatorEffectivenessMultiplier) || 0)
+    Math.max(0, Number(rowDuplicatorEffectivenessMultiplier) || 0) *
+    getRowDuplicatorExternalMultiplier(rowDuplicatorExternalMultiplier)
   )
 }
 
@@ -348,6 +359,11 @@ export function getHamsterCoordinationMultiplier(
 
 // Future inventions and other global construction effects belong here.
 export function getHamsterExternalMultiplier(multiplier = 1) {
+  return Math.max(0, Number(multiplier) || 0)
+}
+
+// Future inventions and other global Row construction effects belong here.
+export function getRowDuplicatorExternalMultiplier(multiplier = 1) {
   return Math.max(0, Number(multiplier) || 0)
 }
 
@@ -391,11 +407,13 @@ export function getRowsProducedForTick(
   rowDuplicators,
   rowDuplicatorEffectivenessMultiplier = 1,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
+  rowDuplicatorExternalMultiplier = 1,
 ) {
   return (
     getRowsProducedPerSecond(
       rowDuplicators,
       rowDuplicatorEffectivenessMultiplier,
+      rowDuplicatorExternalMultiplier,
     ) *
     (tickIntervalMs / 1000)
   )
