@@ -1,5 +1,6 @@
 import {
   APPLE_TREE_UNLOCK_CROP_COUNT,
+  CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT,
   CROP_PERFECTION_UNLOCK_CROP_COUNT,
   CROP_PERFECTIONS,
   KNOTWEED_UNLOCK_CROP_COUNT,
@@ -185,6 +186,17 @@ export const MAJOR_PROGRESSION_GOALS = [
     target: SUNFLOWER_UNLOCK_CROP_COUNT,
     description: 'Reach the Crop threshold to permanently unlock Sunflower.',
     isComplete: (game) => game.hasUnlockedSunflower === true,
+  }),
+  createCropGoal({
+    id: 'crop-canola',
+    title: 'Unlock Canola',
+    target: CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT,
+    unit: 'Row Duplicators',
+    description: 'Own 500 Row Duplicators to unlock Canola.',
+    isComplete: (game) =>
+      getSafeProgressValue(game.rowDuplicators) >=
+      CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT,
+    getCurrent: (game) => game.rowDuplicators,
   }),
 ]
 

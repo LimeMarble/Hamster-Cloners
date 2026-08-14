@@ -247,6 +247,7 @@ export function BlueprintEdit({
             index={hoveredEditorCrop.index}
             completedCropPerfections={game.completedCropPerfections}
             rowsProducedPerSecond={rowsBuiltPerSecond}
+            activeHamsters={game.hamsters}
             cursor={hoveredEditorCrop}
           />
         ) : null}

@@ -10,6 +10,7 @@ import {
   getCropProductionPerSecond,
 
   getHamsterCoordinationMultiplier,
+  getGlobalRowProductionMultiplier,
   getHamsterExternalMultiplier,
   getNextHamsterCost,
   getNextMajorProgressionGoal,
@@ -77,8 +78,17 @@ export function useGameDerivedState(game) {
     () => getRowDuplicatorCoordinationMultiplier(game.rowDuplicators),
     [game.rowDuplicators],
   )
-  const rowDuplicatorExternalMultiplier =
-    getRowDuplicatorExternalMultiplier()
+  const rowDuplicatorExternalMultiplier = useMemo(
+    () =>
+      getRowDuplicatorExternalMultiplier(
+        getGlobalRowProductionMultiplier(
+          game.blueprint,
+          game.hamsters,
+          game.completedCropPerfections,
+        ),
+      ),
+    [game.blueprint, game.hamsters, game.completedCropPerfections],
+  )
   const rowsBuiltPerSecond = useMemo(
     () =>
       getRowsProducedPerSecond(
@@ -129,6 +139,7 @@ export function useGameDerivedState(game) {
         game.hasUnlockedKnotweed,
         game.hasUnlockedRootTunnel,
         game.hasUnlockedSunflower,
+        game.rowDuplicators,
       ),
     [
       game.blueprint,
@@ -140,6 +151,7 @@ export function useGameDerivedState(game) {
       game.hasUnlockedKnotweed,
       game.hasUnlockedRootTunnel,
       game.hasUnlockedSunflower,
+      game.rowDuplicators,
     ],
   )
   const visibleCropIds = useMemo(

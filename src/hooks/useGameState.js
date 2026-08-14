@@ -3,6 +3,7 @@ import {
   getBlueprintSlots,
   getColumnsProducedForTick,
   getCropHamsterEfficiencyMultiplier,
+  getGlobalRowProductionMultiplier,
   getProductionForTick,
   getRowsProducedPerSecond,
   getRowDuplicatorEffectivenessMultiplier,
@@ -81,7 +82,13 @@ export function useGameState(isEditingBlueprintRef) {
           ? getRowsProducedPerSecond(
               currentGame.rowDuplicators,
               rowDuplicatorEffectivenessMultiplier,
-              getRowDuplicatorExternalMultiplier(),
+              getRowDuplicatorExternalMultiplier(
+                getGlobalRowProductionMultiplier(
+                  currentGame.blueprint,
+                  currentGame.hamsters,
+                  currentGame.completedCropPerfections,
+                ),
+              ),
             )
           : 0
         const columnsProducedForTick = getColumnsProducedForTick(

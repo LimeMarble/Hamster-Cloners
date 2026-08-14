@@ -264,6 +264,12 @@
   background: #443c12;
 }
 
+.plot-canola,
+.editor-plot-canola {
+  border-color: #d8c94b;
+  background: #3d3a11;
+}
+
 .plot-leechingGourd,
 .plot-leechingGourdPart,
 .editor-plot-leechingGourd,
@@ -321,6 +327,11 @@
 .plot-sunflower span,
 .editor-plot-sunflower span {
   color: #ffe27a;
+}
+
+.plot-canola span,
+.editor-plot-canola span {
+  color: #f2e56f;
 }
 
 .plot-leechingGourd span,

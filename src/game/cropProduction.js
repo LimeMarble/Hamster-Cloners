@@ -21,8 +21,8 @@ import {
   getGlobalHamsterEfficiencyMultiplier,
   getGlobalHarvestMultiplier,
   getMirrorCornEffectMultiplier,
+  getMonocropCropCount,
   getMonocropThresholdBonus,
-  getPlantedCropCount,
   getRootTunnelAdjacencyStrength,
 } from './cropEffects.js'
 
@@ -39,7 +39,7 @@ export function getCropHamsterEfficiencyMultiplier(
   const cropCounts = Object.fromEntries(
     Object.keys(CROP_DEFINITIONS).map((crop) => [
       crop,
-      getPlantedCropCount(blueprint, crop),
+      getMonocropCropCount(blueprint, crop),
     ]),
   )
   const additiveCropBonus = blueprint.cells.reduce((totalBonus, crop, index) => {
@@ -105,7 +105,7 @@ export function getRowDuplicatorEffectivenessMultiplier(
   const cropCounts = Object.fromEntries(
     Object.keys(CROP_DEFINITIONS).map((crop) => [
       crop,
-      getPlantedCropCount(blueprint, crop),
+      getMonocropCropCount(blueprint, crop),
     ]),
   )
   const additiveEffectivenessBonus = blueprint.cells.reduce(
@@ -161,7 +161,7 @@ export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
   const cropCounts = Object.fromEntries(
     Object.keys(CROP_DEFINITIONS).map((crop) => [
       crop,
-      getPlantedCropCount(blueprint, crop),
+      getMonocropCropCount(blueprint, crop),
     ]),
   )
 

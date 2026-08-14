@@ -14,12 +14,13 @@ import {
   getGlobalHamsterEfficiencyEffects,
   getGlobalHarvestMultiplier,
   getGlobalPassiveEffectMultiplier,
+  getGlobalRowProductionEffects,
   getGroupedGlobalHarvestEffects,
   getLeechingGourdTurnipEffect,
   getMirrorCornEffectMultiplier,
   getMirrorCornTargetCount,
+  getMonocropCropCount,
   getMonocropThresholdBonus,
-  getPlantedCropCount,
   getRootTunnelAdjacencyStrength,
 } from './cropEffects.js'
 
@@ -28,6 +29,7 @@ export function getBlueprintCropStats(
   index,
   completedCropPerfections = [],
   rowsProducedPerSecond = 0,
+  activeHamsters = 0,
 ) {
   const crop = blueprint.cells[index]
   const definition = CROP_DEFINITIONS[crop]
@@ -43,7 +45,7 @@ export function getBlueprintCropStats(
   )
   const receivedEffects = []
   const fieldSize = blueprint.rows * blueprint.columns
-  const cropCount = getPlantedCropCount(blueprint, crop)
+  const cropCount = getMonocropCropCount(blueprint, crop)
   const monocropMultiplier = getMonocropYieldMultiplier(
     cropCount,
     fieldSize,
@@ -293,6 +295,11 @@ export function getBlueprintCropStats(
     blueprint,
     completedCropPerfections,
   )
+  const globalRowProductionEffects = getGlobalRowProductionEffects(
+    blueprint,
+    activeHamsters,
+    completedCropPerfections,
+  )
   const globalHamsterEfficiencyEffects =
     getGlobalHamsterEfficiencyEffects(
       blueprint,
@@ -320,6 +327,9 @@ export function getBlueprintCropStats(
 
   globalHarvestEffects.forEach((effect) => {
     receivedEffects.push({ type: 'global-harvest', ...effect })
+  })
+  globalRowProductionEffects.forEach((effect) => {
+    receivedEffects.push({ type: 'global-row-production', ...effect })
   })
   globalHamsterEfficiencyEffects.forEach((effect) => {
     receivedEffects.push({ type: 'global-hamster-efficiency', ...effect })
