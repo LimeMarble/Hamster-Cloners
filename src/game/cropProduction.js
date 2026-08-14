@@ -19,6 +19,7 @@ import {
   getCropHamsterEfficiencyBonus,
   getExternalCropBuffMultiplier,
   getGlobalHamsterEfficiencyMultiplier,
+  getGlobalRowProductionMultiplier,
   getGlobalHarvestMultiplier,
   getMirrorCornEffectMultiplier,
   getMonocropCropCount,
@@ -96,6 +97,7 @@ export function getCropHamsterEfficiencyMultiplier(
 export function getRowDuplicatorEffectivenessMultiplier(
   blueprint,
   completedCropPerfections = [],
+  activeHamsters = 0,
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const monocropThresholdBonus = getMonocropThresholdBonus(
@@ -149,7 +151,14 @@ export function getRowDuplicatorEffectivenessMultiplier(
     0,
   )
 
-  return Math.max(0, 1 + additiveEffectivenessBonus)
+  return (
+    Math.max(0, 1 + additiveEffectivenessBonus) *
+    getGlobalRowProductionMultiplier(
+      blueprint,
+      activeHamsters,
+      completedCropPerfections,
+    )
+  )
 }
 
 export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {

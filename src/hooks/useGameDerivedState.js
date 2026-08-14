@@ -10,7 +10,6 @@ import {
   getCropProductionPerSecond,
 
   getHamsterCoordinationMultiplier,
-  getGlobalRowProductionMultiplier,
   getHamsterExternalMultiplier,
   getNextHamsterCost,
   getNextMajorProgressionGoal,
@@ -71,24 +70,16 @@ export function useGameDerivedState(game) {
       getRowDuplicatorEffectivenessMultiplier(
         game.blueprint,
         game.completedCropPerfections,
+        game.hamsters,
       ),
-    [game.blueprint, game.completedCropPerfections],
+    [game.blueprint, game.completedCropPerfections, game.hamsters],
   )
   const rowDuplicatorCoordinationMultiplier = useMemo(
     () => getRowDuplicatorCoordinationMultiplier(game.rowDuplicators),
     [game.rowDuplicators],
   )
-  const rowDuplicatorExternalMultiplier = useMemo(
-    () =>
-      getRowDuplicatorExternalMultiplier(
-        getGlobalRowProductionMultiplier(
-          game.blueprint,
-          game.hamsters,
-          game.completedCropPerfections,
-        ),
-      ),
-    [game.blueprint, game.hamsters, game.completedCropPerfections],
-  )
+  const rowDuplicatorExternalMultiplier =
+    getRowDuplicatorExternalMultiplier()
   const rowsBuiltPerSecond = useMemo(
     () =>
       getRowsProducedPerSecond(
