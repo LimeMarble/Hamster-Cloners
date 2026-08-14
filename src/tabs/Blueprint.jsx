@@ -1,6 +1,10 @@
 import { getFieldsPlanted } from '../game/gameLogic.js'
+import { getCropName } from '../game/crops.js'
 import { FormattedNumber, MonocropStatus } from './ui.jsx'
-import { getCropMark } from './uiHelpers.js'
+import {
+  getBlueprintCropSummary,
+  getCropMark,
+} from './uiHelpers.js'
 
 export function Blueprint({
   game,
@@ -12,6 +16,17 @@ export function Blueprint({
   onSelectBlueprintSlot,
   onOpenEditor,
 }) {
+  const plantedCrops = getBlueprintCropSummary(game.blueprint.cells)
+  const plantedCropDescription =
+    plantedCrops.length > 0
+      ? plantedCrops
+          .map(
+            ({ cropId, count }) =>
+              `${getCropName(cropId, game.completedCropPerfections)}: ${count}`,
+          )
+          .join(', ')
+      : 'empty blueprint'
+
   return (
     <article className="field-card">
       <div className="section-heading blueprint-heading">
@@ -64,19 +79,37 @@ export function Blueprint({
         type="button"
         className="blueprint-preview"
         onClick={onOpenEditor}
-        aria-label="Open the blueprint editor"
+        aria-label={`Open the blueprint editor. ${plantedCropDescription}`}
       >
-        <span
-          className="field-grid"
-          style={{
-            gridTemplateColumns: `repeat(${game.blueprint.columns}, minmax(54px, 1fr))`,
-          }}
-        >
-          {game.blueprint.cells.map((crop, index) => (
-            <span className={`plot ${crop ? `plot-${crop}` : ''}`} key={index}>
-              {crop ? <span aria-hidden="true">{getCropMark(crop)}</span> : null}
-            </span>
-          ))}
+        <span className="blueprint-crop-summary">
+          {plantedCrops.length > 0 ? (
+            plantedCrops.map(({ cropId, count }) => {
+              const cropName = getCropName(
+                cropId,
+                game.completedCropPerfections,
+              )
+
+              return (
+                <span
+                  className={`blueprint-crop-chip plot-${cropId}`}
+                  key={cropId}
+                  title={`${cropName}: ${count} planted`}
+                >
+                  <span className="blueprint-crop-icon" aria-hidden="true">
+                    {getCropMark(cropId)}
+                  </span>
+                  <span
+                    className="blueprint-crop-count"
+                    aria-label={`${cropName}: ${count} planted`}
+                  >
+                    ×<FormattedNumber value={count} maximumFractionDigits={0} />
+                  </span>
+                </span>
+              )
+            })
+          ) : (
+            <span className="blueprint-empty-summary">Empty blueprint</span>
+          )}
         </span>
         <span className="edit-hint">Click field to edit blueprint</span>
       </button>

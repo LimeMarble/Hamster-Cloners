@@ -93,6 +93,8 @@ export function useGameController() {
                 derived.rowDuplicatorEffectivenessMultiplier,
               rowDuplicatorCoordinationMultiplier:
                 derived.rowDuplicatorCoordinationMultiplier,
+              rowDuplicatorExternalMultiplier:
+                derived.rowDuplicatorExternalMultiplier,
               rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
               onBuyRowDuplicator:
                 actions.purchaseActions.onBuyRowDuplicator,

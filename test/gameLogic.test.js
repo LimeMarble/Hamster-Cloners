@@ -32,6 +32,7 @@ import {
   getMonocropThresholdBonus,
   getProductionForTick,
   getRowDuplicatorEffectivenessMultiplier,
+  getRowDuplicatorExternalMultiplier,
   getRowsProducedForTick,
   getRowsProducedPerSecond,
   getRowDuplicatorCoordinationMultiplier,
@@ -1399,7 +1400,7 @@ test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', 
   ])
   assert.equal(LENTIL_UNLOCK_CROP_COUNT, 8e16)
   assert.equal(KNOTWEED_UNLOCK_CROP_COUNT, 2e19)
-  assert.equal(SUNFLOWER_UNLOCK_CROP_COUNT, 1.42e42)
+  assert.equal(SUNFLOWER_UNLOCK_CROP_COUNT, 1.42e44)
   assert.equal(ROOT_TUNNEL_UNLOCK_CROP_COUNT, Number.POSITIVE_INFINITY)
   assert.deepEqual(
     getUnlockedCropIds(expandedBlueprint, true, 125, true, true, true),
@@ -1466,10 +1467,12 @@ test('Row Duplicators generate Rows independently from Hamster-built Columns', (
   assert.equal(ROWS_PER_ROW_DUPLICATOR_PER_SECOND, 0.1)
   assert.equal(ROW_DUPLICATOR_COORDINATION_GROWTH, 1.02)
   assert.equal(getRowDuplicatorCoordinationMultiplier(0), 1)
+  assert.equal(getRowDuplicatorExternalMultiplier(), 1)
   assert.equal(getRowDuplicatorCoordinationMultiplier(8), 1.02 ** 8)
   assert.equal(getRowsProducedPerSecond(0), 0)
   assert.equal(getRowsProducedPerSecond(1), 0.1 * 1.02)
   assert.equal(getRowsProducedPerSecond(8), 0.8 * 1.02 ** 8)
+  assert.equal(getRowsProducedPerSecond(1, 1, 10), 1.02)
   assert.ok(
     Math.abs(getRowsProducedForTick(8) * 60 - 0.8 * 1.02 ** 8) < 1e-12,
   )

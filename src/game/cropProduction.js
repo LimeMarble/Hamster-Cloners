@@ -310,6 +310,7 @@ export function getColumnsProducedPerSecond(
 export function getRowsProducedPerSecond(
   rowDuplicators,
   rowDuplicatorEffectivenessMultiplier = 1,
+  rowDuplicatorExternalMultiplier = 1,
 ) {
   const safeRowDuplicators = Math.max(
     0,
@@ -320,7 +321,8 @@ export function getRowsProducedPerSecond(
     safeRowDuplicators *
     ROWS_PER_ROW_DUPLICATOR_PER_SECOND *
     getRowDuplicatorCoordinationMultiplier(safeRowDuplicators) *
-    Math.max(0, Number(rowDuplicatorEffectivenessMultiplier) || 0)
+    Math.max(0, Number(rowDuplicatorEffectivenessMultiplier) || 0) *
+    getRowDuplicatorExternalMultiplier(rowDuplicatorExternalMultiplier)
   )
 }
 
@@ -348,6 +350,11 @@ export function getHamsterCoordinationMultiplier(
 
 // Future inventions and other global construction effects belong here.
 export function getHamsterExternalMultiplier(multiplier = 1) {
+  return Math.max(0, Number(multiplier) || 0)
+}
+
+// Future inventions and other global Row construction effects belong here.
+export function getRowDuplicatorExternalMultiplier(multiplier = 1) {
   return Math.max(0, Number(multiplier) || 0)
 }
 
@@ -391,11 +398,13 @@ export function getRowsProducedForTick(
   rowDuplicators,
   rowDuplicatorEffectivenessMultiplier = 1,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
+  rowDuplicatorExternalMultiplier = 1,
 ) {
   return (
     getRowsProducedPerSecond(
       rowDuplicators,
       rowDuplicatorEffectivenessMultiplier,
+      rowDuplicatorExternalMultiplier,
     ) *
     (tickIntervalMs / 1000)
   )

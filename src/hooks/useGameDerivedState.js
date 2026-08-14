@@ -16,6 +16,7 @@ import {
   getNextRowDuplicatorCost,
   getMonocropThresholdBonus,
   getRowDuplicatorEffectivenessMultiplier,
+  getRowDuplicatorExternalMultiplier,
   getRowsProducedPerSecond,
   getRowDuplicatorCoordinationMultiplier,
   getUnlockedBlueprintSlotCount,
@@ -76,16 +77,20 @@ export function useGameDerivedState(game) {
     () => getRowDuplicatorCoordinationMultiplier(game.rowDuplicators),
     [game.rowDuplicators],
   )
+  const rowDuplicatorExternalMultiplier =
+    getRowDuplicatorExternalMultiplier()
   const rowsBuiltPerSecond = useMemo(
     () =>
       getRowsProducedPerSecond(
         game.hasUnlockedRowDuplicators ? game.rowDuplicators : 0,
         rowDuplicatorEffectivenessMultiplier,
+        rowDuplicatorExternalMultiplier,
       ),
     [
       game.hasUnlockedRowDuplicators,
       game.rowDuplicators,
       rowDuplicatorEffectivenessMultiplier,
+      rowDuplicatorExternalMultiplier,
     ],
   )
   const cropHamsterEfficiencyMultiplier = useMemo(
@@ -201,6 +206,7 @@ export function useGameDerivedState(game) {
     nextRowDuplicatorCost,
     rowDuplicatorEffectivenessMultiplier,
     rowDuplicatorCoordinationMultiplier,
+    rowDuplicatorExternalMultiplier,
     rowsBuiltPerSecond,
     unlockedCropIds,
     visibleCropIds,

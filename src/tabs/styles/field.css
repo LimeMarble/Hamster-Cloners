@@ -25,12 +25,12 @@
   align-items: center;
   justify-content: center;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.76rem;
+  font-size: 1.5rem;
   font-weight: 700;
 }
 
 .size-pill {
-  padding: 5px 8px;
+  padding: 8px 12px;
   border: 1px solid var(--field-green);
   color: var(--field-green);
 }
@@ -100,8 +100,9 @@
 }
 
 .hamster-badge {
-  min-width: 30px;
-  height: 30px;
+  min-width: 48px;
+  min-height: 44px;
+  padding: 6px 10px;
   border: 1px solid var(--hamster-purple);
   color: var(--hamster-purple);
 }
@@ -122,6 +123,51 @@
 .blueprint-preview:hover {
   border-color: var(--field-green);
   background: #0a110b;
+}
+
+.blueprint-crop-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 58px;
+}
+
+.blueprint-crop-chip {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 7px;
+  min-width: 72px;
+  max-width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #315a38;
+  background: #0b160d;
+}
+
+.blueprint-crop-icon {
+  flex: 0 0 auto;
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.blueprint-crop-count {
+  min-width: 0;
+  color: var(--text-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.blueprint-empty-summary {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .sunflower-garden {

@@ -6,6 +6,7 @@ import {
   getProductionForTick,
   getRowsProducedPerSecond,
   getRowDuplicatorEffectivenessMultiplier,
+  getRowDuplicatorExternalMultiplier,
   getUnlockedBlueprintSlotCount,
   SIMULATION_TICK_INTERVAL_MS,
   VISUAL_UPDATE_INTERVAL_MS,
@@ -80,6 +81,7 @@ export function useGameState(isEditingBlueprintRef) {
           ? getRowsProducedPerSecond(
               currentGame.rowDuplicators,
               rowDuplicatorEffectivenessMultiplier,
+              getRowDuplicatorExternalMultiplier(),
             )
           : 0
         const columnsProducedForTick = getColumnsProducedForTick(
