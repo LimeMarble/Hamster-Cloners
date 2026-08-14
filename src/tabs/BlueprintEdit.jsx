@@ -8,7 +8,7 @@ import {
   MirrorCornConnectionLines,
   MonocropStatus,
 } from './ui.jsx'
-import { getCropMark } from './uiHelpers.js'
+import { CropVisual } from './CropVisual.jsx'
 
 export function BlueprintEdit({
   game,
@@ -140,7 +140,13 @@ export function BlueprintEdit({
                     }
                   >
                     {crop ? (
-                      <span aria-hidden="true">{getCropMark(crop)}</span>
+                      <CropVisual
+                        cropId={crop}
+                        completedCropPerfections={
+                          game.completedCropPerfections
+                        }
+                        className="editor-crop-visual"
+                      />
                     ) : (
                       <span>Plant</span>
                     )}
@@ -166,9 +172,13 @@ export function BlueprintEdit({
                     disabled={!unlocked}
                   >
                     <span className="crop-option-name">
-                      <span className="crop-option-icon" aria-hidden="true">
-                        {crop.icon}
-                      </span>
+                      <CropVisual
+                        cropId={cropId}
+                        completedCropPerfections={
+                          game.completedCropPerfections
+                        }
+                        className="crop-option-icon"
+                      />
                       {getDisplayedCropName(cropId)}
                     </span>
                     <small>

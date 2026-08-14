@@ -57,6 +57,7 @@ export const CROP_DEFINITIONS = {
   turnip: {
     name: 'Turnip',
     icon: '🥕',
+    image: new URL('../assets/turnip.png', import.meta.url).href,
     baseYield: 0.5,
     hamsterEfficiencyBonus: 0,
     adjacentCropEffectModifier: 2,
@@ -250,6 +251,11 @@ export function getCropPerfection(cropId, completedCropPerfections) {
   )
 }
 
+export function getCropImage(cropId, completedCropPerfections) {
+  const perfection = getCropPerfection(cropId, completedCropPerfections)
+
+  return perfection?.image ?? CROP_DEFINITIONS[cropId]?.image ?? null
+}
 export function getCropName(cropId, completedCropPerfections) {
   const perfection = getCropPerfection(cropId, completedCropPerfections)
 

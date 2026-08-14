@@ -1,0 +1,57 @@
+.crop-visual {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.crop-visual-image {
+  object-fit: contain;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.editor-grid {
+  gap: 0;
+}
+
+.editor-plot,
+.editor-plot:hover {
+  padding: 0;
+  background-image: url('../../assets/soil.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.editor-crop-visual {
+  width: 64px;
+  height: 64px;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.crop-visual-image.crop-option-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.crop-visual-image.blueprint-crop-icon {
+  width: 1.65rem;
+  height: 1.65rem;
+}
+
+.crop-hover-visual {
+  width: 1.3rem;
+  height: 1.3rem;
+  vertical-align: middle;
+}
+
+.rabbit-contract-crop-visual {
+  width: 2rem;
+  height: 2rem;
+}

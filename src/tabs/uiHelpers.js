@@ -18,9 +18,7 @@ export function formatPlaytime(seconds) {
   return `${minutes}m ${remainingSeconds}s`
 }
 
-export function getCropMark(crop) {
-  return crop ? CROP_DEFINITIONS[crop].icon : null
-}
+
 export function getBlueprintCropSummary(cells = []) {
   const cropCounts = cells.reduce((counts, cropId) => {
     if (

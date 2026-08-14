@@ -1,10 +1,8 @@
 import { getFieldsPlanted } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
+import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber, MonocropStatus } from './ui.jsx'
-import {
-  getBlueprintCropSummary,
-  getCropMark,
-} from './uiHelpers.js'
+import { getBlueprintCropSummary } from './uiHelpers.js'
 
 export function Blueprint({
   game,
@@ -95,9 +93,13 @@ export function Blueprint({
                   key={cropId}
                   title={`${cropName}: ${count} planted`}
                 >
-                  <span className="blueprint-crop-icon" aria-hidden="true">
-                    {getCropMark(cropId)}
-                  </span>
+                  <CropVisual
+                    cropId={cropId}
+                    completedCropPerfections={
+                      game.completedCropPerfections
+                    }
+                    className="blueprint-crop-icon"
+                  />
                   <span
                     className="blueprint-crop-count"
                     aria-label={`${cropName}: ${count} planted`}

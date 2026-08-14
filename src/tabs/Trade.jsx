@@ -3,7 +3,8 @@ import {
   TRADE_ESTABLISHMENT_COST,
   hasRabbitUnlock,
 } from '../game/gameLogic.js'
-import { CROP_DEFINITIONS, getCropName } from '../game/crops.js'
+import { getCropName } from '../game/crops.js'
+import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber } from './ui.jsx'
 
 function EstablishTradeCard({ game, onEstablishTrade }) {
@@ -55,7 +56,6 @@ function RabbitContract({
     )
   }
 
-  const cropDefinition = CROP_DEFINITIONS[contract.cropId]
   const cropName = getCropName(
     contract.cropId,
     game.completedCropPerfections,
@@ -70,7 +70,11 @@ function RabbitContract({
     <article className="rabbit-contract-card">
       <div className="rabbit-contract-heading">
         <div className="rabbit-contract-crop">
-          <span aria-hidden="true">{cropDefinition?.icon ?? '🌾'}</span>
+          <CropVisual
+            cropId={contract.cropId}
+            completedCropPerfections={game.completedCropPerfections}
+            className="rabbit-contract-crop-visual"
+          />
           <div>
             <p className="eyebrow">Active Rabbit contract</p>
             <h2>Deliver {cropName}</h2>

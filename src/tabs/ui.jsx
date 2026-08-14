@@ -4,7 +4,7 @@ import {
   getCropName,
 } from '../game/crops.js'
 import { getBlueprintCropStats } from '../game/gameLogic.js'
-import { getCropMark } from './uiHelpers.js'
+import { CropVisual } from './CropVisual.jsx'
 
 export function FormattedNumber({ value, maximumFractionDigits = 1 }) {
   return getCachedFormattedNumber(value, maximumFractionDigits)
@@ -115,7 +115,11 @@ export function CropHoverInspector({
     >
       <p className="eyebrow">Hovered crop</p>
       <h3>
-        <span aria-hidden="true">{getCropMark(stats.crop)}</span>{' '}
+        <CropVisual
+          cropId={stats.crop}
+          completedCropPerfections={completedCropPerfections}
+          className="crop-hover-visual"
+        />{' '}
         {getCropName(stats.crop, completedCropPerfections)}
       </h3>
       <dl className="crop-hover-stats">
