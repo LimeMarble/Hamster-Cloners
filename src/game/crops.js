@@ -129,10 +129,10 @@ export const CROP_DEFINITIONS = {
     baseYield: 1,
     hamsterEfficiencyBonus: 0,
     monocropCountWeight: 5,
-    globalRowProductionBonusPerHamster: 0.01,
+    globalRowProductionBonusPerHamster: 0.1,
     hasUnboostableActiveHamsterRowMultiplier: true,
     effectDescription:
-      '1 Crop per slot · +1% global Row production per active Hamster · counts as 5 crops toward its Monocrop limit · global Row boost cannot be boosted',
+      '1 Crop per slot · +10% global Row production per active Hamster · counts as 5 crops toward its Monocrop limit · global Row boost cannot be boosted',
     unlockDescription: `Unlocks at ${CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT.toLocaleString()} Row Duplicators`,
   },
   leechingGourd: {
