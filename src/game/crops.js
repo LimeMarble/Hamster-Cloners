@@ -6,7 +6,6 @@ export const LENTIL_UNLOCK_CROP_COUNT = 8e16
 export const KNOTWEED_UNLOCK_CROP_COUNT = 2e19
 export const SUNFLOWER_UNLOCK_CROP_COUNT = 1.42e44
 export const CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT = 500
-// The requested 1.8e308 cost exceeds the native Number range.
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
 export const CORN_REVEAL_HAMSTER_COUNT = 50
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
@@ -20,6 +19,7 @@ export const CROP_DEFINITIONS = {
   leek: {
     name: 'Leek',
     icon: '🥬',
+    image: new URL('../assets/leek.png', import.meta.url).href,
     baseYield: 1,
     hamsterEfficiencyBonus: 0,
     effectDescription: '1 Crop per slot',
@@ -28,6 +28,7 @@ export const CROP_DEFINITIONS = {
   corn: {
     name: 'Corn',
     icon: '🌽',
+    image: new URL('../assets/corn.png', import.meta.url).href,
     baseYield: 2,
     hamsterEfficiencyBonus: -0.1,
     hasDebuff: true,
