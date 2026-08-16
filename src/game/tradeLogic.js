@@ -50,6 +50,7 @@ const RABBIT_UNLOCK_ID_SET = new Set(RABBIT_UNLOCKS.map(({ id }) => id))
 const RABBIT_EXCLUDED_CROP_IDS = new Set([
   'appleTree',
   'knotweed',
+  'pumpkin',
   'leechingGourd',
   'leechingGourdPart',
 ])
