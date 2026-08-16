@@ -17,7 +17,7 @@ export const RABBIT_UNLOCKS = Object.freeze([
   {
     id: RABBIT_UNLOCK_IDS.CARROT,
     name: 'Unlock Carrot',
-    cost: 100,
+    cost: 500,
     description: 'Secures the crop for a future update; Carrot is not plantable yet.',
   },
   {
