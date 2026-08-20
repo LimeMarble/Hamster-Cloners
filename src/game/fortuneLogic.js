@@ -311,3 +311,27 @@ export function collectCloverBundle(game, random = Math.random) {
     },
   }
 }
+export function spawnCloverBundle(game, random = Math.random) {
+  const fortune = normalizeFortuneState(game.fortune)
+
+  return {
+    ...game,
+    fortune: {
+      ...fortune,
+      bundle: {
+        x: 10 + clampRandomValue(random()) * 80,
+        y: 12 + clampRandomValue(random()) * 68,
+      },
+    },
+  }
+}
+
+export function wipeActiveFortuneEffects(game) {
+  return {
+    ...game,
+    fortune: {
+      ...normalizeFortuneState(game.fortune),
+      activeEffects: [],
+    },
+  }
+}

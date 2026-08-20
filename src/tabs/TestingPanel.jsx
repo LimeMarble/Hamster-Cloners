@@ -15,6 +15,8 @@ export function TestingPanel({
   onGrantRowExpansion,
   onRevokeColumnExpansion,
   onRevokeRowExpansion,
+  onSpawnCloverBundle,
+  onWipeCloverEffects,
 }) {
   const columnsMaxed = columnExpansionCount >= maximumColumnExpansions
   const rowsMaxed = rowExpansionCount >= maximumRowExpansions
@@ -108,6 +110,19 @@ export function TestingPanel({
               disabled={rowExpansionCount <= 0}
             >
               -1 Row expansion ({rowExpansionCount}/{maximumRowExpansions})
+            </button>            <button
+              type="button"
+              className="testing-action"
+              onClick={onSpawnCloverBundle}
+            >
+              Spawn Clover Bundle
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onWipeCloverEffects}
+            >
+              Wipe active Clover effects
             </button>
           </div>
         </aside>

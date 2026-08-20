@@ -2,6 +2,8 @@ import { useState } from 'react'
 import {
   grantNextBlueprintExpansion,
   revokeLastBlueprintExpansion,
+  spawnCloverBundle,
+  wipeActiveFortuneEffects,
 } from '../game/gameLogic.js'
 
 const TESTING_CODE = 'limesaysopensesame'
@@ -78,6 +80,13 @@ export function useTestingCheats({
     )
   }
 
+  function spawnTestingCloverBundle() {
+    updateGame((currentGame) => spawnCloverBundle(currentGame))
+  }
+
+  function wipeTestingCloverEffects() {
+    updateGame((currentGame) => wipeActiveFortuneEffects(currentGame))
+  }
   const columnTrack = blueprintExpansionTracks.find(
     (track) => track.id === 'column',
   )
@@ -114,6 +123,8 @@ export function useTestingCheats({
           onGrantRowExpansion: () => grantExpansion('row'),
           onRevokeColumnExpansion: () => revokeExpansion('column'),
           onRevokeRowExpansion: () => revokeExpansion('row'),
+          onSpawnCloverBundle: spawnTestingCloverBundle,
+          onWipeCloverEffects: wipeTestingCloverEffects,
         }
       : null,
   }

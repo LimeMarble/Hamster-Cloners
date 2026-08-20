@@ -13,6 +13,8 @@ import {
   getCropProductionSnapshotPerSecond,
   getFortuneModifiers,
   getMirrorCornEffectMultiplier,
+  spawnCloverBundle,
+  wipeActiveFortuneEffects,
 } from '../src/game/gameLogic.js'
 import { getUnlockedCropIds } from '../src/game/crops.js'
 
@@ -143,6 +145,27 @@ test('collecting the same timed Breeze adds its duration to the remaining timer'
   assert.deepEqual(collected.fortune.activeEffects, [
     { id: FORTUNE_EFFECT_IDS.OPUS, remainingSeconds: 49 },
   ])
+})
+test('testing helpers spawn a bundle and wipe only active Clover effects', () => {
+  const game = {
+    ...createCloverGame(),
+    fortune: {
+      bundle: null,
+      secondsTowardBundleRoll: 23,
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 40 },
+      ],
+      notice: { effectId: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 3 },
+    },
+  }
+  const randomValues = [0.25, 0.75]
+  const spawned = spawnCloverBundle(game, () => randomValues.shift())
+  const wiped = wipeActiveFortuneEffects(spawned)
+
+  assert.deepEqual(spawned.fortune.bundle, { x: 30, y: 63 })
+  assert.deepEqual(wiped.fortune.activeEffects, [])
+  assert.deepEqual(wiped.fortune.bundle, { x: 30, y: 63 })
+  assert.deepEqual(wiped.fortune.notice, game.fortune.notice)
 })
 test('Bounty multiplies Crop yield while Blight destroys the harvest', () => {
   const blueprint = createBlueprint({
