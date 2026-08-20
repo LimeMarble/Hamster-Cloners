@@ -1,3 +1,4 @@
+import { grantNextBlueprintExpansion } from './blueprintLogic.js'
 import { CROP_DEFINITIONS, getUnlockedCropIds } from './crops.js'
 import { getFieldsPlanted } from './cropProduction.js'
 import { getRabbitRelationsMultiplier } from './cropEffects.js'
@@ -9,6 +10,8 @@ export const RABBIT_ACTIVE_CONTRACT_COUNT = 3
 
 export const RABBIT_UNLOCK_IDS = Object.freeze({
   CARROT: 'carrot',
+  ROW_EXPANSION: 'rowExpansion',
+  COLUMN_EXPANSION: 'columnExpansion',
   HAMSTER_EFFICIENCY: 'hamsterEfficiency',
   ROW_DUPLICATOR_EFFICIENCY: 'rowDuplicatorEfficiency',
   CAPYBARA_CONTACT: 'capybaraContact',
@@ -21,35 +24,50 @@ export const RABBIT_UNLOCKS = Object.freeze([
     name: 'Unlock Carrot',
     cost: 500,
     description:
-      'Unlocks Carrot. Its Rabbit-contract bonuses grow with completed Rabbit contracts, and Carrot contracts give double relations.',
+      'Unlocks Carrot. Its harvest bonus grows with completed Rabbit contracts, and Carrot contracts give double relations.',
   },
   {
+    id: RABBIT_UNLOCK_IDS.ROW_EXPANSION,
+    name: 'Blueprint Row Expansion',
+    cost: 1000,
+    description: 'Adds one permanent blueprint row without resetting your field.',
+  },
+  {
+    id: RABBIT_UNLOCK_IDS.COLUMN_EXPANSION,
+    name: 'Blueprint Column Expansion',
+    cost: 2000,
+    description: 'Adds one permanent blueprint column without resetting your field.',
+  },  {
     id: RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY,
     name: '×3 Hamster Efficiency',
-    cost: 1111,
+    cost: 4444,
     description: 'A permanent external multiplier to Hamster Cloner production.',
   },
   {
     id: RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
     name: '×2 Row Duplicator Efficiency',
-    cost: 2000,
+    cost: 6000,
     description: 'A permanent external multiplier to Row Duplicator production.',
   },
   {
     id: RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
     name: 'Establish contact with Capybaras',
-    cost: 5000,
+    cost: 25000,
     description: 'Records first contact; Capybara contracts will arrive later.',
   },
   {
     id: RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
     name: 'Unlock 4-Leaf Clover',
-    cost: 7777,
+    cost: 77777,
     description: 'Secures the crop for a future update; 4-Leaf Clover is not plantable yet.',
   },
 ])
 
 const RABBIT_UNLOCK_ID_SET = new Set(RABBIT_UNLOCKS.map(({ id }) => id))
+const RABBIT_EXPANSION_TRACK_BY_UNLOCK_ID = Object.freeze({
+  [RABBIT_UNLOCK_IDS.ROW_EXPANSION]: 'row',
+  [RABBIT_UNLOCK_IDS.COLUMN_EXPANSION]: 'column',
+})
 const RABBIT_EXCLUDED_CROP_IDS = new Set([
   'appleTree',
   'knotweed',
@@ -366,12 +384,21 @@ export function purchaseRabbitUnlock(game, unlockId) {
     return null
   }
 
+  const expansionTrackId = RABBIT_EXPANSION_TRACK_BY_UNLOCK_ID[unlockId]
+  const expansionGame = expansionTrackId
+    ? grantNextBlueprintExpansion(game, expansionTrackId)
+    : game
+
+  if (!expansionGame) {
+    return null
+  }
+
   return {
-    ...game,
+    ...expansionGame,
     trade: {
-      ...game.trade,
+      ...expansionGame.trade,
       rabbitRelations: currentRelations - unlock.cost,
-      rabbitUnlocks: [...game.trade.rabbitUnlocks, unlockId],
+      rabbitUnlocks: [...expansionGame.trade.rabbitUnlocks, unlockId],
     },
   }
 }

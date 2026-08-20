@@ -227,6 +227,32 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: (game) => game.trade?.rabbitRelations,
     requiresAction: true,
   },
+  {
+    id: 'rabbit-row-expansion',
+    category: 'Milestone',
+    title: 'Buy a Blueprint Row Expansion',
+    target: 1000,
+    unit: 'Rabbit relations',
+    description:
+      'Spend 1,000 Rabbit relations in Trade for one blueprint row without resetting.',
+    isComplete: (game) =>
+      hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.ROW_EXPANSION),
+    getCurrent: (game) => game.trade?.rabbitRelations,
+    requiresAction: true,
+  },
+  {
+    id: 'rabbit-column-expansion',
+    category: 'Milestone',
+    title: 'Buy a Blueprint Column Expansion',
+    target: 2000,
+    unit: 'Rabbit relations',
+    description:
+      'Spend 2,000 Rabbit relations in Trade for one blueprint column without resetting.',
+    isComplete: (game) =>
+      hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.COLUMN_EXPANSION),
+    getCurrent: (game) => game.trade?.rabbitRelations,
+    requiresAction: true,
+  },
 ]
 
 export function getNextMajorProgressionGoal(game) {

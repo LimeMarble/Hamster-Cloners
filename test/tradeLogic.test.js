@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   RABBIT_ACTIVE_CONTRACT_COUNT,
+  RABBIT_UNLOCKS,
   RABBIT_UNLOCK_IDS,
   TRADE_ESTABLISHMENT_COST,
   advanceRabbitContract,
@@ -248,12 +249,58 @@ test('unlocked Carrot contracts give double Rabbit relations', () => {
   assert.equal(contract.relationsReward, 2)
 })
 
+test('Rabbit relation expansions appear before efficiency upgrades and grant blueprint space without a reset', () => {
+  assert.deepEqual(
+    RABBIT_UNLOCKS.map((unlock) => unlock.id),
+    [
+      RABBIT_UNLOCK_IDS.CARROT,
+      RABBIT_UNLOCK_IDS.ROW_EXPANSION,
+      RABBIT_UNLOCK_IDS.COLUMN_EXPANSION,
+      RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY,
+      RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
+      RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
+      RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
+    ],
+  )
+
+  const game = {
+    ...createInitialGame(),
+    crops: 12345,
+    farmland: { rows: 1, columns: 42, floors: 1, farms: 1, otherMultiplier: 1 },
+    trade: {
+      established: true,
+      rabbitRelations: 3000,
+      rabbitContractsCompleted: 0,
+      rabbitContracts: [],
+      rabbitUnlocks: [],
+    },
+  }
+  const rowExpandedGame = purchaseRabbitUnlock(
+    game,
+    RABBIT_UNLOCK_IDS.ROW_EXPANSION,
+  )
+  const columnExpandedGame = purchaseRabbitUnlock(
+    rowExpandedGame,
+    RABBIT_UNLOCK_IDS.COLUMN_EXPANSION,
+  )
+
+  assert.equal(rowExpandedGame.trade.rabbitRelations, 2000)
+  assert.equal(rowExpandedGame.blueprint.rows, 2)
+  assert.equal(rowExpandedGame.blueprint.columns, 1)
+  assert.equal(rowExpandedGame.crops, 12345)
+  assert.equal(rowExpandedGame.farmland.columns, 42)
+  assert.equal(columnExpandedGame.trade.rabbitRelations, 0)
+  assert.equal(columnExpandedGame.blueprint.rows, 2)
+  assert.equal(columnExpandedGame.blueprint.columns, 2)
+  assert.equal(columnExpandedGame.crops, 12345)
+  assert.equal(columnExpandedGame.farmland.columns, 42)
+})
 test('Rabbit unlocks spend relations once and expose their completion', () => {
   const game = {
     ...createInitialGame(),
     trade: {
       established: true,
-      rabbitRelations: 2000,
+      rabbitRelations: 5000,
       rabbitContractsCompleted: 0,
       rabbitContracts: [],
       rabbitUnlocks: [],
@@ -264,7 +311,7 @@ test('Rabbit unlocks spend relations once and expose their completion', () => {
     RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY,
   )
 
-  assert.equal(unlockedGame.trade.rabbitRelations, 889)
+  assert.equal(unlockedGame.trade.rabbitRelations, 556)
   assert.equal(
     hasRabbitUnlock(unlockedGame, RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY),
     true,
