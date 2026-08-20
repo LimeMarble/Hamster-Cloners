@@ -260,6 +260,7 @@ export function BlueprintEdit({
             rowsProducedPerSecond={rowsBuiltPerSecond}
             activeHamsters={game.hamsters}
             rabbitContractsCompleted={rabbitContractsCompleted}
+            fortune={game.fortune}
             cursor={hoveredEditorCrop}
           />
         ) : null}

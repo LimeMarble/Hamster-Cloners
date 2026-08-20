@@ -3,7 +3,10 @@ import {
   getCropEffectDescription,
   getCropName,
 } from '../game/crops.js'
-import { getBlueprintCropStats } from '../game/gameLogic.js'
+import {
+  getBlueprintCropStats,
+  getFortuneModifiers,
+} from '../game/gameLogic.js'
 import { CropVisual } from './CropVisual.jsx'
 
 export function FormattedNumber({ value, maximumFractionDigits = 1 }) {
@@ -94,6 +97,7 @@ export function CropHoverInspector({
   rowsProducedPerSecond,
   activeHamsters,
   rabbitContractsCompleted,
+  fortune,
   cursor,
 }) {
   const stats = getBlueprintCropStats(
@@ -103,6 +107,7 @@ export function CropHoverInspector({
     rowsProducedPerSecond,
     activeHamsters,
     rabbitContractsCompleted,
+    getFortuneModifiers(fortune),
   )
 
   if (!stats) {
@@ -211,6 +216,35 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'fortune-passive') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> Crop passive effects from Breezes of Fortune
+                </li>
+              )
+            }
+
+            if (effect.type === 'fortune-crop-yield') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> Crop yields from Breezes of Fortune
+                </li>
+              )
+            }
+
+            if (effect.type === 'fortune-harvest') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  {effect.multiplier === 0 ? (
+                    "Harvest destroyed by Fortune's Blight"
+                  ) : (
+                    <>
+                      ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> harvest from Breezes of Fortune
+                    </>
+                  )}
+                </li>
+              )
+            }
             if (effect.type === 'global-hamster-efficiency') {
               return (
                 <li key={effectIndex}>

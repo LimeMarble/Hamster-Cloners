@@ -8,6 +8,7 @@ import {
   createBlueprint,
   createInitialGame,
   getAdjacentCropEffectModifier,
+  getBlueprintCropStats,
   getCloverBundleChancePerMinute,
   getCropHamsterEfficiencyMultiplier,
   getCropProductionSnapshotPerSecond,
@@ -166,6 +167,60 @@ test('testing helpers spawn a bundle and wipe only active Clover effects', () =>
   assert.deepEqual(wiped.fortune.activeEffects, [])
   assert.deepEqual(wiped.fortune.bundle, { x: 30, y: 63 })
   assert.deepEqual(wiped.fortune.notice, game.fortune.notice)
+})
+test('crop hover stats include active Breeze yield and passive modifiers', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['sweetPotato', null, null, null],
+  })
+  const boostedStats = getBlueprintCropStats(
+    blueprint,
+    0,
+    [],
+    0,
+    0,
+    0,
+    getFortuneModifiers({
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.OPUS, remainingSeconds: 10 },
+        { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 10 },
+      ],
+    }),
+  )
+  const blightedStats = getBlueprintCropStats(
+    blueprint,
+    0,
+    [],
+    0,
+    0,
+    0,
+    getFortuneModifiers({
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.BLIGHT, remainingSeconds: 10 },
+      ],
+    }),
+  )
+
+  assert.equal(boostedStats.harvestYield, 7.77)
+  assert.equal(boostedStats.hamsterEfficiencyBonus, 0.25 * 1.0777)
+  assert.ok(
+    boostedStats.receivedEffects.some(
+      (effect) => effect.type === 'fortune-passive' && effect.multiplier === 1.0777,
+    ),
+  )
+  assert.ok(
+    boostedStats.receivedEffects.some(
+      (effect) => effect.type === 'fortune-crop-yield' && effect.multiplier === 7.77,
+    ),
+  )
+  assert.equal(blightedStats.harvestYield, 0)
+  assert.equal(blightedStats.harvestDestroyedByAppleTree, true)
+  assert.ok(
+    blightedStats.receivedEffects.some(
+      (effect) => effect.type === 'fortune-harvest' && effect.multiplier === 0,
+    ),
+  )
 })
 test('Bounty multiplies Crop yield while Blight destroys the harvest', () => {
   const blueprint = createBlueprint({
