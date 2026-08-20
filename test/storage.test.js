@@ -250,6 +250,30 @@ test('Trade state persists with safe migration defaults', () => {
     rabbitUnlocks: [],
   })
 })
+test('legacy Rabbit blueprint expansions migrate to free blueprint space', () => {
+  const migratedGame = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    blueprint: {
+      rows: 2,
+      columns: 2,
+      cells: ['leek', null, null, null],
+    },
+    completedBlueprintExpansions: ['firstRow', 'firstColumn'],
+    trade: {
+      established: true,
+      rabbitUnlocks: ['rowExpansion', 'columnExpansion'],
+    },
+  })
+
+  assert.equal(migratedGame.blueprint.rows, 2)
+  assert.equal(migratedGame.blueprint.columns, 2)
+  assert.deepEqual(migratedGame.completedBlueprintExpansions, [])
+  assert.deepEqual(migratedGame.rabbitBlueprintExpansions, {
+    row: 1,
+    column: 1,
+  })
+})
+
 test('exports and imports a versioned Base64 save code', () => {
   const saveCode = exportGame({
     crops: 12_345,

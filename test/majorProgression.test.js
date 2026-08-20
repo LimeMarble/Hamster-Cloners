@@ -30,8 +30,7 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'crop-canola',
       'trade-relations',
       'crop-carrot',
-      'rabbit-row-expansion',
-      'rabbit-column-expansion',
+      'capybara-contact',
     ],
   )
 })
@@ -158,25 +157,12 @@ test('major progression advances to the earliest unfinished goal', () => {
     ...game,
     trade: { ...game.trade, rabbitUnlocks: ['carrot'] },
   }
-  const rowExpansionGoal = getNextMajorProgressionGoal(game)
-  assert.equal(rowExpansionGoal.id, 'rabbit-row-expansion')
+  const capybaraGoal = getNextMajorProgressionGoal(game)
+  assert.equal(capybaraGoal.id, 'capybara-contact')
 
   game = {
     ...game,
-    trade: { ...game.trade, rabbitRelations: 1000 },
-  }
-  assert.equal(getNextMajorProgressionGoal(game).isReady, true)
-
-  game = {
-    ...game,
-    trade: { ...game.trade, rabbitUnlocks: ['carrot', 'rowExpansion'] },
-  }
-  const columnExpansionGoal = getNextMajorProgressionGoal(game)
-  assert.equal(columnExpansionGoal.id, 'rabbit-column-expansion')
-
-  game = {
-    ...game,
-    trade: { ...game.trade, rabbitRelations: 2000 },
+    trade: { ...game.trade, rabbitRelations: 25000 },
   }
   assert.equal(getNextMajorProgressionGoal(game).isReady, true)
 
@@ -184,7 +170,7 @@ test('major progression advances to the earliest unfinished goal', () => {
     ...game,
     trade: {
       ...game.trade,
-      rabbitUnlocks: ['carrot', 'rowExpansion', 'columnExpansion'],
+      rabbitUnlocks: ['carrot', 'capybaraContact'],
     },
   }
   const completedGoal = getNextMajorProgressionGoal(game)

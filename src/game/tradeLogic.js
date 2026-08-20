@@ -1,4 +1,4 @@
-import { grantNextBlueprintExpansion } from './blueprintLogic.js'
+import { grantFreeBlueprintExpansion } from './blueprintLogic.js'
 import { CROP_DEFINITIONS, getUnlockedCropIds } from './crops.js'
 import { getFieldsPlanted } from './cropProduction.js'
 import { getRabbitRelationsMultiplier } from './cropEffects.js'
@@ -14,6 +14,7 @@ export const RABBIT_UNLOCK_IDS = Object.freeze({
   COLUMN_EXPANSION: 'columnExpansion',
   HAMSTER_EFFICIENCY: 'hamsterEfficiency',
   ROW_DUPLICATOR_EFFICIENCY: 'rowDuplicatorEfficiency',
+  CONTRACTOR: 'contractor',
   CAPYBARA_CONTACT: 'capybaraContact',
   FOUR_LEAF_CLOVER: 'fourLeafClover',
 })
@@ -48,6 +49,13 @@ export const RABBIT_UNLOCKS = Object.freeze([
     name: '×2 Row Duplicator Efficiency',
     cost: 6000,
     description: 'A permanent external multiplier to Row Duplicator production.',
+  },
+  {
+    id: RABBIT_UNLOCK_IDS.CONTRACTOR,
+    name: 'Strike a deal with a Contractor',
+    cost: 10000,
+    description:
+      'Finished Rabbit contracts are claimed and replaced automatically.',
   },
   {
     id: RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
@@ -274,7 +282,11 @@ export function establishTradeRelations(game, random = Math.random) {
   }
 }
 
-export function advanceRabbitContract(game, productionByCrop) {
+export function advanceRabbitContract(
+  game,
+  productionByCrop,
+  random = Math.random,
+) {
   if (game.trade?.established !== true) {
     return game.trade
   }
@@ -303,10 +315,20 @@ export function advanceRabbitContract(game, productionByCrop) {
     }
   })
 
-  return {
+  const advancedTrade = {
     ...game.trade,
     rabbitContracts,
   }
+
+  if (!hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CONTRACTOR)) {
+    return advancedTrade
+  }
+
+  return rabbitContracts.reduce(
+    (trade, _contract, index) =>
+      claimRabbitContract({ ...game, trade }, index, random)?.trade ?? trade,
+    advancedTrade,
+  )
 }
 
 export function claimRabbitContract(
@@ -386,7 +408,7 @@ export function purchaseRabbitUnlock(game, unlockId) {
 
   const expansionTrackId = RABBIT_EXPANSION_TRACK_BY_UNLOCK_ID[unlockId]
   const expansionGame = expansionTrackId
-    ? grantNextBlueprintExpansion(game, expansionTrackId)
+    ? grantFreeBlueprintExpansion(game, expansionTrackId)
     : game
 
   if (!expansionGame) {

@@ -228,28 +228,15 @@ export const MAJOR_PROGRESSION_GOALS = [
     requiresAction: true,
   },
   {
-    id: 'rabbit-row-expansion',
+    id: 'capybara-contact',
     category: 'Milestone',
-    title: 'Buy a Blueprint Row Expansion',
-    target: 1000,
+    title: 'Establish contact with Capybaras',
+    target: 25000,
     unit: 'Rabbit relations',
     description:
-      'Spend 1,000 Rabbit relations in Trade for one blueprint row without resetting.',
+      'Spend Rabbit relations in Trade to establish contact with Capybaras.',
     isComplete: (game) =>
-      hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.ROW_EXPANSION),
-    getCurrent: (game) => game.trade?.rabbitRelations,
-    requiresAction: true,
-  },
-  {
-    id: 'rabbit-column-expansion',
-    category: 'Milestone',
-    title: 'Buy a Blueprint Column Expansion',
-    target: 2000,
-    unit: 'Rabbit relations',
-    description:
-      'Spend 2,000 Rabbit relations in Trade for one blueprint column without resetting.',
-    isComplete: (game) =>
-      hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.COLUMN_EXPANSION),
+      hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT),
     getCurrent: (game) => game.trade?.rabbitRelations,
     requiresAction: true,
   },

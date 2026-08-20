@@ -249,6 +249,44 @@ test('unlocked Carrot contracts give double Rabbit relations', () => {
   assert.equal(contract.relationsReward, 2)
 })
 
+test('the Contractor claims every finished Rabbit contract automatically', () => {
+  const game = {
+    ...createInitialGame(),
+    trade: {
+      established: true,
+      rabbitRelations: 7,
+      rabbitContractsCompleted: 0,
+      rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
+      rabbitContracts: [
+        {
+          cropId: 'leek',
+          factor: 1e7,
+          fieldsPlanted: 1,
+          requiredAmount: 10,
+          progress: 4,
+          relationsReward: 3,
+        },
+        {
+          cropId: 'leek',
+          factor: 1e7,
+          fieldsPlanted: 1,
+          requiredAmount: 10,
+          progress: 0,
+          relationsReward: 5,
+        },
+        null,
+      ],
+    },
+  }
+
+  const advancedTrade = advanceRabbitContract(game, { leek: 20 }, () => 0)
+
+  assert.equal(advancedTrade.rabbitRelations, 15)
+  assert.equal(advancedTrade.rabbitContractsCompleted, 2)
+  assert.equal(advancedTrade.rabbitContracts[0].progress, 0)
+  assert.equal(advancedTrade.rabbitContracts[1].progress, 0)
+})
+
 test('Rabbit relation expansions appear before efficiency upgrades and grant blueprint space without a reset', () => {
   assert.deepEqual(
     RABBIT_UNLOCKS.map((unlock) => unlock.id),
@@ -258,6 +296,7 @@ test('Rabbit relation expansions appear before efficiency upgrades and grant blu
       RABBIT_UNLOCK_IDS.COLUMN_EXPANSION,
       RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY,
       RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
+      RABBIT_UNLOCK_IDS.CONTRACTOR,
       RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
       RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
     ],
@@ -287,11 +326,21 @@ test('Rabbit relation expansions appear before efficiency upgrades and grant blu
   assert.equal(rowExpandedGame.trade.rabbitRelations, 2000)
   assert.equal(rowExpandedGame.blueprint.rows, 2)
   assert.equal(rowExpandedGame.blueprint.columns, 1)
+  assert.deepEqual(rowExpandedGame.completedBlueprintExpansions, [])
+  assert.deepEqual(rowExpandedGame.rabbitBlueprintExpansions, {
+    row: 1,
+    column: 0,
+  })
   assert.equal(rowExpandedGame.crops, 12345)
   assert.equal(rowExpandedGame.farmland.columns, 42)
   assert.equal(columnExpandedGame.trade.rabbitRelations, 0)
   assert.equal(columnExpandedGame.blueprint.rows, 2)
   assert.equal(columnExpandedGame.blueprint.columns, 2)
+  assert.deepEqual(columnExpandedGame.completedBlueprintExpansions, [])
+  assert.deepEqual(columnExpandedGame.rabbitBlueprintExpansions, {
+    row: 1,
+    column: 1,
+  })
   assert.equal(columnExpandedGame.crops, 12345)
   assert.equal(columnExpandedGame.farmland.columns, 42)
 })

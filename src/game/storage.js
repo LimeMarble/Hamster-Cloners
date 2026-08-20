@@ -1,4 +1,4 @@
-import { normalizeTradeState } from './tradeLogic.js'
+import { normalizeTradeState, RABBIT_UNLOCK_IDS } from './tradeLogic.js'
 import {
   BLUEPRINT_EXPANSIONS,
   BLUEPRINT_EXPANSION_TRACKS,
@@ -77,6 +77,21 @@ function removeUnavailableCrops(blueprint, hasUnlockedSunflower) {
   })
 }
 
+function getRabbitBlueprintExpansionCounts(rawGame, trade) {
+  const storedCounts = rawGame.rabbitBlueprintExpansions
+  const hasStoredCounts = storedCounts && typeof storedCounts === 'object'
+  const getCount = (trackId, unlockId) =>
+    toNonNegativeInteger(
+      storedCounts?.[trackId],
+      hasStoredCounts || !trade.rabbitUnlocks.includes(unlockId) ? 0 : 1,
+    )
+
+  return {
+    row: getCount('row', RABBIT_UNLOCK_IDS.ROW_EXPANSION),
+    column: getCount('column', RABBIT_UNLOCK_IDS.COLUMN_EXPANSION),
+  }
+}
+
 export function normalizeGame(rawGame) {
   const initialGame = createInitialGame()
 
@@ -85,6 +100,7 @@ export function normalizeGame(rawGame) {
   }
 
   const hasCurrentBlueprintAxes = rawGame.blueprintExpansionAxesSwapped === true
+  const trade = normalizeTradeState(rawGame.trade)
   const currentCrops = toNonNegativeNumber(rawGame.crops, initialGame.crops)
   const hasUnlockedSunflower =
     rawGame.hasUnlockedSunflower === true ||
@@ -105,6 +121,33 @@ export function normalizeGame(rawGame) {
         )
       : [],
   )
+  const rabbitBlueprintExpansions = getRabbitBlueprintExpansionCounts(
+    rawGame,
+    trade,
+  )
+
+  // Earlier Rabbit expansion purchases consumed the next reset milestone.
+  // Preserve their grid size while restoring that milestone to the paid track.
+  if (
+    hasCurrentBlueprintAxes &&
+    !(rawGame.rabbitBlueprintExpansions &&
+      typeof rawGame.rabbitBlueprintExpansions === 'object')
+  ) {
+    BLUEPRINT_EXPANSION_TRACKS.forEach((track) => {
+      const freeExpansionCount = rabbitBlueprintExpansions[track.id]
+
+      for (let index = 0; index < freeExpansionCount; index += 1) {
+        const lastCompletedStage = [...track.stages]
+          .reverse()
+          .find((stage) => completedExpansionIds.has(stage.id))
+
+        if (lastCompletedStage) {
+          completedExpansionIds.delete(lastCompletedStage.id)
+        }
+      }
+    })
+  }
+
   const completedCropPerfections = Array.isArray(rawGame.completedCropPerfections)
     ? rawGame.completedCropPerfections.filter((perfectionId) =>
         CROP_PERFECTION_IDS.includes(perfectionId),
@@ -172,8 +215,12 @@ export function normalizeGame(rawGame) {
 
   if (hasCurrentBlueprintAxes) {
     BLUEPRINT_EXPANSION_TRACKS.forEach((track) => {
-      const completedExpansionCount =
-        (track.id === 'row' ? blueprint.rows : blueprint.columns) - 1
+      const completedExpansionCount = Math.max(
+        0,
+        (track.id === 'row' ? blueprint.rows : blueprint.columns) -
+          1 -
+          rabbitBlueprintExpansions[track.id],
+      )
 
       track.stages.forEach((stage, stageIndex) => {
         if (
@@ -230,7 +277,7 @@ export function normalizeGame(rawGame) {
       toNonNegativeNumber(rawGame.crops, 0) >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
     hasUnlockedRowDuplicators: rawGame.hasUnlockedRowDuplicators === true,
     rowDuplicators: toNonNegativeInteger(rawGame.rowDuplicators, 0),
-    trade: normalizeTradeState(rawGame.trade),
+    trade,
     numberNotation:
       rawGame.numberNotation === 'scientific' ? 'scientific' : 'suffix',
     testingPanelUnlocked: rawGame.testingPanelUnlocked === true,
@@ -249,6 +296,7 @@ export function normalizeGame(rawGame) {
     completedBlueprintExpansions: BLUEPRINT_EXPANSIONS.map(
       (expansion) => expansion.id,
     ).filter((expansionId) => completedExpansionIds.has(expansionId)),
+    rabbitBlueprintExpansions,
     blueprint: activeBlueprint,
     blueprintSlots,
     activeBlueprintSlot,

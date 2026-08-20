@@ -181,6 +181,10 @@ export function createInitialGame() {
     completedCropPerfections: [],
     blueprintExpansionAxesSwapped: true,
     completedBlueprintExpansions: [],
+    rabbitBlueprintExpansions: {
+      row: 0,
+      column: 0,
+    },
     blueprint,
     blueprintSlots: [blueprint],
     activeBlueprintSlot: 0,
@@ -246,6 +250,17 @@ function getCompletedBlueprintExpansions(game) {
   return Array.isArray(game.completedBlueprintExpansions)
     ? game.completedBlueprintExpansions
     : []
+}
+
+export function getRabbitBlueprintExpansionCounts(game) {
+  const storedCounts = game.rabbitBlueprintExpansions
+  const toNonNegativeInteger = (value) =>
+    Math.max(0, Math.floor(Number(value) || 0))
+
+  return {
+    row: toNonNegativeInteger(storedCounts?.row),
+    column: toNonNegativeInteger(storedCounts?.column),
+  }
 }
 
 export function hasCompletedBlueprintExpansion(game, expansionId) {
@@ -448,7 +463,7 @@ function removeBlueprintColumn(blueprint) {
   })
 }
 
-function applyBlueprintExpansion(game, expansion) {
+function applyBlueprintSpace(game, direction) {
   const currentBlueprint = createBlueprint(game.blueprint)
   const storedBlueprintSlots = getBlueprintSlots(game)
   const activeBlueprintSlot = Math.min(
@@ -458,8 +473,7 @@ function applyBlueprintExpansion(game, expansion) {
   const currentBlueprintSlots = storedBlueprintSlots.map((blueprint, slotIndex) =>
     slotIndex === activeBlueprintSlot ? currentBlueprint : blueprint,
   )
-  const expandBlueprint =
-    expansion.direction === 'row' ? addBlueprintRow : addBlueprintColumn
+  const expandBlueprint = direction === 'row' ? addBlueprintRow : addBlueprintColumn
   const expandedBlueprintSlots = currentBlueprintSlots.map(expandBlueprint)
   const nextBlueprint = expandedBlueprintSlots[activeBlueprintSlot] ??
     expandBlueprint(currentBlueprint)
@@ -476,6 +490,12 @@ function applyBlueprintExpansion(game, expansion) {
     blueprint: nextBlueprint,
     blueprintSlots: expandedBlueprintSlots,
     activeBlueprintSlot,
+  }
+}
+
+function applyBlueprintExpansion(game, expansion) {
+  return {
+    ...applyBlueprintSpace(game, expansion.direction),
     completedBlueprintExpansions: [
       ...getCompletedBlueprintExpansions(game),
       expansion.id,
@@ -497,6 +517,27 @@ export function grantNextBlueprintExpansion(game, trackId) {
   return nextExpansion
     ? { ...game, ...applyBlueprintExpansion(game, nextExpansion) }
     : null
+}
+
+export function grantFreeBlueprintExpansion(game, trackId) {
+  const track = BLUEPRINT_EXPANSION_TRACKS.find(
+    (candidateTrack) => candidateTrack.id === trackId,
+  )
+
+  if (!track) {
+    return null
+  }
+
+  const rabbitBlueprintExpansions = getRabbitBlueprintExpansionCounts(game)
+
+  return {
+    ...game,
+    ...applyBlueprintSpace(game, trackId),
+    rabbitBlueprintExpansions: {
+      ...rabbitBlueprintExpansions,
+      [trackId]: rabbitBlueprintExpansions[trackId] + 1,
+    },
+  }
 }
 
 export function revokeLastBlueprintExpansion(game, trackId) {

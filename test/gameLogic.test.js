@@ -27,6 +27,7 @@ import {
   getFieldsPlanted,
   getGlobalPassiveEffectMultiplier,
   getGlobalRowProductionMultiplier,
+  grantFreeBlueprintExpansion,
   grantNextBlueprintExpansion,
   getLeechingGourdFootprint,
   getLeechingGourdTurnipEffect,
@@ -1799,6 +1800,21 @@ test('testing expansion grants follow each configured track and stop at its cap'
   assert.equal(game.completedBlueprintExpansions.length, 0)
   assert.equal(revokeLastBlueprintExpansion(game, 'column'), null)
   assert.equal(revokeLastBlueprintExpansion(game, 'row'), null)
+})
+
+test('free blueprint space does not advance reset expansion progress', () => {
+  const rowExpandedGame = grantFreeBlueprintExpansion(createInitialGame(), 'row')
+  const expandedGame = grantFreeBlueprintExpansion(rowExpandedGame, 'column')
+
+  assert.equal(expandedGame.blueprint.rows, 2)
+  assert.equal(expandedGame.blueprint.columns, 2)
+  assert.deepEqual(expandedGame.completedBlueprintExpansions, [])
+  assert.deepEqual(expandedGame.rabbitBlueprintExpansions, {
+    row: 1,
+    column: 1,
+  })
+  assert.equal(getBlueprintExpansionCost(expandedGame, 'firstColumn'), 1e4)
+  assert.equal(getBlueprintExpansionCost(expandedGame, 'firstRow'), null)
 })
 
 test('blueprint slots unlock with Potato and Sunflower and retain separate layouts', () => {
