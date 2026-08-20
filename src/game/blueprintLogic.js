@@ -167,7 +167,8 @@ export function createInitialGame() {
     trade: {
       established: false,
       rabbitRelations: 0,
-      rabbitContract: null,
+      rabbitContractsCompleted: 0,
+      rabbitContracts: [],
       rabbitUnlocks: [],
     },
     numberNotation: 'suffix',

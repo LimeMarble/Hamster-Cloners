@@ -1575,16 +1575,16 @@ test('Canola gives an unboostable global Row multiplier from active Hamsters', (
     cells: ['canola', 'sunflower'],
   })
 
-  // Two Canolas give +100% each at 100 active Hamsters. The adjacent Turnip
+  // Two Canolas give +1000% each at 100 active Hamsters. The adjacent Turnip
   // cannot boost this global effect, matching Sweet Potato's global passive.
-  assert.equal(getGlobalRowProductionMultiplier(canolaBlueprint, 100), 3)
+  assert.equal(getGlobalRowProductionMultiplier(canolaBlueprint, 100), 21)
   assert.equal(
     getRowDuplicatorEffectivenessMultiplier(canolaBlueprint, [], 100),
-    3,
+    21,
   )
   assert.equal(getRowDuplicatorExternalMultiplier(), 1)
 
-  // Canola's ×2 multiplier appears inside Duplicator Effectiveness and
+  // Canola's ×11 multiplier appears inside Duplicator Effectiveness and
   // stacks multiplicatively with Sunflower's ×1.2 effectiveness multiplier.
   assert.ok(
     Math.abs(
@@ -1597,7 +1597,7 @@ test('Canola gives an unboostable global Row multiplier from active Hamsters', (
         ),
         getRowDuplicatorExternalMultiplier(),
       ) -
-        0.1 * 1.02 * 1.2 * 2,
+        0.1 * 1.02 * 1.2 * 11,
     ) < 1e-12,
   )
   assert.equal(
@@ -1633,8 +1633,8 @@ test('each Canola counts as five crops toward its Monocrop limit', () => {
       type: 'global-row-production',
       sourceCropId: 'canola',
       count: 1,
-      bonus: monocropMultiplier,
-      multiplier: 1 + monocropMultiplier,
+      bonus: monocropMultiplier * 10,
+      multiplier: 1 + monocropMultiplier * 10,
     },
   )
 })

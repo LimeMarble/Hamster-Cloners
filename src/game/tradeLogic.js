@@ -1,9 +1,11 @@
-import { getFieldsPlanted } from './cropProduction.js'
 import { CROP_DEFINITIONS, getUnlockedCropIds } from './crops.js'
+import { getFieldsPlanted } from './cropProduction.js'
+import { getRabbitRelationsMultiplier } from './cropEffects.js'
 
 export const TRADE_ESTABLISHMENT_COST = 1e57
 export const RABBIT_CONTRACT_MIN_FACTOR = 1e7
 export const RABBIT_CONTRACT_MAX_FACTOR = 5e7
+export const RABBIT_ACTIVE_CONTRACT_COUNT = 3
 
 export const RABBIT_UNLOCK_IDS = Object.freeze({
   CARROT: 'carrot',
@@ -18,7 +20,8 @@ export const RABBIT_UNLOCKS = Object.freeze([
     id: RABBIT_UNLOCK_IDS.CARROT,
     name: 'Unlock Carrot',
     cost: 500,
-    description: 'Secures the crop for a future update; Carrot is not plantable yet.',
+    description:
+      'Unlocks Carrot. Its Rabbit-contract bonuses grow with completed Rabbit contracts, and Carrot contracts give double relations.',
   },
   {
     id: RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY,
@@ -68,7 +71,8 @@ export function createInitialTradeState() {
   return {
     established: false,
     rabbitRelations: 0,
-    rabbitContract: null,
+    rabbitContractsCompleted: 0,
+    rabbitContracts: [],
     rabbitUnlocks: [],
   }
 }
@@ -86,6 +90,10 @@ export function isRabbitContractCropEligible(cropId) {
   )
 }
 
+export function hasRabbitUnlock(game, unlockId) {
+  return game.trade?.rabbitUnlocks?.includes(unlockId) === true
+}
+
 export function getRabbitContractCropIds(game) {
   return getUnlockedCropIds(
     game.blueprint,
@@ -98,6 +106,7 @@ export function getRabbitContractCropIds(game) {
     game.hasUnlockedRootTunnel,
     game.hasUnlockedSunflower,
     game.rowDuplicators,
+    hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CARROT),
   ).filter(isRabbitContractCropEligible)
 }
 
@@ -123,16 +132,27 @@ export function createRabbitContract(game, random = Math.random) {
   const cropIndex = Math.floor(
     clampRandomValue(random()) * eligibleCropIds.length,
   )
+  const cropId = eligibleCropIds[cropIndex]
   const fieldsPlanted = Math.max(1, getFieldsPlanted(game.farmland))
+  const relationRewardMultiplier = cropId === 'carrot' ? 2 : 1
 
   return {
-    cropId: eligibleCropIds[cropIndex],
+    cropId,
     factor,
     fieldsPlanted,
     requiredAmount: fieldsPlanted * factor,
     progress: 0,
-    relationsReward: getRabbitContractRelationsReward(fieldsPlanted, factor),
+    relationsReward:
+      getRabbitContractRelationsReward(fieldsPlanted, factor) *
+      relationRewardMultiplier,
   }
+}
+
+function createRabbitContracts(game, random = Math.random) {
+  return Array.from(
+    { length: RABBIT_ACTIVE_CONTRACT_COUNT },
+    () => createRabbitContract(game, random),
+  )
 }
 
 function normalizeRabbitContract(rawContract) {
@@ -168,6 +188,23 @@ function normalizeRabbitContract(rawContract) {
   }
 }
 
+function normalizeRabbitContracts(rawTrade) {
+  const rawContracts = Array.isArray(rawTrade.rabbitContracts)
+    ? rawTrade.rabbitContracts
+    : rawTrade.rabbitContract
+      ? [rawTrade.rabbitContract]
+      : []
+  const contracts = rawContracts
+    .slice(0, RABBIT_ACTIVE_CONTRACT_COUNT)
+    .map(normalizeRabbitContract)
+
+  while (contracts.length < RABBIT_ACTIVE_CONTRACT_COUNT) {
+    contracts.push(null)
+  }
+
+  return contracts
+}
+
 export function normalizeTradeState(rawTrade) {
   const initialTrade = createInitialTradeState()
 
@@ -178,15 +215,18 @@ export function normalizeTradeState(rawTrade) {
   return {
     established: rawTrade.established === true,
     rabbitRelations: toNonNegativeNumber(rawTrade.rabbitRelations),
-    rabbitContract: normalizeRabbitContract(rawTrade.rabbitContract),
+    rabbitContractsCompleted: Math.floor(
+      toNonNegativeNumber(rawTrade.rabbitContractsCompleted),
+    ),
+    rabbitContracts: normalizeRabbitContracts(rawTrade),
     rabbitUnlocks: Array.isArray(rawTrade.rabbitUnlocks)
-      ? [...new Set(rawTrade.rabbitUnlocks.filter((id) => RABBIT_UNLOCK_ID_SET.has(id)))]
+      ? [
+          ...new Set(
+            rawTrade.rabbitUnlocks.filter((id) => RABBIT_UNLOCK_ID_SET.has(id)),
+          ),
+        ]
       : [],
   }
-}
-
-export function hasRabbitUnlock(game, unlockId) {
-  return game.trade?.rabbitUnlocks?.includes(unlockId) === true
 }
 
 export function establishTradeRelations(game, random = Math.random) {
@@ -211,7 +251,7 @@ export function establishTradeRelations(game, random = Math.random) {
     ...establishedGame,
     trade: {
       ...establishedGame.trade,
-      rabbitContract: createRabbitContract(establishedGame, random),
+      rabbitContracts: createRabbitContracts(establishedGame, random),
     },
   }
 }
@@ -221,49 +261,81 @@ export function advanceRabbitContract(game, productionByCrop) {
     return game.trade
   }
 
-  const rabbitContract =
-    game.trade.rabbitContract ?? createRabbitContract(game)
+  const currentContracts = Array.isArray(game.trade.rabbitContracts)
+    ? game.trade.rabbitContracts
+    : normalizeRabbitContracts(game.trade)
+  const rabbitContracts = currentContracts.map((currentContract) => {
+    const contract = currentContract ?? createRabbitContract(game)
 
-  if (!rabbitContract) {
-    return game.trade
-  }
+    if (!contract) {
+      return null
+    }
 
-  const producedAmount = Math.max(
-    0,
-    Number(productionByCrop?.[rabbitContract.cropId]) || 0,
-  )
+    const producedAmount = Math.max(
+      0,
+      Number(productionByCrop?.[contract.cropId]) || 0,
+    )
+
+    return {
+      ...contract,
+      progress: Math.min(
+        contract.requiredAmount,
+        contract.progress + producedAmount,
+      ),
+    }
+  })
 
   return {
     ...game.trade,
-    rabbitContract: {
-      ...rabbitContract,
-      progress: Math.min(
-        rabbitContract.requiredAmount,
-        rabbitContract.progress + producedAmount,
-      ),
-    },
+    rabbitContracts,
   }
 }
 
-export function claimRabbitContract(game, random = Math.random) {
-  const contract = game.trade?.rabbitContract
+export function claimRabbitContract(
+  game,
+  contractIndex = 0,
+  random = Math.random,
+) {
+  // Preserve the previous claimRabbitContract(game, random) call shape.
+  if (typeof contractIndex === 'function') {
+    random = contractIndex
+    contractIndex = 0
+  }
+
+  const safeIndex = Math.floor(Number(contractIndex) || 0)
+  const contracts = Array.isArray(game.trade?.rabbitContracts)
+    ? game.trade.rabbitContracts
+    : normalizeRabbitContracts(game.trade ?? {})
+  const contract = contracts[safeIndex]
 
   if (
     game.trade?.established !== true ||
+    safeIndex < 0 ||
+    safeIndex >= RABBIT_ACTIVE_CONTRACT_COUNT ||
     !contract ||
     contract.progress < contract.requiredAmount
   ) {
     return null
   }
 
+  const relationMultiplier = getRabbitRelationsMultiplier(
+    game.blueprint,
+    game.completedCropPerfections,
+  )
+  const gainedRelations = Math.floor(
+    toNonNegativeNumber(contract.relationsReward) * relationMultiplier,
+  )
   const gameWithRelations = {
     ...game,
     trade: {
       ...game.trade,
       rabbitRelations:
-        toNonNegativeNumber(game.trade.rabbitRelations) +
-        toNonNegativeNumber(contract.relationsReward),
-      rabbitContract: null,
+        toNonNegativeNumber(game.trade.rabbitRelations) + gainedRelations,
+      rabbitContractsCompleted:
+        Math.floor(toNonNegativeNumber(game.trade.rabbitContractsCompleted)) + 1,
+      rabbitContracts: contracts.map((currentContract, index) =>
+        index === safeIndex ? null : currentContract,
+      ),
     },
   }
 
@@ -271,7 +343,12 @@ export function claimRabbitContract(game, random = Math.random) {
     ...gameWithRelations,
     trade: {
       ...gameWithRelations.trade,
-      rabbitContract: createRabbitContract(gameWithRelations, random),
+      rabbitContracts: gameWithRelations.trade.rabbitContracts.map(
+        (currentContract, index) =>
+          index === safeIndex
+            ? createRabbitContract(gameWithRelations, random)
+            : currentContract,
+      ),
     },
   }
 }

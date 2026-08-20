@@ -43,12 +43,14 @@ export function useGameDerivedState(game) {
         game.farmland,
         game.completedCropPerfections,
         game.testingCheats?.cropMultiplierEnabled ? 10 : 1,
+        game.trade?.rabbitContractsCompleted ?? 0,
       ),
     [
       game.blueprint,
       game.farmland,
       game.completedCropPerfections,
       game.testingCheats?.cropMultiplierEnabled,
+      game.trade?.rabbitContractsCompleted,
     ],
   )
   const productionPerSecond = cropProductionSnapshot.total
@@ -131,6 +133,10 @@ export function useGameDerivedState(game) {
       hamsterExternalMultiplier,
     ],
   )
+  const hasUnlockedCarrot = hasRabbitUnlock(
+    game,
+    RABBIT_UNLOCK_IDS.CARROT,
+  )
   const unlockedCropIds = useMemo(
     () =>
       getUnlockedCropIds(
@@ -144,6 +150,7 @@ export function useGameDerivedState(game) {
         game.hasUnlockedRootTunnel,
         game.hasUnlockedSunflower,
         game.rowDuplicators,
+        hasUnlockedCarrot,
       ),
     [
       game.blueprint,
@@ -156,6 +163,7 @@ export function useGameDerivedState(game) {
       game.hasUnlockedRootTunnel,
       game.hasUnlockedSunflower,
       game.rowDuplicators,
+      hasUnlockedCarrot,
     ],
   )
   const visibleCropIds = useMemo(
@@ -215,12 +223,7 @@ export function useGameDerivedState(game) {
     nextHamsterCost,
     majorProgressionGoal,
     productionPerSecond,
-    rabbitContractProductionPerSecond: Math.max(
-      0,
-      Number(
-        cropProductionSnapshot.byCrop[game.trade?.rabbitContract?.cropId],
-      ) || 0,
-    ),
+    rabbitContractProductionPerSecondByCrop: cropProductionSnapshot.byCrop,
     isTradeTabVisible: game.hasUnlockedSunflower === true,
     cropHamsterEfficiencyMultiplier,
     hamsterCoordinationMultiplier,

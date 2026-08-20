@@ -10,6 +10,8 @@ export {
   getGlobalPassiveEffectMultiplier,
   getGlobalRowProductionEffects,
   getGlobalRowProductionMultiplier,
+  getRabbitRelationsEffects,
+  getRabbitRelationsMultiplier,
   getLeechingGourdTurnipEffect,
   getMonocropCropCount,
   getMonocropThresholdBonus,

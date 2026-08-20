@@ -29,6 +29,7 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'crop-sunflower',
       'crop-canola',
       'trade-relations',
+      'crop-carrot',
     ],
   )
 })
@@ -140,6 +141,20 @@ test('major progression advances to the earliest unfinished goal', () => {
   game = {
     ...game,
     trade: { ...game.trade, established: true },
+  }
+  const carrotGoal = getNextMajorProgressionGoal(game)
+  assert.equal(carrotGoal.id, 'crop-carrot')
+  assert.equal(carrotGoal.isReady, false)
+
+  game = {
+    ...game,
+    trade: { ...game.trade, rabbitRelations: 500 },
+  }
+  assert.equal(getNextMajorProgressionGoal(game).isReady, true)
+
+  game = {
+    ...game,
+    trade: { ...game.trade, rabbitUnlocks: ['carrot'] },
   }
   const completedGoal = getNextMajorProgressionGoal(game)
   assert.equal(completedGoal.id, 'all-current-goals-complete')

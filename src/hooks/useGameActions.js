@@ -234,9 +234,9 @@ export function useGameActions({
     )
   }
 
-  function claimRabbitDelivery() {
+  function claimRabbitDelivery(contractIndex) {
     updateGame((currentGame) =>
-      claimRabbitContract(currentGame) ?? currentGame,
+      claimRabbitContract(currentGame, contractIndex) ?? currentGame,
     )
   }
 

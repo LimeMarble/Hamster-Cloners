@@ -27,6 +27,7 @@ export function useGameController() {
     hasMirrorCorn: derived.hasMirrorCorn,
     hasLeechingGourd: derived.hasLeechingGourd,
     rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
+    rabbitContractsCompleted: game.trade?.rabbitContractsCompleted ?? 0,
     showMonocropLimit: derived.showMonocropLimit,
     monocropLimit: derived.monocropLimit,
     monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
@@ -107,8 +108,8 @@ export function useGameController() {
       },
       trade: {
         game,
-        rabbitContractProductionPerSecond:
-          derived.rabbitContractProductionPerSecond,
+        rabbitContractProductionPerSecondByCrop:
+          derived.rabbitContractProductionPerSecondByCrop,
         ...actions.tradeActions,
       },
       inventions: {

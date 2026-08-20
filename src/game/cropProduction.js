@@ -164,6 +164,7 @@ export function getRowDuplicatorEffectivenessMultiplier(
 function getBaseFieldProductionSnapshot(
   blueprint,
   completedCropPerfections = [],
+  rabbitContractsCompleted = 0,
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const monocropThresholdBonus = getMonocropThresholdBonus(
@@ -247,6 +248,7 @@ function getBaseFieldProductionSnapshot(
   const globalHarvestMultiplier = getGlobalHarvestMultiplier(
     blueprint,
     completedCropPerfections,
+    rabbitContractsCompleted,
   )
   const byCrop = contributions.reduce((cropTotals, contribution) => {
     if (!contribution) {
@@ -270,20 +272,27 @@ function getBaseFieldProductionSnapshot(
   }
 }
 
-export function getBaseFieldIncome(blueprint, completedCropPerfections = []) {
+export function getBaseFieldIncome(
+  blueprint,
+  completedCropPerfections = [],
+  rabbitContractsCompleted = 0,
+) {
   return getBaseFieldProductionSnapshot(
     blueprint,
     completedCropPerfections,
+    rabbitContractsCompleted,
   ).total
 }
 
 export function getBaseFieldIncomeByCrop(
   blueprint,
   completedCropPerfections = [],
+  rabbitContractsCompleted = 0,
 ) {
   return getBaseFieldProductionSnapshot(
     blueprint,
     completedCropPerfections,
+    rabbitContractsCompleted,
   ).byCrop
 }
 export function getIncomeMultiplier(farmland) {
@@ -322,9 +331,14 @@ export function getCropProductionPerSecond(
   farmland,
   completedCropPerfections = [],
   externalCropMultiplier = 1,
+  rabbitContractsCompleted = 0,
 ) {
   return (
-    getBaseFieldIncome(blueprint, completedCropPerfections) *
+    getBaseFieldIncome(
+      blueprint,
+      completedCropPerfections,
+      rabbitContractsCompleted,
+    ) *
     getIncomeMultiplier(farmland) *
     Math.max(0, Number(externalCropMultiplier) || 0)
   )
@@ -335,10 +349,12 @@ export function getCropProductionSnapshotPerSecond(
   farmland,
   completedCropPerfections = [],
   externalCropMultiplier = 1,
+  rabbitContractsCompleted = 0,
 ) {
   const fieldSnapshot = getBaseFieldProductionSnapshot(
     blueprint,
     completedCropPerfections,
+    rabbitContractsCompleted,
   )
   const multiplier =
     getIncomeMultiplier(farmland) *
@@ -428,6 +444,7 @@ export function getProductionForTick(
   completedCropPerfections = [],
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
   externalCropMultiplier = 1,
+  rabbitContractsCompleted = 0,
 ) {
   return (
     getCropProductionPerSecond(
@@ -435,6 +452,7 @@ export function getProductionForTick(
       farmland,
       completedCropPerfections,
       externalCropMultiplier,
+      rabbitContractsCompleted,
     ) *
     (tickIntervalMs / 1000)
   )
@@ -446,12 +464,14 @@ export function getProductionSnapshotForTick(
   completedCropPerfections = [],
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
   externalCropMultiplier = 1,
+  rabbitContractsCompleted = 0,
 ) {
   const productionPerSecond = getCropProductionSnapshotPerSecond(
     blueprint,
     farmland,
     completedCropPerfections,
     externalCropMultiplier,
+    rabbitContractsCompleted,
   )
   const tickLengthSeconds = tickIntervalMs / 1000
 

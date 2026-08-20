@@ -15,7 +15,11 @@ import {
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   UNIONIZATION_HAMSTER_COUNT,
 } from './gameConfig.js'
-import { TRADE_ESTABLISHMENT_COST } from './tradeLogic.js'
+import {
+  RABBIT_UNLOCK_IDS,
+  TRADE_ESTABLISHMENT_COST,
+  hasRabbitUnlock,
+} from './tradeLogic.js'
 
 const FIRST_COLUMN_EXPANSION_COST =
   BLUEPRINT_EXPANSIONS.find((expansion) => expansion.id === 'firstColumn')
@@ -147,9 +151,9 @@ export const MAJOR_PROGRESSION_GOALS = [
   createPerfectionGoal('mirrorCorn'),
   createCropGoal({
     id: 'crop-apple-tree',
-    title: 'Unlock Apple Tree',
+    title: 'Unlock Apple Sapling',
     target: APPLE_TREE_UNLOCK_CROP_COUNT,
-    description: 'Reach the Crop threshold to permanently unlock Apple Tree.',
+    description: 'Reach the Crop threshold to permanently unlock Apple Sapling.',
     isComplete: (game) => game.hasUnlockedAppleTree === true,
   }),
   createCropGoal({
@@ -209,6 +213,18 @@ export const MAJOR_PROGRESSION_GOALS = [
       'Spend the cost in the Trade tab to establish relations without resetting.',
     isComplete: (game) => game.trade?.established === true,
     getCurrent: (game) => game.crops,
+    requiresAction: true,
+  },
+  {
+    id: 'crop-carrot',
+    category: 'Crop unlock',
+    title: 'Unlock Carrot',
+    target: 500,
+    unit: 'Rabbit relations',
+    description:
+      'Spend 500 Rabbit relations in Trade to unlock Carrot and its contract-scaling passives.',
+    isComplete: (game) => hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CARROT),
+    getCurrent: (game) => game.trade?.rabbitRelations,
     requiresAction: true,
   },
 ]

@@ -19,6 +19,7 @@ export function BlueprintEdit({
   visibleCropIds,
   unlockedCropIds,
   rowsBuiltPerSecond,
+  rabbitContractsCompleted,
   showMonocropLimit,
   monocropLimit,
   monocropPenaltyMultiplier,
@@ -258,6 +259,7 @@ export function BlueprintEdit({
             completedCropPerfections={game.completedCropPerfections}
             rowsProducedPerSecond={rowsBuiltPerSecond}
             activeHamsters={game.hamsters}
+            rabbitContractsCompleted={rabbitContractsCompleted}
             cursor={hoveredEditorCrop}
           />
         ) : null}

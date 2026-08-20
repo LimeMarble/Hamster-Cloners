@@ -1,6 +1,7 @@
 import {
   RABBIT_UNLOCKS,
   TRADE_ESTABLISHMENT_COST,
+  getRabbitRelationsMultiplier,
   hasRabbitUnlock,
 } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
@@ -43,15 +44,15 @@ function EstablishTradeCard({ game, onEstablishTrade }) {
 
 function RabbitContract({
   game,
+  contract,
+  contractIndex,
   productionPerSecond,
   onClaimRabbitContract,
 }) {
-  const contract = game.trade.rabbitContract
-
   if (!contract) {
     return (
       <article className="rabbit-contract-card">
-        <p>The Rabbits are preparing their next contract.</p>
+        <p>The Rabbits are preparing this contract.</p>
       </article>
     )
   }
@@ -76,8 +77,8 @@ function RabbitContract({
             className="rabbit-contract-crop-visual"
           />
           <div>
-            <p className="eyebrow">Active Rabbit contract</p>
-            <h2>Deliver {cropName}</h2>
+            <p className="eyebrow">Rabbit contract {contractIndex + 1}</p>
+            <h3>Deliver {cropName}</h3>
           </div>
         </div>
         <strong className="relations-reward">
@@ -90,8 +91,8 @@ function RabbitContract({
       </div>
 
       <p className="trade-copy">
-        Contract progress counts this crop's real harvest while the contract is
-        active.
+        Contract progress counts this crop&apos;s real harvest while the
+        contract is active.
       </p>
 
       <div
@@ -117,7 +118,7 @@ function RabbitContract({
       <button
         type="button"
         className="trade-primary-button"
-        onClick={onClaimRabbitContract}
+        onClick={() => onClaimRabbitContract(contractIndex)}
         disabled={!canClaim}
       >
         {canClaim ? 'Complete contract' : 'Delivery in progress'}
@@ -178,11 +179,19 @@ function RabbitUnlocks({ game, onPurchaseRabbitUnlock }) {
 
 export function Trade({
   game,
-  rabbitContractProductionPerSecond,
+  rabbitContractProductionPerSecondByCrop,
   onEstablishTrade,
   onClaimRabbitContract,
   onPurchaseRabbitUnlock,
 }) {
+  const rabbitContracts = game.trade.rabbitContracts ?? []
+  const rabbitContractsCompleted =
+    game.trade.rabbitContractsCompleted ?? 0
+  const rabbitRelationsMultiplier = getRabbitRelationsMultiplier(
+    game.blueprint,
+    game.completedCropPerfections,
+  )
+
   return (
     <section className="trade-panel" aria-labelledby="trade-title">
       <header className="trade-header">
@@ -217,11 +226,37 @@ export function Trade({
                 <h2 id="rabbits-title">Rabbits</h2>
               </div>
             </div>
-            <RabbitContract
-              game={game}
-              productionPerSecond={rabbitContractProductionPerSecond}
-              onClaimRabbitContract={onClaimRabbitContract}
-            />
+            <p className="trade-copy rabbit-lore">
+              The Rabbits insist they dislike apples, pumpkins, and pesky
+              weeds. Whether that is accurate rabbit lore is another question.
+            </p>
+            <div className="rabbit-contract-summary">
+              <span>
+                Contracts completed: <strong><FormattedNumber value={rabbitContractsCompleted} maximumFractionDigits={0} /></strong>
+              </span>
+              <span>
+                Relation rewards: <strong>×<FormattedNumber value={rabbitRelationsMultiplier} maximumFractionDigits={3} /></strong>
+              </span>
+            </div>
+            <div className="rabbit-contract-grid">
+              {rabbitContracts.map((contract, contractIndex) => (
+                <RabbitContract
+                  game={game}
+                  contract={contract}
+                  contractIndex={contractIndex}
+                  key={contractIndex}
+                  productionPerSecond={Math.max(
+                    0,
+                    Number(
+                      rabbitContractProductionPerSecondByCrop?.[
+                        contract?.cropId
+                      ],
+                    ) || 0,
+                  )}
+                  onClaimRabbitContract={onClaimRabbitContract}
+                />
+              ))}
+            </div>
           </section>
           <RabbitUnlocks
             game={game}

@@ -34,7 +34,12 @@ export function Statistics({ game, unlockedCropIds }) {
             <FormattedNumber value={game.completedCropPerfections.length} maximumFractionDigits={0} />
           </dd>
         </div>
-        <div className="statistics-playtime">
+        <div>
+          <dt>Rabbit contracts completed</dt>
+          <dd>
+            <FormattedNumber value={game.trade?.rabbitContractsCompleted ?? 0} maximumFractionDigits={0} />
+          </dd>
+        </div>        <div className="statistics-playtime">
           <dt>Playtime</dt>
           <dd>{formatPlaytime(game.playtimeSeconds)}</dd>
         </div>

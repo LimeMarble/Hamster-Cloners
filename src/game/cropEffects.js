@@ -569,7 +569,7 @@ export function getAdjacentCropEffectModifier(
     return 1
   }
 
-  if (crop === 'turnip' && targetCrop === 'lentil') {
+  if (crop === 'turnip' && (targetCrop === 'lentil' || targetCrop === 'carrot')) {
     return 1
   }
 
@@ -598,9 +598,28 @@ export function getAdjacentCropEffectModifier(
     : 1 + (monocropAdjustedBaseMultiplier - 1) * strength
 }
 
+function getCarrotContractBonus(
+  definition,
+  startingBonusKey,
+  contractBonusKey,
+  rabbitContractsCompleted,
+) {
+  const completedContracts = Math.max(
+    0,
+    Math.floor(Number(rabbitContractsCompleted) || 0),
+  )
+
+  return Math.min(
+    definition?.maximumRabbitContractBonus ?? 0,
+    (definition?.[startingBonusKey] ?? 0) +
+      completedContracts * (definition?.[contractBonusKey] ?? 0),
+  )
+}
+
 export function getGlobalHarvestEffects(
   blueprint,
   completedCropPerfections = [],
+  rabbitContractsCompleted = 0,
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCounts = Object.fromEntries(
@@ -609,7 +628,7 @@ export function getGlobalHarvestEffects(
       getMonocropCropCount(blueprint, crop),
     ]),
   )
-
+  const hasAppleSapling = blueprint.cells.includes('appleTree')
   const globalPassiveEffectMultiplier =
     getGlobalPassiveEffectMultiplier(
       blueprint,
@@ -617,8 +636,20 @@ export function getGlobalHarvestEffects(
     )
 
   return blueprint.cells.flatMap((crop, index) => {
+    const definition = CROP_DEFINITIONS[crop]
     const globalHarvestMultiplier =
-      CROP_DEFINITIONS[crop]?.globalHarvestMultiplier
+      crop === 'carrot'
+        ? hasAppleSapling
+          ? undefined
+          :
+              1 +
+              getCarrotContractBonus(
+                definition,
+                'globalHarvestBonusAtZero',
+                'globalHarvestBonusPerContract',
+                rabbitContractsCompleted,
+              )
+        : definition?.globalHarvestMultiplier
 
     if (globalHarvestMultiplier === undefined) {
       return []
@@ -655,22 +686,38 @@ export function getGlobalHarvestEffects(
 export function getGlobalHarvestMultiplier(
   blueprint,
   completedCropPerfections = [],
+  rabbitContractsCompleted = 0,
 ) {
-  return 1 + getGlobalHarvestEffects(
+  const bonusesByCrop = new Map()
+
+  getGlobalHarvestEffects(
     blueprint,
     completedCropPerfections,
-  ).reduce((totalBonus, effect) => totalBonus + effect.bonus, 0)
+    rabbitContractsCompleted,
+  ).forEach(({ sourceCropId, bonus }) => {
+    bonusesByCrop.set(
+      sourceCropId,
+      (bonusesByCrop.get(sourceCropId) ?? 0) + bonus,
+    )
+  })
+
+  return Array.from(bonusesByCrop.values()).reduce(
+    (multiplier, bonus) => multiplier * (1 + bonus),
+    1,
+  )
 }
 
 export function getGroupedGlobalHarvestEffects(
   blueprint,
   completedCropPerfections = [],
+  rabbitContractsCompleted = 0,
 ) {
   const effectsByCrop = new Map()
 
   getGlobalHarvestEffects(
     blueprint,
     completedCropPerfections,
+    rabbitContractsCompleted,
   ).forEach(({ sourceCropId, bonus }) => {
     const currentEffect = effectsByCrop.get(sourceCropId) ?? {
       count: 0,
@@ -690,6 +737,63 @@ export function getGroupedGlobalHarvestEffects(
   }))
 }
 
+export function getRabbitRelationsEffects(
+  blueprint,
+  completedCropPerfections = [],
+) {
+  if (blueprint.cells.includes('appleTree')) {
+    return []
+  }
+
+  const sourceCropId = 'carrot'
+  const definition = CROP_DEFINITIONS[sourceCropId]
+  const count = getPlantedCropCount(blueprint, sourceCropId)
+
+  if (!definition || count === 0) {
+    return []
+  }
+
+  const fieldSize = blueprint.rows * blueprint.columns
+  const cropCount = getMonocropCropCount(blueprint, sourceCropId)
+  const bonusPerCarrot = definition.rabbitRelationsBonusAtZero ?? 0
+  const baseBonus =
+    applyMonocropPenaltyToBonus(
+      bonusPerCarrot,
+      cropCount,
+      fieldSize,
+      getMonocropThresholdBonus(blueprint, completedCropPerfections),
+    ) *
+    getGlobalPassiveEffectMultiplier(blueprint, completedCropPerfections)
+  const bonus = blueprint.cells.reduce((totalBonus, crop, index) => {
+    if (crop !== sourceCropId) {
+      return totalBonus
+    }
+
+    return (
+      totalBonus +
+      baseBonus *
+        getAdjacentCropEffectMultiplier(
+          blueprint,
+          index,
+          sourceCropId,
+          false,
+          completedCropPerfections,
+        )
+    )
+  }, 0)
+
+  return [{ sourceCropId, count, bonus, multiplier: 1 + bonus }]
+}
+
+export function getRabbitRelationsMultiplier(
+  blueprint,
+  completedCropPerfections = [],
+) {
+  return getRabbitRelationsEffects(
+    blueprint,
+    completedCropPerfections,
+  ).reduce((multiplier, effect) => multiplier * effect.multiplier, 1)
+}
 export function getAdjacentHarvestModifier(
   blueprint,
   crop,

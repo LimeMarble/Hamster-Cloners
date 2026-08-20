@@ -93,6 +93,7 @@ export function CropHoverInspector({
   completedCropPerfections,
   rowsProducedPerSecond,
   activeHamsters,
+  rabbitContractsCompleted,
   cursor,
 }) {
   const stats = getBlueprintCropStats(
@@ -101,6 +102,7 @@ export function CropHoverInspector({
     completedCropPerfections,
     rowsProducedPerSecond,
     activeHamsters,
+    rabbitContractsCompleted,
   )
 
   if (!stats) {
@@ -190,10 +192,10 @@ export function CropHoverInspector({
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
                   {effect.multiplier === undefined ? (
-                    'Harvest destroyed by an adjacent Apple Tree'
+                    'Harvest destroyed by an adjacent Apple Sapling'
                   ) : (
                     <>
-                      ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> harvest from Apple Tree
+                      ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> harvest from Apple Sapling
                     </>
                   )}
                   <RootTunnelDistance distances={effect.adjacencyDistances} />

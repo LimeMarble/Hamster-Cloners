@@ -270,6 +270,12 @@
   background: #3d3a11;
 }
 
+.plot-carrot,
+.editor-plot-carrot {
+  border-color: #e58437;
+  background: #41250f;
+}
+
 .plot-leechingGourd,
 .plot-leechingGourdPart,
 .editor-plot-leechingGourd,
@@ -312,6 +318,11 @@
 .plot-lentil span,
 .editor-plot-lentil span {
   color: #e6c878;
+}
+
+.plot-carrot span,
+.editor-plot-carrot span {
+  color: #f3a45a;
 }
 
 .plot-knotweed span,

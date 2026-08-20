@@ -73,6 +73,7 @@ export function useGameState(isEditingBlueprintRef) {
           currentGame.completedCropPerfections,
           SIMULATION_TICK_INTERVAL_MS,
           currentGame.testingCheats?.cropMultiplierEnabled ? 10 : 1,
+          currentGame.trade?.rabbitContractsCompleted ?? 0,
         )
         const productionForTick = productionSnapshotForTick.total
         const nextCrops = currentGame.crops + productionForTick

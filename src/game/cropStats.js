@@ -30,6 +30,7 @@ export function getBlueprintCropStats(
   completedCropPerfections = [],
   rowsProducedPerSecond = 0,
   activeHamsters = 0,
+  rabbitContractsCompleted = 0,
 ) {
   const crop = blueprint.cells[index]
   const definition = CROP_DEFINITIONS[crop]
@@ -294,6 +295,7 @@ export function getBlueprintCropStats(
   const globalHarvestEffects = getGroupedGlobalHarvestEffects(
     blueprint,
     completedCropPerfections,
+    rabbitContractsCompleted,
   )
   const globalRowProductionEffects = getGlobalRowProductionEffects(
     blueprint,
@@ -309,6 +311,7 @@ export function getBlueprintCropStats(
   const globalHarvestMultiplier = getGlobalHarvestMultiplier(
     blueprint,
     completedCropPerfections,
+    rabbitContractsCompleted,
   )
   const harvestYield = doesNotHarvest(crop) || harvestDestroyedByAppleTree
     ? 0
