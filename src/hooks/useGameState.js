@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  advanceFortuneState,
   advanceRabbitContract,
   getBlueprintSlots,
   getColumnsProducedForTick,
   getCropHamsterEfficiencyMultiplier,
+  getFortuneModifiers,
   getProductionSnapshotForTick,
   getRowsProducedPerSecond,
   getRowDuplicatorEffectivenessMultiplier,
@@ -65,6 +67,7 @@ export function useGameState(isEditingBlueprintRef) {
       const nextPlaytimeSeconds =
         (Number(currentGame.playtimeSeconds) || 0) +
         SIMULATION_TICK_INTERVAL_MS / 1000
+      const fortuneModifiers = getFortuneModifiers(currentGame)
 
       if (!isEditingBlueprintRef.current) {
         const productionSnapshotForTick = getProductionSnapshotForTick(
@@ -74,6 +77,7 @@ export function useGameState(isEditingBlueprintRef) {
           SIMULATION_TICK_INTERVAL_MS,
           currentGame.testingCheats?.cropMultiplierEnabled ? 10 : 1,
           currentGame.trade?.rabbitContractsCompleted ?? 0,
+          fortuneModifiers,
         )
         const productionForTick = productionSnapshotForTick.total
         const nextCrops = currentGame.crops + productionForTick
@@ -82,6 +86,7 @@ export function useGameState(isEditingBlueprintRef) {
             currentGame.blueprint,
             currentGame.completedCropPerfections,
             currentGame.hamsters,
+            fortuneModifiers.passiveEffectMultiplier,
           )
         const rowsBuiltPerSecond = currentGame.hasUnlockedRowDuplicators
           ? getRowsProducedPerSecond(
@@ -104,6 +109,7 @@ export function useGameState(isEditingBlueprintRef) {
             currentGame.blueprint,
             currentGame.completedCropPerfections,
             rowsBuiltPerSecond,
+            fortuneModifiers.passiveEffectMultiplier,
           ),
           SIMULATION_TICK_INTERVAL_MS,
           (currentGame.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1) *
@@ -138,7 +144,7 @@ export function useGameState(isEditingBlueprintRef) {
           nextBlueprintSlots.push(currentGame.blueprint)
         }
 
-        gameRef.current = {
+        const nextGame = {
           ...currentGame,
           crops: nextCrops,
           totalCropsMade:
@@ -174,11 +180,18 @@ export function useGameState(isEditingBlueprintRef) {
           blueprintSlots: nextBlueprintSlots,
           activeBlueprintSlot,
         }
+        gameRef.current = advanceFortuneState(
+          nextGame,
+          SIMULATION_TICK_INTERVAL_MS / 1000,
+        )
       } else {
-        gameRef.current = {
-          ...currentGame,
-          playtimeSeconds: nextPlaytimeSeconds,
-        }
+        gameRef.current = advanceFortuneState(
+          {
+            ...currentGame,
+            playtimeSeconds: nextPlaytimeSeconds,
+          },
+          SIMULATION_TICK_INTERVAL_MS / 1000,
+        )
       }
 
       simulationTimeoutId = window.setTimeout(

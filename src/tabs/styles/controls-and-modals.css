@@ -156,6 +156,127 @@ dd {
   text-transform: uppercase;
 }
 
+.clover-bundle {
+  position: fixed;
+  z-index: 42;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  place-items: center;
+  gap: 0;
+  min-width: 92px;
+  min-height: 76px;
+  padding: 10px 12px 8px;
+  border: 2px solid #92f29e;
+  border-radius: 42% 48% 40% 46%;
+  color: #effff0;
+  background: radial-gradient(circle at 50% 35%, #276f37, #0d2b16 72%);
+  box-shadow: 0 0 28px rgb(104 214 122 / 55%), 0 12px 28px rgb(0 0 0 / 55%);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  animation: clover-bundle-float 1.8s ease-in-out infinite;
+}
+
+.clover-bundle span {
+  margin: 0 -3px;
+  font-size: 1.8rem;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 50%));
+}
+
+.clover-bundle strong {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clover-bundle:hover {
+  border-color: #d5ffda;
+  filter: brightness(1.18);
+}
+
+@keyframes clover-bundle-float {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(-2deg);
+  }
+
+  50% {
+    transform: translate(-50%, calc(-50% - 8px)) rotate(2deg);
+  }
+}
+
+.fortune-active-effects,
+.fortune-result-toast {
+  position: fixed;
+  right: 22px;
+  display: grid;
+  width: min(360px, calc(100vw - 36px));
+  border: 1px solid #68d67a;
+  color: var(--text-strong);
+  background: #0d2514;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 48%);
+}
+
+.fortune-active-effects {
+  z-index: 31;
+  top: 18px;
+  gap: 7px;
+  padding: 12px;
+}
+
+.fortune-active-effects div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding-top: 7px;
+  border-top: 1px solid rgb(104 214 122 / 24%);
+}
+
+.fortune-active-effects div strong {
+  color: #9af3a6;
+  font-size: 0.78rem;
+}
+
+.fortune-active-effects div span {
+  grid-column: 1;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.fortune-active-effects time {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #d5ffda;
+  font: 700 0.75rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.fortune-result-toast {
+  z-index: 41;
+  bottom: 22px;
+  gap: 4px;
+  padding: 15px;
+}
+
+.fortune-result-toast strong {
+  color: #9af3a6;
+  font-size: 1rem;
+}
+
+.fortune-result-toast > span:last-child {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.fortune-panel-label {
+  color: #cdeed1;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .blueprint-modal {
   width: min(700px, 100%);
   max-height: calc(100dvh - 40px);

@@ -276,6 +276,12 @@
   background: #41250f;
 }
 
+.plot-fourLeafClover,
+.editor-plot-fourLeafClover {
+  border-color: #68d67a;
+  background: #123a20;
+}
+
 .plot-leechingGourd,
 .plot-leechingGourdPart,
 .editor-plot-leechingGourd,
@@ -323,6 +329,11 @@
 .plot-carrot span,
 .editor-plot-carrot span {
   color: #f3a45a;
+}
+
+.plot-fourLeafClover span,
+.editor-plot-fourLeafClover span {
+  color: #8ef0a0;
 }
 
 .plot-knotweed span,

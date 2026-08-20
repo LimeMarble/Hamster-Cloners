@@ -3,8 +3,10 @@ export * from './blueprintLogic.js'
 export * from './purchaseLogic.js'
 export * from './majorProgression.js'
 export * from './tradeLogic.js'
+export * from './fortuneLogic.js'
 export {
   getAdjacentCropConnections,
+  getAdjacentCropEffectModifier,
   getBlueprintMonocropMultiplier,
   getDiagonalTileIndexes,
   getGlobalPassiveEffectMultiplier,
@@ -13,6 +15,7 @@ export {
   getRabbitRelationsEffects,
   getRabbitRelationsMultiplier,
   getLeechingGourdTurnipEffect,
+  getMirrorCornEffectMultiplier,
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getPlantedCropCount,

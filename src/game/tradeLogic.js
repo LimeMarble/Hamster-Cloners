@@ -2,6 +2,7 @@ import { grantFreeBlueprintExpansion } from './blueprintLogic.js'
 import { CROP_DEFINITIONS, getUnlockedCropIds } from './crops.js'
 import { getFieldsPlanted } from './cropProduction.js'
 import { getRabbitRelationsMultiplier } from './cropEffects.js'
+import { getFortuneModifiers } from './fortuneLogic.js'
 
 export const TRADE_ESTABLISHMENT_COST = 1e57
 export const RABBIT_CONTRACT_MIN_FACTOR = 1e7
@@ -58,16 +59,17 @@ export const RABBIT_UNLOCKS = Object.freeze([
       'Finished Rabbit contracts are claimed and replaced automatically.',
   },
   {
-    id: RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
-    name: 'Establish contact with Capybaras',
-    cost: 25000,
-    description: 'Records first contact; Capybara contracts will arrive later.',
-  },
-  {
     id: RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
     name: 'Unlock 4-Leaf Clover',
     cost: 77777,
-    description: 'Secures the crop for a future update; 4-Leaf Clover is not plantable yet.',
+    description:
+      'Unlocks one 4-Leaf Clover per blueprint and its collectible Breezes of Fortune.',
+  },
+  {
+    id: RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
+    name: 'Establish contact with Capybaras',
+    cost: 125000,
+    description: 'Records first contact; Capybara contracts will arrive later.',
   },
 ])
 
@@ -133,6 +135,7 @@ export function getRabbitContractCropIds(game) {
     game.hasUnlockedSunflower,
     game.rowDuplicators,
     hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CARROT),
+    hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER),
   ).filter(isRabbitContractCropEligible)
 }
 
@@ -361,6 +364,7 @@ export function claimRabbitContract(
   const relationMultiplier = getRabbitRelationsMultiplier(
     game.blueprint,
     game.completedCropPerfections,
+    getFortuneModifiers(game).passiveEffectMultiplier,
   )
   const gainedRelations = Math.floor(
     toNonNegativeNumber(contract.relationsReward) * relationMultiplier,

@@ -13,6 +13,7 @@ import {
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   STARTING_CROPS,
 } from './gameConfig.js'
+import { createInitialFortuneState } from './fortuneLogic.js'
 
 export function isLeechingGourdAnchor(crop) {
   return CROP_DEFINITIONS[crop]?.isLeechingGourdAnchor === true
@@ -63,6 +64,18 @@ function normalizeLeechingGourdCells(cells, rows, columns) {
   return hasValidFootprint ? cells : clearGourdCells()
 }
 
+function normalizeUniqueCloverCells(cells) {
+  let hasClover = false
+
+  return cells.map((crop) => {
+    if (crop !== 'fourLeafClover') return crop
+    if (hasClover) return null
+
+    hasClover = true
+    return crop
+  })
+}
+
 export function createBlueprint({
   rows = INITIAL_BLUEPRINT_SIZE.rows,
   columns = INITIAL_BLUEPRINT_SIZE.columns,
@@ -73,10 +86,12 @@ export function createBlueprint({
   const safeColumns = Math.max(1, Math.floor(Number(columns) || 1))
   const totalCells = safeRows * safeColumns
   const sourceCells = Array.isArray(cells) ? cells : []
-  const normalizedCells = normalizeLeechingGourdCells(Array.from(
-    { length: totalCells },
-    (_, index) => (isKnownCrop(sourceCells[index]) ? sourceCells[index] : null),
-  ), safeRows, safeColumns)
+  const normalizedCells = normalizeUniqueCloverCells(
+    normalizeLeechingGourdCells(Array.from(
+      { length: totalCells },
+      (_, index) => (isKnownCrop(sourceCells[index]) ? sourceCells[index] : null),
+    ), safeRows, safeColumns),
+  )
   const sourceMirrorCornTargets = Array.isArray(mirrorCornTargets)
     ? mirrorCornTargets
     : []
@@ -164,6 +179,7 @@ export function createInitialGame() {
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
     rowDuplicators: 0,
+    fortune: createInitialFortuneState(),
     trade: {
       established: false,
       rabbitRelations: 0,

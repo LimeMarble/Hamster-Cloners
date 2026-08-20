@@ -228,10 +228,23 @@ export const MAJOR_PROGRESSION_GOALS = [
     requiresAction: true,
   },
   {
+    id: 'crop-four-leaf-clover',
+    category: 'Crop unlock',
+    title: 'Unlock 4-Leaf Clover',
+    target: 77777,
+    unit: 'Rabbit relations',
+    description:
+      'Spend Rabbit relations in Trade to unlock 4-Leaf Clover.',
+    isComplete: (game) =>
+      hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER),
+    getCurrent: (game) => game.trade?.rabbitRelations,
+    requiresAction: true,
+  },
+  {
     id: 'capybara-contact',
     category: 'Milestone',
     title: 'Establish contact with Capybaras',
-    target: 25000,
+    target: 125000,
     unit: 'Rabbit relations',
     description:
       'Spend Rabbit relations in Trade to establish contact with Capybaras.',

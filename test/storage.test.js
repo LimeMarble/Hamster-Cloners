@@ -274,6 +274,34 @@ test('legacy Rabbit blueprint expansions migrate to free blueprint space', () =>
   })
 })
 
+test('Clover bundles and active Breezes of Fortune persist with safe defaults', () => {
+  const cloverSave = normalizeGame({
+    fortune: {
+      bundle: { x: 25, y: 75 },
+      secondsTowardBundleRoll: 42,
+      activeEffects: [
+        { id: 'bounty', remainingSeconds: 31 },
+      ],
+      notice: { effectId: 'bounty', remainingSeconds: 4 },
+    },
+  })
+  const olderSave = normalizeGame({})
+
+  assert.deepEqual(cloverSave.fortune, {
+    bundle: { x: 25, y: 75 },
+    secondsTowardBundleRoll: 42,
+    activeEffects: [
+      { id: 'bounty', remainingSeconds: 31 },
+    ],
+    notice: { effectId: 'bounty', remainingSeconds: 4 },
+  })
+  assert.deepEqual(olderSave.fortune, {
+    bundle: null,
+    secondsTowardBundleRoll: 0,
+    activeEffects: [],
+    notice: null,
+  })
+})
 test('exports and imports a versioned Base64 save code', () => {
   const saveCode = exportGame({
     crops: 12_345,

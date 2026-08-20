@@ -8,6 +8,7 @@ import {
   getColumnsProducedPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getCropProductionSnapshotPerSecond,
+  getFortuneModifiers,
 
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
@@ -32,6 +33,10 @@ import { getMonocropThreshold } from '../game/monocropPenalty.js'
 import { getCachedFormattedNumber } from '../game/numberFormat.js'
 
 export function useGameDerivedState(game) {
+  const fortuneModifiers = useMemo(
+    () => getFortuneModifiers(game.fortune),
+    [game.fortune],
+  )
   const nextHamsterCost = useMemo(
     () => getNextHamsterCost(game.hamsters, game.unionized),
     [game.hamsters, game.unionized],
@@ -44,6 +49,7 @@ export function useGameDerivedState(game) {
         game.completedCropPerfections,
         game.testingCheats?.cropMultiplierEnabled ? 10 : 1,
         game.trade?.rabbitContractsCompleted ?? 0,
+        fortuneModifiers,
       ),
     [
       game.blueprint,
@@ -51,6 +57,7 @@ export function useGameDerivedState(game) {
       game.completedCropPerfections,
       game.testingCheats?.cropMultiplierEnabled,
       game.trade?.rabbitContractsCompleted,
+      fortuneModifiers,
     ],
   )
   const productionPerSecond = cropProductionSnapshot.total
@@ -79,8 +86,14 @@ export function useGameDerivedState(game) {
         game.blueprint,
         game.completedCropPerfections,
         game.hamsters,
+        fortuneModifiers.passiveEffectMultiplier,
       ),
-    [game.blueprint, game.completedCropPerfections, game.hamsters],
+    [
+      game.blueprint,
+      game.completedCropPerfections,
+      game.hamsters,
+      fortuneModifiers.passiveEffectMultiplier,
+    ],
   )
   const rowDuplicatorCoordinationMultiplier = useMemo(
     () => getRowDuplicatorCoordinationMultiplier(game.rowDuplicators),
@@ -115,8 +128,14 @@ export function useGameDerivedState(game) {
         game.blueprint,
         game.completedCropPerfections,
         rowsBuiltPerSecond,
+        fortuneModifiers.passiveEffectMultiplier,
       ),
-    [game.blueprint, game.completedCropPerfections, rowsBuiltPerSecond],
+    [
+      game.blueprint,
+      game.completedCropPerfections,
+      rowsBuiltPerSecond,
+      fortuneModifiers.passiveEffectMultiplier,
+    ],
   )
   const columnsBuiltPerSecond = useMemo(
     () =>
@@ -137,6 +156,10 @@ export function useGameDerivedState(game) {
     game,
     RABBIT_UNLOCK_IDS.CARROT,
   )
+  const hasUnlockedFourLeafClover = hasRabbitUnlock(
+    game,
+    RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
+  )
   const unlockedCropIds = useMemo(
     () =>
       getUnlockedCropIds(
@@ -151,6 +174,7 @@ export function useGameDerivedState(game) {
         game.hasUnlockedSunflower,
         game.rowDuplicators,
         hasUnlockedCarrot,
+        hasUnlockedFourLeafClover,
       ),
     [
       game.blueprint,
@@ -164,6 +188,7 @@ export function useGameDerivedState(game) {
       game.hasUnlockedSunflower,
       game.rowDuplicators,
       hasUnlockedCarrot,
+      hasUnlockedFourLeafClover,
     ],
   )
   const visibleCropIds = useMemo(

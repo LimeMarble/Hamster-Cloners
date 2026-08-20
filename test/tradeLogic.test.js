@@ -54,6 +54,7 @@ test('Rabbit contracts exclude apples, pumpkins, weeds, and crops without a harv
   assert.equal(isRabbitContractCropEligible('knotweed'), false)
   assert.equal(isRabbitContractCropEligible('leechingGourd'), false)
   assert.equal(isRabbitContractCropEligible('rootTunnel'), false)
+  assert.equal(isRabbitContractCropEligible('fourLeafClover'), false)
 })
 
 test('establishing Trade spends Crops without resetting existing progress and creates three contracts', () => {
@@ -297,8 +298,8 @@ test('Rabbit relation expansions appear before efficiency upgrades and grant blu
       RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY,
       RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
       RABBIT_UNLOCK_IDS.CONTRACTOR,
-      RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
       RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
+      RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
     ],
   )
 

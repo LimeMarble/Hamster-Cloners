@@ -35,6 +35,7 @@ export function getCropHamsterEfficiencyMultiplier(
   blueprint,
   completedCropPerfections = [],
   rowsProducedPerSecond = 0,
+  passiveEffectMultiplier = 1,
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const monocropThresholdBonus = getMonocropThresholdBonus(
@@ -51,6 +52,7 @@ export function getCropHamsterEfficiencyMultiplier(
     const baseHamsterEfficiencyBonus = getCropHamsterEfficiencyBonus(
       crop,
       completedCropPerfections,
+      passiveEffectMultiplier,
     )
 
     if (baseHamsterEfficiencyBonus === 0) {
@@ -70,16 +72,19 @@ export function getCropHamsterEfficiencyMultiplier(
       crop,
       baseHamsterEfficiencyBonus < 0,
       completedCropPerfections,
+      passiveEffectMultiplier,
     )
     const mirrorCornEffectMultiplier = getMirrorCornEffectMultiplier(
       blueprint,
       index,
       completedCropPerfections,
+      passiveEffectMultiplier,
     )
 
     return (
       totalBonus +
       adjustForMonocrop(baseHamsterEfficiencyBonus) *
+        passiveEffectMultiplier *
         adjacentCropBonusMultiplier *
         mirrorCornEffectMultiplier
     )
@@ -90,6 +95,7 @@ export function getCropHamsterEfficiencyMultiplier(
       blueprint,
       completedCropPerfections,
       rowsProducedPerSecond,
+      passiveEffectMultiplier,
     )
 
   return Math.max(
@@ -102,6 +108,7 @@ export function getRowDuplicatorEffectivenessMultiplier(
   blueprint,
   completedCropPerfections = [],
   activeHamsters = 0,
+  passiveEffectMultiplier = 1,
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const monocropThresholdBonus = getMonocropThresholdBonus(
@@ -138,16 +145,19 @@ export function getRowDuplicatorEffectivenessMultiplier(
         crop,
         baseEffectivenessBonus < 0,
         completedCropPerfections,
+        passiveEffectMultiplier,
       )
       const mirrorCornEffectMultiplier = getMirrorCornEffectMultiplier(
         blueprint,
         index,
         completedCropPerfections,
+        passiveEffectMultiplier,
       )
 
       return (
         totalBonus +
         adjustedBonus *
+          passiveEffectMultiplier *
           adjacentCropBonusMultiplier *
           mirrorCornEffectMultiplier
       )
@@ -161,6 +171,7 @@ export function getRowDuplicatorEffectivenessMultiplier(
       blueprint,
       activeHamsters,
       completedCropPerfections,
+      passiveEffectMultiplier,
     )
   )
 }
@@ -170,6 +181,7 @@ export function getCarrotHighHarvestEffect(
   contributions,
   baseGlobalHarvestMultiplier = 1,
   completedCropPerfections = [],
+  passiveEffectMultiplier = 1,
 ) {
   if (blueprint.cells.includes('appleTree')) {
     return { qualifyingCropTypeCount: 0, multiplier: 1 }
@@ -206,7 +218,11 @@ export function getCarrotHighHarvestEffect(
       carrotCount,
       fieldSize,
       getMonocropThresholdBonus(blueprint, completedCropPerfections),
-    ) * getGlobalPassiveEffectMultiplier(blueprint, completedCropPerfections)
+    ) * getGlobalPassiveEffectMultiplier(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+    )
   const carrotBonus = blueprint.cells.reduce((totalBonus, crop, index) => {
     if (crop !== 'carrot') {
       return totalBonus
@@ -221,6 +237,7 @@ export function getCarrotHighHarvestEffect(
           'carrot',
           false,
           completedCropPerfections,
+          passiveEffectMultiplier,
         )
     )
   }, 0)
@@ -234,6 +251,7 @@ export function getBaseFieldProductionSnapshot(
   blueprint,
   completedCropPerfections = [],
   rabbitContractsCompleted = 0,
+  passiveEffectMultiplier = 1,
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const monocropThresholdBonus = getMonocropThresholdBonus(
@@ -260,6 +278,7 @@ export function getBaseFieldProductionSnapshot(
         blueprint,
         index,
         completedCropPerfections,
+        passiveEffectMultiplier,
       )
     const adjacentYieldBonus = adjacentConnections.reduce(
       (totalBonus, { index: neighborIndex, adjacencyDistance }) => {
@@ -268,6 +287,7 @@ export function getBaseFieldProductionSnapshot(
           blueprint,
           neighborCrop,
           completedCropPerfections,
+          passiveEffectMultiplier,
         )
         const adjacencyStrength =
           getRootTunnelAdjacencyStrength(adjacencyDistance)
@@ -282,11 +302,13 @@ export function getBaseFieldProductionSnapshot(
               neighborCrop,
               baseCropYieldBonus < 0,
               completedCropPerfections,
+              passiveEffectMultiplier,
             ) *
             getMirrorCornEffectMultiplier(
               blueprint,
               neighborIndex,
               completedCropPerfections,
+              passiveEffectMultiplier,
             )
         )
       },
@@ -297,6 +319,7 @@ export function getBaseFieldProductionSnapshot(
       index,
       crop,
       completedCropPerfections,
+      passiveEffectMultiplier,
     )
     const monocropMultiplier = getMonocropYieldMultiplier(
       cropCounts[crop],
@@ -318,12 +341,14 @@ export function getBaseFieldProductionSnapshot(
     blueprint,
     completedCropPerfections,
     rabbitContractsCompleted,
+    passiveEffectMultiplier,
   )
   const carrotHighHarvestEffect = getCarrotHighHarvestEffect(
     blueprint,
     contributions,
     baseGlobalHarvestMultiplier,
     completedCropPerfections,
+    passiveEffectMultiplier,
   )
   const globalHarvestMultiplier =
     baseGlobalHarvestMultiplier * carrotHighHarvestEffect.multiplier
@@ -355,11 +380,13 @@ export function getBaseFieldIncome(
   blueprint,
   completedCropPerfections = [],
   rabbitContractsCompleted = 0,
+  passiveEffectMultiplier = 1,
 ) {
   return getBaseFieldProductionSnapshot(
     blueprint,
     completedCropPerfections,
     rabbitContractsCompleted,
+    passiveEffectMultiplier,
   ).total
 }
 
@@ -367,11 +394,13 @@ export function getBaseFieldIncomeByCrop(
   blueprint,
   completedCropPerfections = [],
   rabbitContractsCompleted = 0,
+  passiveEffectMultiplier = 1,
 ) {
   return getBaseFieldProductionSnapshot(
     blueprint,
     completedCropPerfections,
     rabbitContractsCompleted,
+    passiveEffectMultiplier,
   ).byCrop
 }
 export function getIncomeMultiplier(farmland) {
@@ -405,21 +434,40 @@ export function getEffectiveFarmlandMultipliers(farmland) {
   }
 }
 
+function normalizeCropProductionModifiers(modifiers = {}) {
+  const getMultiplier = (value) => {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1
+  }
+
+  return {
+    passiveEffectMultiplier: getMultiplier(modifiers.passiveEffectMultiplier),
+    cropYieldMultiplier: getMultiplier(modifiers.cropYieldMultiplier),
+    harvestMultiplier: getMultiplier(modifiers.harvestMultiplier),
+  }
+}
+
 export function getCropProductionPerSecond(
   blueprint,
   farmland,
   completedCropPerfections = [],
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
+  fortuneModifiers = {},
 ) {
+  const modifiers = normalizeCropProductionModifiers(fortuneModifiers)
+
   return (
     getBaseFieldIncome(
       blueprint,
       completedCropPerfections,
       rabbitContractsCompleted,
+      modifiers.passiveEffectMultiplier,
     ) *
     getIncomeMultiplier(farmland) *
-    Math.max(0, Number(externalCropMultiplier) || 0)
+    Math.max(0, Number(externalCropMultiplier) || 0) *
+    modifiers.cropYieldMultiplier *
+    modifiers.harvestMultiplier
   )
 }
 
@@ -429,15 +477,20 @@ export function getCropProductionSnapshotPerSecond(
   completedCropPerfections = [],
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
+  fortuneModifiers = {},
 ) {
+  const modifiers = normalizeCropProductionModifiers(fortuneModifiers)
   const fieldSnapshot = getBaseFieldProductionSnapshot(
     blueprint,
     completedCropPerfections,
     rabbitContractsCompleted,
+    modifiers.passiveEffectMultiplier,
   )
   const multiplier =
     getIncomeMultiplier(farmland) *
-    Math.max(0, Number(externalCropMultiplier) || 0)
+    Math.max(0, Number(externalCropMultiplier) || 0) *
+    modifiers.cropYieldMultiplier *
+    modifiers.harvestMultiplier
 
   return {
     total: fieldSnapshot.total * multiplier,
@@ -524,6 +577,7 @@ export function getProductionForTick(
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
+  fortuneModifiers = {},
 ) {
   return (
     getCropProductionPerSecond(
@@ -532,6 +586,7 @@ export function getProductionForTick(
       completedCropPerfections,
       externalCropMultiplier,
       rabbitContractsCompleted,
+      fortuneModifiers,
     ) *
     (tickIntervalMs / 1000)
   )
@@ -544,6 +599,7 @@ export function getProductionSnapshotForTick(
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
+  fortuneModifiers = {},
 ) {
   const productionPerSecond = getCropProductionSnapshotPerSecond(
     blueprint,
@@ -551,6 +607,7 @@ export function getProductionSnapshotForTick(
     completedCropPerfections,
     externalCropMultiplier,
     rabbitContractsCompleted,
+    fortuneModifiers,
   )
   const tickLengthSeconds = tickIntervalMs / 1000
 

@@ -108,6 +108,14 @@ export function useBlueprintEditor({
     }
 
     const currentGame = gameRef.current
+    if (
+      crop === 'fourLeafClover' &&
+      currentGame.blueprint.cells.some(
+        (cell, cellIndex) => cell === 'fourLeafClover' && cellIndex !== index,
+      )
+    ) {
+      return
+    }
     const maximumReflectionsPerTile =
       CROP_PERFECTIONS.mirrorCorn.maximumReflectionsPerTile
     const existingReflections = (

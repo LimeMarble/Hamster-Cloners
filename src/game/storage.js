@@ -1,4 +1,5 @@
 import { normalizeTradeState, RABBIT_UNLOCK_IDS } from './tradeLogic.js'
+import { normalizeFortuneState } from './fortuneLogic.js'
 import {
   BLUEPRINT_EXPANSIONS,
   BLUEPRINT_EXPANSION_TRACKS,
@@ -277,6 +278,7 @@ export function normalizeGame(rawGame) {
       toNonNegativeNumber(rawGame.crops, 0) >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
     hasUnlockedRowDuplicators: rawGame.hasUnlockedRowDuplicators === true,
     rowDuplicators: toNonNegativeInteger(rawGame.rowDuplicators, 0),
+    fortune: normalizeFortuneState(rawGame.fortune),
     trade,
     numberNotation:
       rawGame.numberNotation === 'scientific' ? 'scientific' : 'suffix',

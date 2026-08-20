@@ -151,6 +151,16 @@ export const CROP_DEFINITIONS = {
       '40 Crops per slot · +4% Rabbit relations · +10% all Crop harvest, plus +0.4% per completed Rabbit contract (caps at +100%) · +4% all Crop harvest per crop type with more than 10,000 total harvest · inactive while an Apple Sapling is planted',
     unlockDescription: 'Unlock with 500 Rabbit relations',
   },
+  fourLeafClover: {
+    name: '4-Leaf Clover',
+    icon: '🍀',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    effectDescription:
+      'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · only one can be planted per blueprint',
+    unlockDescription: 'Unlock with 77,777 Rabbit relations',
+  },
   leechingGourd: {
     name: 'Leeching Gourd',
     icon: '🎃',
@@ -204,6 +214,16 @@ export const CROP_PERFECTIONS = {
     baseEffectDescription: '5 Crops per slot · −50% Hamster efficiency',
     effectDescription:
       'Multiplies one diagonally adjacent crop effect by ×4 · each tile can receive at most two reflections; harsh sunlight reflected by three or more Mirror Corns would burn any crop to a crisp',
+  },
+  fourLeafClover: {
+    name: '4-Leaf Clover',
+    icon: '🍀',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    effectDescription:
+      'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · only one can be planted per blueprint',
+    unlockDescription: 'Unlock with 77,777 Rabbit relations',
   },
   leechingGourd: {
     id: 'leechingGourd',
@@ -365,6 +385,7 @@ export function getUnlockedCropIds(
   hasUnlockedSunflower = false,
   rowDuplicators = 0,
   hasUnlockedCarrot = false,
+  hasUnlockedFourLeafClover = false,
 ) {
   const unlockedCrops = ['leek']
 
@@ -400,6 +421,9 @@ export function getUnlockedCropIds(
   }
   if (hasUnlockedCarrot) {
     unlockedCrops.push('carrot')
+  }
+  if (hasUnlockedFourLeafClover) {
+    unlockedCrops.push('fourLeafClover')
   }
 
   return unlockedCrops

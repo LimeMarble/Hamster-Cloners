@@ -1,5 +1,8 @@
 import { useRef } from 'react'
-import { INVENTIONS_HAMSTER_UNLOCK_COUNT } from '../game/gameLogic.js'
+import {
+  collectCloverBundle,
+  INVENTIONS_HAMSTER_UNLOCK_COUNT,
+} from '../game/gameLogic.js'
 import { useBlueprintEditor } from './useBlueprintEditor.js'
 import { useCropUnlockNotifications } from './useCropUnlockNotifications.js'
 import { useGameActions } from './useGameActions.js'
@@ -155,6 +158,11 @@ export function useGameController() {
       unionConfirmation: actions.unionConfirmation,
       cropUnlockNotice: notifications.cropUnlockNotice,
       testingPanel: testing.testingPanel,
+      fortune: {
+        fortune: game.fortune,
+        onCollect: () =>
+          updateGame((currentGame) => collectCloverBundle(currentGame)),
+      },
     },
   }
 }

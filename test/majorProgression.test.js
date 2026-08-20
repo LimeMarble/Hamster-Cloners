@@ -30,6 +30,7 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'crop-canola',
       'trade-relations',
       'crop-carrot',
+      'crop-four-leaf-clover',
       'capybara-contact',
     ],
   )
@@ -157,12 +158,12 @@ test('major progression advances to the earliest unfinished goal', () => {
     ...game,
     trade: { ...game.trade, rabbitUnlocks: ['carrot'] },
   }
-  const capybaraGoal = getNextMajorProgressionGoal(game)
-  assert.equal(capybaraGoal.id, 'capybara-contact')
+  const cloverGoal = getNextMajorProgressionGoal(game)
+  assert.equal(cloverGoal.id, 'crop-four-leaf-clover')
 
   game = {
     ...game,
-    trade: { ...game.trade, rabbitRelations: 25000 },
+    trade: { ...game.trade, rabbitRelations: 77777 },
   }
   assert.equal(getNextMajorProgressionGoal(game).isReady, true)
 
@@ -170,7 +171,23 @@ test('major progression advances to the earliest unfinished goal', () => {
     ...game,
     trade: {
       ...game.trade,
-      rabbitUnlocks: ['carrot', 'capybaraContact'],
+      rabbitUnlocks: ['carrot', 'fourLeafClover'],
+    },
+  }
+  const capybaraGoal = getNextMajorProgressionGoal(game)
+  assert.equal(capybaraGoal.id, 'capybara-contact')
+
+  game = {
+    ...game,
+    trade: { ...game.trade, rabbitRelations: 125000 },
+  }
+  assert.equal(getNextMajorProgressionGoal(game).isReady, true)
+
+  game = {
+    ...game,
+    trade: {
+      ...game.trade,
+      rabbitUnlocks: ['carrot', 'fourLeafClover', 'capybaraContact'],
     },
   }
   const completedGoal = getNextMajorProgressionGoal(game)
