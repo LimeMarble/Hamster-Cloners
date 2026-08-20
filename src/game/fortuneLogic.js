@@ -31,7 +31,7 @@ export const FORTUNE_EFFECTS = Object.freeze([
     id: FORTUNE_EFFECT_IDS.BOUNTY,
     name: "Fortune's Bounty",
     weight: 0.52,
-    durationSeconds: 87,
+    durationSeconds: 117,
     description: 'Crop yields ×7.77',
     cropYieldMultiplier: 7.77,
   },
