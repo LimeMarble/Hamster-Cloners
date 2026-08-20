@@ -281,14 +281,25 @@ export function collectCloverBundle(game, random = Math.random) {
   if (!fortune.bundle) return game
 
   const effect = chooseFortuneEffect(random())
-  const activeEffects = effect.durationSeconds > 0
-    ? [
-        ...fortune.activeEffects.filter(
-          (activeEffect) => activeEffect.id !== effect.id,
-        ),
-        { id: effect.id, remainingSeconds: effect.durationSeconds },
-      ]
-    : fortune.activeEffects
+  const matchingEffect = fortune.activeEffects.some(
+    (activeEffect) => activeEffect.id === effect.id,
+  )
+  const activeEffects = effect.durationSeconds <= 0
+    ? fortune.activeEffects
+    : matchingEffect
+      ? fortune.activeEffects.map((activeEffect) =>
+          activeEffect.id === effect.id
+            ? {
+                ...activeEffect,
+                remainingSeconds:
+                  activeEffect.remainingSeconds + effect.durationSeconds,
+              }
+            : activeEffect,
+        )
+      : [
+          ...fortune.activeEffects,
+          { id: effect.id, remainingSeconds: effect.durationSeconds },
+        ]
 
   return {
     ...game,

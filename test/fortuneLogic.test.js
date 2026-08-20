@@ -95,11 +95,11 @@ test('Clover Bundle outcome weights and durations match the configured Breezes',
       durationSeconds,
     })),
     [
-      { id: FORTUNE_EFFECT_IDS.OPUS, weight: 0.17, durationSeconds: 30 },
-      { id: FORTUNE_EFFECT_IDS.BOUNTY, weight: 0.52, durationSeconds: 60 },
+      { id: FORTUNE_EFFECT_IDS.OPUS, weight: 0.17, durationSeconds: 37 },
+      { id: FORTUNE_EFFECT_IDS.BOUNTY, weight: 0.52, durationSeconds: 117 },
       { id: FORTUNE_EFFECT_IDS.MIRAGE, weight: 0.2, durationSeconds: 0 },
       { id: FORTUNE_EFFECT_IDS.PRANK, weight: 0.06, durationSeconds: 44 },
-      { id: FORTUNE_EFFECT_IDS.BLIGHT, weight: 0.05, durationSeconds: 30 },
+      { id: FORTUNE_EFFECT_IDS.BLIGHT, weight: 0.05, durationSeconds: 22 },
     ],
   )
 
@@ -125,6 +125,25 @@ test('Clover Bundle outcome weights and durations match the configured Breezes',
   })
 })
 
+test('collecting the same timed Breeze adds its duration to the remaining timer', () => {
+  const game = {
+    ...createCloverGame(),
+    fortune: {
+      bundle: { x: 50, y: 50 },
+      secondsTowardBundleRoll: 0,
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.OPUS, remainingSeconds: 12 },
+      ],
+      notice: null,
+    },
+  }
+
+  const collected = collectCloverBundle(game, () => 0)
+
+  assert.deepEqual(collected.fortune.activeEffects, [
+    { id: FORTUNE_EFFECT_IDS.OPUS, remainingSeconds: 49 },
+  ])
+})
 test('Bounty multiplies Crop yield while Blight destroys the harvest', () => {
   const blueprint = createBlueprint({
     rows: 2,
