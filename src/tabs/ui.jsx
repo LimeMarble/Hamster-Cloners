@@ -230,6 +230,14 @@ export function CropHoverInspector({
                 </li>
               )
             }
+            if (effect.type === 'carrot-high-harvest') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from {effect.qualifyingCropTypeCount}{' '}
+                  high-harvest Crop type{effect.qualifyingCropTypeCount === 1 ? '' : 's'} and Carrots
+                </li>
+              )
+            }
             if (effect.type === 'global-harvest') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>

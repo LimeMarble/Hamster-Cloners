@@ -10,6 +10,7 @@ import {
   createInitialGame,
   createRabbitContract,
   establishTradeRelations,
+  getCarrotHighHarvestEffect,
   getCropProductionSnapshotPerSecond,
   getRabbitContractRelationsReward,
   getRabbitRelationsMultiplier,
@@ -104,7 +105,7 @@ test('crop-specific production advances and completes one selected Rabbit contra
   assert.equal(claimedGame.trade.rabbitContracts.length, RABBIT_ACTIVE_CONTRACT_COUNT)
 })
 
-test('Carrot Rabbit relation bonus stays at ten percent regardless of completed contracts', () => {
+test('Carrot Rabbit relation bonus stays at four percent regardless of completed contracts', () => {
   const carrotBlueprint = createBlueprint({
     rows: 1,
     columns: 1,
@@ -116,12 +117,12 @@ test('Carrot Rabbit relation bonus stays at ten percent regardless of completed 
     cells: ['carrot', 'appleTree'],
   })
 
-  assert.equal(getRabbitRelationsMultiplier(carrotBlueprint), 1.1)
-  assert.equal(getRabbitRelationsMultiplier(carrotBlueprint), 1.1)
+  assert.equal(getRabbitRelationsMultiplier(carrotBlueprint), 1.04)
+  assert.equal(getRabbitRelationsMultiplier(carrotBlueprint), 1.04)
   assert.equal(getRabbitRelationsMultiplier(appleBlueprint), 1)
 })
 
-test('Carrot scales claimed relations from completed contracts and Apple Saplings disable it', () => {
+test('Carrot boosts claimed relations and Apple Saplings disable it', () => {
   const carrotBlueprint = createBlueprint({
     rows: 1,
     columns: 1,
@@ -163,10 +164,42 @@ test('Carrot scales claimed relations from completed contracts and Apple Sapling
     () => 0,
   )
 
-  assert.equal(boostedClaim.trade.rabbitRelations, 110)
+  assert.equal(boostedClaim.trade.rabbitRelations, 104)
   assert.equal(appleClaim.trade.rabbitRelations, 100)
 })
 
+test('Carrot high-harvest bounty counts qualifying crop types once each', () => {
+  const blueprint = createBlueprint({
+    rows: 100,
+    columns: 100,
+    cells: [
+      'leek',
+      'corn',
+      'pumpkin',
+      'sweetPotato',
+      'turnip',
+      'lentil',
+      'sunflower',
+      ...Array(15).fill('carrot'),
+    ],
+  })
+  const effect = getCarrotHighHarvestEffect(
+    blueprint,
+    [
+      { cropId: 'leek', amount: 10_001 },
+      { cropId: 'corn', amount: 10_001 },
+      { cropId: 'pumpkin', amount: 10_001 },
+      { cropId: 'sweetPotato', amount: 10_001 },
+      { cropId: 'turnip', amount: 10_001 },
+      { cropId: 'lentil', amount: 10_001 },
+      { cropId: 'sunflower', amount: 10_001 },
+      { cropId: 'leek', amount: 10_001 },
+    ],
+  )
+
+  assert.equal(effect.qualifyingCropTypeCount, 7)
+  assert.ok(Math.abs(effect.multiplier - 5.2) < 1e-12)
+})
 test('Carrot harvest stacks multiplicatively with Lentil and is disabled by Apple Saplings', () => {
   const farmland = { rows: 1, columns: 1, floors: 1, farms: 1, otherMultiplier: 1 }
   const carrotAndLentil = createBlueprint({

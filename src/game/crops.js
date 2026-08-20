@@ -144,11 +144,14 @@ export const CROP_DEFINITIONS = {
     rabbitRelationsBonusAtZero: 0.04,
     globalHarvestBonusAtZero: 0.1,
     globalHarvestBonusPerContract: 0.004,
+    highHarvestThreshold: 1e4,
+    highHarvestGlobalHarvestBonus: 0.04,
     maximumRabbitContractBonus: 1,
     effectDescription:
-      '40 Crops per slot · +4% Rabbit relations · +10% all Crop harvest, plus +0.4% per completed Rabbit contract (caps at +100%) · inactive while an Apple Sapling is planted',
+      '40 Crops per slot · +4% Rabbit relations · +10% all Crop harvest, plus +0.4% per completed Rabbit contract (caps at +100%) · +4% all Crop harvest per crop type with more than 10,000 total harvest · inactive while an Apple Sapling is planted',
     unlockDescription: 'Unlock with 500 Rabbit relations',
-  },  leechingGourd: {
+  },
+  leechingGourd: {
     name: 'Leeching Gourd',
     icon: '🎃',
     baseYield: 0,
@@ -202,20 +205,7 @@ export const CROP_PERFECTIONS = {
     effectDescription:
       'Multiplies one diagonally adjacent crop effect by ×4 · each tile can receive at most two reflections; harsh sunlight reflected by three or more Mirror Corns would burn any crop to a crisp',
   },
-  carrot: {
-    name: 'Carrot',
-    icon: '🥕',
-    baseYield: 40,
-    hamsterEfficiencyBonus: 0,
-    canBeMirrorCornTarget: false,
-    rabbitRelationsBonusAtZero: 0.1,
-    globalHarvestBonusAtZero: 0.1,
-    globalHarvestBonusPerContract: 0.004,
-    maximumRabbitContractBonus: 1,
-    effectDescription:
-      '40 Crops per slot · +10% Rabbit relations · +10% all Crop harvest, plus +0.4% per completed Rabbit contract (caps at +100%) · inactive while an Apple Sapling is planted',
-    unlockDescription: 'Unlock with 500 Rabbit relations',
-  },  leechingGourd: {
+  leechingGourd: {
     id: 'leechingGourd',
     cropId: 'pumpkin',
     name: 'Leeching Gourd',

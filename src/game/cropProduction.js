@@ -1,5 +1,8 @@
-import { getMonocropYieldMultiplier } from './monocropPenalty.js'
 import { CROP_DEFINITIONS } from './crops.js'
+import {
+  applyMonocropPenaltyToBonus,
+  getMonocropYieldMultiplier,
+} from './monocropPenalty.js'
 import {
   BASE_CROP_YIELD_PER_PLOT,
   COLUMNS_PER_HAMSTER_PER_SECOND,
@@ -21,6 +24,7 @@ import {
   getGlobalHamsterEfficiencyMultiplier,
   getGlobalRowProductionMultiplier,
   getGlobalHarvestMultiplier,
+  getGlobalPassiveEffectMultiplier,
   getMirrorCornEffectMultiplier,
   getMonocropCropCount,
   getMonocropThresholdBonus,
@@ -161,7 +165,72 @@ export function getRowDuplicatorEffectivenessMultiplier(
   )
 }
 
-function getBaseFieldProductionSnapshot(
+export function getCarrotHighHarvestEffect(
+  blueprint,
+  contributions,
+  baseGlobalHarvestMultiplier = 1,
+  completedCropPerfections = [],
+) {
+  if (blueprint.cells.includes('appleTree')) {
+    return { qualifyingCropTypeCount: 0, multiplier: 1 }
+  }
+
+  const definition = CROP_DEFINITIONS.carrot
+  const carrotCount = getMonocropCropCount(blueprint, 'carrot')
+  const highHarvestThreshold = definition?.highHarvestThreshold ?? Infinity
+  const harvestByCropType = contributions.reduce(
+    (totals, contribution) => {
+      if (!contribution) {
+        return totals
+      }
+
+      totals[contribution.cropId] =
+        (totals[contribution.cropId] ?? 0) +
+        contribution.amount * baseGlobalHarvestMultiplier
+      return totals
+    },
+    {},
+  )
+  const qualifyingCropTypeCount = Object.values(harvestByCropType).filter(
+    (totalHarvest) => totalHarvest > highHarvestThreshold,
+  ).length
+
+  if (!definition || carrotCount === 0 || qualifyingCropTypeCount === 0) {
+    return { qualifyingCropTypeCount, multiplier: 1 }
+  }
+
+  const fieldSize = blueprint.rows * blueprint.columns
+  const baseBonus =
+    applyMonocropPenaltyToBonus(
+      definition.highHarvestGlobalHarvestBonus ?? 0,
+      carrotCount,
+      fieldSize,
+      getMonocropThresholdBonus(blueprint, completedCropPerfections),
+    ) * getGlobalPassiveEffectMultiplier(blueprint, completedCropPerfections)
+  const carrotBonus = blueprint.cells.reduce((totalBonus, crop, index) => {
+    if (crop !== 'carrot') {
+      return totalBonus
+    }
+
+    return (
+      totalBonus +
+      baseBonus *
+        getAdjacentCropEffectMultiplier(
+          blueprint,
+          index,
+          'carrot',
+          false,
+          completedCropPerfections,
+        )
+    )
+  }, 0)
+
+  return {
+    qualifyingCropTypeCount,
+    multiplier: 1 + qualifyingCropTypeCount * carrotBonus,
+  }
+}
+export function getBaseFieldProductionSnapshot(
   blueprint,
   completedCropPerfections = [],
   rabbitContractsCompleted = 0,
@@ -245,11 +314,19 @@ function getBaseFieldProductionSnapshot(
         harvestDestructionMultiplier,
     }
   })
-  const globalHarvestMultiplier = getGlobalHarvestMultiplier(
+  const baseGlobalHarvestMultiplier = getGlobalHarvestMultiplier(
     blueprint,
     completedCropPerfections,
     rabbitContractsCompleted,
   )
+  const carrotHighHarvestEffect = getCarrotHighHarvestEffect(
+    blueprint,
+    contributions,
+    baseGlobalHarvestMultiplier,
+    completedCropPerfections,
+  )
+  const globalHarvestMultiplier =
+    baseGlobalHarvestMultiplier * carrotHighHarvestEffect.multiplier
   const byCrop = contributions.reduce((cropTotals, contribution) => {
     if (!contribution) {
       return cropTotals
@@ -269,6 +346,8 @@ function getBaseFieldProductionSnapshot(
   return {
     total: total * globalHarvestMultiplier,
     byCrop,
+    globalHarvestMultiplier,
+    carrotHighHarvestEffect,
   }
 }
 

@@ -1,5 +1,6 @@
 import { getMonocropYieldMultiplier } from './monocropPenalty.js'
 import { CROP_DEFINITIONS, isCropEffectModifier } from './crops.js'
+import { getBaseFieldProductionSnapshot } from './cropProduction.js'
 import {
   doesNotHarvest,
   getAdjacentCropConnections,
@@ -12,7 +13,6 @@ import {
   getCropHamsterEfficiencyBonus,
   getExternalCropBuffMultiplier,
   getGlobalHamsterEfficiencyEffects,
-  getGlobalHarvestMultiplier,
   getGlobalPassiveEffectMultiplier,
   getGlobalRowProductionEffects,
   getGroupedGlobalHarvestEffects,
@@ -308,11 +308,12 @@ export function getBlueprintCropStats(
       completedCropPerfections,
       rowsProducedPerSecond,
     )
-  const globalHarvestMultiplier = getGlobalHarvestMultiplier(
+  const fieldProductionSnapshot = getBaseFieldProductionSnapshot(
     blueprint,
     completedCropPerfections,
     rabbitContractsCompleted,
   )
+  const globalHarvestMultiplier = fieldProductionSnapshot.globalHarvestMultiplier
   const harvestYield = doesNotHarvest(crop) || harvestDestroyedByAppleTree
     ? 0
     : (getCropBaseYield(crop, completedCropPerfections) +
@@ -331,6 +332,12 @@ export function getBlueprintCropStats(
   globalHarvestEffects.forEach((effect) => {
     receivedEffects.push({ type: 'global-harvest', ...effect })
   })
+  if (fieldProductionSnapshot.carrotHighHarvestEffect.multiplier !== 1) {
+    receivedEffects.push({
+      type: 'carrot-high-harvest',
+      ...fieldProductionSnapshot.carrotHighHarvestEffect,
+    })
+  }
   globalRowProductionEffects.forEach((effect) => {
     receivedEffects.push({ type: 'global-row-production', ...effect })
   })
