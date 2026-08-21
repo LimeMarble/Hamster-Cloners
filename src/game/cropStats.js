@@ -23,6 +23,7 @@ import {
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
 } from './cropEffects.js'
+import { getCropPassiveStats } from './cropPassiveStats.js'
 function normalizeFortuneMultiplier(value) {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1
@@ -424,11 +425,28 @@ export function getBlueprintCropStats(
     })
   }
 
+  const passiveStats = getCropPassiveStats({
+    blueprint,
+    index,
+    crop,
+    definition,
+    baseHamsterEfficiencyBonus,
+    hamsterEfficiencyBonus,
+    monocropMultiplier,
+    passiveEffectMultiplier,
+    completedCropPerfections,
+    rabbitContractsCompleted,
+    globalRowProductionEffects,
+    globalHamsterEfficiencyEffects,
+    baseGlobalPassiveEffectMultiplier,
+  })
+
   return {
     crop,
     baseYield: getCropBaseYield(crop, completedCropPerfections),
     harvestYield,
     hamsterEfficiencyBonus,
+    passiveStats,
     harvestDestroyedByAppleTree,
     externalCropBuffMultiplier,
     receivedEffects,

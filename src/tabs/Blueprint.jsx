@@ -1,9 +1,5 @@
 import { getFieldsPlanted } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
-import {
-  getFortuneEffect,
-  normalizeFortuneState,
-} from '../game/fortuneLogic.js'
 import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber, MonocropStatus } from './ui.jsx'
 import { getBlueprintCropSummary } from './uiHelpers.js'
@@ -19,9 +15,6 @@ export function Blueprint({
   onOpenEditor,
 }) {
   const plantedCrops = getBlueprintCropSummary(game.blueprint.cells)
-  const activeFortuneEffects = normalizeFortuneState(
-    game.fortune,
-  ).activeEffects
   const plantedCropDescription =
     plantedCrops.length > 0
       ? plantedCrops
@@ -148,27 +141,6 @@ export function Blueprint({
         ) : null}
       </dl>
 
-      {activeFortuneEffects.length > 0 ? (
-        <section
-          className="field-fortune-info"
-          aria-labelledby="field-fortune-title"
-        >
-          <p className="eyebrow" id="field-fortune-title">
-            Active Breezes of Fortune
-          </p>
-          {activeFortuneEffects.map((activeEffect) => {
-            const effect = getFortuneEffect(activeEffect.id)
-
-            return effect ? (
-              <div className="field-fortune-effect" key={activeEffect.id}>
-                <strong>{effect.name}</strong>
-                <span>{effect.description}</span>
-                <time>{Math.ceil(activeEffect.remainingSeconds)}s</time>
-              </div>
-            ) : null
-          })}
-        </section>
-      ) : null}
     </article>
   )
 }

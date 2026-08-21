@@ -1,6 +1,10 @@
+import { useState } from 'react'
 import {
+  CAPYBARA_DEMONSTRATIONS,
+  RABBIT_UNLOCK_IDS,
   RABBIT_UNLOCKS,
   TRADE_ESTABLISHMENT_COST,
+  getCapybaraDemonstrationStatus,
   getRabbitRelationsMultiplier,
   hasRabbitUnlock,
 } from '../game/gameLogic.js'
@@ -177,13 +181,129 @@ function RabbitUnlocks({ game, onPurchaseRabbitUnlock }) {
   )
 }
 
+function CapybaraDemonstrations({
+  game,
+  blueprintCropYield,
+  onCompleteCapybaraDemonstration,
+}) {
+  return (
+    <section
+      className="trading-group capybara-demonstrations"
+      aria-labelledby="capybaras-title"
+    >
+      <div className="trading-group-title">
+        <span className="capybara-mark" aria-hidden="true">C</span>
+        <div>
+          <p className="eyebrow">Technological partner</p>
+          <h2 id="capybaras-title">Capybaras</h2>
+        </div>
+      </div>
+      <p className="trade-copy capybara-lore">
+        The Capybaras are too technologically advanced to want anything you
+        can currently offer. They are willing to share their knowledge if you
+        can pass their demonstrations.
+      </p>
+
+      <div className="capybara-demonstration-list">
+        {CAPYBARA_DEMONSTRATIONS.map((demonstration) => {
+          const status = getCapybaraDemonstrationStatus(
+            game,
+            demonstration.id,
+            { blueprintCropYield },
+          )
+          const progress = status.completed ? 1 : status.progress
+
+          return (
+            <article
+              className={`capybara-demonstration-card ${status.completed ? 'capybara-demonstration-completed' : ''}`}
+              key={demonstration.id}
+            >
+              <div className="capybara-demonstration-heading">
+                <div>
+                  <p className="eyebrow">
+                    Demonstration {demonstration.number}
+                  </p>
+                  <h3>{demonstration.name}</h3>
+                </div>
+                <strong>{status.completed ? 'Passed' : 'In progress'}</strong>
+              </div>
+
+              <p className="trade-copy">{demonstration.goal}</p>
+              <div
+                className="rabbit-contract-track"
+                role="progressbar"
+                aria-label={`Demonstration ${demonstration.number} progress`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(progress * 1000) / 10}
+              >
+                <span style={{ width: `${progress * 100}%` }} />
+              </div>
+              <div className="capybara-demonstration-value">
+                <span>Blueprint Crop yield</span>
+                <strong>
+                  <FormattedNumber value={status.current} /> /{' '}
+                  <FormattedNumber value={demonstration.target} /> Crops
+                </strong>
+              </div>
+
+              <dl className="capybara-demonstration-details">
+                <div>
+                  <dt>Restrictions</dt>
+                  <dd>
+                    {demonstration.restrictions.length > 0
+                      ? demonstration.restrictions.join(', ')
+                      : 'None'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Reward</dt>
+                  <dd>
+                    <strong>{demonstration.rewardName}</strong> —{' '}
+                    {demonstration.rewardDescription}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Hint</dt>
+                  <dd>{demonstration.hint}</dd>
+                </div>
+              </dl>
+
+              <button
+                type="button"
+                className="trade-primary-button"
+                onClick={() =>
+                  onCompleteCapybaraDemonstration(demonstration.id)
+                }
+                disabled={!status.canComplete}
+              >
+                {status.completed
+                  ? 'Demonstration passed'
+                  : status.canComplete
+                    ? 'Pass demonstration'
+                    : 'Goal not reached'}
+              </button>
+            </article>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
 export function Trade({
   game,
   rabbitContractProductionPerSecondByCrop,
+  capybaraBlueprintCropYield,
   onEstablishTrade,
   onClaimRabbitContract,
   onPurchaseRabbitUnlock,
+  onCompleteCapybaraDemonstration,
 }) {
+  const [activeRelation, setActiveRelation] = useState('rabbits')
+  const hasCapybaraContact = hasRabbitUnlock(
+    game,
+    RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
+  )
   const rabbitContracts = game.trade.rabbitContracts ?? []
   const rabbitContractsCompleted =
     game.trade.rabbitContractsCompleted ?? 0
@@ -203,7 +323,7 @@ export function Trade({
             on permanent unlocks.
           </p>
         </div>
-        {game.trade.established ? (
+        {game.trade.established && activeRelation === 'rabbits' ? (
           <div className="relations-balance">
             <span>Rabbit relations</span>
             <strong>
@@ -218,50 +338,83 @@ export function Trade({
 
       {game.trade.established ? (
         <>
-          <section className="trading-group" aria-labelledby="rabbits-title">
-            <div className="trading-group-title">
-              <span aria-hidden="true">🐇</span>
-              <div>
-                <p className="eyebrow">Trading partner</p>
-                <h2 id="rabbits-title">Rabbits</h2>
-              </div>
+          <nav className="trade-relation-tabs" aria-label="Trade relations">
+            <button
+              type="button"
+              className={`trade-relation-tab ${activeRelation === 'rabbits' ? 'trade-relation-tab-active' : ''}`}
+              onClick={() => setActiveRelation('rabbits')}
+              aria-pressed={activeRelation === 'rabbits'}
+            >
+              Rabbits
+            </button>
+            {hasCapybaraContact ? (
+              <button
+                type="button"
+                className={`trade-relation-tab ${activeRelation === 'capybaras' ? 'trade-relation-tab-active' : ''}`}
+                onClick={() => setActiveRelation('capybaras')}
+                aria-pressed={activeRelation === 'capybaras'}
+              >
+                Capybaras
+              </button>
+            ) : null}
+          </nav>
+
+          {activeRelation === 'rabbits' ? (
+            <div className="trade-relation-panel">
+              <section className="trading-group" aria-labelledby="rabbits-title">
+                <div className="trading-group-title">
+                  <span aria-hidden="true">🐇</span>
+                  <div>
+                    <p className="eyebrow">Trading partner</p>
+                    <h2 id="rabbits-title">Rabbits</h2>
+                  </div>
+                </div>
+                <p className="trade-copy rabbit-lore">
+                  The Rabbits insist they dislike apples, pumpkins, and pesky
+                  weeds. Whether that is accurate rabbit lore is another question.
+                </p>
+                <div className="rabbit-contract-summary">
+                  <span>
+                    Contracts completed: <strong><FormattedNumber value={rabbitContractsCompleted} maximumFractionDigits={0} /></strong>
+                  </span>
+                  <span>
+                    Relation rewards: <strong>×<FormattedNumber value={rabbitRelationsMultiplier} maximumFractionDigits={3} /></strong>
+                  </span>
+                </div>
+                <div className="rabbit-contract-grid">
+                  {rabbitContracts.map((contract, contractIndex) => (
+                    <RabbitContract
+                      game={game}
+                      contract={contract}
+                      contractIndex={contractIndex}
+                      key={contractIndex}
+                      productionPerSecond={Math.max(
+                        0,
+                        Number(
+                          rabbitContractProductionPerSecondByCrop?.[
+                            contract?.cropId
+                          ],
+                        ) || 0,
+                      )}
+                      onClaimRabbitContract={onClaimRabbitContract}
+                    />
+                  ))}
+                </div>
+              </section>
+              <RabbitUnlocks
+                game={game}
+                onPurchaseRabbitUnlock={onPurchaseRabbitUnlock}
+              />
             </div>
-            <p className="trade-copy rabbit-lore">
-              The Rabbits insist they dislike apples, pumpkins, and pesky
-              weeds. Whether that is accurate rabbit lore is another question.
-            </p>
-            <div className="rabbit-contract-summary">
-              <span>
-                Contracts completed: <strong><FormattedNumber value={rabbitContractsCompleted} maximumFractionDigits={0} /></strong>
-              </span>
-              <span>
-                Relation rewards: <strong>×<FormattedNumber value={rabbitRelationsMultiplier} maximumFractionDigits={3} /></strong>
-              </span>
-            </div>
-            <div className="rabbit-contract-grid">
-              {rabbitContracts.map((contract, contractIndex) => (
-                <RabbitContract
-                  game={game}
-                  contract={contract}
-                  contractIndex={contractIndex}
-                  key={contractIndex}
-                  productionPerSecond={Math.max(
-                    0,
-                    Number(
-                      rabbitContractProductionPerSecondByCrop?.[
-                        contract?.cropId
-                      ],
-                    ) || 0,
-                  )}
-                  onClaimRabbitContract={onClaimRabbitContract}
-                />
-              ))}
-            </div>
-          </section>
-          <RabbitUnlocks
-            game={game}
-            onPurchaseRabbitUnlock={onPurchaseRabbitUnlock}
-          />
+          ) : hasCapybaraContact ? (
+            <CapybaraDemonstrations
+              game={game}
+              blueprintCropYield={capybaraBlueprintCropYield}
+              onCompleteCapybaraDemonstration={
+                onCompleteCapybaraDemonstration
+              }
+            />
+          ) : null}
         </>
       ) : (
         <EstablishTradeCard

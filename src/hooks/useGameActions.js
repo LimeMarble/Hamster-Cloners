@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   claimRabbitContract,
+  completeCapybaraDemonstration,
   createInitialGame,
   establishTradeRelations,
   getBlueprintExpansion,
@@ -23,6 +24,7 @@ export function useGameActions({
   updateGame,
   areInventionsUnlocked,
   isTradeTabVisible,
+  isAugmentationTabVisible,
   resetBlueprintEditor,
   clearCropUnlockNotices,
 }) {
@@ -49,6 +51,7 @@ export function useGameActions({
     }, 4000)
     return () => window.clearTimeout(timeoutId)
   }, [hardResetClicks, lastHardResetClickAt])
+
 
   function completeHamsterHire() {
     updateGame((currentGame) => {
@@ -246,6 +249,18 @@ export function useGameActions({
     )
   }
 
+  function completeCapybaraDemo(demonstrationId) {
+    updateGame((currentGame) =>
+      completeCapybaraDemonstration(currentGame, demonstrationId) ??
+        currentGame,
+    )
+  }
+
+  function openAugmentation() {
+    if (isAugmentationTabVisible) {
+      setActiveTab('augmentation')
+    }
+  }
   function openTrade() {
     if (isTradeTabVisible) {
       setActiveTab('trade')
@@ -270,6 +285,7 @@ export function useGameActions({
     navigationActions: {
       onShowField: () => setActiveTab('field'),
       onShowTrade: openTrade,
+      onShowAugmentation: openAugmentation,
       onOpenInventions: openInventions,
       onShowStatistics: () => setActiveTab('statistics'),
       onOpenOptions: openOptions,
@@ -284,6 +300,7 @@ export function useGameActions({
       onEstablishTrade: establishTrade,
       onClaimRabbitContract: claimRabbitDelivery,
       onPurchaseRabbitUnlock: buyRabbitUnlock,
+      onCompleteCapybaraDemonstration: completeCapybaraDemo,
     },
     inventionsActions: {
       onUnlockEnrichingLeek: () => unlockPerfection('enrichingLeek'),

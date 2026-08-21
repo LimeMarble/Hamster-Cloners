@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import {
   canUnlockCropPerfection,
   canUnlockRowDuplicators,
+  getCapybaraBlueprintCropYield,
   getBlueprintExpansionTrackProgress,
   getBlueprintMonocropMultiplier,
   getBlueprintSlots,
@@ -23,6 +24,7 @@ import {
   getUnlockedBlueprintSlotCount,
   hasReachedMonocropLimit,
   hasRabbitUnlock,
+  hasSeedAugmentation,
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
   RABBIT_UNLOCK_IDS,
   UNIONIZATION_HAMSTER_COUNT,
@@ -61,6 +63,24 @@ export function useGameDerivedState(game) {
     ],
   )
   const productionPerSecond = cropProductionSnapshot.total
+  const capybaraBlueprintCropYield = useMemo(
+    () =>
+      getCapybaraBlueprintCropYield({
+        blueprint: game.blueprint,
+        completedCropPerfections: game.completedCropPerfections,
+        fortune: game.fortune,
+        trade: {
+          rabbitContractsCompleted:
+            game.trade?.rabbitContractsCompleted ?? 0,
+        },
+      }),
+    [
+      game.blueprint,
+      game.completedCropPerfections,
+      game.fortune,
+      game.trade?.rabbitContractsCompleted,
+    ],
+  )
 
   const hamsterCoordinationMultiplier = useMemo(
     () =>
@@ -249,7 +269,9 @@ export function useGameDerivedState(game) {
     majorProgressionGoal,
     productionPerSecond,
     rabbitContractProductionPerSecondByCrop: cropProductionSnapshot.byCrop,
+    capybaraBlueprintCropYield,
     isTradeTabVisible: game.hasUnlockedSunflower === true,
+    isAugmentationTabVisible: hasSeedAugmentation(game),
     cropHamsterEfficiencyMultiplier,
     hamsterCoordinationMultiplier,
     hamsterExternalMultiplier,

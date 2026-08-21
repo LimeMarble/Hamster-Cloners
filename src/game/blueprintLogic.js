@@ -180,6 +180,9 @@ export function createInitialGame() {
     hasUnlockedRowDuplicators: false,
     rowDuplicators: 0,
     fortune: createInitialFortuneState(),
+    capybara: {
+      completedDemonstrations: [],
+    },
     trade: {
       established: false,
       rabbitRelations: 0,

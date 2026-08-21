@@ -1,5 +1,6 @@
 import { normalizeTradeState, RABBIT_UNLOCK_IDS } from './tradeLogic.js'
 import { normalizeFortuneState } from './fortuneLogic.js'
+import { normalizeCapybaraState } from './capybaraLogic.js'
 import {
   BLUEPRINT_EXPANSIONS,
   BLUEPRINT_EXPANSION_TRACKS,
@@ -279,6 +280,7 @@ export function normalizeGame(rawGame) {
     hasUnlockedRowDuplicators: rawGame.hasUnlockedRowDuplicators === true,
     rowDuplicators: toNonNegativeInteger(rawGame.rowDuplicators, 0),
     fortune: normalizeFortuneState(rawGame.fortune),
+    capybara: normalizeCapybaraState(rawGame.capybara),
     trade,
     numberNotation:
       rawGame.numberNotation === 'scientific' ? 'scientific' : 'suffix',

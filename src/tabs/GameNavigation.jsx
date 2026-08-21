@@ -16,9 +16,11 @@ export function GameNavigation({
   showInventionsUnlockPrompt,
   inventionsUnlockCount,
   isTradeTabVisible,
+  isAugmentationTabVisible,
   onShowField,
   onOpenInventions,
   onShowTrade,
+  onShowAugmentation,
   onShowStatistics,
   onOpenOptions,
 }) {
@@ -65,7 +67,15 @@ export function GameNavigation({
           Trade
         </button>
       ) : null}
-      <button
+      {isAugmentationTabVisible ? (
+        <button
+          type="button"
+          className={`game-tab ${activeTab === 'augmentation' ? 'game-tab-active' : ''}`}
+          onClick={onShowAugmentation}
+        >
+          Augmentation
+        </button>
+      ) : null}      <button
         type="button"
         className={`game-tab ${activeTab === 'statistics' ? 'game-tab-active' : ''}`}
         onClick={onShowStatistics}

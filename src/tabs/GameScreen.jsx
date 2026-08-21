@@ -5,6 +5,7 @@ import { Inventions } from './Inventions.jsx'
 import { Options } from './Options.jsx'
 import { Statistics } from './Statistics.jsx'
 import { Trade } from './Trade.jsx'
+import { Augmentation } from './Augmentation.jsx'
 import { FormattedNumber } from './ui.jsx'
 
 function FieldScreen({
@@ -44,6 +45,7 @@ export function GameScreen({
   field,
   inventions,
   trade,
+  augmentation,
   statistics,
   options,
 }) {
@@ -59,6 +61,9 @@ export function GameScreen({
     return <Trade {...trade} />
   }
 
+  if (activeTab === 'augmentation') {
+    return <Augmentation {...augmentation} />
+  }
   if (activeTab === 'statistics') {
     return <Statistics {...statistics} />
   }

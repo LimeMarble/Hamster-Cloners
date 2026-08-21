@@ -250,3 +250,127 @@
     justify-self: stretch;
   }
 }
+.capybara-demonstrations {
+  border-color: #c99c55;
+  background: linear-gradient(145deg, #17140e, #0d110d);
+}
+
+.capybara-mark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #c99c55;
+  border-radius: 50%;
+  color: #ffe0a6;
+  font: 800 1.15rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: #2b2112;
+}
+
+.capybara-demonstration-list {
+  display: grid;
+  gap: 10px;
+}
+
+.capybara-demonstration-card {
+  display: grid;
+  gap: 13px;
+  padding: 16px;
+  border: 1px solid #6f5731;
+  background: #100f0b;
+}
+
+.capybara-demonstration-completed {
+  border-color: var(--field-green);
+}
+
+.capybara-demonstration-heading,
+.capybara-demonstration-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.capybara-demonstration-heading h3 {
+  margin: 3px 0 0;
+  color: #ffe0a6;
+}
+
+.capybara-demonstration-heading > strong {
+  color: #c99c55;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.capybara-demonstration-value {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.capybara-demonstration-value strong {
+  color: var(--text-strong);
+}
+
+.capybara-demonstration-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.capybara-demonstration-details div {
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
+}
+
+.capybara-demonstration-details dd {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.capybara-demonstration-details dd strong {
+  color: #ffe0a6;
+}
+
+@media (max-width: 650px) {
+  .capybara-demonstration-heading,
+  .capybara-demonstration-value {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .capybara-demonstration-details {
+    grid-template-columns: 1fr;
+  }
+}
+.trade-relation-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.trade-relation-tab {
+  min-width: 130px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  background: var(--panel-raised);
+}
+
+.trade-relation-tab:hover,
+.trade-relation-tab-active {
+  border-color: #c99c55;
+  color: #ffe0a6;
+  background: #2b2112;
+}
+
+.trade-relation-panel {
+  display: grid;
+  gap: 18px;
+}

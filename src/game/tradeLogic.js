@@ -69,7 +69,8 @@ export const RABBIT_UNLOCKS = Object.freeze([
     id: RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
     name: 'Establish contact with Capybaras',
     cost: 125000,
-    description: 'Records first contact; Capybara contracts will arrive later.',
+    description:
+      'Unlocks Capybara demonstrations of agricultural and technical prowess.',
   },
 ])
 

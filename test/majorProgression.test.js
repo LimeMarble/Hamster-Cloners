@@ -32,6 +32,7 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'crop-carrot',
       'crop-four-leaf-clover',
       'capybara-contact',
+      'capybara-demonstration-introduction',
     ],
   )
 })
@@ -189,6 +190,17 @@ test('major progression advances to the earliest unfinished goal', () => {
       ...game.trade,
       rabbitUnlocks: ['carrot', 'fourLeafClover', 'capybaraContact'],
     },
+  }
+  const demonstrationGoal = getNextMajorProgressionGoal(game)
+  assert.equal(
+    demonstrationGoal.id,
+    'capybara-demonstration-introduction',
+  )
+  assert.equal(demonstrationGoal.target, 5e11)
+
+  game = {
+    ...game,
+    capybara: { completedDemonstrations: ['introduction'] },
   }
   const completedGoal = getNextMajorProgressionGoal(game)
   assert.equal(completedGoal.id, 'all-current-goals-complete')

@@ -511,6 +511,14 @@ test('Root Tunnels track distance, decay effects, and carry Turnips', () => {
       baseYield: 0.5,
       harvestYield: 6.9,
       hamsterEfficiencyBonus: 0,
+      passiveStats: [
+        {
+          id: 'adjacent-crop-effects',
+          label: 'Adjacent Crop effects',
+          format: 'multiplier',
+          value: 2,
+        },
+      ],
       harvestDestroyedByAppleTree: false,
       externalCropBuffMultiplier: null,
       receivedEffects: [
@@ -659,6 +667,14 @@ test('blueprint crop stats expose a crop’s received effects', () => {
       baseYield: 1,
       harvestYield: 1,
       hamsterEfficiencyBonus: 2,
+      passiveStats: [
+        {
+          id: 'hamster-efficiency',
+          label: 'Hamster efficiency',
+          format: 'percentage',
+          value: 2,
+        },
+      ],
       harvestDestroyedByAppleTree: false,
       externalCropBuffMultiplier: null,
       receivedEffects: [
@@ -704,6 +720,31 @@ test('blueprint crop stats combine Turnip and Pumpkin effect stacks', () => {
   ])
 })
 
+test('crop hover stats only show numerical passives relevant to that crop', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['leek', 'sweetPotato', 'sunflower', null],
+  })
+
+  assert.deepEqual(getBlueprintCropStats(blueprint, 0).passiveStats, [])
+  assert.deepEqual(getBlueprintCropStats(blueprint, 1).passiveStats, [
+    {
+      id: 'hamster-efficiency',
+      label: 'Hamster efficiency',
+      format: 'percentage',
+      value: 0.25,
+    },
+  ])
+  assert.deepEqual(getBlueprintCropStats(blueprint, 2).passiveStats, [
+    {
+      id: 'row-duplicator-efficiency',
+      label: 'Row Duplicator efficiency',
+      format: 'percentage',
+      value: 0.2,
+    },
+  ])
+})
 test('Mirror Corn costs 20T Crops to unlock', () => {
   const game = {
     crops: CROP_PERFECTIONS.mirrorCorn.cost,

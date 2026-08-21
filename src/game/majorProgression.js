@@ -20,6 +20,12 @@ import {
   TRADE_ESTABLISHMENT_COST,
   hasRabbitUnlock,
 } from './tradeLogic.js'
+import {
+  CAPYBARA_DEMONSTRATION_IDS,
+  CAPYBARA_DEMONSTRATIONS,
+  getCapybaraBlueprintCropYield,
+  hasCompletedCapybaraDemonstration,
+} from './capybaraLogic.js'
 
 const FIRST_COLUMN_EXPANSION_COST =
   BLUEPRINT_EXPANSIONS.find((expansion) => expansion.id === 'firstColumn')
@@ -253,7 +259,22 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: (game) => game.trade?.rabbitRelations,
     requiresAction: true,
   },
-]
+  {
+    id: 'capybara-demonstration-introduction',
+    category: 'Demonstration',
+    title: 'Capybara Demonstration 0: Introduction',
+    target: CAPYBARA_DEMONSTRATIONS[0].target,
+    unit: 'blueprint Crop yield',
+    description:
+      'Reach 500B intrinsic blueprint Crop yield and complete the demonstration in Trade. Luck may need to be on your side...',
+    isComplete: (game) =>
+      hasCompletedCapybaraDemonstration(
+        game,
+        CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+      ),
+    getCurrent: getCapybaraBlueprintCropYield,
+    requiresAction: true,
+  },]
 
 export function getNextMajorProgressionGoal(game) {
   const goal = MAJOR_PROGRESSION_GOALS.find(

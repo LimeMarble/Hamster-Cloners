@@ -41,6 +41,30 @@ export function SignedPercentage({ value }) {
   )
 }
 
+function CropPassiveStatValue({ stat }) {
+  if (stat.format === 'percentage') {
+    return <SignedPercentage value={stat.value} />
+  }
+
+  if (stat.format === 'crop-yield') {
+    return (
+      <>
+        {stat.value > 0 ? '+' : stat.value < 0 ? '−' : ''}
+        <FormattedNumber
+          value={Math.abs(stat.value)}
+          maximumFractionDigits={2}
+        />{' '}
+        Crops
+      </>
+    )
+  }
+
+  return (
+    <>
+      ×<FormattedNumber value={stat.value} maximumFractionDigits={3} />
+    </>
+  )
+}
 function RootTunnelDistance({ distances }) {
   if (!distances || distances.length === 0) {
     return null
@@ -142,12 +166,14 @@ export function CropHoverInspector({
             )}
           </dd>
         </div>
-        <div>
-          <dt>Hamster efficiency</dt>
-          <dd>
-            <SignedPercentage value={stats.hamsterEfficiencyBonus} />
-          </dd>
-        </div>
+        {stats.passiveStats.map((stat) => (
+          <div key={stat.id}>
+            <dt>{stat.label}</dt>
+            <dd>
+              <CropPassiveStatValue stat={stat} />
+            </dd>
+          </div>
+        ))}
         {stats.externalCropBuffMultiplier !== null ? (
           <div>
             <dt>External effects</dt>
