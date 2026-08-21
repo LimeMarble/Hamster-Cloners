@@ -4,7 +4,6 @@ import {
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
 } from '../game/gameLogic.js'
 import { useBlueprintEditor } from './useBlueprintEditor.js'
-import { useCropUnlockNotifications } from './useCropUnlockNotifications.js'
 import { useGameActions } from './useGameActions.js'
 import { useGameDerivedState } from './useGameDerivedState.js'
 import { useGameState } from './useGameState.js'
@@ -16,9 +15,6 @@ export function useGameController() {
     isEditingBlueprintRef,
   )
   const derived = useGameDerivedState(game)
-  const notifications = useCropUnlockNotifications(
-    derived.visibleUnlockedCropIds,
-  )
   const blueprintEditor = useBlueprintEditor({
     game,
     gameRef,
@@ -43,7 +39,6 @@ export function useGameController() {
     isTradeTabVisible: derived.isTradeTabVisible,
     isAugmentationTabVisible: derived.isAugmentationTabVisible,
     resetBlueprintEditor: blueprintEditor.resetBlueprintEditor,
-    clearCropUnlockNotices: notifications.clearCropUnlockNotices,
   })
   const testing = useTestingCheats({
     game,
@@ -163,7 +158,6 @@ export function useGameController() {
         onClose: actions.onCloseBlueprintMastery,
       },
       unionConfirmation: actions.unionConfirmation,
-      cropUnlockNotice: notifications.cropUnlockNotice,
       testingPanel: testing.testingPanel,
       fortune: {
         fortune: game.fortune,

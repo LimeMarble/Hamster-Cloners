@@ -95,7 +95,6 @@ export function GameOverlays({
   monocropWarning,
   blueprintMastery,
   unionConfirmation,
-  cropUnlockNotice,
   testingPanel,
   fortune,
 }) {
@@ -115,13 +114,6 @@ export function GameOverlays({
           onCancel={unionConfirmation.onCancel}
           onConfirm={unionConfirmation.onConfirm}
         />
-      ) : null}
-      {cropUnlockNotice ? (
-        <aside className="crop-unlock-toast" role="status" aria-live="polite">
-          <span className="crop-unlock-label">New crop unlocked</span>
-          <strong>{cropUnlockNotice.crop}</strong>
-          <span>{cropUnlockNotice.message}</span>
-        </aside>
       ) : null}
     </>
   )

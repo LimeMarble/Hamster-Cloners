@@ -26,7 +26,6 @@ export function useGameActions({
   isTradeTabVisible,
   isAugmentationTabVisible,
   resetBlueprintEditor,
-  clearCropUnlockNotices,
 }) {
   const [activeTab, setActiveTab] = useState('field')
   const [activeInventionsTab, setActiveInventionsTab] = useState('blueprint')
@@ -170,7 +169,6 @@ export function useGameActions({
       setActiveTab('field')
       setActiveInventionsTab('blueprint')
       resetBlueprintEditor()
-      clearCropUnlockNotices()
       setHardResetClicks(0)
       setLastHardResetClickAt(0)
       return

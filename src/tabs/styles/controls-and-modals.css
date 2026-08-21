@@ -122,40 +122,6 @@ dd {
   background: rgb(0 0 0 / 82%);
 }
 
-.crop-unlock-toast {
-  position: fixed;
-  z-index: 30;
-  right: 22px;
-  bottom: 22px;
-  display: grid;
-  gap: 3px;
-  width: min(340px, calc(100vw - 36px));
-  padding: 14px;
-  border: 1px solid var(--field-green);
-  color: var(--text-strong);
-  background: #102417;
-  box-shadow: 0 12px 30px rgb(0 0 0 / 45%);
-}
-
-.crop-unlock-toast strong {
-  color: var(--field-green);
-  font-size: 1rem;
-}
-
-.crop-unlock-toast > span:last-child {
-  color: var(--text-muted);
-  font-size: 0.78rem;
-  line-height: 1.45;
-}
-
-.crop-unlock-label {
-  color: #cbd7bb;
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .clover-bundle {
   position: fixed;
   z-index: 42;
