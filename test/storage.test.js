@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   exportGame,
   importGame,
+  importGameSnapshot,
   normalizeGame,
   SAVE_FORMAT_VERSION,
 } from '../src/game/storage.js'
@@ -324,4 +325,33 @@ test('rejects invalid and unsupported save codes', () => {
     () => importGame(btoa(JSON.stringify({ version: 99, game: {} }))),
     /unsupported version/,
   )
+})
+
+test('save snapshots preserve their simulation timestamp', () => {
+  const saveCode = exportGame(
+    {
+      crops: 12_345,
+      hamsters: 10,
+      blueprintExpansionAxesSwapped: true,
+      blueprint: { cells: ['leek'] },
+    },
+    1_000,
+  )
+  const snapshot = importGameSnapshot(saveCode, 2_000)
+
+  assert.equal(snapshot.savedAt, 1_000)
+  assert.equal(snapshot.game.crops, 12_345)
+})
+
+test('save snapshots clamp future timestamps to the current time', () => {
+  const saveCode = exportGame(
+    {
+      crops: 10,
+      blueprintExpansionAxesSwapped: true,
+      blueprint: { cells: ['leek'] },
+    },
+    5_000,
+  )
+
+  assert.equal(importGameSnapshot(saveCode, 2_000).savedAt, 2_000)
 })

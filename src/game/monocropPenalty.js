@@ -8,7 +8,7 @@ export function getMonocropThreshold(fieldSize, thresholdBonus = 0) {
 
   return (
     Math.min(safeFieldSize * 0.5, safeFieldSize ** 0.75) +
-    1 +
+    1.25 +
     safeThresholdBonus
   )
 }

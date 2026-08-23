@@ -11,15 +11,20 @@ import { useTestingCheats } from './useTestingCheats.js'
 
 export function useGameController() {
   const isEditingBlueprintRef = useRef(false)
-  const { game, gameRef, setGame, updateGame } = useGameState(
-    isEditingBlueprintRef,
-  )
+  const {
+    game,
+    gameRef,
+    setGame,
+    updateGame,
+    setSimulationPaused,
+  } = useGameState(isEditingBlueprintRef)
   const derived = useGameDerivedState(game)
   const blueprintEditor = useBlueprintEditor({
     game,
     gameRef,
     updateGame,
     isEditingBlueprintRef,
+    onEditingChange: setSimulationPaused,
     unlockedCropIds: derived.unlockedCropIds,
     visibleCropIds: derived.visibleCropIds,
     unlockedBlueprintSlotCount: derived.unlockedBlueprintSlotCount,

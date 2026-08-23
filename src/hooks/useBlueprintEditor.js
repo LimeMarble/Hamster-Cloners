@@ -13,6 +13,7 @@ export function useBlueprintEditor({
   gameRef,
   updateGame,
   isEditingBlueprintRef,
+  onEditingChange,
   unlockedCropIds,
   visibleCropIds,
   unlockedBlueprintSlotCount,
@@ -32,6 +33,7 @@ export function useBlueprintEditor({
   const [isMonocropWarningOpen, setIsMonocropWarningOpen] = useState(false)
 
   function setBlueprintEditing(nextIsEditing) {
+    onEditingChange?.(nextIsEditing)
     isEditingBlueprintRef.current = nextIsEditing
     setIsEditingBlueprint(nextIsEditing)
   }

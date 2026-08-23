@@ -1,234 +1,300 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  advanceFortuneState,
-  advanceRabbitContract,
-  getBlueprintSlots,
-  getColumnsProducedForTick,
-  getCropHamsterEfficiencyMultiplier,
-  getFortuneModifiers,
-  getProductionSnapshotForTick,
-  getRowsProducedPerSecond,
-  getRowDuplicatorEffectivenessMultiplier,
-  getRowDuplicatorExternalMultiplier,
-  getUnlockedBlueprintSlotCount,
-  hasRabbitUnlock,
-  RABBIT_UNLOCK_IDS,
+  ACTIVE_SIMULATION_STEP_SECONDS,
+  advanceGameByElapsedTime,
+} from '../game/gameSimulation.js'
+import {
   SIMULATION_TICK_INTERVAL_MS,
   VISUAL_UPDATE_INTERVAL_MS,
-} from '../game/gameLogic.js'
-import {
-  APPLE_TREE_UNLOCK_CROP_COUNT,
-  CROP_PERFECTION_UNLOCK_CROP_COUNT,
-  KNOTWEED_UNLOCK_CROP_COUNT,
-  LENTIL_UNLOCK_CROP_COUNT,
-  ROOT_TUNNEL_UNLOCK_CROP_COUNT,
-  SUNFLOWER_UNLOCK_CROP_COUNT,
-  TURNIP_UNLOCK_CROP_COUNT,
-} from '../game/crops.js'
-import { loadGame, saveGame } from '../game/storage.js'
+} from '../game/gameConfig.js'
+import { loadGameSnapshot, saveGame } from '../game/storage.js'
 import { setActiveNumberNotation } from '../game/numberFormat.js'
 
-export function useGameState(isEditingBlueprintRef) {
-  const [game, setRenderedGame] = useState(() => {
-    const loadedGame = loadGame()
-    setActiveNumberNotation(loadedGame.numberNotation)
-    return loadedGame
-  })
-  const gameRef = useRef(game)
+const SAVE_INTERVAL_MS = 1000
+const ACTIVE_CATCH_UP_LIMIT_SECONDS = 1
 
-  function updateGame(update) {
-    const nextGame = update(gameRef.current)
+function getAdvanceMode(elapsedSeconds) {
+  return elapsedSeconds <= ACTIVE_CATCH_UP_LIMIT_SECONDS
+    ? 'active'
+    : 'catch-up'
+}
+
+export function useGameState(isEditingBlueprintRef) {
+  const [initialSnapshot] = useState(() => {
+    const snapshot = loadGameSnapshot()
+    setActiveNumberNotation(snapshot.game.numberNotation)
+    return snapshot
+  })
+  const [game, setRenderedGame] = useState(initialSnapshot.game)
+  const gameRef = useRef(initialSnapshot.game)
+  const workerRef = useRef(null)
+  const revisionRef = useRef(0)
+  const simulatedAtRef = useRef(initialSnapshot.savedAt)
+
+  function advanceCurrentGameTo(
+    targetTimestamp,
+    isEditingBlueprint = isEditingBlueprintRef.current,
+  ) {
+    const elapsedSeconds = Math.max(
+      0,
+      (targetTimestamp - simulatedAtRef.current) / 1000,
+    )
+
+    if (elapsedSeconds > 0) {
+      gameRef.current = advanceGameByElapsedTime(
+        gameRef.current,
+        elapsedSeconds,
+        {
+          mode: getAdvanceMode(elapsedSeconds),
+          isEditingBlueprint,
+        },
+      )
+      simulatedAtRef.current = targetTimestamp
+    }
+
+    return gameRef.current
+  }
+
+  function commitGame(
+    nextGame,
+    {
+      simulatedAt = Date.now(),
+      isEditingBlueprint = isEditingBlueprintRef.current,
+      visible = !document.hidden,
+    } = {},
+  ) {
+    revisionRef.current += 1
     gameRef.current = nextGame
+    simulatedAtRef.current = simulatedAt
     setActiveNumberNotation(nextGame.numberNotation)
     setRenderedGame(nextGame)
+    workerRef.current?.postMessage({
+      type: 'replace-state',
+      game: nextGame,
+      revision: revisionRef.current,
+      simulatedAt,
+      isEditingBlueprint,
+      visible,
+    })
+  }
+
+  function updateGame(update) {
+    const now = Date.now()
+    const currentGame = advanceCurrentGameTo(now)
+    commitGame(update(currentGame), { simulatedAt: now })
   }
 
   function replaceGame(nextGame) {
-    gameRef.current = nextGame
-    setActiveNumberNotation(nextGame.numberNotation)
-    setRenderedGame(nextGame)
+    commitGame(nextGame, { simulatedAt: Date.now() })
+  }
+
+  function setSimulationPaused(nextIsPaused) {
+    const now = Date.now()
+    const currentGame = advanceCurrentGameTo(
+      now,
+      isEditingBlueprintRef.current,
+    )
+    commitGame(currentGame, {
+      simulatedAt: now,
+      isEditingBlueprint: nextIsPaused,
+    })
   }
 
   useEffect(() => {
-    saveGame(game)
-  }, [game])
-
-  useEffect(() => {
-    let simulationTimeoutId
-    let visualTimeoutId
+    let saveTimeoutId
     let isActive = true
 
-    const runSimulationTick = () => {
-      if (!isActive) {
+    const persistGame = () => {
+      saveGame(gameRef.current, simulatedAtRef.current)
+
+      if (isActive) {
+        saveTimeoutId = window.setTimeout(
+          persistGame,
+          SAVE_INTERVAL_MS,
+        )
+      }
+    }
+    const persistImmediately = () =>
+      saveGame(gameRef.current, simulatedAtRef.current)
+
+    saveTimeoutId = window.setTimeout(persistGame, SAVE_INTERVAL_MS)
+    window.addEventListener('pagehide', persistImmediately)
+
+    return () => {
+      isActive = false
+      window.clearTimeout(saveTimeoutId)
+      window.removeEventListener('pagehide', persistImmediately)
+      persistImmediately()
+    }
+  }, [])
+
+  useEffect(() => {
+    let worker
+    let fallbackTimeoutId
+    let fallbackLastVisualAt = 0
+    let isDisposed = false
+    let isUsingFallback = false
+
+    const publishWorkerSnapshot = (snapshot) => {
+      if (
+        snapshot?.type !== 'snapshot' ||
+        snapshot.revision !== revisionRef.current ||
+        !snapshot.game ||
+        typeof snapshot.game !== 'object'
+      ) {
         return
       }
 
-      const currentGame = gameRef.current
-      const nextPlaytimeSeconds =
-        (Number(currentGame.playtimeSeconds) || 0) +
-        SIMULATION_TICK_INTERVAL_MS / 1000
-      const fortuneModifiers = getFortuneModifiers(currentGame)
+      const snapshotTimestamp = Number(snapshot.simulatedAt)
+      if (!Number.isFinite(snapshotTimestamp)) return
 
-      if (!isEditingBlueprintRef.current) {
-        const productionSnapshotForTick = getProductionSnapshotForTick(
-          currentGame.blueprint,
-          currentGame.farmland,
-          currentGame.completedCropPerfections,
-          SIMULATION_TICK_INTERVAL_MS,
-          currentGame.testingCheats?.cropMultiplierEnabled ? 10 : 1,
-          currentGame.trade?.rabbitContractsCompleted ?? 0,
-          fortuneModifiers,
-        )
-        const productionForTick = productionSnapshotForTick.total
-        const nextCrops = currentGame.crops + productionForTick
-        const rowDuplicatorEffectivenessMultiplier =
-          getRowDuplicatorEffectivenessMultiplier(
-            currentGame.blueprint,
-            currentGame.completedCropPerfections,
-            currentGame.hamsters,
-            fortuneModifiers.passiveEffectMultiplier,
-          )
-        const rowsBuiltPerSecond = currentGame.hasUnlockedRowDuplicators
-          ? getRowsProducedPerSecond(
-              currentGame.rowDuplicators,
-              rowDuplicatorEffectivenessMultiplier,
-              getRowDuplicatorExternalMultiplier(
-                hasRabbitUnlock(
-                  currentGame,
-                  RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
-                )
-                  ? 2
-                  : 1,
-              ),
-            )
-          : 0
-        const columnsProducedForTick = getColumnsProducedForTick(
-          currentGame.hamsters,
-          currentGame.postUnionHamstersHired,
-          getCropHamsterEfficiencyMultiplier(
-            currentGame.blueprint,
-            currentGame.completedCropPerfections,
-            rowsBuiltPerSecond,
-            fortuneModifiers.passiveEffectMultiplier,
-          ),
-          SIMULATION_TICK_INTERVAL_MS,
-          (currentGame.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1) *
-            (hasRabbitUnlock(
-              currentGame,
-              RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY,
-            )
-              ? 3
-              : 1),
-        )
-        const rowsProducedForTick =
-          rowsBuiltPerSecond * (SIMULATION_TICK_INTERVAL_MS / 1000)
-        const hasUnlockedRootTunnel =
-          currentGame.hasUnlockedRootTunnel ||
-          nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT
-        const hasUnlockedSunflower =
-          currentGame.hasUnlockedSunflower ||
-          nextCrops >= SUNFLOWER_UNLOCK_CROP_COUNT
-        const currentBlueprintSlots = getBlueprintSlots(currentGame)
-        const activeBlueprintSlot = Math.min(
-          Math.max(0, Math.floor(Number(currentGame.activeBlueprintSlot) || 0)),
-          currentBlueprintSlots.length - 1,
-        )
-        const requiredBlueprintSlotCount = getUnlockedBlueprintSlotCount({
-          ...currentGame,
-          hasUnlockedRootTunnel,
-          hasUnlockedSunflower,
-        })
-        const nextBlueprintSlots = [...currentBlueprintSlots]
+      gameRef.current = snapshot.game
+      simulatedAtRef.current = snapshotTimestamp
+      setActiveNumberNotation(snapshot.game.numberNotation)
+      setRenderedGame(snapshot.game)
+    }
 
-        while (nextBlueprintSlots.length < requiredBlueprintSlotCount) {
-          nextBlueprintSlots.push(currentGame.blueprint)
-        }
+    const runFallbackTick = () => {
+      if (isDisposed || !isUsingFallback) return
 
-        const nextGame = {
-          ...currentGame,
-          crops: nextCrops,
-          totalCropsMade:
-            (Number(currentGame.totalCropsMade) || 0) +
-            Math.max(0, productionForTick),
-          playtimeSeconds: nextPlaytimeSeconds,
-          hasUnlockedTurnip:
-            currentGame.hasUnlockedTurnip ||
-            nextCrops >= TURNIP_UNLOCK_CROP_COUNT,
-          hasUnlockedAppleTree:
-            currentGame.hasUnlockedAppleTree ||
-            nextCrops >= APPLE_TREE_UNLOCK_CROP_COUNT,
-          hasUnlockedLentil:
-            currentGame.hasUnlockedLentil ||
-            nextCrops >= LENTIL_UNLOCK_CROP_COUNT,
-          hasUnlockedKnotweed:
-            currentGame.hasUnlockedKnotweed ||
-            nextCrops >= KNOTWEED_UNLOCK_CROP_COUNT,
-          hasUnlockedRootTunnel,
-          hasUnlockedSunflower,
-          hasUnlockedCropPerfection:
-            currentGame.hasUnlockedCropPerfection ||
-            nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
-          trade: advanceRabbitContract(
-            currentGame,
-            productionSnapshotForTick.byCrop,
-          ),
-          farmland: {
-            ...currentGame.farmland,
-            columns: currentGame.farmland.columns + columnsProducedForTick,
-            rows: currentGame.farmland.rows + rowsProducedForTick,
-          },
-          blueprintSlots: nextBlueprintSlots,
-          activeBlueprintSlot,
-        }
-        gameRef.current = advanceFortuneState(
-          nextGame,
-          SIMULATION_TICK_INTERVAL_MS / 1000,
-        )
-      } else {
-        gameRef.current = advanceFortuneState(
+      const now = Date.now()
+      const elapsedSeconds = Math.max(
+        0,
+        (now - simulatedAtRef.current) / 1000,
+      )
+
+      if (elapsedSeconds > 0) {
+        gameRef.current = advanceGameByElapsedTime(
+          gameRef.current,
+          elapsedSeconds,
           {
-            ...currentGame,
-            playtimeSeconds: nextPlaytimeSeconds,
+            mode: getAdvanceMode(elapsedSeconds),
+            isEditingBlueprint: isEditingBlueprintRef.current,
           },
-          SIMULATION_TICK_INTERVAL_MS / 1000,
         )
+        simulatedAtRef.current = now
       }
 
-      simulationTimeoutId = window.setTimeout(
-        runSimulationTick,
+      if (now - fallbackLastVisualAt >= VISUAL_UPDATE_INTERVAL_MS) {
+        fallbackLastVisualAt = now
+        setActiveNumberNotation(gameRef.current.numberNotation)
+        setRenderedGame(gameRef.current)
+      }
+
+      fallbackTimeoutId = window.setTimeout(
+        runFallbackTick,
         SIMULATION_TICK_INTERVAL_MS,
       )
     }
 
-    const publishVisualUpdate = () => {
-      if (!isActive) {
+    const startFallback = () => {
+      if (isUsingFallback || isDisposed) return
+
+      isUsingFallback = true
+      workerRef.current = null
+      fallbackTimeoutId = window.setTimeout(
+        runFallbackTick,
+        SIMULATION_TICK_INTERVAL_MS,
+      )
+    }
+
+    const handleWorkerError = (event) => {
+      event.preventDefault()
+      worker?.terminate()
+      worker = null
+      startFallback()
+    }
+
+    try {
+      worker = new Worker(
+        new URL('../workers/gameSimulation.worker.js', import.meta.url),
+        { type: 'module' },
+      )
+      workerRef.current = worker
+      worker.addEventListener('message', (event) =>
+        publishWorkerSnapshot(event.data),
+      )
+      worker.addEventListener('error', handleWorkerError)
+      worker.postMessage({
+        type: 'initialize',
+        game: gameRef.current,
+        revision: revisionRef.current,
+        simulatedAt: simulatedAtRef.current,
+        now: Date.now(),
+        isEditingBlueprint: isEditingBlueprintRef.current,
+        visible: !document.hidden,
+      })
+    } catch {
+      startFallback()
+    }
+
+    const handleVisibilityChange = () => {
+      const now = Date.now()
+
+      if (document.hidden) {
+        const elapsedSeconds = Math.max(
+          0,
+          (now - simulatedAtRef.current) / 1000,
+        )
+        if (elapsedSeconds > 0) {
+          gameRef.current = advanceGameByElapsedTime(
+            gameRef.current,
+            elapsedSeconds,
+            {
+              mode: getAdvanceMode(elapsedSeconds),
+              isEditingBlueprint: isEditingBlueprintRef.current,
+            },
+          )
+          simulatedAtRef.current = now
+        }
+
+        revisionRef.current += 1
+        setRenderedGame(gameRef.current)
+        workerRef.current?.postMessage({
+          type: 'replace-state',
+          game: gameRef.current,
+          revision: revisionRef.current,
+          simulatedAt: now,
+          isEditingBlueprint: isEditingBlueprintRef.current,
+          visible: false,
+        })
+        saveGame(gameRef.current, now)
         return
       }
 
-      setRenderedGame((currentGame) =>
-        currentGame === gameRef.current ? currentGame : gameRef.current,
-      )
-      visualTimeoutId = window.setTimeout(
-        publishVisualUpdate,
-        VISUAL_UPDATE_INTERVAL_MS,
-      )
+      workerRef.current?.postMessage({
+        type: 'set-visibility',
+        now,
+        visible: true,
+      })
     }
 
-    simulationTimeoutId = window.setTimeout(
-      runSimulationTick,
-      SIMULATION_TICK_INTERVAL_MS,
-    )
-    visualTimeoutId = window.setTimeout(
-      publishVisualUpdate,
-      VISUAL_UPDATE_INTERVAL_MS,
+    document.addEventListener(
+      'visibilitychange',
+      handleVisibilityChange,
     )
 
     return () => {
-      isActive = false
-      window.clearTimeout(simulationTimeoutId)
-      window.clearTimeout(visualTimeoutId)
-    }
-  }, [gameRef, isEditingBlueprintRef])
+      isDisposed = true
+      document.removeEventListener(
+        'visibilitychange',
+        handleVisibilityChange,
+      )
+      window.clearTimeout(fallbackTimeoutId)
+      worker?.terminate()
 
-  return { game, gameRef, setGame: replaceGame, updateGame }
+      if (workerRef.current === worker) {
+        workerRef.current = null
+      }
+    }
+  }, [isEditingBlueprintRef])
+
+  return {
+    game,
+    gameRef,
+    setGame: replaceGame,
+    updateGame,
+    setSimulationPaused,
+    activeSimulationStepSeconds: ACTIVE_SIMULATION_STEP_SECONDS,
+  }
 }

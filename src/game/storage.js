@@ -308,23 +308,15 @@ export function normalizeGame(rawGame) {
   }
 }
 
-export function exportGame(game) {
-  return encodeBase64(
-    JSON.stringify({
-      version: SAVE_FORMAT_VERSION,
-      game,
-    }),
-  )
-}
-
-export function importGame(saveCode) {
+function parseSavePayload(saveCode) {
   let payload
 
   try {
     payload = JSON.parse(decodeBase64(saveCode))
   } catch (error) {
     throw new Error(
-      error instanceof Error && error.message === 'The save code is not valid Base64.'
+      error instanceof Error &&
+        error.message === 'The save code is not valid Base64.'
         ? error.message
         : 'The save code is invalid or corrupted.',
       { cause: error },
@@ -341,10 +333,39 @@ export function importGame(saveCode) {
     throw new Error('This save code is from an unsupported version of the game.')
   }
 
-  return normalizeGame(payload.game)
+  return payload
 }
 
-export function loadGame() {
+export function exportGame(game, savedAt = Date.now()) {
+  return encodeBase64(
+    JSON.stringify({
+      version: SAVE_FORMAT_VERSION,
+      savedAt: toNonNegativeNumber(savedAt, Date.now()),
+      game,
+    }),
+  )
+}
+
+export function importGameSnapshot(saveCode, currentTime = Date.now()) {
+  const payload = parseSavePayload(saveCode)
+  const now = toNonNegativeNumber(currentTime, Date.now())
+
+  return {
+    game: normalizeGame(payload.game),
+    savedAt: Math.min(
+      toNonNegativeNumber(payload.savedAt, now),
+      now,
+    ),
+  }
+}
+
+export function importGame(saveCode) {
+  return importGameSnapshot(saveCode).game
+}
+
+export function loadGameSnapshot() {
+  const now = Date.now()
+
   try {
     const rawSave =
       window.localStorage.getItem(SAVE_KEY) ??
@@ -353,25 +374,29 @@ export function loadGame() {
         : null)
 
     if (!rawSave) {
-      return createInitialGame()
+      return { game: createInitialGame(), savedAt: now }
     }
 
     try {
-      return importGame(rawSave)
+      return importGameSnapshot(rawSave, now)
     } catch {
       // Migrate pre-save-code JSON saves without taking away existing progress.
       const migratedGame = normalizeGame(JSON.parse(rawSave))
-      saveGame(migratedGame)
-      return migratedGame
+      saveGame(migratedGame, now)
+      return { game: migratedGame, savedAt: now }
     }
   } catch {
-    return createInitialGame()
+    return { game: createInitialGame(), savedAt: now }
   }
 }
 
-export function saveGame(game) {
+export function loadGame() {
+  return loadGameSnapshot().game
+}
+
+export function saveGame(game, savedAt = Date.now()) {
   try {
-    window.localStorage.setItem(SAVE_KEY, exportGame(game))
+    window.localStorage.setItem(SAVE_KEY, exportGame(game, savedAt))
   } catch {
     // The game remains playable if storage is unavailable or full.
   }

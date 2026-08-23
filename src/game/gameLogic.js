@@ -4,6 +4,7 @@ export * from './purchaseLogic.js'
 export * from './majorProgression.js'
 export * from './tradeLogic.js'
 export * from './fortuneLogic.js'
+export * from './gameSimulation.js'
 export * from './capybaraLogic.js'
 export {
   getAdjacentCropConnections,
