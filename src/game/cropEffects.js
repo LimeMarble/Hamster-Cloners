@@ -709,7 +709,6 @@ export function getGlobalHarvestEffects(
       getMonocropCropCount(blueprint, crop),
     ]),
   )
-  const hasAppleSapling = blueprint.cells.includes('appleTree')
   const globalPassiveEffectMultiplier =
     getGlobalPassiveEffectMultiplier(
       blueprint,
@@ -721,16 +720,13 @@ export function getGlobalHarvestEffects(
     const definition = CROP_DEFINITIONS[crop]
     const globalHarvestMultiplier =
       crop === 'carrot'
-        ? hasAppleSapling
-          ? undefined
-          :
-              1 +
-              getCarrotContractBonus(
-                definition,
-                'globalHarvestBonusAtZero',
-                'globalHarvestBonusPerContract',
-                rabbitContractsCompleted,
-              )
+        ? 1 +
+          getCarrotContractBonus(
+            definition,
+            'globalHarvestBonusAtZero',
+            'globalHarvestBonusPerContract',
+            rabbitContractsCompleted,
+          )
         : definition?.globalHarvestMultiplier
 
     if (globalHarvestMultiplier === undefined) {
@@ -829,9 +825,6 @@ export function getRabbitRelationsEffects(
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
 ) {
-  if (blueprint.cells.includes('appleTree')) {
-    return []
-  }
 
   const sourceCropId = 'carrot'
   const definition = CROP_DEFINITIONS[sourceCropId]

@@ -107,7 +107,7 @@ test('crop-specific production advances and completes one selected Rabbit contra
   assert.equal(claimedGame.trade.rabbitContracts.length, RABBIT_ACTIVE_CONTRACT_COUNT)
 })
 
-test('Carrot Rabbit relation bonus stays at four percent regardless of completed contracts', () => {
+test('Carrot Rabbit relation bonus stays active alongside Apple Saplings', () => {
   const carrotBlueprint = createBlueprint({
     rows: 1,
     columns: 1,
@@ -121,10 +121,10 @@ test('Carrot Rabbit relation bonus stays at four percent regardless of completed
 
   assert.equal(getRabbitRelationsMultiplier(carrotBlueprint), 1.04)
   assert.equal(getRabbitRelationsMultiplier(carrotBlueprint), 1.04)
-  assert.equal(getRabbitRelationsMultiplier(appleBlueprint), 1)
+  assert.equal(getRabbitRelationsMultiplier(appleBlueprint), 1.04)
 })
 
-test('Carrot boosts claimed relations and Apple Saplings disable it', () => {
+test('Carrot boosts claimed relations alongside Apple Saplings', () => {
   const carrotBlueprint = createBlueprint({
     rows: 1,
     columns: 1,
@@ -167,7 +167,7 @@ test('Carrot boosts claimed relations and Apple Saplings disable it', () => {
   )
 
   assert.equal(boostedClaim.trade.rabbitRelations, 104)
-  assert.equal(appleClaim.trade.rabbitRelations, 100)
+  assert.equal(appleClaim.trade.rabbitRelations, 104)
 })
 
 test('Carrot high-harvest bounty counts qualifying crop types once each', () => {
@@ -182,6 +182,7 @@ test('Carrot high-harvest bounty counts qualifying crop types once each', () => 
       'turnip',
       'lentil',
       'sunflower',
+      'appleTree',
       ...Array(15).fill('carrot'),
     ],
   })
@@ -202,7 +203,7 @@ test('Carrot high-harvest bounty counts qualifying crop types once each', () => 
   assert.equal(effect.qualifyingCropTypeCount, 7)
   assert.ok(Math.abs(effect.multiplier - 5.2) < 1e-12)
 })
-test('Carrot harvest stacks multiplicatively with Lentil and is disabled by Apple Saplings', () => {
+test('Carrot harvest stacks multiplicatively and stays active alongside Apple Saplings', () => {
   const farmland = { rows: 1, columns: 1, floors: 1, farms: 1, otherMultiplier: 1 }
   const carrotAndLentil = createBlueprint({
     rows: 1,
@@ -230,7 +231,7 @@ test('Carrot harvest stacks multiplicatively with Lentil and is disabled by Appl
   )
 
   assert.ok(Math.abs(stackedProduction.total - (25 + 40) * 1.25 * 1.1) < 1e-12)
-  assert.equal(appleProduction.total, 10)
+  assert.ok(Math.abs(appleProduction.total - 10 * 1.192) < 1e-12)
 })
 
 test('unlocked Carrot contracts give double Rabbit relations', () => {

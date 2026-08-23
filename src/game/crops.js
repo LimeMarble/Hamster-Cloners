@@ -160,7 +160,7 @@ export const CROP_DEFINITIONS = {
     highHarvestGlobalHarvestBonus: 0.04,
     maximumRabbitContractBonus: 1,
     effectDescription:
-      '40 Crops per slot · +4% Rabbit relations · +10% all Crop harvest, plus +0.4% per completed Rabbit contract (caps at +100%) · +4% all Crop harvest per crop type with more than 10,000 total harvest · inactive while an Apple Sapling is planted',
+      '40 Crops per slot · +4% Rabbit relations · +10% all Crop harvest, plus +0.4% per completed Rabbit contract (caps at +100%) · +4% all Crop harvest per crop type with more than 10,000 total harvest',
     unlockDescription: 'Unlock with 500 Rabbit relations',
   },
   fourLeafClover: {

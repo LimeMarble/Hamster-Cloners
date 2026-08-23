@@ -76,7 +76,7 @@ test('Demonstration 0 requires Capybara contact and 500B blueprint yield', () =>
   const noContactGame = createInitialGame()
   const contactGame = createContactGame()
 
-  assert.equal(target, 5e11)
+  assert.equal(target, 2e13)
   assert.equal(
     completeCapybaraDemonstration(
       noContactGame,

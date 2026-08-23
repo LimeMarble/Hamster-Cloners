@@ -192,7 +192,7 @@ test('major progression advances to the earliest unfinished goal', () => {
     demonstrationGoal.id,
     'capybara-demonstration-introduction',
   )
-  assert.equal(demonstrationGoal.target, 5e11)
+  assert.equal(demonstrationGoal.target, 2e13)
 
   game = {
     ...game,

@@ -12,7 +12,7 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     number: 0,
     name: 'Introduction',
     goal: 'Have a field blueprint with a Crop yield of at least 500B Crops.',
-    target: 5e11,
+    target: 2e13,
     unit: 'blueprint Crop yield',
     restrictions: [],
     rewardName: 'Seed Augmentation',

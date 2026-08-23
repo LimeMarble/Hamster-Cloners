@@ -183,9 +183,6 @@ export function getCarrotHighHarvestEffect(
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
 ) {
-  if (blueprint.cells.includes('appleTree')) {
-    return { qualifyingCropTypeCount: 0, multiplier: 1 }
-  }
 
   const definition = CROP_DEFINITIONS.carrot
   const carrotCount = getMonocropCropCount(blueprint, 'carrot')
