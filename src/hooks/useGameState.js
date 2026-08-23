@@ -26,6 +26,7 @@ export function useGameState(isEditingBlueprintRef) {
     return snapshot
   })
   const [game, setRenderedGame] = useState(initialSnapshot.game)
+  const [backgroundCatchUp, setBackgroundCatchUp] = useState(null)
   const gameRef = useRef(initialSnapshot.game)
   const workerRef = useRef(null)
   const revisionRef = useRef(0)
@@ -68,6 +69,7 @@ export function useGameState(isEditingBlueprintRef) {
     simulatedAtRef.current = simulatedAt
     setActiveNumberNotation(nextGame.numberNotation)
     setRenderedGame(nextGame)
+    setBackgroundCatchUp(null)
     workerRef.current?.postMessage({
       type: 'replace-state',
       game: nextGame,
@@ -98,6 +100,14 @@ export function useGameState(isEditingBlueprintRef) {
       simulatedAt: now,
       isEditingBlueprint: nextIsPaused,
     })
+  }
+
+  function compressBackgroundCatchUp() {
+    workerRef.current?.postMessage({ type: 'compress-catch-up' })
+  }
+
+  function skipBackgroundCatchUp() {
+    workerRef.current?.postMessage({ type: 'skip-catch-up' })
   }
 
   useEffect(() => {
@@ -135,23 +145,53 @@ export function useGameState(isEditingBlueprintRef) {
     let isDisposed = false
     let isUsingFallback = false
 
-    const publishWorkerSnapshot = (snapshot) => {
+    const publishWorkerMessage = (message) => {
+      if (!message || message.revision !== revisionRef.current) return
+
+      if (message.type === 'catch-up-progress') {
+        setBackgroundCatchUp({
+          ticksRemaining: Math.max(
+            0,
+            Math.ceil(Number(message.ticksRemaining) || 0),
+          ),
+          initialTicks: Math.max(
+            1,
+            Math.ceil(Number(message.initialTicks) || 1),
+          ),
+          remainingSeconds: Math.max(
+            0,
+            Number(message.remainingSeconds) || 0,
+          ),
+          totalSeconds: Math.max(0, Number(message.totalSeconds) || 0),
+          compressionMultiplier: Math.max(
+            1,
+            Number(message.compressionMultiplier) || 1,
+          ),
+          strategy: message.strategy === 'skipped' ? 'skipped' : 'compressed',
+        })
+        return
+      }
+
+      if (message.type === 'catch-up-complete') {
+        setBackgroundCatchUp(null)
+        return
+      }
+
       if (
-        snapshot?.type !== 'snapshot' ||
-        snapshot.revision !== revisionRef.current ||
-        !snapshot.game ||
-        typeof snapshot.game !== 'object'
+        message.type !== 'snapshot' ||
+        !message.game ||
+        typeof message.game !== 'object'
       ) {
         return
       }
 
-      const snapshotTimestamp = Number(snapshot.simulatedAt)
+      const snapshotTimestamp = Number(message.simulatedAt)
       if (!Number.isFinite(snapshotTimestamp)) return
 
-      gameRef.current = snapshot.game
+      gameRef.current = message.game
       simulatedAtRef.current = snapshotTimestamp
-      setActiveNumberNotation(snapshot.game.numberNotation)
-      setRenderedGame(snapshot.game)
+      setActiveNumberNotation(message.game.numberNotation)
+      setRenderedGame(message.game)
     }
 
     const runFallbackTick = () => {
@@ -202,6 +242,7 @@ export function useGameState(isEditingBlueprintRef) {
       event.preventDefault()
       worker?.terminate()
       worker = null
+      setBackgroundCatchUp(null)
       startFallback()
     }
 
@@ -212,7 +253,7 @@ export function useGameState(isEditingBlueprintRef) {
       )
       workerRef.current = worker
       worker.addEventListener('message', (event) =>
-        publishWorkerSnapshot(event.data),
+        publishWorkerMessage(event.data),
       )
       worker.addEventListener('error', handleWorkerError)
       worker.postMessage({
@@ -232,6 +273,16 @@ export function useGameState(isEditingBlueprintRef) {
       const now = Date.now()
 
       if (document.hidden) {
+        if (workerRef.current) {
+          workerRef.current.postMessage({
+            type: 'set-visibility',
+            now,
+            visible: false,
+          })
+          saveGame(gameRef.current, simulatedAtRef.current)
+          return
+        }
+
         const elapsedSeconds = Math.max(
           0,
           (now - simulatedAtRef.current) / 1000,
@@ -248,16 +299,7 @@ export function useGameState(isEditingBlueprintRef) {
           simulatedAtRef.current = now
         }
 
-        revisionRef.current += 1
         setRenderedGame(gameRef.current)
-        workerRef.current?.postMessage({
-          type: 'replace-state',
-          game: gameRef.current,
-          revision: revisionRef.current,
-          simulatedAt: now,
-          isEditingBlueprint: isEditingBlueprintRef.current,
-          visible: false,
-        })
         saveGame(gameRef.current, now)
         return
       }
@@ -295,6 +337,9 @@ export function useGameState(isEditingBlueprintRef) {
     setGame: replaceGame,
     updateGame,
     setSimulationPaused,
+    backgroundCatchUp,
+    compressBackgroundCatchUp,
+    skipBackgroundCatchUp,
     activeSimulationStepSeconds: ACTIVE_SIMULATION_STEP_SECONDS,
   }
 }

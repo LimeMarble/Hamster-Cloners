@@ -17,6 +17,9 @@ export function useGameController() {
     setGame,
     updateGame,
     setSimulationPaused,
+    backgroundCatchUp,
+    compressBackgroundCatchUp,
+    skipBackgroundCatchUp,
   } = useGameState(isEditingBlueprintRef)
   const derived = useGameDerivedState(game)
   const blueprintEditor = useBlueprintEditor({
@@ -154,6 +157,13 @@ export function useGameController() {
       },
     },
     overlays: {
+      backgroundCatchUp: backgroundCatchUp
+        ? {
+            ...backgroundCatchUp,
+            onCompress: compressBackgroundCatchUp,
+            onSkip: skipBackgroundCatchUp,
+          }
+        : null,
       blueprintEditor: blueprintEditor.blueprintEditor,
       monocropWarning: blueprintEditor.monocropWarning,
       blueprintMastery: {

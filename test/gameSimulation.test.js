@@ -7,7 +7,9 @@ import {
   createInitialGame,
   getSimulationStepCount,
   getSimulationStepSeconds,
-  MAX_CATCH_UP_STEPS,
+  CATCH_UP_COMPRESSION_FACTOR,
+  CATCH_UP_SPEED_FACTOR,
+  SKIPPED_CATCH_UP_STEPS,
 } from '../src/game/gameLogic.js'
 
 test('active simulation uses no more than one-sixtieth second per step', () => {
@@ -16,17 +18,23 @@ test('active simulation uses no more than one-sixtieth second per step', () => {
   assert.equal(getSimulationStepCount(1, 'active'), 60)
 })
 
-test('long background catch-up stays bounded', () => {
+test('catch-up defaults to fifteen-times compressed ticks', () => {
   const oneDayInSeconds = 24 * 60 * 60
 
-  assert.equal(
-    getSimulationStepCount(oneDayInSeconds, 'catch-up'),
-    MAX_CATCH_UP_STEPS,
-  )
+  assert.equal(CATCH_UP_COMPRESSION_FACTOR, 15)
   assert.equal(
     getSimulationStepSeconds(oneDayInSeconds, 'catch-up'),
-    oneDayInSeconds / MAX_CATCH_UP_STEPS,
+    ACTIVE_SIMULATION_STEP_SECONDS * CATCH_UP_COMPRESSION_FACTOR,
   )
+  assert.equal(
+    getSimulationStepCount(oneDayInSeconds, 'catch-up'),
+    (oneDayInSeconds * 60) / CATCH_UP_COMPRESSION_FACTOR,
+  )
+})
+
+test('catch-up controls use multiplicative speed and a 1,000-tick skip', () => {
+  assert.equal(CATCH_UP_SPEED_FACTOR, 2)
+  assert.equal(SKIPPED_CATCH_UP_STEPS, 1000)
 })
 
 test('elapsed active time matches sixty fixed simulation steps', () => {

@@ -29,7 +29,9 @@ import {
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
   SIMULATION_TICK_INTERVAL_MS / 1000
-export const MAX_CATCH_UP_STEPS = 3600
+export const CATCH_UP_COMPRESSION_FACTOR = 15
+export const CATCH_UP_SPEED_FACTOR = 2
+export const SKIPPED_CATCH_UP_STEPS = 1000
 
 function normalizeElapsedSeconds(value) {
   const elapsedSeconds = Number(value)
@@ -48,10 +50,7 @@ export function getSimulationStepSeconds(
     return ACTIVE_SIMULATION_STEP_SECONDS
   }
 
-  return Math.max(
-    ACTIVE_SIMULATION_STEP_SECONDS,
-    safeElapsedSeconds / MAX_CATCH_UP_STEPS,
-  )
+  return ACTIVE_SIMULATION_STEP_SECONDS * CATCH_UP_COMPRESSION_FACTOR
 }
 
 export function getSimulationStepCount(elapsedSeconds, mode = 'catch-up') {
@@ -225,12 +224,30 @@ export function advanceGameByElapsedTime(
   const safeElapsedSeconds = normalizeElapsedSeconds(elapsedSeconds)
   const stepCount = getSimulationStepCount(safeElapsedSeconds, mode)
 
-  if (stepCount === 0) return game
+  return advanceGameByStepCount(game, safeElapsedSeconds, stepCount, {
+    isEditingBlueprint,
+    random,
+  })
+}
 
-  const secondsPerStep = safeElapsedSeconds / stepCount
+export function advanceGameByStepCount(
+  game,
+  elapsedSeconds,
+  stepCount,
+  {
+    isEditingBlueprint = false,
+    random = Math.random,
+  } = {},
+) {
+  const safeElapsedSeconds = normalizeElapsedSeconds(elapsedSeconds)
+  const safeStepCount = Math.max(0, Math.floor(Number(stepCount) || 0))
+
+  if (safeElapsedSeconds === 0 || safeStepCount === 0) return game
+
+  const secondsPerStep = safeElapsedSeconds / safeStepCount
   let nextGame = game
 
-  for (let stepIndex = 0; stepIndex < stepCount; stepIndex += 1) {
+  for (let stepIndex = 0; stepIndex < safeStepCount; stepIndex += 1) {
     nextGame = advanceGameSimulationStep(nextGame, secondsPerStep, {
       isEditingBlueprint,
       random,

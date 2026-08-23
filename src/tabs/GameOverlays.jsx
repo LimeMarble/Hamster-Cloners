@@ -1,3 +1,4 @@
+import { BackgroundCatchUpOverlay } from './BackgroundCatchUpOverlay.jsx'
 import { BlueprintEdit } from './BlueprintEdit.jsx'
 import { CloverFortune } from './CloverFortune.jsx'
 import { TestingPanel } from './TestingPanel.jsx'
@@ -91,6 +92,7 @@ function UnionConfirmation({ onCancel, onConfirm }) {
 }
 
 export function GameOverlays({
+  backgroundCatchUp,
   blueprintEditor,
   monocropWarning,
   blueprintMastery,
@@ -114,6 +116,9 @@ export function GameOverlays({
           onCancel={unionConfirmation.onCancel}
           onConfirm={unionConfirmation.onConfirm}
         />
+      ) : null}
+      {backgroundCatchUp ? (
+        <BackgroundCatchUpOverlay {...backgroundCatchUp} />
       ) : null}
     </>
   )
