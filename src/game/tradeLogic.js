@@ -137,6 +137,7 @@ export function getRabbitContractCropIds(game) {
     game.rowDuplicators,
     hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CARROT),
     hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER),
+    game.hasUnlockedWheat,
   ).filter(isRabbitContractCropEligible)
 }
 

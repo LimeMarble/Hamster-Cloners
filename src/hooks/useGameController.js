@@ -134,13 +134,11 @@ export function useGameController() {
         canUnlockEnrichingLeek: derived.canUnlockEnrichingLeek,
         canUnlockMirrorCorn: derived.canUnlockMirrorCorn,
         canUnlockLeechingGourd: derived.canUnlockLeechingGourd,
-        canUnlockSweetPotato: derived.canUnlockSweetPotato,
         canUnlockSplitweed: derived.canUnlockSplitweed,
         canUnlockRows: derived.canUnlockRows,
         hasEnrichingLeek: derived.hasEnrichingLeek,
         hasMirrorCorn: derived.hasMirrorCorn,
         hasLeechingGourd: derived.hasLeechingGourd,
-        hasSweetPotato: derived.hasSweetPotato,
         hasSplitweed: derived.hasSplitweed,
         pendingBlueprintExpansion: actions.pendingBlueprintExpansion,
         isRowDuplicatorUnlockPending:

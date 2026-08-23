@@ -18,6 +18,7 @@ import {
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
+  WHEAT_UNLOCK_CROP_COUNT,
 } from './crops.js'
 import { advanceFortuneState, getFortuneModifiers } from './fortuneLogic.js'
 import { SIMULATION_TICK_INTERVAL_MS } from './gameConfig.js'
@@ -148,6 +149,10 @@ export function advanceGameSimulationStep(
   const hasUnlockedRootTunnel =
     currentGame.hasUnlockedRootTunnel ||
     nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT
+  const hasUnlockedWheat =
+    currentGame.hasUnlockedWheat ||
+    (currentGame.hasUnlockedRowDuplicators === true &&
+      nextCrops >= WHEAT_UNLOCK_CROP_COUNT)
   const hasUnlockedSunflower =
     currentGame.hasUnlockedSunflower ||
     nextCrops >= SUNFLOWER_UNLOCK_CROP_COUNT
@@ -186,6 +191,7 @@ export function advanceGameSimulationStep(
     hasUnlockedKnotweed:
       currentGame.hasUnlockedKnotweed ||
       nextCrops >= KNOTWEED_UNLOCK_CROP_COUNT,
+    hasUnlockedWheat,
     hasUnlockedRootTunnel,
     hasUnlockedSunflower,
     hasUnlockedCropPerfection:

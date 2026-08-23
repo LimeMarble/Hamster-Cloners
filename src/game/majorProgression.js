@@ -8,6 +8,7 @@ import {
   SUNFLOWER_UNLOCK_CROP_COUNT,
   SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
+  WHEAT_UNLOCK_CROP_COUNT,
 } from './crops.js'
 import {
   BLUEPRINT_EXPANSIONS,
@@ -189,7 +190,14 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: (game) => game.crops,
     requiresAction: true,
   },
-  createPerfectionGoal('sweetPotato'),
+  createCropGoal({
+    id: 'crop-wheat',
+    title: 'Unlock Wheat',
+    target: WHEAT_UNLOCK_CROP_COUNT,
+    description:
+      'After unlocking Row Duplicators, reach the Crop threshold to permanently unlock Wheat.',
+    isComplete: (game) => game.hasUnlockedWheat === true,
+  }),
   createPerfectionGoal('splitweed'),
   createCropGoal({
     id: 'crop-sunflower',

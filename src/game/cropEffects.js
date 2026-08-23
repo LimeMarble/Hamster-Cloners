@@ -498,11 +498,8 @@ export function getGlobalHamsterEfficiencyEffects(
   rowsProducedPerSecond = 0,
   passiveEffectMultiplier = 1,
 ) {
-  const sourceCropId = 'sweetPotato'
-  const perfection = getCropPerfection(
-    sourceCropId,
-    completedCropPerfections,
-  )
+  const sourceCropId = 'wheat'
+  const definition = CROP_DEFINITIONS[sourceCropId]
   const count = getPlantedCropCount(blueprint, sourceCropId)
   const safeRowsProducedPerSecond = Math.max(
     0,
@@ -510,7 +507,7 @@ export function getGlobalHamsterEfficiencyEffects(
   )
 
   if (
-    perfection?.hasUnboostableRowsPerSecondMultiplier !== true ||
+    definition?.hasUnboostableRowsPerSecondMultiplier !== true ||
     count === 0 ||
     safeRowsProducedPerSecond <= 1
   ) {

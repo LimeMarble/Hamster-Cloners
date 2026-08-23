@@ -260,6 +260,12 @@
   background: #25201b;
 }
 
+.plot-wheat,
+.editor-plot-wheat {
+  border-color: #d6b44f;
+  background: #433715;
+}
+
 .plot-sunflower,
 .editor-plot-sunflower {
   border-color: #e4bf42;
@@ -348,6 +354,11 @@
 .plot-rootTunnel span,
 .editor-plot-rootTunnel span {
   color: #b7a996;
+}
+
+.plot-wheat span,
+.editor-plot-wheat span {
+  color: #f2d56c;
 }
 
 .plot-sunflower span,

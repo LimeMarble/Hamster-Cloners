@@ -4,6 +4,7 @@ export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
 export const APPLE_TREE_UNLOCK_CROP_COUNT = 1e15
 export const LENTIL_UNLOCK_CROP_COUNT = 8e16
 export const KNOTWEED_UNLOCK_CROP_COUNT = 2e19
+export const WHEAT_UNLOCK_CROP_COUNT = 1.25e32
 export const SUNFLOWER_UNLOCK_CROP_COUNT = 1.42e44
 export const CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT = 500
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
@@ -99,6 +100,17 @@ export const CROP_DEFINITIONS = {
     isHarmful: true,
     effectDescription: '0 Crops per slot · −10 adjacent Crop harvest',
     unlockDescription: 'Unlocks at 20 Qn Crops',
+  },
+  wheat: {
+    name: 'Wheat',
+    icon: '🌾',
+    baseYield: 100,
+    hamsterEfficiencyBonus: 0,
+    hasUnboostableRowsPerSecondMultiplier: true,
+    canBeMirrorCornTarget: false,
+    effectDescription:
+      '100 Crops per slot · globally multiplies Hamster Efficiency by 1 + Wheat × log10(Rows/sec) · global multiplier cannot be boosted',
+    unlockDescription: 'Unlocks at 1.25e32 Crops after Row Duplicators',
   },
   rootTunnel: {
     name: 'Root Tunnel',
@@ -235,7 +247,7 @@ export const CROP_PERFECTIONS = {
     hamsterEfficiencyBonus: 0,
     doesNotHarvest: true,
     effectDescription:
-      'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · only one can be planted per blueprint',
+      'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · Only one can be planted per blueprint (allegedly this would ruin its "luck")',
     unlockDescription: 'Unlock with 77,777 Rabbit relations',
   },
   leechingGourd: {
@@ -245,7 +257,7 @@ export const CROP_PERFECTIONS = {
     cost: 2e19,
     baseEffectDescription: 'Occupies one 2×2 block and produces no Crops',
     effectDescription:
-      'Nullifies adjacent crop debuffs · +5% all Turnip effectiveness per adjacent debuff; harmful crops count twice',
+      'Nullifies adjacent crop debuffs · +5% all Turnip effectiveness per adjacent debuff; harmful crops count twice · Too destructive on soil integrity to plant multiple in a single field',
   },
   sweetPotato: {
     id: 'sweetPotato',
@@ -255,6 +267,7 @@ export const CROP_PERFECTIONS = {
     hamsterEfficiencyBonus: 1.25,
     hasUnboostableRowsPerSecondMultiplier: true,
     requiresRowDuplicators: true,
+    temporarilyUnavailable: true,
     baseEffectDescription: '1 Crop per slot · +125% Hamster Efficiency',
     effectDescription:
       'Globally multiplies Hamster Efficiency by 1 + Sweet Potatoes × log10(Rows/sec) · this multiplier cannot be boosted',
@@ -263,7 +276,7 @@ export const CROP_PERFECTIONS = {
     id: 'splitweed',
     cropId: 'knotweed',
     name: 'Splitweed',
-    cost: 6e38,
+    cost: 3e38,
     hasDebuff: true,
     isHarmful: false,
     globalPassiveEffectMultiplier: 0,
@@ -288,6 +301,10 @@ export function isCropTemporarilyUnavailable(cropId) {
   return CROP_DEFINITIONS[cropId]?.temporarilyUnavailable === true
 }
 
+export function isCropPerfectionTemporarilyUnavailable(perfectionId) {
+  return CROP_PERFECTIONS[perfectionId]?.temporarilyUnavailable === true
+}
+
 export function hasCropPerfection(completedCropPerfections, perfectionId) {
   return (
     Array.isArray(completedCropPerfections) &&
@@ -299,6 +316,7 @@ export function getCropPerfection(cropId, completedCropPerfections) {
   return Object.values(CROP_PERFECTIONS).find(
     (perfection) =>
       perfection.cropId === cropId &&
+      !isCropPerfectionTemporarilyUnavailable(perfection.id) &&
       hasCropPerfection(completedCropPerfections, perfection.id),
   )
 }
@@ -401,6 +419,7 @@ export function getUnlockedCropIds(
   rowDuplicators = 0,
   hasUnlockedCarrot = false,
   hasUnlockedFourLeafClover = false,
+  hasUnlockedWheat = false,
 ) {
   const unlockedCrops = ['leek']
 
@@ -425,6 +444,9 @@ export function getUnlockedCropIds(
   if (hasUnlockedKnotweed) {
     unlockedCrops.push('knotweed')
   }
+  if (hasUnlockedWheat) {
+    unlockedCrops.push('wheat')
+  }
   if (hasUnlockedRootTunnel && !isCropTemporarilyUnavailable('rootTunnel')) {
     unlockedCrops.push('rootTunnel')
   }
@@ -444,7 +466,11 @@ export function getUnlockedCropIds(
   return unlockedCrops
 }
 
-export function getVisibleCropIds(unlockedCropIds, totalHamstersHired = 0) {
+export function getVisibleCropIds(
+  unlockedCropIds,
+  totalHamstersHired = 0,
+  hasUnlockedRowDuplicators = false,
+) {
   const visibleCropIds = ['leek']
 
   for (let index = 1; index < CROP_IDS.length; index += 1) {
@@ -466,6 +492,10 @@ export function getVisibleCropIds(unlockedCropIds, totalHamstersHired = 0) {
       cropId === 'pumpkin' &&
       totalHamstersHired < PUMPKIN_REVEAL_HAMSTER_COUNT
     ) {
+      break
+    }
+
+    if (cropId === 'wheat' && !hasUnlockedRowDuplicators) {
       break
     }
 

@@ -11,6 +11,7 @@ import {
   CATCH_UP_SPEED_FACTOR,
   SKIPPED_CATCH_UP_STEPS,
 } from '../src/game/gameLogic.js'
+import { WHEAT_UNLOCK_CROP_COUNT } from '../src/game/crops.js'
 
 test('active simulation uses no more than one-sixtieth second per step', () => {
   assert.equal(ACTIVE_SIMULATION_STEP_SECONDS, 1 / 60)
@@ -60,6 +61,27 @@ test('elapsed active time matches sixty fixed simulation steps', () => {
     advanceGameByElapsedTime(initialGame, 1, { mode: 'active' }),
     fixedStepGame,
   )
+})
+
+test('Wheat unlocks at its Crop threshold only after Row Duplicators', () => {
+  const withoutDuplicators = advanceGameSimulationStep(
+    {
+      ...createInitialGame(),
+      crops: WHEAT_UNLOCK_CROP_COUNT,
+    },
+    ACTIVE_SIMULATION_STEP_SECONDS,
+  )
+  const withDuplicators = advanceGameSimulationStep(
+    {
+      ...createInitialGame(),
+      crops: WHEAT_UNLOCK_CROP_COUNT,
+      hasUnlockedRowDuplicators: true,
+    },
+    ACTIVE_SIMULATION_STEP_SECONDS,
+  )
+
+  assert.equal(withoutDuplicators.hasUnlockedWheat, false)
+  assert.equal(withDuplicators.hasUnlockedWheat, true)
 })
 
 test('Blueprint editing pauses production but still advances time', () => {

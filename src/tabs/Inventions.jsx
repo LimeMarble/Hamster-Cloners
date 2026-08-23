@@ -10,18 +10,15 @@ export function Inventions({
   canUnlockEnrichingLeek,
   canUnlockMirrorCorn,
   canUnlockLeechingGourd,
-  canUnlockSweetPotato,
   canUnlockSplitweed,
   canUnlockRows,
   hasEnrichingLeek,
   hasMirrorCorn,
   hasLeechingGourd,
-  hasSweetPotato,
   hasSplitweed,
   onUnlockEnrichingLeek,
   onUnlockMirrorCorn,
   onUnlockLeechingGourd,
-  onUnlockSweetPotato,
   onUnlockSplitweed,
   onRequestRowDuplicatorUnlock,
   onRequestBlueprintExpansion,
@@ -175,52 +172,6 @@ export function Inventions({
             ) : null}
             {game.hasUnlockedRowDuplicators ? (
               <>
-                <article className="invention-card crop-perfection-card">
-                  <div>
-                    <p className="eyebrow">Potato perfection</p>
-                    <h2>{CROP_PERFECTIONS.sweetPotato.name}</h2>
-                    <p>
-                      Raise Potato&apos;s Hamster Efficiency bonus from +25% to
-                      +125%, then multiply Hamster Efficiency by 1 + planted
-                      Sweet Potatoes × log10(Rows/sec). This global multiplier
-                      cannot be boosted.
-                    </p>
-                  </div>
-                  {hasSweetPotato ? (
-                    <span className="invention-complete">Perfected</span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="primary-button"
-                      onClick={onUnlockSweetPotato}
-                      disabled={!canUnlockSweetPotato}
-                    >
-                      Spend{' '}
-                      <FormattedNumber
-                        value={CROP_PERFECTIONS.sweetPotato.cost}
-                        maximumFractionDigits={0}
-                      />{' '}
-                      Crops
-                    </button>
-                  )}
-                </article>
-                {!hasSweetPotato ? (
-                  <p className="invention-progress">
-                    <FormattedNumber
-                      value={Math.min(
-                        game.crops,
-                        CROP_PERFECTIONS.sweetPotato.cost,
-                      )}
-                      maximumFractionDigits={0}
-                    />{' '}
-                    /{' '}
-                    <FormattedNumber
-                      value={CROP_PERFECTIONS.sweetPotato.cost}
-                      maximumFractionDigits={0}
-                    />{' '}
-                    Crops
-                  </p>
-                ) : null}
                 <article className="invention-card crop-perfection-card">
                   <div>
                     <p className="eyebrow">Knotweed perfection</p>

@@ -3,6 +3,7 @@ import {
   CROP_PERFECTION_IDS,
   SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
   hasCropPerfection,
+  isCropPerfectionTemporarilyUnavailable,
   isKnownCrop,
 } from './crops.js'
 import {
@@ -105,6 +106,7 @@ export function createInitialGame() {
     hasUnlockedAppleTree: false,
     hasUnlockedLentil: false,
     hasUnlockedKnotweed: false,
+    hasUnlockedWheat: false,
     hasUnlockedRootTunnel: false,
     hasUnlockedSunflower: false,
     hasUnlockedCropPerfection: false,
@@ -220,7 +222,8 @@ export function hasCompletedBlueprintExpansion(game, expansionId) {
 function getCompletedCropPerfections(game) {
   return Array.isArray(game.completedCropPerfections)
     ? game.completedCropPerfections.filter((perfectionId) =>
-        CROP_PERFECTION_IDS.includes(perfectionId),
+        CROP_PERFECTION_IDS.includes(perfectionId) &&
+        !isCropPerfectionTemporarilyUnavailable(perfectionId),
       )
     : []
 }
@@ -235,6 +238,7 @@ export function canUnlockCropPerfection(game, perfectionId) {
   return (
     game.hasUnlockedCropPerfection === true &&
     cost !== null &&
+    !isCropPerfectionTemporarilyUnavailable(perfectionId) &&
     (CROP_PERFECTIONS[perfectionId]?.requiresRowDuplicators !== true ||
       game.hasUnlockedRowDuplicators === true) &&
     !hasCropPerfection(getCompletedCropPerfections(game), perfectionId) &&

@@ -195,6 +195,7 @@ export function useGameDerivedState(game) {
         game.rowDuplicators,
         hasUnlockedCarrot,
         hasUnlockedFourLeafClover,
+        game.hasUnlockedWheat,
       ),
     [
       game.blueprint,
@@ -209,11 +210,21 @@ export function useGameDerivedState(game) {
       game.rowDuplicators,
       hasUnlockedCarrot,
       hasUnlockedFourLeafClover,
+      game.hasUnlockedWheat,
     ],
   )
   const visibleCropIds = useMemo(
-    () => getVisibleCropIds(unlockedCropIds, game.totalHamstersHired),
-    [unlockedCropIds, game.totalHamstersHired],
+    () =>
+      getVisibleCropIds(
+        unlockedCropIds,
+        game.totalHamstersHired,
+        game.hasUnlockedRowDuplicators,
+      ),
+    [
+      unlockedCropIds,
+      game.totalHamstersHired,
+      game.hasUnlockedRowDuplicators,
+    ],
   )
   const visibleUnlockedCropIds = useMemo(
     () =>
@@ -306,13 +317,11 @@ export function useGameDerivedState(game) {
     canUnlockEnrichingLeek: canUnlockCropPerfection(game, 'enrichingLeek'),
     canUnlockMirrorCorn: canUnlockCropPerfection(game, 'mirrorCorn'),
     canUnlockLeechingGourd: canUnlockCropPerfection(game, 'leechingGourd'),
-    canUnlockSweetPotato: canUnlockCropPerfection(game, 'sweetPotato'),
     canUnlockSplitweed: canUnlockCropPerfection(game, 'splitweed'),
     canUnlockRows: canUnlockRowDuplicators(game),
     hasEnrichingLeek: completedCropPerfections.includes('enrichingLeek'),
     hasMirrorCorn: completedCropPerfections.includes('mirrorCorn'),
     hasLeechingGourd: completedCropPerfections.includes('leechingGourd'),
-    hasSweetPotato: completedCropPerfections.includes('sweetPotato'),
     hasSplitweed: completedCropPerfections.includes('splitweed'),
   }
 }

@@ -75,6 +75,7 @@ import {
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
+  WHEAT_UNLOCK_CROP_COUNT,
 } from '../src/game/crops.js'
 import {
   applyMonocropPenaltyToBonus,
@@ -906,84 +907,61 @@ test('Enriching Leek costs 20 billion Crops to unlock', () => {
   })
 })
 
-test('Sweet Potato perfection adds an unboostable Rows-per-second bonus', () => {
-  const lockedGame = {
+test('Wheat replaces the unobtainable Sweet Potato logarithmic perfection', () => {
+  const dormantPerfectionGame = {
     crops: CROP_PERFECTIONS.sweetPotato.cost,
     hasUnlockedCropPerfection: true,
-    hasUnlockedRowDuplicators: false,
-    completedCropPerfections: [],
-  }
-  const eligibleGame = {
-    ...lockedGame,
     hasUnlockedRowDuplicators: true,
+    completedCropPerfections: [],
   }
   const blueprint = createBlueprint({
     rows: 1,
     columns: 2,
-    cells: ['sweetPotato', 'turnip'],
+    cells: ['wheat', 'turnip'],
   })
 
-  assert.equal(CROP_PERFECTIONS.sweetPotato.cost, 1.25e33)
+  assert.equal(WHEAT_UNLOCK_CROP_COUNT, 1.25e32)
+  assert.equal(CROP_DEFINITIONS.wheat.baseYield, 100)
+  assert.equal(CROP_PERFECTIONS.sweetPotato.temporarilyUnavailable, true)
   assert.equal(getCropName('sweetPotato'), 'Potato')
-  assert.equal(getCropName('sweetPotato', ['sweetPotato']), 'Sweet Potato')
-  assert.equal(canUnlockCropPerfection(lockedGame, 'sweetPotato'), false)
-  assert.equal(canUnlockCropPerfection(eligibleGame, 'sweetPotato'), true)
-  assert.deepEqual(unlockCropPerfection(eligibleGame, 'sweetPotato'), {
-    ...eligibleGame,
-    crops: 0,
-    completedCropPerfections: ['sweetPotato'],
-  })
-
-  // Turnip doubles the perfected +125% base bonus to produce ×3.5, then
-  // the unboostable global ×3 from 1 + log10(100 Rows/sec) multiplies it.
+  assert.equal(getCropName('sweetPotato', ['sweetPotato']), 'Potato')
   assert.equal(
-    getCropHamsterEfficiencyMultiplier(blueprint, ['sweetPotato'], 100),
-    10.5,
+    canUnlockCropPerfection(dormantPerfectionGame, 'sweetPotato'),
+    false,
   )
   assert.equal(
-    getCropHamsterEfficiencyMultiplier(blueprint, ['sweetPotato'], 0.1),
-    3.5,
-  )
-  const sweetPotatoStats = getBlueprintCropStats(
-    blueprint,
-    0,
-    ['sweetPotato'],
-    100,
-  )
-  const turnipStats = getBlueprintCropStats(
-    blueprint,
-    1,
-    ['sweetPotato'],
-    100,
+    unlockCropPerfection(dormantPerfectionGame, 'sweetPotato'),
+    null,
   )
 
-  assert.equal(sweetPotatoStats.hamsterEfficiencyBonus, 2.5)
+  assert.equal(getCropHamsterEfficiencyMultiplier(blueprint, [], 100), 3)
+  assert.equal(getCropHamsterEfficiencyMultiplier(blueprint, [], 0.1), 1)
+
+  const wheatStats = getBlueprintCropStats(blueprint, 0, [], 100)
+  const turnipStats = getBlueprintCropStats(blueprint, 1, [], 100)
+  const expectedGlobalEffect = {
+    type: 'global-hamster-efficiency',
+    sourceCropId: 'wheat',
+    count: 1,
+    bonus: 2,
+    multiplier: 3,
+  }
+
+  assert.equal(wheatStats.baseYield, 100)
   assert.deepEqual(
-    sweetPotatoStats.receivedEffects.find(
+    wheatStats.receivedEffects.find(
       (effect) => effect.type === 'global-hamster-efficiency',
     ),
-    {
-      type: 'global-hamster-efficiency',
-      sourceCropId: 'sweetPotato',
-      count: 1,
-      bonus: 2,
-      multiplier: 3,
-    },
+    expectedGlobalEffect,
   )
   assert.deepEqual(
     turnipStats.receivedEffects.find(
       (effect) => effect.type === 'global-hamster-efficiency',
     ),
-    {
-      type: 'global-hamster-efficiency',
-      sourceCropId: 'sweetPotato',
-      count: 1,
-      bonus: 2,
-      multiplier: 3,
-    },
+    expectedGlobalEffect,
   )
 })
-test('Splitweed costs 6e39 Crops and stays locked before Row Duplicators', () => {
+test('Splitweed costs 6e38 Crops and stays locked before Row Duplicators', () => {
   const lockedGame = {
     crops: CROP_PERFECTIONS.splitweed.cost,
     hasUnlockedCropPerfection: true,
@@ -995,7 +973,7 @@ test('Splitweed costs 6e39 Crops and stays locked before Row Duplicators', () =>
     hasUnlockedRowDuplicators: true,
   }
 
-  assert.equal(CROP_PERFECTIONS.splitweed.cost, 6e39)
+  assert.equal(CROP_PERFECTIONS.splitweed.cost, 6e38)
   assert.equal(CROP_PERFECTIONS.splitweed.requiresRowDuplicators, true)
   assert.equal(getCropName('knotweed'), 'Knotweed')
   assert.equal(getCropName('knotweed', ['splitweed']), 'Splitweed')
@@ -1452,72 +1430,69 @@ test('adjacency modifier crops stack on buffs without modifying each other', () 
 })
 
 test('monocrop penalties weaken every crop passive and strengthen debuffs', () => {
-  const sweetPotatoMonocrop = createBlueprint({
+  const wheatMonocrop = createBlueprint({
     rows: 2,
     columns: 2,
-    cells: ['sweetPotato', 'sweetPotato', 'sweetPotato'],
+    cells: ['wheat', 'wheat', 'wheat', 'wheat'],
   })
   const cornMonocrop = createBlueprint({
     rows: 2,
     columns: 2,
-    cells: ['corn', 'corn', 'corn'],
+    cells: ['corn', 'corn', 'corn', 'corn'],
   })
   const turnipMonocrop = createBlueprint({
-    rows: 2,
-    columns: 2,
-    cells: ['turnip', 'turnip', 'turnip', 'sweetPotato'],
+    rows: 1,
+    columns: 5,
+    cells: ['turnip', 'turnip', 'sweetPotato', 'turnip', 'turnip'],
   })
   const enrichingLeekMonocrop = createBlueprint({
-    rows: 2,
-    columns: 2,
-    cells: ['leek', 'leek', 'leek', 'corn'],
+    rows: 1,
+    columns: 5,
+    cells: ['leek', 'leek', 'leek', 'leek', 'corn'],
   })
   const knotweedMonocrop = createBlueprint({
-    rows: 2,
-    columns: 2,
-    cells: ['knotweed', 'knotweed', 'knotweed', 'corn'],
+    rows: 1,
+    columns: 5,
+    cells: ['knotweed', 'knotweed', 'knotweed', 'knotweed', 'corn'],
   })
+  const fourCropPenalty = getMonocropYieldMultiplier(4, 4)
+  const fourOfFivePenalty = getMonocropYieldMultiplier(4, 5)
 
-  assert.equal(getBlueprintMonocropMultiplier(sweetPotatoMonocrop), 0.5)
-  assert.equal(getCropHamsterEfficiencyMultiplier(sweetPotatoMonocrop), 1.375)
-  assert.ok(
-    Math.abs(getCropHamsterEfficiencyMultiplier(cornMonocrop) - 0.4) < 1e-12,
+  assert.equal(getBlueprintMonocropMultiplier(wheatMonocrop), fourCropPenalty)
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(wheatMonocrop, [], 100),
+    1 + 8 * fourCropPenalty,
+  )
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(cornMonocrop),
+    Math.max(0, 1 - 0.4 / fourCropPenalty),
   )
 
-  // Turnip's hidden tier-2 passive protection blocks ordinary crop buffs,
-  // while the tier-5 monocrop rule still reduces each adjacent ×2 to ×1.5.
+  // Turnip's hidden tier-2 protection blocks ordinary crop buffs, while the
+  // tier-5 monocrop rule weakens each adjacent Turnip multiplier.
   assert.equal(CROP_DEFINITIONS.turnip.passiveProtectionTier, 2)
   assert.equal(CROP_EFFECT_BYPASS_TIERS.MONOCROP, 5)
-  assert.equal(getCropHamsterEfficiencyMultiplier(turnipMonocrop), 1.5625)
-
-  // Sweet Potato's unboostable global passive is still a crop passive:
-  // its raw +6 becomes +3, while its three personal +125% bonuses also halve.
   assert.equal(
-    getCropHamsterEfficiencyMultiplier(
-      sweetPotatoMonocrop,
-      ['sweetPotato'],
-      100,
-    ),
-    11.5,
+    getCropHamsterEfficiencyMultiplier(turnipMonocrop),
+    1 + 0.25 * (1 + fourOfFivePenalty) ** 2,
   )
 
   assert.equal(
     getBlueprintCropStats(
       enrichingLeekMonocrop,
-      3,
+      4,
       ['enrichingLeek'],
     ).receivedEffects.find((effect) => effect.type === 'crop-yield').bonus,
-    5,
+    5 * fourOfFivePenalty,
   )
   assert.equal(
     getBlueprintCropStats(
       knotweedMonocrop,
-      3,
+      4,
     ).receivedEffects.find((effect) => effect.type === 'crop-yield').bonus,
-    -40,
+    -10 / fourOfFivePenalty,
   )
 })
-
 test('crop unlocks follow the Corn, Pumpkin, Sweet Potato, Turnip progression', () => {
   const expandedBlueprint = createBlueprint({ rows: 1, columns: 2 })
 
@@ -2024,26 +1999,47 @@ test('blueprint slots unlock with Potato and Sunflower and retain separate layou
   assert.equal(getBlueprintSlots(firstColumnResult).length, 2)
 })
 
-test('monocrop threshold matches the design formula', () => {
-  assert.equal(getMonocropThreshold(1), 1.5)
-  assert.equal(getMonocropThreshold(16), 9)
-  assert.equal(getMonocropThreshold(256), 65)
+test('monocrop threshold includes the current 1.25 base allowance', () => {
+  assert.equal(getMonocropThreshold(1), 1.75)
+  assert.equal(getMonocropThreshold(16), 9.25)
+  assert.equal(getMonocropThreshold(256), 65.25)
 })
 
-test('monocrop multiplier uses the inverse-power penalty at the threshold', () => {
-  assert.equal(getMonocropYieldMultiplier(2, 16), 1)
-  assert.equal(getMonocropYieldMultiplier(9, 16), 0.5)
+test('monocrop multiplier uses the inverse-power penalty once count reaches the threshold', () => {
+  assert.equal(getMonocropYieldMultiplier(9, 16), 1)
 
-  const overage = (16 - getMonocropThreshold(16)) / 16
+  const firstPenalizedCount = 10
+  const firstOverage =
+    (firstPenalizedCount - getMonocropThreshold(16)) / 16
+  assert.equal(
+    getMonocropYieldMultiplier(firstPenalizedCount, 16),
+    1 / (2 * (firstOverage + 1) ** 10),
+  )
+
+  const fullOverage = (16 - getMonocropThreshold(16)) / 16
   assert.equal(
     getMonocropYieldMultiplier(16, 16),
-    1 / (2 * (overage + 1) ** 10),
+    1 / (2 * (fullOverage + 1) ** 10),
   )
 })
 
 test('monocrop passive helpers weaken bonuses and inversely strengthen debuffs', () => {
-  assert.equal(applyMonocropPenaltyToBonus(0.25, 3, 4), 0.125)
-  assert.equal(applyMonocropPenaltyToBonus(-0.1, 3, 4), -0.2)
-  assert.equal(applyMonocropPenaltyToEffectMultiplier(2, 3, 4), 1.5)
-  assert.equal(applyMonocropPenaltyToEffectMultiplier(0.5, 3, 4), 0)
+  const multiplier = getMonocropYieldMultiplier(4, 4)
+
+  assert.equal(
+    applyMonocropPenaltyToBonus(0.25, 4, 4),
+    0.25 * multiplier,
+  )
+  assert.equal(
+    applyMonocropPenaltyToBonus(-0.1, 4, 4),
+    -0.1 / multiplier,
+  )
+  assert.equal(
+    applyMonocropPenaltyToEffectMultiplier(2, 4, 4),
+    1 + multiplier,
+  )
+  assert.equal(
+    applyMonocropPenaltyToEffectMultiplier(0.5, 4, 4),
+    Math.max(0, 1 - 0.5 / multiplier),
+  )
 })

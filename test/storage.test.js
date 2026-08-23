@@ -7,7 +7,10 @@ import {
   normalizeGame,
   SAVE_FORMAT_VERSION,
 } from '../src/game/storage.js'
-import { SUNFLOWER_UNLOCK_CROP_COUNT } from '../src/game/crops.js'
+import {
+  SUNFLOWER_UNLOCK_CROP_COUNT,
+  WHEAT_UNLOCK_CROP_COUNT,
+} from '../src/game/crops.js'
 
 test('legacy saves reset blueprint progress after the expansion axes swap', () => {
   const migratedGame = normalizeGame({
@@ -92,6 +95,25 @@ test('current saves retain valid Splitweed footprints and clear legacy single ti
     'splitweedPart',
   ])
   assert.deepEqual(legacySave.blueprint.cells, [null, 'leek', null, null])
+})
+
+test('Wheat unlock migration requires Row Duplicators and removes dormant Sweet Potato perfection', () => {
+  const withoutDuplicators = normalizeGame({
+    crops: WHEAT_UNLOCK_CROP_COUNT,
+    completedCropPerfections: ['sweetPotato'],
+  })
+  const withDuplicators = normalizeGame({
+    crops: WHEAT_UNLOCK_CROP_COUNT,
+    hasUnlockedRowDuplicators: true,
+    completedCropPerfections: ['sweetPotato'],
+  })
+
+  assert.equal(withoutDuplicators.hasUnlockedWheat, false)
+  assert.equal(withDuplicators.hasUnlockedWheat, true)
+  assert.equal(
+    withDuplicators.completedCropPerfections.includes('sweetPotato'),
+    false,
+  )
 })
 
 test('current saves retain independent unlocked blueprint slots', () => {

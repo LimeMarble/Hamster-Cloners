@@ -19,6 +19,8 @@ import {
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
+  WHEAT_UNLOCK_CROP_COUNT,
+  isCropPerfectionTemporarilyUnavailable,
   isCropTemporarilyUnavailable,
 } from './crops.js'
 
@@ -152,7 +154,8 @@ export function normalizeGame(rawGame) {
 
   const completedCropPerfections = Array.isArray(rawGame.completedCropPerfections)
     ? rawGame.completedCropPerfections.filter((perfectionId) =>
-        CROP_PERFECTION_IDS.includes(perfectionId),
+        CROP_PERFECTION_IDS.includes(perfectionId) &&
+        !isCropPerfectionTemporarilyUnavailable(perfectionId),
       )
     : []
 
@@ -284,6 +287,10 @@ export function normalizeGame(rawGame) {
     hasUnlockedKnotweed:
       rawGame.hasUnlockedKnotweed === true ||
       toNonNegativeNumber(rawGame.crops, 0) >= KNOTWEED_UNLOCK_CROP_COUNT,
+    hasUnlockedWheat:
+      rawGame.hasUnlockedWheat === true ||
+      (rawGame.hasUnlockedRowDuplicators === true &&
+        toNonNegativeNumber(rawGame.crops, 0) >= WHEAT_UNLOCK_CROP_COUNT),
     hasUnlockedRootTunnel:
       hasUnlockedRootTunnel,
     hasUnlockedSunflower,
