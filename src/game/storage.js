@@ -107,7 +107,7 @@ export function normalizeGame(rawGame) {
   const hasUnlockedSunflower =
     rawGame.hasUnlockedSunflower === true ||
     currentCrops >= SUNFLOWER_UNLOCK_CROP_COUNT
-  const blueprint = hasCurrentBlueprintAxes
+  let blueprint = hasCurrentBlueprintAxes
     ? removeUnavailableCrops(
         createBlueprint(rawGame.blueprint),
         hasUnlockedSunflower,
@@ -155,6 +155,17 @@ export function normalizeGame(rawGame) {
         CROP_PERFECTION_IDS.includes(perfectionId),
       )
     : []
+
+  if (completedCropPerfections.includes('splitweed')) {
+    blueprint = removeUnavailableCrops(
+      createBlueprint({
+        ...blueprint,
+        requireSplitweedFootprints: true,
+      }),
+      hasUnlockedSunflower,
+    )
+  }
+
   const hasLegacyAppleTreeUnlock =
     Array.isArray(rawGame.completedCropUnlocks) &&
     rawGame.completedCropUnlocks.includes('appleTree')
@@ -187,6 +198,8 @@ export function normalizeGame(rawGame) {
               columns: blueprint.columns,
               cells: rawSlot.cells,
               mirrorCornTargets: rawSlot.mirrorCornTargets,
+              requireSplitweedFootprints:
+                completedCropPerfections.includes('splitweed'),
             }),
             hasUnlockedSunflower,
           )

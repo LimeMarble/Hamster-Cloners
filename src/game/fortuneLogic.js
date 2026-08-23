@@ -11,29 +11,28 @@ export const CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS = 60
 export const CLOVER_BUNDLE_MAX_CHANCE = 0.77
 
 export const FORTUNE_EFFECT_IDS = Object.freeze({
-  OPUS: 'opus',
+  DEMONSTRATION: 'opus',
   BOUNTY: 'bounty',
   MIRAGE: 'mirage',
-  PRANK: 'prank',
-  BLIGHT: 'blight',
+  OPUS: 'fortuneOpus',
 })
 
 export const FORTUNE_EFFECTS = Object.freeze([
   {
-    id: FORTUNE_EFFECT_IDS.OPUS,
-    name: "Fortune's Opus",
+    id: FORTUNE_EFFECT_IDS.DEMONSTRATION,
+    name: "Fortune's Demonstration",
     weight: 0.17,
     durationSeconds: 37,
-    description: '+7.77% Crop passive effects',
-    passiveEffectMultiplier: 1.0777,
+    description: '+10% Crop passive effects',
+    passiveEffectMultiplier: 1.1,
   },
   {
     id: FORTUNE_EFFECT_IDS.BOUNTY,
     name: "Fortune's Bounty",
     weight: 0.52,
     durationSeconds: 117,
-    description: 'Crop yields ×7.77',
-    cropYieldMultiplier: 7.77,
+    description: 'Crop yields ×17.77',
+    cropYieldMultiplier: 17.77,
   },
   {
     id: FORTUNE_EFFECT_IDS.MIRAGE,
@@ -43,23 +42,15 @@ export const FORTUNE_EFFECTS = Object.freeze([
     description: 'Nothing happens',
   },
   {
-    id: FORTUNE_EFFECT_IDS.PRANK,
-    name: "Fortune's Prank",
-    weight: 0.06,
-    durationSeconds: 44,
-    description: '−6.66% Crop passive effects',
-    passiveEffectMultiplier: 0.9334,
-  },
-  {
-    id: FORTUNE_EFFECT_IDS.BLIGHT,
-    name: "Fortune's Blight",
-    weight: 0.05,
-    durationSeconds: 22,
-    description: 'All harvests are destroyed',
-    harvestMultiplier: 0,
+    id: FORTUNE_EFFECT_IDS.OPUS,
+    name: "Fortune's Opus",
+    weight: 0.11,
+    durationSeconds: 27,
+    description: 'Crop yields ×7.77 and +7.77% Crop passive effects',
+    cropYieldMultiplier: 7.77,
+    passiveEffectMultiplier: 1.0777,
   },
 ])
-
 const FORTUNE_EFFECT_BY_ID = new Map(
   FORTUNE_EFFECTS.map((effect) => [effect.id, effect]),
 )

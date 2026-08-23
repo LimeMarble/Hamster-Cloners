@@ -247,7 +247,9 @@
 }
 
 .plot-knotweed,
-.editor-plot-knotweed {
+.plot-splitweedPart,
+.editor-plot-knotweed,
+.editor-plot-splitweedPart {
   border-color: #8ca153;
   background: #263617;
 }
@@ -337,7 +339,9 @@
 }
 
 .plot-knotweed span,
-.editor-plot-knotweed span {
+.plot-splitweedPart span,
+.editor-plot-knotweed span,
+.editor-plot-splitweedPart span {
   color: #c4d57d;
 }
 

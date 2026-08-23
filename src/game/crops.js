@@ -184,6 +184,19 @@ export const CROP_DEFINITIONS = {
     internalOnly: true,
     effectDescription: 'Part of a Leeching Gourd',
   },
+  splitweedPart: {
+    name: 'Splitweed',
+    icon: '',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    adjacentHarvestModifier: -10,
+    doesNotHarvest: true,
+    hasDebuff: true,
+    canBeMirrorCornTarget: false,
+    internalOnly: true,
+    isSplitweedPart: true,
+    effectDescription: 'Part of a Splitweed',
+  },
 }
 
 const KNOWN_CROP_IDS = Object.keys(CROP_DEFINITIONS)
@@ -238,7 +251,7 @@ export const CROP_PERFECTIONS = {
     id: 'sweetPotato',
     cropId: 'sweetPotato',
     name: 'Sweet Potato',
-    cost: 1.25e33,
+    cost: 1.25e32,
     hamsterEfficiencyBonus: 1.25,
     hasUnboostableRowsPerSecondMultiplier: true,
     requiresRowDuplicators: true,
@@ -250,16 +263,18 @@ export const CROP_PERFECTIONS = {
     id: 'splitweed',
     cropId: 'knotweed',
     name: 'Splitweed',
-    cost: 6e39,
+    cost: 6e38,
     hasDebuff: true,
     isHarmful: false,
     globalPassiveEffectMultiplier: 0,
-    gourdAdjacencyContribution: 4,
+    gourdAdjacencyContribution: 8,
+    mirrorCornEffectivenessBonus: 0.5,
     requiresRowDuplicators: true,
-    monocropThresholdBonusPerCrop: 1,
-    baseEffectDescription: '0 Crops per slot · −10 adjacent Crop harvest',
+    monocropThresholdBonusPerCrop: 2,
+    baseEffectDescription:
+      'Occupies one 2×2 block · 0 Crops · −10 adjacent Crop harvest',
     effectDescription:
-      '×0 global Crop passive effects unless nullified by Leeching Gourd · counts as 4 debuff crops for Leeching Gourd adjacency · +1 Monocrop limit per Splitweed · cannot be boosted',
+      '×0 global Crop passive effects unless nullified by Leeching Gourd · counts as 8 debuff crops for Leeching Gourd adjacency · +2 Monocrop limit and +0.5× Mirror Corn effectiveness per Splitweed · cannot be boosted',
   },
 }
 

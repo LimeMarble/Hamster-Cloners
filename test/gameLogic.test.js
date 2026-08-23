@@ -31,6 +31,10 @@ import {
   grantNextBlueprintExpansion,
   getLeechingGourdFootprint,
   getLeechingGourdTurnipEffect,
+  getMirrorCornEffectMultiplier,
+  getSplitweedAnchorIndex,
+  getSplitweedFootprint,
+  getSplitweedMirrorCornEffectivenessBonus,
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getProductionForTick,
@@ -1006,34 +1010,45 @@ test('Splitweed costs 6e39 Crops and stays locked before Row Duplicators', () =>
 
 test('Splitweed suppresses global Crop passives unless Gourd nullifies it', () => {
   const unprotectedBlueprint = createBlueprint({
-    rows: 1,
+    rows: 2,
     columns: 3,
-    cells: ['lentil', 'leek', 'knotweed'],
+    cells: [
+      'knotweed',
+      'splitweedPart',
+      'lentil',
+      'splitweedPart',
+      'splitweedPart',
+      'leek',
+    ],
+    requireSplitweedFootprints: true,
   })
   const gourdProtectedBlueprint = createBlueprint({
-    rows: 3,
-    columns: 3,
+    rows: 4,
+    columns: 4,
     cells: [
       'leechingGourd',
       'leechingGourdPart',
       'knotweed',
+      'splitweedPart',
       'leechingGourdPart',
       'leechingGourdPart',
-      null,
+      'splitweedPart',
+      'splitweedPart',
       'lentil',
       null,
+      null,
+      null,
       'leek',
+      null,
+      null,
+      null,
     ],
+    requireSplitweedFootprints: true,
   })
-  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
 
   assert.equal(
     getGlobalPassiveEffectMultiplier(unprotectedBlueprint, ['splitweed']),
     0,
-  )
-  assert.equal(
-    getCropProductionPerSecond(unprotectedBlueprint, farmland, ['splitweed']),
-    16,
   )
   assert.equal(
     getGlobalPassiveEffectMultiplier(gourdProtectedBlueprint, ['splitweed']),
@@ -1042,21 +1057,104 @@ test('Splitweed suppresses global Crop passives unless Gourd nullifies it', () =
   assert.equal(
     getLeechingGourdTurnipEffect(gourdProtectedBlueprint, ['splitweed'])
       .debuffContribution,
-    4,
+    8,
   )
 })
 
-test('each Splitweed raises the monocrop threshold by one', () => {
+test('each 2x2 Splitweed raises the monocrop threshold by two', () => {
   const blueprint = createBlueprint({
     rows: 2,
     columns: 2,
-    cells: ['leek', 'leek', 'leek', 'knotweed'],
+    cells: [
+      'knotweed',
+      'splitweedPart',
+      'splitweedPart',
+      'splitweedPart',
+    ],
+    requireSplitweedFootprints: true,
   })
 
   assert.equal(getMonocropThresholdBonus(blueprint), 0)
-  assert.equal(getMonocropThresholdBonus(blueprint, ['splitweed']), 1)
-  assert.equal(getBlueprintMonocropMultiplier(blueprint), 0.5)
-  assert.equal(getBlueprintMonocropMultiplier(blueprint, ['splitweed']), 1)
+  assert.equal(getMonocropThresholdBonus(blueprint, ['splitweed']), 2)
+})
+
+test('Splitweed uses valid 2x2 footprints and clears malformed layouts', () => {
+  const validSplitweed = createBlueprint({
+    rows: 2,
+    columns: 4,
+    cells: [
+      'knotweed',
+      'splitweedPart',
+      'knotweed',
+      'splitweedPart',
+      'splitweedPart',
+      'splitweedPart',
+      'splitweedPart',
+      'splitweedPart',
+    ],
+    requireSplitweedFootprints: true,
+  })
+  const malformedSplitweed = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['knotweed', 'splitweedPart', null, null],
+    requireSplitweedFootprints: true,
+  })
+
+  assert.deepEqual(getSplitweedFootprint(validSplitweed, 0), [0, 1, 4, 5])
+  assert.equal(getSplitweedAnchorIndex(validSplitweed, 5), 0)
+  assert.equal(getSplitweedAnchorIndex(validSplitweed, 7), 2)
+  assert.deepEqual(malformedSplitweed.cells, [null, null, null, null])
+})
+
+test('each Splitweed adds 0.5x Mirror Corn effectiveness', () => {
+  const blueprint = createBlueprint({
+    rows: 4,
+    columns: 4,
+    cells: [
+      'leechingGourd',
+      'leechingGourdPart',
+      'knotweed',
+      'splitweedPart',
+      'leechingGourdPart',
+      'leechingGourdPart',
+      'splitweedPart',
+      'splitweedPart',
+      'corn',
+      null,
+      null,
+      null,
+      null,
+      'leek',
+      null,
+      null,
+    ],
+    mirrorCornTargets: [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      13,
+    ],
+    requireSplitweedFootprints: true,
+  })
+
+  assert.equal(
+    getSplitweedMirrorCornEffectivenessBonus(blueprint, ['splitweed']),
+    0.5,
+  )
+  assert.equal(
+    getMirrorCornEffectMultiplier(
+      blueprint,
+      13,
+      ['mirrorCorn', 'splitweed'],
+    ),
+    4.5,
+  )
 })
 test('Pumpkins yield five Crops and halve adjacent crop buffs and debuffs', () => {
   const blueprint = createBlueprint({

@@ -17,6 +17,10 @@ import {
   getLeechingGourdAdjacentCropConnections,
   getRootTunnelAdjacencyStrength,
 } from './adjacencyLogic.js'
+import {
+  getSplitweedAnchorIndex,
+  getSplitweedFootprint,
+} from './cropFootprintLogic.js'
 
 export {
   getAdjacentCropConnections,
@@ -150,32 +154,53 @@ export function getLeechingGourdTurnipEffect(
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
 ) {
-  const adjacencyEffects = getLeechingGourdAdjacentCropConnections(
-    blueprint,
-  ).flatMap(({ index, adjacencyDistance }) => {
-    const crop = blueprint.cells[index]
-    const definition = CROP_DEFINITIONS[crop]
-    const perfection = getCropPerfection(crop, completedCropPerfections)
-    const effectDefinition = perfection ?? definition
+  const nearestConnections = new Map()
 
-    if (!effectDefinition?.hasDebuff) {
-      return []
+  getLeechingGourdAdjacentCropConnections(blueprint).forEach((connection) => {
+    const splitweedAnchorIndex = getSplitweedAnchorIndex(
+      blueprint,
+      connection.index,
+    )
+    const normalizedIndex = splitweedAnchorIndex ?? connection.index
+    const existingConnection = nearestConnections.get(normalizedIndex)
+
+    if (
+      !existingConnection ||
+      connection.adjacencyDistance < existingConnection.adjacencyDistance
+    ) {
+      nearestConnections.set(normalizedIndex, {
+        ...connection,
+        index: normalizedIndex,
+      })
     }
-
-    const strength = getRootTunnelAdjacencyStrength(adjacencyDistance)
-    return [
-      {
-        index,
-        crop,
-        adjacencyDistance,
-        strength,
-        contribution:
-          (effectDefinition.gourdAdjacencyContribution ??
-            (effectDefinition.isHarmful ? 2 : 1)) *
-          strength,
-      },
-    ]
   })
+
+  const adjacencyEffects = [...nearestConnections.values()].flatMap(
+    ({ index, adjacencyDistance }) => {
+      const crop = blueprint.cells[index]
+      const definition = CROP_DEFINITIONS[crop]
+      const perfection = getCropPerfection(crop, completedCropPerfections)
+      const effectDefinition = perfection ?? definition
+
+      if (!effectDefinition?.hasDebuff) {
+        return []
+      }
+
+      const strength = getRootTunnelAdjacencyStrength(adjacencyDistance)
+      return [
+        {
+          index,
+          crop,
+          adjacencyDistance,
+          strength,
+          contribution:
+            (effectDefinition.gourdAdjacencyContribution ??
+              (effectDefinition.isHarmful ? 2 : 1)) *
+            strength,
+        },
+      ]
+    },
+  )
   const debuffContribution = adjacencyEffects.reduce(
     (total, effect) => total + effect.contribution,
     0,
@@ -214,9 +239,17 @@ export function getDiagonalTileIndexes(blueprint, index) {
 }
 
 export function getLeechingGourdDebuffMultiplier(blueprint, index) {
-  const connection = getLeechingGourdAdjacentCropConnections(blueprint).find(
-    ({ index: cropIndex }) => cropIndex === index,
+  const splitweedAnchorIndex = getSplitweedAnchorIndex(blueprint, index)
+  const affectedIndexes = new Set(
+    splitweedAnchorIndex === null
+      ? [index]
+      : getSplitweedFootprint(blueprint, splitweedAnchorIndex),
   )
+  const connection = getLeechingGourdAdjacentCropConnections(blueprint)
+    .filter(({ index: cropIndex }) => affectedIndexes.has(cropIndex))
+    .sort(
+      (left, right) => left.adjacencyDistance - right.adjacencyDistance,
+    )[0]
 
   return connection
     ? 1 - getRootTunnelAdjacencyStrength(connection.adjacencyDistance)
@@ -368,6 +401,23 @@ export function getMirrorCornTargetCount(
   return Math.min(targetCount, mirrorCorn.maximumReflectionsPerTile)
 }
 
+export function getSplitweedMirrorCornEffectivenessBonus(
+  blueprint,
+  completedCropPerfections = [],
+) {
+  const splitweed = getCropPerfection('knotweed', completedCropPerfections)
+  const baseBonus =
+    getPlantedCropCount(blueprint, 'knotweed') *
+    (splitweed?.mirrorCornEffectivenessBonus ?? 0)
+
+  return getMonocropAdjustedCropBonus(
+    blueprint,
+    'knotweed',
+    baseBonus,
+    completedCropPerfections,
+  )
+}
+
 export function getMirrorCornEffectMultiplier(
   blueprint,
   targetIndex,
@@ -381,11 +431,18 @@ export function getMirrorCornEffectMultiplier(
     completedCropPerfections,
   )
 
+  const mirrorCornEffectiveness =
+    (mirrorCorn?.diagonalTargetEffectMultiplier ?? 1) +
+    getSplitweedMirrorCornEffectivenessBonus(
+      blueprint,
+      completedCropPerfections,
+    )
+
   return (
     getMonocropAdjustedCropEffectMultiplier(
       blueprint,
       'corn',
-      mirrorCorn?.diagonalTargetEffectMultiplier ?? 1,
+      mirrorCornEffectiveness,
       completedCropPerfections,
     ) * passiveEffectMultiplier
   ) ** mirrorCornTargetCount
@@ -841,11 +898,13 @@ export function getAdjacentHarvestModifier(
   completedCropPerfections,
   passiveEffectMultiplier = 1,
 ) {
+  const effectCrop = crop === 'splitweedPart' ? 'knotweed' : crop
+
   return getMonocropAdjustedCropBonus(
     blueprint,
-    crop,
-    getAdjacentCropYieldBonus(crop, completedCropPerfections) +
-      (CROP_DEFINITIONS[crop]?.adjacentHarvestModifier ?? 0),
+    effectCrop,
+    getAdjacentCropYieldBonus(effectCrop, completedCropPerfections) +
+      (CROP_DEFINITIONS[effectCrop]?.adjacentHarvestModifier ?? 0),
     completedCropPerfections,
   ) * passiveEffectMultiplier
 }

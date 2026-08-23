@@ -135,6 +135,10 @@ export function BlueprintEdit({
                         ? 'Assign this tile as the Mirror Corn target'
                         : crop === 'leechingGourd' || crop === 'leechingGourdPart'
                           ? 'Remove Leeching Gourd from blueprint'
+                          : crop === 'splitweedPart' ||
+                              (crop === 'knotweed' &&
+                                game.completedCropPerfections.includes('splitweed'))
+                            ? 'Remove Splitweed from blueprint'
                           : crop === selectedCrop
                             ? `Remove ${getCropName(crop, game.completedCropPerfections)} from plot`
                             : `Plant ${getDisplayedCropName(selectedCrop)} in plot`

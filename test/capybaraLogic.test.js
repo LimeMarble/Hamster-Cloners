@@ -56,19 +56,19 @@ test('Capybara blueprint yield excludes Fields and testing multipliers but inclu
       ],
     },
   }
-  const blightedGame = {
+  const opusGame = {
     ...game,
     fortune: {
       ...game.fortune,
       activeEffects: [
-        { id: FORTUNE_EFFECT_IDS.BLIGHT, remainingSeconds: 10 },
+        { id: FORTUNE_EFFECT_IDS.OPUS, remainingSeconds: 10 },
       ],
     },
   }
 
   assert.equal(getCapybaraBlueprintCropYield(game), 1)
-  assert.equal(getCapybaraBlueprintCropYield(bountyGame), 7.77)
-  assert.equal(getCapybaraBlueprintCropYield(blightedGame), 0)
+  assert.equal(getCapybaraBlueprintCropYield(bountyGame), 17.77)
+  assert.equal(getCapybaraBlueprintCropYield(opusGame), 7.77)
 })
 
 test('Demonstration 0 requires Capybara contact and 500B blueprint yield', () => {

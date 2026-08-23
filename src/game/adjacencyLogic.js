@@ -2,7 +2,7 @@ import {
   getLeechingGourdFootprint,
   isLeechingGourdAnchor,
   isLeechingGourdCell,
-} from './blueprintLogic.js'
+} from './cropFootprintLogic.js'
 import { CROP_DEFINITIONS, isCropEffectModifier } from './crops.js'
 import { ROOT_TUNNEL_ADJACENCY_DECAY } from './gameConfig.js'
 

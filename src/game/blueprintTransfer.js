@@ -80,6 +80,7 @@ export function importBlueprint(
     unlockedCropIds = [],
     hasMirrorCorn = false,
     hasLeechingGourd = false,
+    hasSplitweed = false,
   },
 ) {
   const rawBlueprint = parseBlueprintCode(blueprintCode)
@@ -112,6 +113,10 @@ export function importBlueprint(
     allowedCropIds.add('leechingGourdPart')
   }
 
+  if (hasSplitweed) {
+    allowedCropIds.add('splitweedPart')
+  }
+
   const lockedCrop = rawBlueprint.cells.find(
     (crop) => crop !== null && (!isKnownCrop(crop) || !allowedCropIds.has(crop)),
   )
@@ -127,7 +132,10 @@ export function importBlueprint(
     throw new Error('Unlock Mirror Corn before importing its tile links.')
   }
 
-  const normalizedBlueprint = createBlueprint(rawBlueprint)
+  const normalizedBlueprint = createBlueprint({
+    ...rawBlueprint,
+    requireSplitweedFootprints: hasSplitweed,
+  })
 
   if (
     JSON.stringify(normalizedBlueprint.cells) !==

@@ -226,10 +226,12 @@ export function Inventions({
                     <p className="eyebrow">Knotweed perfection</p>
                     <h2>{CROP_PERFECTIONS.splitweed.name}</h2>
                     <p>
-                      Suppress global Crop passives to ×0 unless Leeching Gourd
-                      nullifies the debuff. Splitweed counts as four debuff
-                      crops for Gourd adjacency and raises the Monocrop limit
-                      by 1 per planted Splitweed. This effect cannot be boosted.
+                      Occupies one 2×2 block and suppresses global Crop passives
+                      to ×0 unless Leeching Gourd nullifies the debuff.
+                      Splitweed counts as eight debuff crops for Gourd adjacency
+                      and gives +2 Monocrop limit and +0.5× Mirror Corn
+                      effectiveness per planted Splitweed. These effects cannot
+                      be boosted.
                     </p>
                   </div>
                   {hasSplitweed ? (

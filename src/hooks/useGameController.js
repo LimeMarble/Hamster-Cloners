@@ -33,6 +33,7 @@ export function useGameController() {
     unlockedBlueprintSlotCount: derived.unlockedBlueprintSlotCount,
     hasMirrorCorn: derived.hasMirrorCorn,
     hasLeechingGourd: derived.hasLeechingGourd,
+    hasSplitweed: derived.hasSplitweed,
     rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
     rabbitContractsCompleted: game.trade?.rabbitContractsCompleted ?? 0,
     showMonocropLimit: derived.showMonocropLimit,

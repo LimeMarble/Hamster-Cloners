@@ -14,6 +14,7 @@ import {
   getCropProductionSnapshotPerSecond,
   getFortuneModifiers,
   getMirrorCornEffectMultiplier,
+  normalizeFortuneState,
   spawnCloverBundle,
   wipeActiveFortuneEffects,
 } from '../src/game/gameLogic.js'
@@ -98,11 +99,14 @@ test('Clover Bundle outcome weights and durations match the configured Breezes',
       durationSeconds,
     })),
     [
-      { id: FORTUNE_EFFECT_IDS.OPUS, weight: 0.17, durationSeconds: 37 },
+      {
+        id: FORTUNE_EFFECT_IDS.DEMONSTRATION,
+        weight: 0.17,
+        durationSeconds: 37,
+      },
       { id: FORTUNE_EFFECT_IDS.BOUNTY, weight: 0.52, durationSeconds: 117 },
       { id: FORTUNE_EFFECT_IDS.MIRAGE, weight: 0.2, durationSeconds: 0 },
-      { id: FORTUNE_EFFECT_IDS.PRANK, weight: 0.06, durationSeconds: 44 },
-      { id: FORTUNE_EFFECT_IDS.BLIGHT, weight: 0.05, durationSeconds: 22 },
+      { id: FORTUNE_EFFECT_IDS.OPUS, weight: 0.11, durationSeconds: 27 },
     ],
   )
 
@@ -113,13 +117,12 @@ test('Clover Bundle outcome weights and durations match the configured Breezes',
       bundle: { x: 50, y: 50 },
     },
   }
-  const rolls = [0, 0.2, 0.7, 0.9, 0.96]
+  const rolls = [0, 0.2, 0.7, 0.9]
   const expectedIds = [
-    FORTUNE_EFFECT_IDS.OPUS,
+    FORTUNE_EFFECT_IDS.DEMONSTRATION,
     FORTUNE_EFFECT_IDS.BOUNTY,
     FORTUNE_EFFECT_IDS.MIRAGE,
-    FORTUNE_EFFECT_IDS.PRANK,
-    FORTUNE_EFFECT_IDS.BLIGHT,
+    FORTUNE_EFFECT_IDS.OPUS,
   ]
 
   rolls.forEach((roll, index) => {
@@ -128,6 +131,19 @@ test('Clover Bundle outcome weights and durations match the configured Breezes',
   })
 })
 
+test('legacy negative Breezes are removed while old Opus becomes Demonstration', () => {
+  const normalized = normalizeFortuneState({
+    activeEffects: [
+      { id: 'opus', remainingSeconds: 10 },
+      { id: 'prank', remainingSeconds: 10 },
+      { id: 'blight', remainingSeconds: 10 },
+    ],
+  })
+
+  assert.deepEqual(normalized.activeEffects, [
+    { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: 10 },
+  ])
+})
 test('collecting the same timed Breeze adds its duration to the remaining timer', () => {
   const game = {
     ...createCloverGame(),
@@ -135,7 +151,7 @@ test('collecting the same timed Breeze adds its duration to the remaining timer'
       bundle: { x: 50, y: 50 },
       secondsTowardBundleRoll: 0,
       activeEffects: [
-        { id: FORTUNE_EFFECT_IDS.OPUS, remainingSeconds: 12 },
+        { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: 12 },
       ],
       notice: null,
     },
@@ -144,7 +160,7 @@ test('collecting the same timed Breeze adds its duration to the remaining timer'
   const collected = collectCloverBundle(game, () => 0)
 
   assert.deepEqual(collected.fortune.activeEffects, [
-    { id: FORTUNE_EFFECT_IDS.OPUS, remainingSeconds: 49 },
+    { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: 49 },
   ])
 })
 test('testing helpers spawn a bundle and wipe only active Clover effects', () => {
@@ -168,13 +184,27 @@ test('testing helpers spawn a bundle and wipe only active Clover effects', () =>
   assert.deepEqual(wiped.fortune.bundle, { x: 30, y: 63 })
   assert.deepEqual(wiped.fortune.notice, game.fortune.notice)
 })
-test('crop hover stats include active Breeze yield and passive modifiers', () => {
+test('crop hover stats include the updated Breeze yield and passive modifiers', () => {
   const blueprint = createBlueprint({
     rows: 2,
     columns: 2,
     cells: ['sweetPotato', null, null, null],
   })
-  const boostedStats = getBlueprintCropStats(
+  const demonstratedStats = getBlueprintCropStats(
+    blueprint,
+    0,
+    [],
+    0,
+    0,
+    0,
+    getFortuneModifiers({
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: 10 },
+        { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 10 },
+      ],
+    }),
+  )
+  const opusStats = getBlueprintCropStats(
     blueprint,
     0,
     [],
@@ -184,45 +214,36 @@ test('crop hover stats include active Breeze yield and passive modifiers', () =>
     getFortuneModifiers({
       activeEffects: [
         { id: FORTUNE_EFFECT_IDS.OPUS, remainingSeconds: 10 },
-        { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 10 },
-      ],
-    }),
-  )
-  const blightedStats = getBlueprintCropStats(
-    blueprint,
-    0,
-    [],
-    0,
-    0,
-    0,
-    getFortuneModifiers({
-      activeEffects: [
-        { id: FORTUNE_EFFECT_IDS.BLIGHT, remainingSeconds: 10 },
       ],
     }),
   )
 
-  assert.equal(boostedStats.harvestYield, 7.77)
-  assert.equal(boostedStats.hamsterEfficiencyBonus, 0.25 * 1.0777)
+  assert.equal(demonstratedStats.harvestYield, 17.77)
+  assert.equal(demonstratedStats.hamsterEfficiencyBonus, 0.25 * 1.1)
   assert.ok(
-    boostedStats.receivedEffects.some(
+    demonstratedStats.receivedEffects.some(
+      (effect) => effect.type === 'fortune-passive' && effect.multiplier === 1.1,
+    ),
+  )
+  assert.ok(
+    demonstratedStats.receivedEffects.some(
+      (effect) => effect.type === 'fortune-crop-yield' && effect.multiplier === 17.77,
+    ),
+  )
+  assert.equal(opusStats.harvestYield, 7.77)
+  assert.equal(opusStats.hamsterEfficiencyBonus, 0.25 * 1.0777)
+  assert.ok(
+    opusStats.receivedEffects.some(
       (effect) => effect.type === 'fortune-passive' && effect.multiplier === 1.0777,
     ),
   )
   assert.ok(
-    boostedStats.receivedEffects.some(
+    opusStats.receivedEffects.some(
       (effect) => effect.type === 'fortune-crop-yield' && effect.multiplier === 7.77,
     ),
   )
-  assert.equal(blightedStats.harvestYield, 0)
-  assert.equal(blightedStats.harvestDestroyedByAppleTree, true)
-  assert.ok(
-    blightedStats.receivedEffects.some(
-      (effect) => effect.type === 'fortune-harvest' && effect.multiplier === 0,
-    ),
-  )
 })
-test('Bounty multiplies Crop yield while Blight destroys the harvest', () => {
+test('Bounty and Opus multiply Crop yield', () => {
   const blueprint = createBlueprint({
     rows: 2,
     columns: 2,
@@ -241,23 +262,22 @@ test('Bounty multiplies Crop yield while Blight destroys the harvest', () => {
     [],
     1,
     0,
-    { cropYieldMultiplier: 7.77 },
+    { cropYieldMultiplier: 17.77 },
   )
-  const blight = getCropProductionSnapshotPerSecond(
+  const opus = getCropProductionSnapshotPerSecond(
     blueprint,
     farmland,
     [],
     1,
     0,
-    { harvestMultiplier: 0 },
+    { cropYieldMultiplier: 7.77, passiveEffectMultiplier: 1.0777 },
   )
 
-  assert.equal(bounty.total, 7.77)
-  assert.equal(blight.total, 0)
+  assert.equal(bounty.total, 17.77)
+  assert.equal(opus.total, 7.77)
 })
-
-test('Opus and Prank modify protected Turnip and Mirror Corn passives', () => {
-  const passiveMultiplier = 1.0777
+test('Demonstration and Opus modify protected Turnip and Mirror Corn passives', () => {
+  const passiveMultiplier = 1.1
   const turnipBlueprint = createBlueprint({
     rows: 2,
     columns: 2,
@@ -302,11 +322,12 @@ test('Opus and Prank modify protected Turnip and Mirror Corn passives', () => {
 
   const combinedModifiers = getFortuneModifiers({
     activeEffects: [
+      { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: 10 },
       { id: FORTUNE_EFFECT_IDS.OPUS, remainingSeconds: 10 },
-      { id: FORTUNE_EFFECT_IDS.PRANK, remainingSeconds: 10 },
     ],
   })
   assert.ok(
-    Math.abs(combinedModifiers.passiveEffectMultiplier - 1.0777 * 0.9334) < 1e-12,
+    Math.abs(combinedModifiers.passiveEffectMultiplier - 1.1 * 1.0777) < 1e-12,
   )
+  assert.equal(combinedModifiers.cropYieldMultiplier, 7.77)
 })

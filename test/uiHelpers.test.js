@@ -31,6 +31,18 @@ test('blueprint crop summaries count a Leeching Gourd once', () => {
   )
 })
 
+test('blueprint crop summaries count a 2x2 Splitweed once', () => {
+  assert.deepEqual(
+    getBlueprintCropSummary([
+      'knotweed',
+      'splitweedPart',
+      'splitweedPart',
+      'splitweedPart',
+    ]),
+    [{ cropId: 'knotweed', count: 1 }],
+  )
+})
+
 test('blueprint crop summaries handle empty and unknown plots', () => {
   assert.deepEqual(getBlueprintCropSummary([null, null, 'unknownCrop']), [])
 })

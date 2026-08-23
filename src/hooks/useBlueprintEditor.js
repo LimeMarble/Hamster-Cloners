@@ -3,6 +3,8 @@ import {
   getBlueprintSlots,
   getDiagonalTileIndexes,
   getLeechingGourdFootprint,
+  getSplitweedAnchorIndex,
+  getSplitweedFootprint,
   hasReachedMonocropLimit,
 } from '../game/gameLogic.js'
 import { CROP_PERFECTIONS, getCropPlacementName } from '../game/crops.js'
@@ -19,6 +21,7 @@ export function useBlueprintEditor({
   unlockedBlueprintSlotCount,
   hasMirrorCorn,
   hasLeechingGourd,
+  hasSplitweed,
   rowsBuiltPerSecond,
   rabbitContractsCompleted,
   showMonocropLimit,
@@ -44,7 +47,15 @@ export function useBlueprintEditor({
       return
     }
 
-    setHoveredEditorCrop({ index, x: event.clientX, y: event.clientY })
+    const splitweedAnchorIndex = hasSplitweed
+      ? getSplitweedAnchorIndex(game.blueprint, index)
+      : null
+
+    setHoveredEditorCrop({
+      index: splitweedAnchorIndex ?? index,
+      x: event.clientX,
+      y: event.clientY,
+    })
   }
 
   function commitBlueprint(nextBlueprint) {
@@ -214,6 +225,60 @@ export function useBlueprintEditor({
     })
   }
 
+  function removeSplitweed(index) {
+    const currentGame = gameRef.current
+    const anchorIndex = getSplitweedAnchorIndex(currentGame.blueprint, index)
+
+    if (anchorIndex === null) {
+      return
+    }
+
+    const footprintIndexes = new Set(
+      getSplitweedFootprint(currentGame.blueprint, anchorIndex),
+    )
+    commitBlueprint({
+      ...currentGame.blueprint,
+      cells: currentGame.blueprint.cells.map((crop, cellIndex) =>
+        footprintIndexes.has(cellIndex) ? null : crop,
+      ),
+      mirrorCornTargets: (currentGame.blueprint.mirrorCornTargets ?? []).map(
+        (targetIndex, sourceIndex) =>
+          footprintIndexes.has(sourceIndex) ? null : targetIndex,
+      ),
+    })
+  }
+
+  function placeSplitweed(index) {
+    const currentGame = gameRef.current
+    const footprint = getSplitweedFootprint(currentGame.blueprint, index)
+
+    if (
+      footprint.length !== 4 ||
+      footprint.some(
+        (footprintIndex) =>
+          currentGame.blueprint.cells[footprintIndex] !== null,
+      )
+    ) {
+      return
+    }
+
+    const footprintIndexes = new Set(footprint)
+    commitBlueprint({
+      ...currentGame.blueprint,
+      cells: currentGame.blueprint.cells.map((crop, cellIndex) => {
+        if (!footprintIndexes.has(cellIndex)) {
+          return crop
+        }
+
+        return cellIndex === index ? 'knotweed' : 'splitweedPart'
+      }),
+      mirrorCornTargets: (currentGame.blueprint.mirrorCornTargets ?? []).map(
+        (targetIndex, sourceIndex) =>
+          footprintIndexes.has(sourceIndex) ? null : targetIndex,
+      ),
+    })
+  }
+
   function handleEditorPlotClick(index, crop) {
     if (pendingMirrorCornPlacement) {
       if (index === pendingMirrorCornPlacement.sourceIndex) {
@@ -232,8 +297,18 @@ export function useBlueprintEditor({
       return
     }
 
+    if (hasSplitweed && getSplitweedAnchorIndex(game.blueprint, index) !== null) {
+      removeSplitweed(index)
+      return
+    }
+
     if (hasLeechingGourd && selectedCrop === 'pumpkin') {
       placeLeechingGourd(index)
+      return
+    }
+
+    if (hasSplitweed && selectedCrop === 'knotweed') {
+      placeSplitweed(index)
       return
     }
 
@@ -265,6 +340,7 @@ export function useBlueprintEditor({
     unlockedCropIds,
     hasMirrorCorn,
     hasLeechingGourd,
+    hasSplitweed,
   })
 
   function handleEditorPlotContextMenu(index, crop, event) {
@@ -279,6 +355,11 @@ export function useBlueprintEditor({
 
     if (crop === 'leechingGourd' || crop === 'leechingGourdPart') {
       removeLeechingGourd()
+      return
+    }
+
+    if (hasSplitweed && getSplitweedAnchorIndex(game.blueprint, index) !== null) {
+      removeSplitweed(index)
       return
     }
 

@@ -1,5 +1,4 @@
 import {
-  CROP_DEFINITIONS,
   CROP_PERFECTIONS,
   CROP_PERFECTION_IDS,
   SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
@@ -14,55 +13,7 @@ import {
   STARTING_CROPS,
 } from './gameConfig.js'
 import { createInitialFortuneState } from './fortuneLogic.js'
-
-export function isLeechingGourdAnchor(crop) {
-  return CROP_DEFINITIONS[crop]?.isLeechingGourdAnchor === true
-}
-
-function isLeechingGourdPart(crop) {
-  return CROP_DEFINITIONS[crop]?.isLeechingGourdPart === true
-}
-
-export function isLeechingGourdCell(crop) {
-  return isLeechingGourdAnchor(crop) || isLeechingGourdPart(crop)
-}
-
-function normalizeLeechingGourdCells(cells, rows, columns) {
-  const anchorIndexes = cells.flatMap((crop, index) =>
-    isLeechingGourdAnchor(crop) ? [index] : [],
-  )
-  const clearGourdCells = () =>
-    cells.map((crop) => (isLeechingGourdCell(crop) ? null : crop))
-
-  if (anchorIndexes.length === 0) {
-    return cells.some(isLeechingGourdPart) ? clearGourdCells() : cells
-  }
-
-  if (anchorIndexes.length !== 1) {
-    return clearGourdCells()
-  }
-
-  const anchorIndex = anchorIndexes[0]
-  const row = Math.floor(anchorIndex / columns)
-  const column = anchorIndex % columns
-
-  if (row >= rows - 1 || column >= columns - 1) {
-    return clearGourdCells()
-  }
-
-  const footprint = [
-    anchorIndex,
-    anchorIndex + 1,
-    anchorIndex + columns,
-    anchorIndex + columns + 1,
-  ]
-  const hasValidFootprint = footprint.every((index, footprintIndex) =>
-    cells[index] ===
-    (footprintIndex === 0 ? 'leechingGourd' : 'leechingGourdPart'),
-  )
-
-  return hasValidFootprint ? cells : clearGourdCells()
-}
+import { normalizeMultiTileCropCells } from './cropFootprintLogic.js'
 
 function normalizeUniqueCloverCells(cells) {
   let hasClover = false
@@ -81,16 +32,23 @@ export function createBlueprint({
   columns = INITIAL_BLUEPRINT_SIZE.columns,
   cells,
   mirrorCornTargets,
+  requireSplitweedFootprints = false,
 } = {}) {
   const safeRows = Math.max(1, Math.floor(Number(rows) || 1))
   const safeColumns = Math.max(1, Math.floor(Number(columns) || 1))
   const totalCells = safeRows * safeColumns
   const sourceCells = Array.isArray(cells) ? cells : []
   const normalizedCells = normalizeUniqueCloverCells(
-    normalizeLeechingGourdCells(Array.from(
-      { length: totalCells },
-      (_, index) => (isKnownCrop(sourceCells[index]) ? sourceCells[index] : null),
-    ), safeRows, safeColumns),
+    normalizeMultiTileCropCells(
+      Array.from(
+        { length: totalCells },
+        (_, index) =>
+          isKnownCrop(sourceCells[index]) ? sourceCells[index] : null,
+      ),
+      safeRows,
+      safeColumns,
+      { requireSplitweedFootprints },
+    ),
   )
   const sourceMirrorCornTargets = Array.isArray(mirrorCornTargets)
     ? mirrorCornTargets
@@ -127,33 +85,6 @@ export function createBlueprint({
     cells: normalizedCells,
     mirrorCornTargets: normalizedMirrorCornTargets,
   }
-}
-
-export function getLeechingGourdFootprint(blueprint, anchorIndex) {
-  const { rows, columns } = blueprint
-  const safeAnchorIndex = Number(anchorIndex)
-
-  if (
-    !Number.isInteger(safeAnchorIndex) ||
-    safeAnchorIndex < 0 ||
-    safeAnchorIndex >= rows * columns
-  ) {
-    return []
-  }
-
-  const row = Math.floor(safeAnchorIndex / columns)
-  const column = safeAnchorIndex % columns
-
-  if (row >= rows - 1 || column >= columns - 1) {
-    return []
-  }
-
-  return [
-    safeAnchorIndex,
-    safeAnchorIndex + 1,
-    safeAnchorIndex + columns,
-    safeAnchorIndex + columns + 1,
-  ]
 }
 
 export function createInitialGame() {
@@ -318,13 +249,28 @@ export function unlockCropPerfection(game, perfectionId) {
     return null
   }
 
+  const completedCropPerfections = [
+    ...getCompletedCropPerfections(game),
+    perfectionId,
+  ]
+  const shouldNormalizeSplitweed = perfectionId === 'splitweed'
+  const normalizeUnlockedBlueprint = (blueprint) =>
+    shouldNormalizeSplitweed && blueprint
+      ? createBlueprint({ ...blueprint, requireSplitweedFootprints: true })
+      : blueprint
+
   return {
     ...game,
     crops: game.crops - cost,
-    completedCropPerfections: [
-      ...getCompletedCropPerfections(game),
-      perfectionId,
-    ],
+    completedCropPerfections,
+    ...(game.blueprint
+      ? { blueprint: normalizeUnlockedBlueprint(game.blueprint) }
+      : {}),
+    ...(Array.isArray(game.blueprintSlots)
+      ? {
+          blueprintSlots: game.blueprintSlots.map(normalizeUnlockedBlueprint),
+        }
+      : {}),
   }
 }
 
@@ -431,7 +377,7 @@ function addBlueprintColumn(blueprint) {
   }
 }
 
-function removeBlueprintRow(blueprint) {
+function removeBlueprintRow(blueprint, requireSplitweedFootprints = false) {
   if (blueprint.rows <= 1) {
     return blueprint
   }
@@ -443,10 +389,11 @@ function removeBlueprintRow(blueprint) {
     columns: blueprint.columns,
     cells: blueprint.cells.slice(0, totalCells),
     mirrorCornTargets: blueprint.mirrorCornTargets.slice(0, totalCells),
+    requireSplitweedFootprints,
   })
 }
 
-function removeBlueprintColumn(blueprint) {
+function removeBlueprintColumn(blueprint, requireSplitweedFootprints = false) {
   if (blueprint.columns <= 1) {
     return blueprint
   }
@@ -479,12 +426,22 @@ function removeBlueprintColumn(blueprint) {
     columns: nextColumnCount,
     cells,
     mirrorCornTargets,
+    requireSplitweedFootprints,
   })
 }
 
 function applyBlueprintSpace(game, direction) {
-  const currentBlueprint = createBlueprint(game.blueprint)
-  const storedBlueprintSlots = getBlueprintSlots(game)
+  const requireSplitweedFootprints = hasCropPerfection(
+    getCompletedCropPerfections(game),
+    'splitweed',
+  )
+  const currentBlueprint = createBlueprint({
+    ...game.blueprint,
+    requireSplitweedFootprints,
+  })
+  const storedBlueprintSlots = getBlueprintSlots(game).map((blueprint) =>
+    createBlueprint({ ...blueprint, requireSplitweedFootprints }),
+  )
   const activeBlueprintSlot = Math.min(
     Math.max(0, Math.floor(Number(game.activeBlueprintSlot) || 0)),
     storedBlueprintSlots.length - 1,
@@ -502,7 +459,9 @@ function applyBlueprintSpace(game, direction) {
   })
 
   while (expandedBlueprintSlots.length < nextBlueprintSlotCount) {
-    expandedBlueprintSlots.push(createBlueprint(nextBlueprint))
+    expandedBlueprintSlots.push(
+      createBlueprint({ ...nextBlueprint, requireSplitweedFootprints }),
+    )
   }
 
   return {
@@ -573,8 +532,14 @@ export function revokeLastBlueprintExpansion(game, trackId) {
 
   const shrinkBlueprint =
     trackId === 'row' ? removeBlueprintRow : removeBlueprintColumn
+  const requireSplitweedFootprints = hasCropPerfection(
+    getCompletedCropPerfections(game),
+    'splitweed',
+  )
   const currentSlots = getBlueprintSlots(game)
-  const shrunkSlots = currentSlots.map(shrinkBlueprint)
+  const shrunkSlots = currentSlots.map((blueprint) =>
+    shrinkBlueprint(blueprint, requireSplitweedFootprints),
+  )
   const previousActiveSlot = Math.min(
     Math.max(0, Math.floor(Number(game.activeBlueprintSlot) || 0)),
     shrunkSlots.length - 1,

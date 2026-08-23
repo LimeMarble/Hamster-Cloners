@@ -60,6 +60,40 @@ test('current saves retain valid Mirror Corn diagonal tile targets', () => {
   assert.deepEqual(emptyTargetSave.blueprint.mirrorCornTargets, [3, null, null, null])
 })
 
+test('current saves retain valid Splitweed footprints and clear legacy single tiles', () => {
+  const validSave = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    completedCropPerfections: ['splitweed'],
+    blueprint: {
+      rows: 2,
+      columns: 2,
+      cells: [
+        'knotweed',
+        'splitweedPart',
+        'splitweedPart',
+        'splitweedPart',
+      ],
+    },
+  })
+  const legacySave = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    completedCropPerfections: ['splitweed'],
+    blueprint: {
+      rows: 2,
+      columns: 2,
+      cells: ['knotweed', 'leek', null, null],
+    },
+  })
+
+  assert.deepEqual(validSave.blueprint.cells, [
+    'knotweed',
+    'splitweedPart',
+    'splitweedPart',
+    'splitweedPart',
+  ])
+  assert.deepEqual(legacySave.blueprint.cells, [null, 'leek', null, null])
+})
+
 test('current saves retain independent unlocked blueprint slots', () => {
   const migratedGame = normalizeGame({
     blueprintExpansionAxesSwapped: true,

@@ -24,6 +24,7 @@ export function getBlueprintCropSummary(cells = []) {
     if (
       !cropId ||
       cropId === 'leechingGourdPart' ||
+      cropId === 'splitweedPart' ||
       !CROP_DEFINITIONS[cropId]
     ) {
       return counts

@@ -1,5 +1,6 @@
 export * from './gameConfig.js'
 export * from './blueprintLogic.js'
+export * from './cropFootprintLogic.js'
 export * from './purchaseLogic.js'
 export * from './majorProgression.js'
 export * from './tradeLogic.js'
@@ -18,6 +19,7 @@ export {
   getRabbitRelationsMultiplier,
   getLeechingGourdTurnipEffect,
   getMirrorCornEffectMultiplier,
+  getSplitweedMirrorCornEffectivenessBonus,
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getPlantedCropCount,

@@ -39,6 +39,49 @@ test('exports and imports a blueprint with persistent Mirror Corn tile links', (
   )
 })
 
+test('exports and imports a valid 2x2 Splitweed footprint', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: [
+      'knotweed',
+      'splitweedPart',
+      'splitweedPart',
+      'splitweedPart',
+    ],
+    requireSplitweedFootprints: true,
+  })
+  const blueprintCode = exportBlueprint(blueprint)
+  const importedBlueprint = importBlueprint(blueprintCode, {
+    rows: 2,
+    columns: 2,
+    unlockedCropIds: ['knotweed'],
+    hasSplitweed: true,
+  })
+
+  assert.deepEqual(importedBlueprint, blueprint)
+})
+
+test('rejects malformed Splitweed footprints after perfection', () => {
+  const blueprintCode = encodePayload({
+    rows: 2,
+    columns: 2,
+    cells: ['knotweed', null, null, null],
+    mirrorCornTargets: [null, null, null, null],
+  })
+
+  assert.throws(
+    () =>
+      importBlueprint(blueprintCode, {
+        rows: 2,
+        columns: 2,
+        unlockedCropIds: ['knotweed'],
+        hasSplitweed: true,
+      }),
+    /invalid crop layout/,
+  )
+})
+
 test('rejects blueprint codes with a different grid size', () => {
   const blueprintCode = exportBlueprint(
     createBlueprint({ rows: 2, columns: 2, cells: ['leek'] }),

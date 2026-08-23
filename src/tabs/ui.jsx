@@ -261,13 +261,7 @@ export function CropHoverInspector({
             if (effect.type === 'fortune-harvest') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  {effect.multiplier === 0 ? (
-                    "Harvest destroyed by Fortune's Blight"
-                  ) : (
-                    <>
-                      ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> harvest from Breezes of Fortune
-                    </>
-                  )}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> harvest from Breezes of Fortune
                 </li>
               )
             }

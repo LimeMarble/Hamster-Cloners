@@ -160,6 +160,25 @@ export function getCropPassiveStats({
       format: 'multiplier',
       value: baseGlobalPassiveEffectMultiplier,
     })
+
+    const splitweedCount = cropEffects.getPlantedCropCount(
+      blueprint,
+      'knotweed',
+    )
+    const mirrorCornEffectivenessBonus =
+      cropEffects.getSplitweedMirrorCornEffectivenessBonus(
+        blueprint,
+        completedCropPerfections,
+      )
+
+    if (splitweedCount > 0 && mirrorCornEffectivenessBonus > 0) {
+      passiveStats.push({
+        id: 'mirror-corn-effectiveness',
+        label: 'Mirror Corn effectiveness',
+        format: 'multiplier',
+        value: 1 + mirrorCornEffectivenessBonus / splitweedCount,
+      })
+    }
   }
   if (crop === 'leechingGourd') {
     const gourdEffect = cropEffects.getLeechingGourdTurnipEffect(
