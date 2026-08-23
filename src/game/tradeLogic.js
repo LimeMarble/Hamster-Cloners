@@ -61,14 +61,14 @@ export const RABBIT_UNLOCKS = Object.freeze([
   {
     id: RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
     name: 'Unlock 4-Leaf Clover',
-    cost: 77777,
+    cost: 27777,
     description:
       'Unlocks one 4-Leaf Clover per blueprint and its collectible Breezes of Fortune.',
   },
   {
     id: RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
     name: 'Establish contact with Capybaras',
-    cost: 125000,
+    cost: 40000,
     description:
       'Unlocks Capybara demonstrations of agricultural and technical prowess.',
   },
