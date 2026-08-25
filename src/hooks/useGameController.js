@@ -75,7 +75,7 @@ export function useGameController() {
         productionPerSecond: derived.productionPerSecond,
         blueprint: {
           game,
-          fieldIncomePerSecond: derived.productionPerSecond,
+          fieldIncomePerSecond: derived.capybaraBlueprintCropYield,
           showMonocropLimit: derived.showMonocropLimit,
           monocropLimit: derived.monocropLimit,
           monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
@@ -167,7 +167,7 @@ export function useGameController() {
       blueprintEditor: blueprintEditor.blueprintEditor
         ? {
             ...blueprintEditor.blueprintEditor,
-            fieldIncomePerSecond: derived.productionPerSecond,
+            fieldIncomePerSecond: derived.capybaraBlueprintCropYield,
             hamsterEfficiencyMultiplier:
               derived.cropHamsterEfficiencyMultiplier,
             duplicatorEfficiencyMultiplier:
