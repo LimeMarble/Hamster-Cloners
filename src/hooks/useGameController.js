@@ -75,6 +75,7 @@ export function useGameController() {
         productionPerSecond: derived.productionPerSecond,
         blueprint: {
           game,
+          fieldIncomePerSecond: derived.productionPerSecond,
           showMonocropLimit: derived.showMonocropLimit,
           monocropLimit: derived.monocropLimit,
           monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
@@ -163,7 +164,16 @@ export function useGameController() {
             onSkip: skipBackgroundCatchUp,
           }
         : null,
-      blueprintEditor: blueprintEditor.blueprintEditor,
+      blueprintEditor: blueprintEditor.blueprintEditor
+        ? {
+            ...blueprintEditor.blueprintEditor,
+            fieldIncomePerSecond: derived.productionPerSecond,
+            hamsterEfficiencyMultiplier:
+              derived.cropHamsterEfficiencyMultiplier,
+            duplicatorEfficiencyMultiplier:
+              derived.rowDuplicatorEffectivenessMultiplier,
+          }
+        : null,
       monocropWarning: blueprintEditor.monocropWarning,
       blueprintMastery: {
         isOpen:

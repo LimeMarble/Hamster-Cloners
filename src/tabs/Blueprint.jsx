@@ -6,6 +6,7 @@ import { getBlueprintCropSummary } from './uiHelpers.js'
 
 export function Blueprint({
   game,
+  fieldIncomePerSecond,
   showMonocropLimit,
   monocropLimit,
   monocropPenaltyMultiplier,
@@ -117,6 +118,12 @@ export function Blueprint({
       </button>
 
       <dl className="field-stats">
+        <div>
+          <dt>Field income / sec</dt>
+          <dd>
+            <FormattedNumber value={fieldIncomePerSecond} /> Crops
+          </dd>
+        </div>
         <div>
           <dt>Fields planted</dt>
           <dd>

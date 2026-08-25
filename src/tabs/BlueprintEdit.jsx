@@ -5,6 +5,7 @@ import {
 } from '../game/crops.js'
 import {
   CropHoverInspector,
+  FormattedNumber,
   MirrorCornConnectionLines,
   MonocropStatus,
 } from './ui.jsx'
@@ -12,6 +13,9 @@ import { CropVisual } from './CropVisual.jsx'
 
 export function BlueprintEdit({
   game,
+  fieldIncomePerSecond,
+  hamsterEfficiencyMultiplier,
+  duplicatorEfficiencyMultiplier,
   selectedCrop,
   onSelectCrop,
   pendingMirrorCornPlacement,
@@ -64,6 +68,29 @@ export function BlueprintEdit({
             multiplier={monocropPenaltyMultiplier}
           />
         ) : null}
+
+        <dl className="field-stats blueprint-editor-income">
+          <div>
+            <dt>Field income / sec</dt>
+            <dd>
+              <FormattedNumber value={fieldIncomePerSecond} /> Crops
+            </dd>
+          </div>
+          <div>
+            <dt>Hamster efficiency</dt>
+            <dd>
+              ×<FormattedNumber value={hamsterEfficiencyMultiplier} maximumFractionDigits={2} />
+            </dd>
+          </div>
+          {game.hasUnlockedSunflower ? (
+            <div>
+              <dt>Duplicator efficiency</dt>
+              <dd>
+                ×<FormattedNumber value={duplicatorEfficiencyMultiplier} maximumFractionDigits={2} />
+              </dd>
+            </div>
+          ) : null}
+        </dl>
 
         <p className="editing-notice">
           Harvesting is paused while you modify this blueprint. Right-click a
