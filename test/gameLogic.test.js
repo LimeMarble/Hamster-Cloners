@@ -118,7 +118,7 @@ test('hamster cost scaling progressively accelerates past 1,500', () => {
       unionized: true,
       postUnionHamstersHired: 1400,
     }),
-    'The hamster union is no longer satisfied with your raises and demand further margins while maintaining their rather convenient 3% improvements.',
+    'The hamster union is no longer satisfied with your raises and demands further margins while maintaining their rather convenient 3% improvements.',
   )
 })
 

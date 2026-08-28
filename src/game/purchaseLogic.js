@@ -18,7 +18,7 @@ export function getHamsterClonerDescription({
   const safeHamsters = Math.max(0, Math.floor(Number(hamsters) || 0))
 
   if (safeHamsters >= HAMSTER_ACCELERATED_COST_SCALING_START) {
-    return 'The hamster union is no longer satisfied with your raises and demand further margins while maintaining their rather convenient 3% improvements.'
+    return 'The hamster union is no longer satisfied with your raises and demands further margins while maintaining their rather convenient 3% improvements.'
   }
 
   if (unionized) {

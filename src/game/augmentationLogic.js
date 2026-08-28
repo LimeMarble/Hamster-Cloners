@@ -22,15 +22,15 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL,
     name: 'Safe Handling',
-    cost: 2.5e73,
+    cost: 2.5e72,
   }),
   [SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS,
     name: 'Brighter Reflection',
-    baseCost: 4e75,
+    baseCost: 4e73,
     costGrowth: 10,
     maximumLevel: 8,
-  }),
+    }),
   [SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT,
     name: 'Heat-Resistant Crops',
@@ -153,7 +153,7 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
     [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]:
       'mirrorCornDebuffRemovalUnlocked',
 
-    [SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT]:
+      [SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT]:
       'mirrorCornReflectionLimitUnlocked',
   }
   const stateKey = cornAugmentationStateKeys[augmentationId]
