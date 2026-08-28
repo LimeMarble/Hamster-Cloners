@@ -14,6 +14,7 @@ export function getCropPassiveStats({
   globalRowProductionEffects,
   globalHamsterEfficiencyEffects,
   baseGlobalPassiveEffectMultiplier,
+  seedAugmentations,
 }) {
   const adjustForMonocrop = (bonus) =>
     bonus > 0 ? bonus * monocropMultiplier : bonus / monocropMultiplier
@@ -50,6 +51,7 @@ export function getCropPassiveStats({
           index,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         ),
     })
   }
@@ -74,6 +76,7 @@ export function getCropPassiveStats({
     crop,
     completedCropPerfections,
     passiveEffectMultiplier,
+    seedAugmentations,
   )
   if (ownBaseAdjacentHarvestBonus !== 0) {
     passiveStats.push({
@@ -95,6 +98,7 @@ export function getCropPassiveStats({
           index,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         ),
     })
   }

@@ -216,6 +216,14 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'mirror-corn-overload') {
+              return (
+                <li key={effect.type + '-' + effectIndex}>
+                  Reflected sunlight overload: {effect.count} reflections exceeds the safe limit of {effect.safeLimit}. This Crop's harvest and all passive effects are destroyed.
+                </li>
+              )
+            }
+
             if (effect.type === 'leeching-gourd') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>

@@ -55,9 +55,6 @@ export function createBlueprint({
   const sourceMirrorCornTargets = Array.isArray(mirrorCornTargets)
     ? mirrorCornTargets
     : []
-  const mirrorCornTargetCounts = new Map()
-  const maximumReflectionsPerTile =
-    CROP_PERFECTIONS.mirrorCorn.maximumReflectionsPerTile
   const normalizedMirrorCornTargets = normalizedCells.map((crop, sourceIndex) => {
     const targetIndex = sourceMirrorCornTargets[sourceIndex]
     const sourceRow = Math.floor(sourceIndex / safeColumns)
@@ -72,13 +69,7 @@ export function createBlueprint({
       Math.abs(sourceRow - targetRow) === 1 &&
       Math.abs(sourceColumn - targetColumn) === 1
 
-    if (!hasValidTarget) return null
-
-    const currentTargetCount = mirrorCornTargetCounts.get(targetIndex) ?? 0
-    if (currentTargetCount >= maximumReflectionsPerTile) return null
-
-    mirrorCornTargetCounts.set(targetIndex, currentTargetCount + 1)
-    return targetIndex
+    return hasValidTarget ? targetIndex : null
   })
 
   return {

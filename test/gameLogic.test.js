@@ -17,6 +17,7 @@ import {
   canUnlockCropPerfection,
   getHamsterStateAfterHire,
   getHamsterCoordinationMultiplier,
+  getHamsterClonerDescription,
   getHamsterCostGrowth,
   getHamsterExternalMultiplier,
   getMaxDuplicatorPurchase,
@@ -111,6 +112,14 @@ test('hamster cost scaling progressively accelerates past 1,500', () => {
   const costAt1999 = getNextHamsterCost(1999, true)
   const costAt2000 = getNextHamsterCost(2000, true)
   assert.ok(Math.abs(costAt2000 / costAt1999 - 1.35) < 1e-12)
+  assert.equal(
+    getHamsterClonerDescription({
+      hamsters: 1500,
+      unionized: true,
+      postUnionHamstersHired: 1400,
+    }),
+    'The hamster union is no longer satisfied with your raises and demand further margins while maintaining their rather convenient 3% improvements.',
+  )
 })
 
 test('hamsters build 0.1 hidden Columns of farmland per second each', () => {
@@ -395,7 +404,7 @@ test('Mirror Corn quadruples selected diagonal crop effects', () => {
   )
 })
 
-test('Mirror Corn limits each target tile to two reflections', () => {
+test('Mirror Corn keeps excess reflections but overloads the targeted crop', () => {
   const overlinkedBlueprint = {
     rows: 3,
     columns: 3,
@@ -407,23 +416,46 @@ test('Mirror Corn limits each target tile to two reflections', () => {
   assert.equal(CROP_PERFECTIONS.mirrorCorn.maximumReflectionsPerTile, 2)
   assert.match(
     CROP_PERFECTIONS.mirrorCorn.effectDescription,
-    /burn any crop to a crisp/,
+    /excess reflected sunlight destroys/,
   )
-  assert.deepEqual(normalizedBlueprint.mirrorCornTargets, [
-    4,
-    null,
-    4,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-  ])
   assert.deepEqual(
-    getBlueprintCropStats(overlinkedBlueprint, 4, ['mirrorCorn'])
-      .receivedEffects,
-    [{ type: 'mirror-corn', count: 2, multiplier: 16 }],
+    normalizedBlueprint.mirrorCornTargets,
+    overlinkedBlueprint.mirrorCornTargets,
+  )
+
+  const overloadedStats = getBlueprintCropStats(
+    normalizedBlueprint,
+    4,
+    ['mirrorCorn', 'enrichingLeek'],
+  )
+  assert.equal(overloadedStats.harvestYield, 0)
+  assert.deepEqual(overloadedStats.passiveStats, [])
+  assert.deepEqual(overloadedStats.receivedEffects, [
+    { type: 'mirror-corn-overload', count: 3, safeLimit: 2 },
+  ])
+
+  const safelyAugmentedStats = getBlueprintCropStats(
+    normalizedBlueprint,
+    4,
+    ['mirrorCorn', 'enrichingLeek'],
+    0,
+    0,
+    0,
+    {},
+    { mirrorCornReflectionLimitUnlocked: true },
+  )
+  assert.equal(safelyAugmentedStats.harvestYield, 1)
+  assert.deepEqual(
+    safelyAugmentedStats.receivedEffects.find(
+      (effect) => effect.type === 'mirror-corn',
+    ),
+    { type: 'mirror-corn', count: 3, multiplier: 64 },
+  )
+  assert.equal(
+    safelyAugmentedStats.passiveStats.find(
+      (passive) => passive.id === 'adjacent-crop-yield',
+    ).value,
+    320,
   )
 })
 

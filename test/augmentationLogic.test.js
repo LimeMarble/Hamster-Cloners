@@ -2,14 +2,19 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   CAPYBARA_DEMONSTRATION_IDS,
+  SEED_AUGMENTATIONS,
   SEED_AUGMENTATION_IDS,
   createBlueprint,
   createInitialGame,
   getBaseFieldIncome,
   getBlueprintCropStats,
+  getCropHamsterEfficiencyMultiplier,
   getLeekAugmentationYieldBonus,
+  getMirrorCornEffectMultiplier,
+  getMirrorCornMaximumReflections,
   getNextSeedAugmentationCost,
   purchaseSeedAugmentation,
+  toggleSeedAugmentation,
 } from '../src/game/gameLogic.js'
 import { normalizeGame } from '../src/game/storage.js'
 
@@ -130,7 +135,132 @@ test('Diagonal Enrichment costs 1e68 and applies Leek boosts diagonally', () => 
   )
 })
 
-test('Seed Augmentations require perfected Leek and persist with safe limits', () => {
+test('Mirror Corn augmentations use their prices and change each Corn rule', () => {
+  let game = {
+    ...createAugmentationGame(),
+    completedCropPerfections: ['enrichingLeek', 'mirrorCorn'],
+  }
+  const purchases = [
+    {
+      id: SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL,
+      stateKey: 'mirrorCornDebuffRemovalUnlocked',
+    },
+    {
+      id: SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT,
+      stateKey: 'mirrorCornReflectionLimitUnlocked',
+    },
+  ]
+
+  purchases.forEach(({ id, stateKey }) => {
+    const cost = SEED_AUGMENTATIONS[id].cost
+    assert.equal(getNextSeedAugmentationCost(game, id), cost)
+    game = purchaseSeedAugmentation({ ...game, crops: cost }, id)
+    assert.equal(game.crops, 0)
+    assert.equal(game.seedAugmentations[stateKey], true)
+    assert.equal(getNextSeedAugmentationCost(game, id), null)
+  })
+
+  const brighterReflection =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS]
+  Array.from({ length: brighterReflection.maximumLevel }, (_, level) => {
+    const cost =
+      brighterReflection.baseCost * brighterReflection.costGrowth ** level
+
+    assert.equal(
+      getNextSeedAugmentationCost(
+        game,
+        SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS,
+      ),
+      cost,
+    )
+    game = purchaseSeedAugmentation(
+      { ...game, crops: cost },
+      SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS,
+    )
+    assert.equal(game.crops, 0)
+    assert.equal(
+      game.seedAugmentations.mirrorCornEffectivenessLevel,
+      level + 1,
+    )
+  })
+  assert.equal(
+    getNextSeedAugmentationCost(
+      game,
+      SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS,
+    ),
+    null,
+  )
+
+  const mirrorBlueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['corn', null, null, 'potato'],
+    mirrorCornTargets: [3, null, null, null],
+  })
+  const cornBlueprint = createBlueprint({
+    rows: 1,
+    columns: 1,
+    cells: ['corn'],
+  })
+
+  assert.equal(
+    getMirrorCornEffectMultiplier(
+      mirrorBlueprint,
+      3,
+      ['mirrorCorn'],
+      1,
+      game.seedAugmentations,
+    ),
+    12,
+  )
+  assert.equal(getMirrorCornMaximumReflections(game.seedAugmentations), 3)
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(
+      cornBlueprint,
+      ['mirrorCorn'],
+      0,
+      1,
+      game.seedAugmentations,
+    ),
+    1,
+  )
+
+  const disabledGame = toggleSeedAugmentation(
+    game,
+    SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL,
+  )
+  assert.equal(
+    disabledGame.seedAugmentations.mirrorCornDebuffRemovalEnabled,
+    false,
+  )
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(
+      cornBlueprint,
+      ['mirrorCorn'],
+      0,
+      1,
+      disabledGame.seedAugmentations,
+    ),
+    0.5,
+  )
+
+  const withoutPerfectCorn = createAugmentationGame()
+  assert.equal(
+    purchaseSeedAugmentation(
+      {
+        ...withoutPerfectCorn,
+        crops:
+          SEED_AUGMENTATIONS[
+            SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL
+          ].cost,
+      },
+      SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL,
+    ),
+    null,
+  )
+})
+
+test('Seed Augmentations require perfected crops and persist with safe limits', () => {
   const lockedGame = createInitialGame()
   assert.equal(
     purchaseSeedAugmentation(
@@ -143,7 +273,17 @@ test('Seed Augmentations require perfected Leek and persist with safe limits', (
   assert.deepEqual(normalizeGame({}).seedAugmentations, {
     leekEnrichmentLevel: 0,
     leekDiagonalUnlocked: false,
+    mirrorCornDebuffRemovalUnlocked: false,
+    mirrorCornDebuffRemovalEnabled: false,
+    mirrorCornEffectivenessLevel: 0,
+    mirrorCornReflectionLimitUnlocked: false,
   })
+  assert.equal(
+    normalizeGame({
+      seedAugmentations: { mirrorCornEffectivenessUnlocked: true },
+    }).seedAugmentations.mirrorCornEffectivenessLevel,
+    1,
+  )
   assert.deepEqual(
     normalizeGame({
       seedAugmentations: {
@@ -154,6 +294,10 @@ test('Seed Augmentations require perfected Leek and persist with safe limits', (
     {
       leekEnrichmentLevel: 5,
       leekDiagonalUnlocked: false,
+      mirrorCornDebuffRemovalUnlocked: false,
+      mirrorCornDebuffRemovalEnabled: false,
+      mirrorCornEffectivenessLevel: 0,
+      mirrorCornReflectionLimitUnlocked: false,
     },
   )
 })

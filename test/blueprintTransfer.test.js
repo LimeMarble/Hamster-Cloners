@@ -179,22 +179,19 @@ test('rejects invalid and unsupported blueprint codes', () => {
   )
 })
 
-test('rejects blueprints that reflect three Mirror Corns onto one tile', () => {
-  const overlinkedBlueprintCode = encodePayload({
+test('imports excess Mirror Corn reflections so overload behavior persists', () => {
+  const overlinkedBlueprint = {
     rows: 3,
     columns: 3,
     cells: ['corn', null, 'corn', null, 'leek', null, 'corn', null, null],
     mirrorCornTargets: [4, null, 4, null, null, null, 4, null, null],
+  }
+  const importedBlueprint = importBlueprint(encodePayload(overlinkedBlueprint), {
+    rows: 3,
+    columns: 3,
+    unlockedCropIds: ['leek', 'corn'],
+    hasMirrorCorn: true,
   })
 
-  assert.throws(
-    () =>
-      importBlueprint(overlinkedBlueprintCode, {
-        rows: 3,
-        columns: 3,
-        unlockedCropIds: ['leek', 'corn'],
-        hasMirrorCorn: true,
-      }),
-    /invalid crop layout or tile link/,
-  )
+  assert.deepEqual(importedBlueprint, createBlueprint(overlinkedBlueprint))
 })

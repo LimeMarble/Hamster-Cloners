@@ -1,6 +1,7 @@
 import {
   getAdjacentCropEffectMultiplier,
   getGlobalPassiveEffectMultiplier,
+  getMirrorCornEffectBlueprint,
   getMirrorCornEffectMultiplier,
   getMonocropCropCount,
   getMonocropThresholdBonus,
@@ -158,28 +159,33 @@ export function getFortuneModifiers(gameOrFortune) {
 }
 
 export function getCloverBundleChancePerMinute(game) {
-  const cloverIndex = game.blueprint?.cells?.indexOf('fourLeafClover') ?? -1
+  const completedCropPerfections = game.completedCropPerfections ?? []
+  const blueprint = getMirrorCornEffectBlueprint(
+    game.blueprint,
+    completedCropPerfections,
+    game.seedAugmentations,
+  )
+  const cloverIndex = blueprint?.cells?.indexOf('fourLeafClover') ?? -1
 
   if (cloverIndex < 0) return 0
 
   const fieldsPlanted = Math.max(1, getFortuneFieldsPlanted(game.farmland))
   const baseChance = (7 + 0.7 * Math.log10(fieldsPlanted)) / 100
-  const completedCropPerfections = game.completedCropPerfections ?? []
-  const fieldSize = game.blueprint.rows * game.blueprint.columns
+  const fieldSize = blueprint.rows * blueprint.columns
   const monocropMultiplier = getMonocropYieldMultiplier(
-    getMonocropCropCount(game.blueprint, 'fourLeafClover'),
+    getMonocropCropCount(blueprint, 'fourLeafClover'),
     fieldSize,
-    getMonocropThresholdBonus(game.blueprint, completedCropPerfections),
+    getMonocropThresholdBonus(blueprint, completedCropPerfections),
   )
   const passiveEffectMultiplier =
     getFortuneModifiers(game).passiveEffectMultiplier
   const globalPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
-    game.blueprint,
+    blueprint,
     completedCropPerfections,
     passiveEffectMultiplier,
   )
   const adjacentEffectMultiplier = getAdjacentCropEffectMultiplier(
-    game.blueprint,
+    blueprint,
     cloverIndex,
     'fourLeafClover',
     false,
@@ -187,10 +193,11 @@ export function getCloverBundleChancePerMinute(game) {
     passiveEffectMultiplier,
   )
   const mirrorCornEffectMultiplier = getMirrorCornEffectMultiplier(
-    game.blueprint,
+    blueprint,
     cloverIndex,
     completedCropPerfections,
     passiveEffectMultiplier,
+    game.seedAugmentations,
   )
 
   return Math.min(

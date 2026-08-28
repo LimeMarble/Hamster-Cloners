@@ -5,9 +5,34 @@ import {
   HAMSTER_COST_GROWTH_INCREASE_PER_HAMSTER,
   ROW_DUPLICATOR_BASE_COST,
   ROW_DUPLICATOR_COST_GROWTH,
+  UNION_STATUS_RETIRE_HIRE_COUNT,
   UNIONIZATION_HAMSTER_COUNT,
   UNIONIZED_HAMSTER_COUNT,
 } from './gameConfig.js'
+
+export function getHamsterClonerDescription({
+  hamsters = 0,
+  unionized = false,
+  postUnionHamstersHired = 0,
+} = {}) {
+  const safeHamsters = Math.max(0, Math.floor(Number(hamsters) || 0))
+
+  if (safeHamsters >= HAMSTER_ACCELERATED_COST_SCALING_START) {
+    return 'The hamster union is no longer satisfied with your raises and demand further margins while maintaining their rather convenient 3% improvements.'
+  }
+
+  if (unionized) {
+    if (postUnionHamstersHired >= UNION_STATUS_RETIRE_HIRE_COUNT) {
+      return 'The hamster workforce is working at an established pace.'
+    }
+
+    return postUnionHamstersHired > 0
+      ? 'A post-union hire has enabled a compounded 3% Hamster Efficiency bonus per active hamster.'
+      : 'The 100 remaining hamsters are working normally. Hire a post-union hamster to activate their compounded Hamster Efficiency bonus.'
+  }
+
+  return 'Every trained hamster tends the field. The hiring cost rises by 1 Crop... for now.'
+}
 
 export function getHamsterCostGrowth(hamsters) {
   const safeHamsters = Math.max(0, Math.floor(Number(hamsters) || 0))

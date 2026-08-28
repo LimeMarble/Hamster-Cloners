@@ -1,6 +1,6 @@
 import {
+  getHamsterClonerDescription,
   HIRE_MAX_UNLOCK_COUNT,
-  UNION_STATUS_RETIRE_HIRE_COUNT,
 } from '../game/gameLogic.js'
 import { FormattedNumber } from './ui.jsx'
 
@@ -28,13 +28,7 @@ export function HamsterPurchase({
         </span>
       </div>
       <p className="card-copy">
-        {game.unionized
-          ? game.postUnionHamstersHired >= UNION_STATUS_RETIRE_HIRE_COUNT
-            ? 'The hamster workforce is working at an established pace.'
-            : game.postUnionHamstersHired > 0
-              ? 'A post-union hire has enabled a compounded 3% Hamster Efficiency bonus per active hamster.'
-              : 'The 100 remaining hamsters are working normally. Hire a post-union hamster to activate their compounded Hamster Efficiency bonus.'
-          : 'Every trained hamster tends the field. The hiring cost rises by 1 Crop... for now.'}
+        {getHamsterClonerDescription(game)}
       </p>
       {unionStatus ? (
         <p className={`union-status ${game.unionized ? 'union-status-complete' : ''}`}>

@@ -113,12 +113,14 @@ export function useGameDerivedState(game) {
         game.completedCropPerfections,
         game.hamsters,
         fortuneModifiers.passiveEffectMultiplier,
+        game.seedAugmentations,
       ),
     [
       game.blueprint,
       game.completedCropPerfections,
       game.hamsters,
       fortuneModifiers.passiveEffectMultiplier,
+      game.seedAugmentations,
     ],
   )
   const rowDuplicatorCoordinationMultiplier = useMemo(
@@ -155,12 +157,14 @@ export function useGameDerivedState(game) {
         game.completedCropPerfections,
         rowsBuiltPerSecond,
         fortuneModifiers.passiveEffectMultiplier,
+        game.seedAugmentations,
       ),
     [
       game.blueprint,
       game.completedCropPerfections,
       rowsBuiltPerSecond,
       fortuneModifiers.passiveEffectMultiplier,
+      game.seedAugmentations,
     ],
   )
   const columnsBuiltPerSecond = useMemo(

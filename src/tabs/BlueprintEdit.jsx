@@ -3,6 +3,7 @@ import {
   getCropName,
   getCropPlacementEffectDescription,
 } from '../game/crops.js'
+import { getMirrorCornMaximumReflections } from '../game/gameLogic.js'
 import {
   CropHoverInspector,
   FormattedNumber,
@@ -39,6 +40,10 @@ export function BlueprintEdit({
   onUpdateHoveredEditorCrop,
   onClearHoveredEditorCrop,
 }) {
+  const safeMirrorCornReflectionLimit = getMirrorCornMaximumReflections(
+    game.seedAugmentations,
+  )
+
   return (
     <div className="modal-backdrop" role="presentation">
       <section
@@ -105,8 +110,9 @@ export function BlueprintEdit({
         ) : hasMirrorCorn && selectedCrop === 'corn' ? (
           <p className="mirror-corn-notice">
             Place Mirror Corn where it has a diagonal tile, then choose that
-            tile. The link remains when its crop changes, but each tile can
-            receive at most two reflections.
+            tile. The link remains when its crop changes. A tile safely takes
+            up to {safeMirrorCornReflectionLimit} reflections; exceeding that
+            destroys its harvest and every passive effect.
           </p>
         ) : null}
 

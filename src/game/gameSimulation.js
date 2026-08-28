@@ -113,6 +113,7 @@ export function advanceGameSimulationStep(
       currentGame.completedCropPerfections,
       currentGame.hamsters,
       fortuneModifiers.passiveEffectMultiplier,
+      currentGame.seedAugmentations,
     )
   const rowsBuiltPerSecond = currentGame.hasUnlockedRowDuplicators
     ? getRowsProducedPerSecond(
@@ -137,6 +138,7 @@ export function advanceGameSimulationStep(
       currentGame.completedCropPerfections,
       rowsBuiltPerSecond,
       fortuneModifiers.passiveEffectMultiplier,
+      currentGame.seedAugmentations,
     ),
     safeElapsedSeconds * 1000,
     (currentGame.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1) *

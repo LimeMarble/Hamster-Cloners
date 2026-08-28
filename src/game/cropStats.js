@@ -18,11 +18,15 @@ import {
   getHarvestBonusConnections,
   getGroupedGlobalHarvestEffects,
   getLeechingGourdTurnipEffect,
+  getMirrorCornEffectBlueprint,
   getMirrorCornEffectMultiplier,
+  getMirrorCornMaximumReflections,
   getMirrorCornTargetCount,
+  getRawMirrorCornTargetCount,
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
+  isMirrorCornOverloaded,
 } from './cropEffects.js'
 import { getCropPassiveStats } from './cropPassiveStats.js'
 function normalizeFortuneMultiplier(value) {
@@ -31,7 +35,7 @@ function normalizeFortuneMultiplier(value) {
 }
 
 export function getBlueprintCropStats(
-  blueprint,
+  sourceBlueprint,
   index,
   completedCropPerfections = [],
   rowsProducedPerSecond = 0,
@@ -40,13 +44,44 @@ export function getBlueprintCropStats(
   fortuneModifiers = {},
   seedAugmentations = {},
 ) {
-  const crop = blueprint.cells[index]
+  const crop = sourceBlueprint.cells[index]
   const definition = CROP_DEFINITIONS[crop]
 
   if (!definition) {
     return null
   }
 
+  const overloadedByMirrorCorn = isMirrorCornOverloaded(
+    sourceBlueprint,
+    index,
+    completedCropPerfections,
+    seedAugmentations,
+  )
+
+  if (overloadedByMirrorCorn) {
+    return {
+      crop,
+      baseYield: getCropBaseYield(crop, completedCropPerfections),
+      harvestYield: 0,
+      hamsterEfficiencyBonus: 0,
+      passiveStats: [],
+      harvestDestroyedByAppleTree: false,
+      externalCropBuffMultiplier: null,
+      receivedEffects: [
+        {
+          type: 'mirror-corn-overload',
+          count: getRawMirrorCornTargetCount(sourceBlueprint, index),
+          safeLimit: getMirrorCornMaximumReflections(seedAugmentations),
+        },
+      ],
+    }
+  }
+
+  const blueprint = getMirrorCornEffectBlueprint(
+    sourceBlueprint,
+    completedCropPerfections,
+    seedAugmentations,
+  )
   const passiveEffectMultiplier = normalizeFortuneMultiplier(
     fortuneModifiers.passiveEffectMultiplier,
   )
@@ -56,6 +91,14 @@ export function getBlueprintCropStats(
   const fortuneHarvestMultiplier = normalizeFortuneMultiplier(
     fortuneModifiers.harvestMultiplier,
   )
+  const getAugmentedMirrorCornEffectMultiplier = (targetIndex) =>
+    getMirrorCornEffectMultiplier(
+      blueprint,
+      targetIndex,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    )
   const neighboringConnections = getAdjacentCropConnections(blueprint, index)
   const harvestBonusConnections = getHarvestBonusConnections(
     blueprint,
@@ -66,6 +109,7 @@ export function getBlueprintCropStats(
   const baseHamsterEfficiencyBonus = getCropHamsterEfficiencyBonus(
     crop,
     completedCropPerfections,
+    seedAugmentations,
   )
   const receivedEffects = []
   const fieldSize = blueprint.rows * blueprint.columns
@@ -164,17 +208,13 @@ export function getBlueprintCropStats(
     blueprint,
     index,
     completedCropPerfections,
+    seedAugmentations,
   )
   if (mirrorCornTargetCount > 0) {
     receivedEffects.push({
       type: 'mirror-corn',
       count: mirrorCornTargetCount,
-      multiplier: getMirrorCornEffectMultiplier(
-        blueprint,
-        index,
-        completedCropPerfections,
-        passiveEffectMultiplier,
-      ),
+      multiplier: getAugmentedMirrorCornEffectMultiplier(index),
     })
   }
 
@@ -202,12 +242,7 @@ export function getBlueprintCropStats(
           completedCropPerfections,
           passiveEffectMultiplier,
         ) *
-        getMirrorCornEffectMultiplier(
-          blueprint,
-          neighborIndex,
-          completedCropPerfections,
-          passiveEffectMultiplier,
-        )
+        getAugmentedMirrorCornEffectMultiplier(neighborIndex)
 
       if (cropYieldBonus !== 0) {
         const currentBonus = cropYieldBonusesByCrop.get(sourceCropId) ?? {
@@ -286,12 +321,7 @@ export function getBlueprintCropStats(
             completedCropPerfections,
             passiveEffectMultiplier,
           ) *
-          getMirrorCornEffectMultiplier(
-            blueprint,
-            neighborIndex,
-            completedCropPerfections,
-            passiveEffectMultiplier,
-          )
+          getAugmentedMirrorCornEffectMultiplier(neighborIndex)
       )
     },
     0,
@@ -303,6 +333,7 @@ export function getBlueprintCropStats(
         crop,
         completedCropPerfections,
         passiveEffectMultiplier,
+        seedAugmentations,
       )
     : null
   const cropEffectMultiplier =
@@ -322,12 +353,7 @@ export function getBlueprintCropStats(
     adjustForMonocrop(baseHamsterEfficiencyBonus) *
     passiveEffectMultiplier *
     cropEffectMultiplier *
-    getMirrorCornEffectMultiplier(
-      blueprint,
-      index,
-      completedCropPerfections,
-      passiveEffectMultiplier,
-    )
+    getAugmentedMirrorCornEffectMultiplier(index)
   const baseGlobalPassiveEffectMultiplier =
     getGlobalPassiveEffectMultiplier(
       blueprint,
@@ -450,6 +476,7 @@ export function getBlueprintCropStats(
     globalRowProductionEffects,
     globalHamsterEfficiencyEffects,
     baseGlobalPassiveEffectMultiplier,
+    seedAugmentations,
   })
 
   return {

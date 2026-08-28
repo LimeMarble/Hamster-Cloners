@@ -1,6 +1,9 @@
 import {
   getLeekAugmentationYieldBonus,
+  getMirrorCornEffectivenessBonus,
+  getMirrorCornReflectionLimitBonus,
   hasLeekDiagonalAugmentation,
+  isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
 export const SWEET_POTATO_UNLOCK_HAMSTER_COUNT = 125
 export const TURNIP_UNLOCK_CROP_COUNT = 1e8
@@ -242,7 +245,7 @@ export const CROP_PERFECTIONS = {
     maximumReflectionsPerTile: 2,
     baseEffectDescription: '5 Crops per slot · −50% Hamster efficiency',
     effectDescription:
-      'Multiplies one diagonally adjacent crop effect by ×4 · each tile can receive at most two reflections; harsh sunlight reflected by three or more Mirror Corns would burn any crop to a crisp',
+      'Multiplies one diagonally adjacent crop effect by ×4 · each tile safely receives up to two reflections; excess reflected sunlight destroys that crop\'s harvest and passive effects',
   },
   fourLeafClover: {
     name: '4-Leaf Clover',
@@ -355,11 +358,37 @@ export function getCropPlacementName(cropId, completedCropPerfections) {
     : getCropName(cropId, completedCropPerfections)
 }
 
+function getPerfectionBaseEffectDescription(
+  cropId,
+  perfection,
+  cropDefinition,
+  seedAugmentations,
+) {
+  if (cropId === 'corn' && perfection?.id === 'mirrorCorn') {
+    return isMirrorCornDebuffRemovalEnabled(seedAugmentations)
+      ? '5 Crops per slot · Hamster efficiency debuff removed'
+      : perfection.baseEffectDescription
+  }
+
+  return perfection.baseEffectDescription ?? cropDefinition.effectDescription
+}
+
 function getPerfectionEffectDescription(
   cropId,
   perfection,
   seedAugmentations,
 ) {
+  if (cropId === 'corn' && perfection?.id === 'mirrorCorn') {
+    const effectMultiplier =
+      perfection.diagonalTargetEffectMultiplier +
+      getMirrorCornEffectivenessBonus(seedAugmentations)
+    const safeReflectionLimit =
+      perfection.maximumReflectionsPerTile +
+      getMirrorCornReflectionLimitBonus(seedAugmentations)
+
+    return `Multiplies one diagonally adjacent Crop effect by ×${effectMultiplier} · each tile safely receives up to ${safeReflectionLimit} reflections; excess reflected sunlight destroys that Crop's harvest and passive effects`
+  }
+
   if (cropId !== 'leek' || perfection?.id !== 'enrichingLeek') {
     return perfection.effectDescription
   }
@@ -391,7 +420,7 @@ export function getCropEffectDescription(
   }
 
   return perfection
-    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations)}`
+    ? `${getPerfectionBaseEffectDescription(cropId, perfection, cropDefinition, seedAugmentations)} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations)}`
     : cropDefinition.effectDescription
 }
 
@@ -408,7 +437,7 @@ export function getCropPlacementEffectDescription(
   }
 
   return perfection
-    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations)}`
+    ? `${getPerfectionBaseEffectDescription(cropId, perfection, cropDefinition, seedAugmentations)} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations)}`
     : cropDefinition.effectDescription
 }
 export function isCropEffectModifier(cropId) {

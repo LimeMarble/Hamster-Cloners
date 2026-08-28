@@ -7,6 +7,7 @@ import {
 import {
   CROP_DEFINITIONS,
   CROP_EFFECT_BYPASS_TIERS,
+  CROP_PERFECTIONS,
   canBeMirrorCornTarget,
   canCropPassiveBeAffectedBy,
   getAdjacentCropYieldBonus,
@@ -21,7 +22,12 @@ import {
   getSplitweedAnchorIndex,
   getSplitweedFootprint,
 } from './cropFootprintLogic.js'
-import { getAugmentedHarvestConnections } from './augmentationLogic.js'
+import {
+  getAugmentedHarvestConnections,
+  getMirrorCornEffectivenessBonus,
+  getMirrorCornReflectionLimitBonus,
+  isMirrorCornDebuffRemovalEnabled,
+} from './augmentationLogic.js'
 
 export {
   getAdjacentCropConnections,
@@ -380,14 +386,83 @@ export function getAdjacentHarvestDestructionMultiplier(
   )
 }
 
+export function getMirrorCornMaximumReflections(seedAugmentations = {}) {
+  return (
+    CROP_PERFECTIONS.mirrorCorn.maximumReflectionsPerTile +
+    getMirrorCornReflectionLimitBonus(seedAugmentations)
+  )
+}
+
+export function getRawMirrorCornTargetCount(blueprint, targetIndex) {
+  return (blueprint.mirrorCornTargets ?? []).reduce(
+    (targetCount, linkedTargetIndex, sourceIndex) =>
+      linkedTargetIndex === targetIndex && blueprint.cells[sourceIndex] === 'corn'
+        ? targetCount + 1
+        : targetCount,
+    0,
+  )
+}
+
+export function isMirrorCornOverloaded(
+  blueprint,
+  targetIndex,
+  completedCropPerfections = [],
+  seedAugmentations = {},
+) {
+  return (
+    completedCropPerfections.includes('mirrorCorn') &&
+    getRawMirrorCornTargetCount(blueprint, targetIndex) >
+      getMirrorCornMaximumReflections(seedAugmentations)
+  )
+}
+
+export function getMirrorCornEffectBlueprint(
+  blueprint,
+  completedCropPerfections = [],
+  seedAugmentations = {},
+) {
+  if (!completedCropPerfections.includes('mirrorCorn')) return blueprint
+
+  const overloadedIndexes = new Set(
+    blueprint.cells.flatMap((_, index) =>
+      isMirrorCornOverloaded(
+        blueprint,
+        index,
+        completedCropPerfections,
+        seedAugmentations,
+      )
+        ? [index]
+        : [],
+    ),
+  )
+
+  return overloadedIndexes.size === 0
+    ? blueprint
+    : {
+        ...blueprint,
+        cells: blueprint.cells.map((crop, index) =>
+          overloadedIndexes.has(index) ? null : crop,
+        ),
+      }
+}
+
 export function getMirrorCornTargetCount(
   blueprint,
   targetIndex,
   completedCropPerfections,
+  seedAugmentations = {},
 ) {
   const mirrorCorn = getCropPerfection('corn', completedCropPerfections)
 
-  if (!mirrorCorn?.diagonalTargetEffectMultiplier) {
+  if (
+    !mirrorCorn?.diagonalTargetEffectMultiplier ||
+    isMirrorCornOverloaded(
+      blueprint,
+      targetIndex,
+      completedCropPerfections,
+      seedAugmentations,
+    )
+  ) {
     return 0
   }
 
@@ -406,15 +481,20 @@ export function getMirrorCornTargetCount(
     return 0
   }
 
-  const targetCount = (blueprint.mirrorCornTargets ?? []).reduce(
+  return (blueprint.mirrorCornTargets ?? []).reduce(
     (targetCount, linkedTargetIndex, sourceIndex) =>
-      linkedTargetIndex === targetIndex && blueprint.cells[sourceIndex] === 'corn'
+      linkedTargetIndex === targetIndex &&
+      blueprint.cells[sourceIndex] === 'corn' &&
+      !isMirrorCornOverloaded(
+        blueprint,
+        sourceIndex,
+        completedCropPerfections,
+        seedAugmentations,
+      )
         ? targetCount + 1
         : targetCount,
     0,
   )
-
-  return Math.min(targetCount, mirrorCorn.maximumReflectionsPerTile)
 }
 
 export function getSplitweedMirrorCornEffectivenessBonus(
@@ -439,16 +519,30 @@ export function getMirrorCornEffectMultiplier(
   targetIndex,
   completedCropPerfections,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
+  if (
+    isMirrorCornOverloaded(
+      blueprint,
+      targetIndex,
+      completedCropPerfections,
+      seedAugmentations,
+    )
+  ) {
+    return 0
+  }
+
   const mirrorCorn = getCropPerfection('corn', completedCropPerfections)
   const mirrorCornTargetCount = getMirrorCornTargetCount(
     blueprint,
     targetIndex,
     completedCropPerfections,
+    seedAugmentations,
   )
 
   const mirrorCornEffectiveness =
     (mirrorCorn?.diagonalTargetEffectMultiplier ?? 1) +
+    getMirrorCornEffectivenessBonus(seedAugmentations) +
     getSplitweedMirrorCornEffectivenessBonus(
       blueprint,
       completedCropPerfections,
@@ -472,7 +566,19 @@ export function getCropBaseYield(crop, completedCropPerfections) {
   )
 }
 
-export function getCropHamsterEfficiencyBonus(crop, completedCropPerfections) {
+export function getCropHamsterEfficiencyBonus(
+  crop,
+  completedCropPerfections = [],
+  seedAugmentations = {},
+) {
+  if (
+    crop === 'corn' &&
+    completedCropPerfections.includes('mirrorCorn') &&
+    isMirrorCornDebuffRemovalEnabled(seedAugmentations)
+  ) {
+    return 0
+  }
+
   return (
     getCropPerfection(crop, completedCropPerfections)?.hamsterEfficiencyBonus ??
     CROP_DEFINITIONS[crop]?.hamsterEfficiencyBonus ??
@@ -926,6 +1032,7 @@ export function getExternalCropBuffMultiplier(
   crop,
   completedCropPerfections,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const baseExternalCropBuffMultiplier =
     CROP_DEFINITIONS[crop]?.externalCropBuffMultiplier
@@ -970,13 +1077,15 @@ export function getExternalCropBuffMultiplier(
     blueprint,
     index,
     completedCropPerfections,
+    seedAugmentations,
   )
   const mirrorCornSourceMultiplier =
     adjustedExternalCropBuffMultiplier *
     getMonocropAdjustedCropEffectMultiplier(
       blueprint,
       'corn',
-      mirrorCorn?.diagonalTargetEffectMultiplier ?? 1,
+      (mirrorCorn?.diagonalTargetEffectMultiplier ?? 1) +
+        getMirrorCornEffectivenessBonus(seedAugmentations),
       completedCropPerfections,
     ) *
     passiveEffectMultiplier

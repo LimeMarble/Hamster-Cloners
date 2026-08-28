@@ -7,7 +7,7 @@ import {
   getSplitweedFootprint,
   hasReachedMonocropLimit,
 } from '../game/gameLogic.js'
-import { CROP_PERFECTIONS, getCropPlacementName } from '../game/crops.js'
+import { getCropPlacementName } from '../game/crops.js'
 import { useBlueprintTransfer } from './useBlueprintTransfer.js'
 
 export function useBlueprintEditor({
@@ -126,24 +126,6 @@ export function useBlueprintEditor({
       currentGame.blueprint.cells.some(
         (cell, cellIndex) => cell === 'fourLeafClover' && cellIndex !== index,
       )
-    ) {
-      return
-    }
-    const maximumReflectionsPerTile =
-      CROP_PERFECTIONS.mirrorCorn.maximumReflectionsPerTile
-    const existingReflections = (
-      currentGame.blueprint.mirrorCornTargets ?? []
-    ).reduce(
-      (count, targetIndex, sourceIndex) =>
-        sourceIndex !== index && targetIndex === mirrorCornTargetIndex
-          ? count + 1
-          : count,
-      0,
-    )
-
-    if (
-      mirrorCornTargetIndex !== null &&
-      existingReflections >= maximumReflectionsPerTile
     ) {
       return
     }
@@ -315,15 +297,7 @@ export function useBlueprintEditor({
     const nextCrop = crop === selectedCrop ? null : selectedCrop
 
     if (nextCrop === 'corn' && hasMirrorCorn) {
-      const maximumReflectionsPerTile =
-        CROP_PERFECTIONS.mirrorCorn.maximumReflectionsPerTile
-      const targetIndexes = getDiagonalTileIndexes(game.blueprint, index).filter(
-        (targetIndex) =>
-          (game.blueprint.mirrorCornTargets ?? []).filter(
-            (linkedTargetIndex, sourceIndex) =>
-              sourceIndex !== index && linkedTargetIndex === targetIndex,
-          ).length < maximumReflectionsPerTile,
-      )
+      const targetIndexes = getDiagonalTileIndexes(game.blueprint, index)
 
       if (targetIndexes.length > 0) {
         setPendingMirrorCornPlacement({ sourceIndex: index, targetIndexes })

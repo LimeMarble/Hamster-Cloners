@@ -1,6 +1,9 @@
 export const SEED_AUGMENTATION_IDS = Object.freeze({
   LEEK_ENRICHMENT: 'leekEnrichment',
   LEEK_DIAGONAL: 'leekDiagonal',
+  MIRROR_CORN_DEBUFF_REMOVAL: 'mirrorCornDebuffRemoval',
+  MIRROR_CORN_EFFECTIVENESS: 'mirrorCornEffectiveness',
+  MIRROR_CORN_REFLECTION_LIMIT: 'mirrorCornReflectionLimit',
 })
 
 export const SEED_AUGMENTATIONS = Object.freeze({
@@ -16,12 +19,33 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     name: 'Diagonal Enrichment',
     cost: 1e68,
   }),
+  [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]: Object.freeze({
+    id: SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL,
+    name: 'Safe Handling',
+    cost: 2.5e73,
+  }),
+  [SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS]: Object.freeze({
+    id: SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS,
+    name: 'Brighter Reflection',
+    baseCost: 4e75,
+    costGrowth: 10,
+    maximumLevel: 8,
+  }),
+  [SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT]: Object.freeze({
+    id: SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT,
+    name: 'Heat-Resistant Crops',
+    cost: 1e78,
+  }),
 })
 
 export function createInitialSeedAugmentationState() {
   return {
     leekEnrichmentLevel: 0,
     leekDiagonalUnlocked: false,
+    mirrorCornDebuffRemovalUnlocked: false,
+    mirrorCornDebuffRemovalEnabled: false,
+    mirrorCornEffectivenessLevel: 0,
+    mirrorCornReflectionLimitUnlocked: false,
   }
 }
 
@@ -30,9 +54,33 @@ export function normalizeSeedAugmentationState(rawState) {
     SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT].maximumLevel
   const parsedLevel = Math.floor(Number(rawState?.leekEnrichmentLevel) || 0)
 
+  const mirrorCornDebuffRemovalUnlocked =
+    rawState?.mirrorCornDebuffRemovalUnlocked === true
+  const mirrorCornEffectiveness =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS]
+  const rawMirrorCornEffectivenessLevel =
+    rawState?.mirrorCornEffectivenessLevel
+  const parsedMirrorCornEffectivenessLevel = Math.floor(
+    rawMirrorCornEffectivenessLevel === undefined
+      ? rawState?.mirrorCornEffectivenessUnlocked === true
+        ? 1
+        : 0
+      : Number(rawMirrorCornEffectivenessLevel) || 0,
+  )
+
   return {
     leekEnrichmentLevel: Math.min(maximumLevel, Math.max(0, parsedLevel)),
     leekDiagonalUnlocked: rawState?.leekDiagonalUnlocked === true,
+    mirrorCornDebuffRemovalUnlocked,
+    mirrorCornDebuffRemovalEnabled:
+      mirrorCornDebuffRemovalUnlocked &&
+      rawState?.mirrorCornDebuffRemovalEnabled === true,
+    mirrorCornEffectivenessLevel: Math.min(
+      mirrorCornEffectiveness.maximumLevel,
+      Math.max(0, parsedMirrorCornEffectivenessLevel),
+    ),
+    mirrorCornReflectionLimitUnlocked:
+      rawState?.mirrorCornReflectionLimitUnlocked === true,
   }
 }
 
@@ -48,6 +96,32 @@ export function getLeekAugmentationYieldBonus(seedAugmentations) {
 export function hasLeekDiagonalAugmentation(seedAugmentations) {
   return normalizeSeedAugmentationState(seedAugmentations)
     .leekDiagonalUnlocked
+}
+
+export function hasMirrorCornDebuffRemovalAugmentation(seedAugmentations) {
+  return normalizeSeedAugmentationState(seedAugmentations)
+    .mirrorCornDebuffRemovalUnlocked
+}
+
+export function isMirrorCornDebuffRemovalEnabled(seedAugmentations) {
+  return normalizeSeedAugmentationState(seedAugmentations)
+    .mirrorCornDebuffRemovalEnabled
+}
+
+export function getMirrorCornEffectivenessLevel(seedAugmentations) {
+  return normalizeSeedAugmentationState(seedAugmentations)
+    .mirrorCornEffectivenessLevel
+}
+
+export function getMirrorCornEffectivenessBonus(seedAugmentations) {
+  return getMirrorCornEffectivenessLevel(seedAugmentations)
+}
+
+export function getMirrorCornReflectionLimitBonus(seedAugmentations) {
+  return normalizeSeedAugmentationState(seedAugmentations)
+    .mirrorCornReflectionLimitUnlocked
+    ? 1
+    : 0
 }
 
 export function getNextSeedAugmentationCost(game, augmentationId) {
@@ -67,36 +141,111 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
       : SEED_AUGMENTATIONS[augmentationId].cost
   }
 
-  return null
+  if (augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS) {
+    const augmentation = SEED_AUGMENTATIONS[augmentationId]
+    return state.mirrorCornEffectivenessLevel >= augmentation.maximumLevel
+      ? null
+      : augmentation.baseCost *
+          augmentation.costGrowth ** state.mirrorCornEffectivenessLevel
+  }
+
+  const cornAugmentationStateKeys = {
+    [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]:
+      'mirrorCornDebuffRemovalUnlocked',
+
+    [SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT]:
+      'mirrorCornReflectionLimitUnlocked',
+  }
+  const stateKey = cornAugmentationStateKeys[augmentationId]
+
+  return stateKey && !state[stateKey]
+    ? SEED_AUGMENTATIONS[augmentationId].cost
+    : null
 }
 
-function canAugmentEnrichingLeek(game) {
+function canPurchaseSeedAugmentation(game, augmentationId) {
+  if (
+    game.capybara?.completedDemonstrations?.includes('introduction') !== true
+  ) {
+    return false
+  }
+
+  const isLeekAugmentation =
+    augmentationId === SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT ||
+    augmentationId === SEED_AUGMENTATION_IDS.LEEK_DIAGONAL
+  const isCornAugmentation =
+    augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL ||
+    augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS ||
+    augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT
+
   return (
-    game.capybara?.completedDemonstrations?.includes('introduction') === true &&
-    game.completedCropPerfections?.includes('enrichingLeek') === true
+    (isLeekAugmentation &&
+      game.completedCropPerfections?.includes('enrichingLeek') === true) ||
+    (isCornAugmentation &&
+      game.completedCropPerfections?.includes('mirrorCorn') === true)
   )
 }
 
 export function purchaseSeedAugmentation(game, augmentationId) {
-  if (!canAugmentEnrichingLeek(game)) return null
+  if (!canPurchaseSeedAugmentation(game, augmentationId)) return null
 
   const cost = getNextSeedAugmentationCost(game, augmentationId)
   if (cost === null || game.crops < cost) return null
 
   const state = normalizeSeedAugmentationState(game.seedAugmentations)
-  const seedAugmentations =
-    augmentationId === SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT
-      ? {
-          ...state,
-          leekEnrichmentLevel: state.leekEnrichmentLevel + 1,
-        }
-      : augmentationId === SEED_AUGMENTATION_IDS.LEEK_DIAGONAL
-        ? { ...state, leekDiagonalUnlocked: true }
-        : null
+  let seedAugmentations = null
+
+  if (augmentationId === SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT) {
+    seedAugmentations = {
+      ...state,
+      leekEnrichmentLevel: state.leekEnrichmentLevel + 1,
+    }
+  } else if (augmentationId === SEED_AUGMENTATION_IDS.LEEK_DIAGONAL) {
+    seedAugmentations = { ...state, leekDiagonalUnlocked: true }
+  } else if (
+    augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL
+  ) {
+    seedAugmentations = {
+      ...state,
+      mirrorCornDebuffRemovalUnlocked: true,
+      mirrorCornDebuffRemovalEnabled: true,
+    }
+  } else if (
+    augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS
+  ) {
+    seedAugmentations = {
+      ...state,
+      mirrorCornEffectivenessLevel: state.mirrorCornEffectivenessLevel + 1,
+    }
+  } else if (
+    augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT
+  ) {
+    seedAugmentations = { ...state, mirrorCornReflectionLimitUnlocked: true }
+  }
 
   return seedAugmentations
     ? { ...game, crops: game.crops - cost, seedAugmentations }
     : null
+}
+
+export function toggleSeedAugmentation(game, augmentationId) {
+  if (
+    augmentationId !== SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL
+  ) {
+    return null
+  }
+
+  const state = normalizeSeedAugmentationState(game.seedAugmentations)
+  if (!state.mirrorCornDebuffRemovalUnlocked) return null
+
+  return {
+    ...game,
+    seedAugmentations: {
+      ...state,
+      mirrorCornDebuffRemovalEnabled:
+        !state.mirrorCornDebuffRemovalEnabled,
+    },
+  }
 }
 
 export function getAugmentedHarvestConnections(
