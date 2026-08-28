@@ -218,8 +218,15 @@
   width: 100%;
 }
 
+.editor-grid-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
 .editor-grid-wrapper {
   position: relative;
+  width: 100%;
 }
 
 .mirror-corn-lines {

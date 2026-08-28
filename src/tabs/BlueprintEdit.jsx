@@ -111,7 +111,11 @@ export function BlueprintEdit({
         ) : null}
 
         <div className="blueprint-editor-layout">
-          <div className="editor-grid-wrapper">
+          <div className="editor-grid-scroll">
+            <div
+              className="editor-grid-wrapper"
+              style={{ minWidth: `${game.blueprint.columns * 64}px` }}
+            >
             <MirrorCornConnectionLines
               blueprint={game.blueprint}
               links={mirrorCornLinks}
@@ -185,6 +189,7 @@ export function BlueprintEdit({
                   </button>
                 )
               })}
+              </div>
             </div>
           </div>
 
