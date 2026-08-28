@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import {
   CAPYBARA_DEMONSTRATIONS,
+  RABBIT_BLAZING_CONTRACT_RATE,
   RABBIT_UNLOCK_IDS,
   RABBIT_UNLOCKS,
   TRADE_ESTABLISHMENT_COST,
   getCapybaraDemonstrationStatus,
+  getRabbitContractCompletionsPerSecond,
   getRabbitRelationsMultiplier,
+  hasBlazingRabbitContractPace,
   hasRabbitUnlock,
 } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
@@ -360,6 +363,16 @@ export function Trade({
     game.blueprint,
     game.completedCropPerfections,
   )
+  const rabbitContractCompletionRate =
+    getRabbitContractCompletionsPerSecond(
+      rabbitContracts,
+      rabbitContractProductionPerSecondByCrop,
+    )
+  const hasBlazingContractPace = hasBlazingRabbitContractPace(
+    game,
+    rabbitContracts,
+    rabbitContractProductionPerSecondByCrop,
+  )
 
   return (
     <section className="trade-panel" aria-labelledby="trade-title">
@@ -431,23 +444,46 @@ export function Trade({
                   </span>
                 </div>
                 <div className="rabbit-contract-grid">
-                  {rabbitContracts.map((contract, contractIndex) => (
-                    <RabbitContract
-                      game={game}
-                      contract={contract}
-                      contractIndex={contractIndex}
-                      key={contractIndex}
-                      productionPerSecond={Math.max(
-                        0,
-                        Number(
-                          rabbitContractProductionPerSecondByCrop?.[
-                            contract?.cropId
-                          ],
-                        ) || 0,
-                      )}
-                      onClaimRabbitContract={onClaimRabbitContract}
-                    />
-                  ))}
+                  {hasBlazingContractPace ? (
+                    <article className="rabbit-contract-card">
+                      <p className="eyebrow">Rabbit contracts</p>
+                      <h3>
+                        Rabbit contracts are being completed at a blazing fast
+                        pace.
+                      </h3>
+                      <p className="trade-copy">
+                        Current pace: approximately{' '}
+                        <FormattedNumber
+                          value={rabbitContractCompletionRate}
+                          maximumFractionDigits={2}
+                        />{' '}
+                        contracts per second, above the{' '}
+                        <FormattedNumber
+                          value={RABBIT_BLAZING_CONTRACT_RATE}
+                          maximumFractionDigits={0}
+                        />{' '}
+                        per-second display limit.
+                      </p>
+                    </article>
+                  ) : (
+                    rabbitContracts.map((contract, contractIndex) => (
+                      <RabbitContract
+                        game={game}
+                        contract={contract}
+                        contractIndex={contractIndex}
+                        key={contractIndex}
+                        productionPerSecond={Math.max(
+                          0,
+                          Number(
+                            rabbitContractProductionPerSecondByCrop?.[
+                              contract?.cropId
+                            ],
+                          ) || 0,
+                        )}
+                        onClaimRabbitContract={onClaimRabbitContract}
+                      />
+                    ))
+                  )}
                 </div>
               </section>
               <RabbitUnlocks

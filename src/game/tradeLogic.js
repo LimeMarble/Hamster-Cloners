@@ -8,6 +8,7 @@ export const TRADE_ESTABLISHMENT_COST = 1e57
 export const RABBIT_CONTRACT_MIN_FACTOR = 1e7
 export const RABBIT_CONTRACT_MAX_FACTOR = 5e7
 export const RABBIT_ACTIVE_CONTRACT_COUNT = 3
+export const RABBIT_BLAZING_CONTRACT_RATE = 5
 
 export const RABBIT_UNLOCK_IDS = Object.freeze({
   CARROT: 'carrot',
@@ -121,6 +122,36 @@ export function isRabbitContractCropEligible(cropId) {
 
 export function hasRabbitUnlock(game, unlockId) {
   return game.trade?.rabbitUnlocks?.includes(unlockId) === true
+}
+
+export function getRabbitContractCompletionsPerSecond(
+  contracts,
+  productionByCrop,
+) {
+  if (!Array.isArray(contracts)) return 0
+
+  return contracts.reduce((totalRate, contract) => {
+    const requiredAmount = toNonNegativeNumber(contract?.requiredAmount)
+    const productionPerSecond = toNonNegativeNumber(
+      productionByCrop?.[contract?.cropId],
+    )
+
+    return requiredAmount > 0
+      ? totalRate + productionPerSecond / requiredAmount
+      : totalRate
+  }, 0)
+}
+
+export function hasBlazingRabbitContractPace(
+  game,
+  contracts,
+  productionByCrop,
+) {
+  return (
+    hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CONTRACTOR) &&
+    getRabbitContractCompletionsPerSecond(contracts, productionByCrop) >
+      RABBIT_BLAZING_CONTRACT_RATE
+  )
 }
 
 export function getRabbitContractCropIds(game) {

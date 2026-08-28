@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   RABBIT_ACTIVE_CONTRACT_COUNT,
+  RABBIT_BLAZING_CONTRACT_RATE,
   RABBIT_UNLOCKS,
   RABBIT_UNLOCK_IDS,
   TRADE_ESTABLISHMENT_COST,
@@ -13,8 +14,10 @@ import {
   establishTradeRelations,
   getCarrotHighHarvestEffect,
   getCropProductionSnapshotPerSecond,
+  getRabbitContractCompletionsPerSecond,
   getRabbitContractRelationsReward,
   getRabbitRelationsMultiplier,
+  hasBlazingRabbitContractPace,
   hasRabbitUnlock,
   isRabbitContractCropEligible,
   purchaseRabbitUnlock,
@@ -24,6 +27,57 @@ test('Rabbit relation rewards match the logarithmic fields formula', () => {
   assert.equal(getRabbitContractRelationsReward(1e40, 30e6), 120)
   assert.equal(getRabbitContractRelationsReward(1e20, 10e6), 20)
   assert.equal(getRabbitContractRelationsReward(1e20, 50e6), 100)
+})
+
+test('Rabbit contract throughput switches above five completions per second', () => {
+  const game = createInitialGame()
+  const contracts = [
+    { cropId: 'leek', requiredAmount: 100 },
+    { cropId: 'corn', requiredAmount: 200 },
+    null,
+  ]
+  const exactThresholdProduction = { leek: 400, corn: 200 }
+  const blazingProduction = { leek: 400, corn: 202 }
+
+  assert.equal(
+    getRabbitContractCompletionsPerSecond(
+      contracts,
+      exactThresholdProduction,
+    ),
+    RABBIT_BLAZING_CONTRACT_RATE,
+  )
+  assert.equal(
+    hasBlazingRabbitContractPace(
+      {
+        ...game,
+        trade: {
+          ...game.trade,
+          rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
+        },
+      },
+      contracts,
+      exactThresholdProduction,
+    ),
+    false,
+  )
+  assert.equal(
+    hasBlazingRabbitContractPace(
+      {
+        ...game,
+        trade: {
+          ...game.trade,
+          rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
+        },
+      },
+      contracts,
+      blazingProduction,
+    ),
+    true,
+  )
+  assert.equal(
+    hasBlazingRabbitContractPace(game, contracts, blazingProduction),
+    false,
+  )
 })
 
 test('Rabbit contracts scale from Fields planted and choose a 10M-50M factor', () => {

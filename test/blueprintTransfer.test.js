@@ -82,19 +82,93 @@ test('rejects malformed Splitweed footprints after perfection', () => {
   )
 })
 
-test('rejects blueprint codes with a different grid size', () => {
+test('crops larger blueprints from the top left and remaps tile links', () => {
   const blueprintCode = exportBlueprint(
-    createBlueprint({ rows: 2, columns: 2, cells: ['leek'] }),
+    createBlueprint({
+      rows: 3,
+      columns: 4,
+      cells: [
+        'leek',
+        'corn',
+        'lentil',
+        null,
+        'potato',
+        'pumpkin',
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ],
+      mirrorCornTargets: [
+        null,
+        4,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ],
+    }),
   )
+  const importedBlueprint = importBlueprint(blueprintCode, {
+    rows: 2,
+    columns: 2,
+    unlockedCropIds: ['leek', 'corn', 'potato', 'pumpkin'],
+    hasMirrorCorn: true,
+  })
 
-  assert.throws(
-    () =>
-      importBlueprint(blueprintCode, {
-        rows: 3,
-        columns: 2,
-        unlockedCropIds: ['leek'],
-      }),
-    /2×2.*3×2/,
+  assert.deepEqual(
+    importedBlueprint,
+    createBlueprint({
+      rows: 2,
+      columns: 2,
+      cells: ['leek', 'corn', 'potato', 'pumpkin'],
+      mirrorCornTargets: [null, 2, null, null],
+    }),
+  )
+})
+
+test('pads smaller blueprints with empty bottom and right plots', () => {
+  const blueprintCode = exportBlueprint(
+    createBlueprint({
+      rows: 2,
+      columns: 2,
+      cells: ['corn', 'leek', 'potato', 'pumpkin'],
+      mirrorCornTargets: [3, null, null, null],
+    }),
+  )
+  const importedBlueprint = importBlueprint(blueprintCode, {
+    rows: 3,
+    columns: 3,
+    unlockedCropIds: ['leek', 'corn', 'potato', 'pumpkin'],
+    hasMirrorCorn: true,
+  })
+
+  assert.deepEqual(
+    importedBlueprint,
+    createBlueprint({
+      rows: 3,
+      columns: 3,
+      cells: [
+        'corn',
+        'leek',
+        null,
+        'potato',
+        'pumpkin',
+        null,
+        null,
+        null,
+        null,
+      ],
+      mirrorCornTargets: [4, null, null, null, null, null, null, null, null],
+    }),
   )
 })
 
