@@ -1,11 +1,26 @@
 import {
+  HAMSTER_ACCELERATED_COST_SCALING_START,
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
+  HAMSTER_COST_GROWTH_INCREASE_PER_HAMSTER,
   ROW_DUPLICATOR_BASE_COST,
   ROW_DUPLICATOR_COST_GROWTH,
   UNIONIZATION_HAMSTER_COUNT,
   UNIONIZED_HAMSTER_COUNT,
 } from './gameConfig.js'
+
+export function getHamsterCostGrowth(hamsters) {
+  const safeHamsters = Math.max(0, Math.floor(Number(hamsters) || 0))
+  const acceleratedHamsters = Math.max(
+    0,
+    safeHamsters - HAMSTER_ACCELERATED_COST_SCALING_START,
+  )
+
+  return (
+    HAMSTER_COST_GROWTH +
+    acceleratedHamsters * HAMSTER_COST_GROWTH_INCREASE_PER_HAMSTER
+  )
+}
 
 export function getNextHamsterCost(hamsters, unionized = false) {
   const safeHamsters = Math.max(0, Math.floor(Number(hamsters) || 0))
@@ -14,7 +29,23 @@ export function getNextHamsterCost(hamsters, unionized = false) {
     return HAMSTER_BASE_COST + safeHamsters
   }
 
-  return Math.ceil(HAMSTER_BASE_COST * HAMSTER_COST_GROWTH ** safeHamsters)
+  const regularScalingHamsters = Math.min(
+    safeHamsters,
+    HAMSTER_ACCELERATED_COST_SCALING_START,
+  )
+  let cost =
+    HAMSTER_BASE_COST * HAMSTER_COST_GROWTH ** regularScalingHamsters
+
+  for (
+    let hamsterCount = HAMSTER_ACCELERATED_COST_SCALING_START + 1;
+    hamsterCount <= safeHamsters;
+    hamsterCount += 1
+  ) {
+    cost *= getHamsterCostGrowth(hamsterCount)
+    if (!Number.isFinite(cost)) return Infinity
+  }
+
+  return Math.ceil(cost)
 }
 
 export function getNextRowDuplicatorCost(rowDuplicators = 0) {

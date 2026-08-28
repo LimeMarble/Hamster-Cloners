@@ -17,6 +17,7 @@ import {
   canUnlockCropPerfection,
   getHamsterStateAfterHire,
   getHamsterCoordinationMultiplier,
+  getHamsterCostGrowth,
   getHamsterExternalMultiplier,
   getMaxDuplicatorPurchase,
   getMaxHamsterPurchase,
@@ -44,8 +45,10 @@ import {
   getRowsProducedPerSecond,
   getRowDuplicatorCoordinationMultiplier,
   getUnlockedBlueprintSlotCount,
+  HAMSTER_ACCELERATED_COST_SCALING_START,
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
+  HAMSTER_COST_GROWTH_INCREASE_PER_HAMSTER,
   POST_UNION_HAMSTER_EFFICIENCY_GROWTH,
   canUnlockRowDuplicators,
   resetForBlueprintExpansion,
@@ -96,6 +99,18 @@ test('hamster costs grow by 1.1 after unionization', () => {
     Math.ceil(HAMSTER_BASE_COST * HAMSTER_COST_GROWTH),
   )
   assert.ok(getNextHamsterCost(101, true) > getNextHamsterCost(100, true))
+})
+
+test('hamster cost scaling progressively accelerates past 1,500', () => {
+  assert.equal(HAMSTER_ACCELERATED_COST_SCALING_START, 1500)
+  assert.equal(HAMSTER_COST_GROWTH_INCREASE_PER_HAMSTER, 0.0005)
+  assert.equal(getHamsterCostGrowth(1500), 1.1)
+  assert.equal(getHamsterCostGrowth(1501), 1.1005)
+  assert.equal(getHamsterCostGrowth(2000), 1.35)
+
+  const costAt1999 = getNextHamsterCost(1999, true)
+  const costAt2000 = getNextHamsterCost(2000, true)
+  assert.ok(Math.abs(costAt2000 / costAt1999 - 1.35) < 1e-12)
 })
 
 test('hamsters build 0.1 hidden Columns of farmland per second each', () => {
