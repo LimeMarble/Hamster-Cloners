@@ -2,7 +2,7 @@ import {
   getHamsterClonerDescription,
   HIRE_MAX_UNLOCK_COUNT,
 } from '../game/gameLogic.js'
-import { FormattedNumber } from './ui.jsx'
+import { FormattedNumber, WholeNumber } from './ui.jsx'
 
 export function HamsterPurchase({
   game,
@@ -24,7 +24,7 @@ export function HamsterPurchase({
           <h2>Hamster Cloners</h2>
         </div>
         <span className="hamster-badge" aria-label="Hamster Cloners owned">
-          <FormattedNumber value={game.hamsters} maximumFractionDigits={0} />
+          <WholeNumber value={game.hamsters} />
         </span>
       </div>
       <p className="card-copy">

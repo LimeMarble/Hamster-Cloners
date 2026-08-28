@@ -5,7 +5,10 @@ import {
   hasLeekDiagonalAugmentation,
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
-import { getCachedFormattedNumber } from './numberFormat.js'
+import {
+  formatWholeNumber,
+  getCachedFormattedNumber,
+} from './numberFormat.js'
 export const SWEET_POTATO_UNLOCK_HAMSTER_COUNT = 125
 export const TURNIP_UNLOCK_CROP_COUNT = 1e8
 export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
@@ -316,10 +319,11 @@ export const CROP_PERFECTION_IDS = Object.keys(CROP_PERFECTIONS)
 
 export function getCropUnlockDescription(cropId) {
   const format = (value) => getCachedFormattedNumber(value, 0)
+  const formatCounter = (value) => formatWholeNumber(value)
 
   switch (cropId) {
     case 'sweetPotato':
-      return `Unlocks at ${format(SWEET_POTATO_UNLOCK_HAMSTER_COUNT)} Hamsters after Pumpkin`
+      return `Unlocks at ${formatCounter(SWEET_POTATO_UNLOCK_HAMSTER_COUNT)} Hamsters after Pumpkin`
     case 'turnip':
       return `Unlocks at ${format(TURNIP_UNLOCK_CROP_COUNT)} Crops`
     case 'appleTree':
@@ -335,7 +339,7 @@ export function getCropUnlockDescription(cropId) {
     case 'sunflower':
       return `Unlocks at ${format(SUNFLOWER_UNLOCK_CROP_COUNT)} Crops`
     case 'canola':
-      return `Unlocks at ${format(CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT)} Row Duplicators`
+      return `Unlocks at ${formatCounter(CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT)} Row Duplicators`
     case 'carrot':
       return `Unlock with ${format(500)} Rabbit relations`
     case 'fourLeafClover':

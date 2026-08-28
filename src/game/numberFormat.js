@@ -67,6 +67,9 @@ export const SUFFIX_SCIENTIFIC_EXPONENT_OPTIONS = Object.freeze([
   FORCED_SCIENTIFIC_EXPONENT,
 ])
 const formattedNumberCache = new Map()
+const wholeNumberFormatter = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 0,
+})
 let activeNumberNotation = NUMBER_NOTATION_SUFFIX
 let activeSuffixScientificExponent = DEFAULT_SUFFIX_SCIENTIFIC_EXPONENT
 
@@ -91,6 +94,14 @@ export function setActiveNumberNotation(
   activeNumberNotation = normalizeNumberNotation(notation)
   activeSuffixScientificExponent = normalizeSuffixScientificExponent(
     suffixScientificExponent,
+  )
+}
+
+export function formatWholeNumber(value) {
+  const numericValue = Number(value)
+
+  return wholeNumberFormatter.format(
+    Number.isNaN(numericValue) ? 0 : Math.floor(numericValue),
   )
 }
 

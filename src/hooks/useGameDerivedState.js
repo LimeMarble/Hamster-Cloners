@@ -33,7 +33,7 @@ import {
 } from '../game/gameLogic.js'
 import { getUnlockedCropIds, getVisibleCropIds } from '../game/crops.js'
 import { getMonocropThreshold } from '../game/monocropPenalty.js'
-import { getCachedFormattedNumber } from '../game/numberFormat.js'
+import { formatWholeNumber } from '../game/numberFormat.js'
 
 export function useGameDerivedState(game) {
   const fortuneModifiers = useMemo(
@@ -263,10 +263,7 @@ export function useGameDerivedState(game) {
       game.blueprint,
       game.completedCropPerfections,
     )
-  const formattedTotalHamstersHired = getCachedFormattedNumber(
-    game.totalHamstersHired,
-    0,
-  )
+  const formattedTotalHamstersHired = formatWholeNumber(game.totalHamstersHired)
   const unionStatus =
     game.unionized &&
     game.postUnionHamstersHired >= UNION_STATUS_RETIRE_HIRE_COUNT

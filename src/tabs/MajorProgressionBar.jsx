@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FormattedNumber } from './ui.jsx'
+import { FormattedNumber, WholeNumber } from './ui.jsx'
 
 export function MajorProgressionBar({ goal }) {
   const [isMinimized, setIsMinimized] = useState(false)
@@ -13,6 +13,11 @@ export function MajorProgressionBar({ goal }) {
   const barClassName =
     'major-progression-bar' +
     (isMinimized ? ' major-progression-bar-minimized' : '')
+  const usesWholeNumberCounters = [
+    'Hamsters',
+    'Hamsters hired',
+    'Row Duplicators',
+  ].includes(goal.unit)
 
   return (
     <aside className={barClassName} aria-label="Major progression">
@@ -53,8 +58,18 @@ export function MajorProgressionBar({ goal }) {
                 '-'
               ) : (
                 <>
-                  <FormattedNumber value={goal.current} /> /{' '}
-                  <FormattedNumber value={goal.target} /> {goal.unit}
+                  {usesWholeNumberCounters ? (
+                    <WholeNumber value={goal.current} />
+                  ) : (
+                    <FormattedNumber value={goal.current} />
+                  )}{' '}
+                  /{' '}
+                  {usesWholeNumberCounters ? (
+                    <WholeNumber value={goal.target} />
+                  ) : (
+                    <FormattedNumber value={goal.target} />
+                  )}{' '}
+                  {goal.unit}
                 </>
               )}
             </span>

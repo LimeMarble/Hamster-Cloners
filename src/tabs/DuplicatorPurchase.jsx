@@ -1,4 +1,4 @@
-import { FormattedNumber } from './ui.jsx'
+import { FormattedNumber, WholeNumber } from './ui.jsx'
 
 export function DuplicatorPurchase({
   game,
@@ -18,7 +18,7 @@ export function DuplicatorPurchase({
           <h2>Row Duplicators</h2>
         </div>
         <span className="hamster-badge" aria-label="Row Duplicators owned">
-          <FormattedNumber value={game.rowDuplicators} maximumFractionDigits={0} />
+          <WholeNumber value={game.rowDuplicators} />
         </span>
       </div>
       <p className="card-copy">

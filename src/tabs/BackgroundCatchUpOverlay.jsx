@@ -2,7 +2,7 @@ import {
   CATCH_UP_SPEED_FACTOR,
   SKIPPED_CATCH_UP_STEPS,
 } from '../game/gameLogic.js'
-import { FormattedNumber } from './ui.jsx'
+import { FormattedNumber, WholeNumber } from './ui.jsx'
 
 export function BackgroundCatchUpOverlay({
   ticksRemaining,
@@ -33,7 +33,7 @@ export function BackgroundCatchUpOverlay({
         <h2 id="background-catch-up-title">Processing background ticks</h2>
 
         <div className="background-catch-up-counter" aria-live="polite">
-          <strong><FormattedNumber value={ticksRemaining} maximumFractionDigits={0} /></strong>
+          <strong><WholeNumber value={ticksRemaining} /></strong>
           <span>ticks left to process</span>
         </div>
 
@@ -50,7 +50,7 @@ export function BackgroundCatchUpOverlay({
 
         <p className="background-catch-up-compression">
           {strategy === 'skipped' ? (
-            <>The remaining time is being approximated in <FormattedNumber value={SKIPPED_CATCH_UP_STEPS} maximumFractionDigits={0} /> ticks.</>
+            <>The remaining time is being approximated in <WholeNumber value={SKIPPED_CATCH_UP_STEPS} /> ticks.</>
           ) : (
             <>Current catch-up compression: ×<FormattedNumber value={compressionMultiplier} maximumFractionDigits={0} /></>
           )}
@@ -72,7 +72,7 @@ export function BackgroundCatchUpOverlay({
             onClick={onSkip}
           >
             &ldquo;Skip&rdquo; to{' '}
-            <FormattedNumber value={SKIPPED_CATCH_UP_STEPS} maximumFractionDigits={0} /> ticks
+            <WholeNumber value={SKIPPED_CATCH_UP_STEPS} /> ticks
           </button>
         </div>
       </section>

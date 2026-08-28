@@ -1,4 +1,7 @@
-import { getCachedFormattedNumber } from '../game/numberFormat.js'
+import {
+  formatWholeNumber,
+  getCachedFormattedNumber,
+} from '../game/numberFormat.js'
 import {
   getCropEffectDescription,
   getCropName,
@@ -11,6 +14,10 @@ import { CropVisual } from './CropVisual.jsx'
 
 export function FormattedNumber({ value, maximumFractionDigits = 1 }) {
   return getCachedFormattedNumber(value, maximumFractionDigits)
+}
+
+export function WholeNumber({ value }) {
+  return formatWholeNumber(value)
 }
 
 export function MonocropStatus({ limit, multiplier }) {

@@ -1,4 +1,4 @@
-import { FormattedNumber } from './ui.jsx'
+import { FormattedNumber, WholeNumber } from './ui.jsx'
 import { formatPlaytime } from './uiHelpers.js'
 
 export function Statistics({ game, unlockedCropIds }) {
@@ -19,7 +19,7 @@ export function Statistics({ game, unlockedCropIds }) {
         <div>
           <dt>Hamsters hired</dt>
           <dd>
-            <FormattedNumber value={game.totalHamstersHired} maximumFractionDigits={0} />
+            <WholeNumber value={game.totalHamstersHired} />
           </dd>
         </div>
         <div>

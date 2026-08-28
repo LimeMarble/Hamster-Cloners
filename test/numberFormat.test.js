@@ -3,9 +3,15 @@ import test from 'node:test'
 import Decimal from 'break_infinity.js'
 import {
   formatNumber,
+  formatWholeNumber,
   getFormatCacheKey,
   getSuffixForExponent,
 } from '../src/game/numberFormat.js'
+
+test('whole-number counters remain unsuffixed', () => {
+  assert.equal(formatWholeNumber(1250).replace(/\D/g, ''), '1250')
+  assert.equal(formatWholeNumber(182.8).replace(/\D/g, ''), '182')
+})
 
 test('formats the first suffix layer', () => {
   const suffixes = [
