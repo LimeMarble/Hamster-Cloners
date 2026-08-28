@@ -3,6 +3,7 @@ import {
   canUnlockCropPerfection,
   canUnlockRowDuplicators,
   getCapybaraBlueprintCropYield,
+  getCapybaraHamsterEfficiencyMultiplier,
   getBlueprintExpansionTrackProgress,
   getBlueprintMonocropMultiplier,
   getBlueprintSlots,
@@ -52,6 +53,7 @@ export function useGameDerivedState(game) {
         game.testingCheats?.cropMultiplierEnabled ? 10 : 1,
         game.trade?.rabbitContractsCompleted ?? 0,
         fortuneModifiers,
+        game.seedAugmentations,
       ),
     [
       game.blueprint,
@@ -60,6 +62,7 @@ export function useGameDerivedState(game) {
       game.testingCheats?.cropMultiplierEnabled,
       game.trade?.rabbitContractsCompleted,
       fortuneModifiers,
+      game.seedAugmentations,
     ],
   )
   const productionPerSecond = cropProductionSnapshot.total
@@ -69,6 +72,7 @@ export function useGameDerivedState(game) {
         blueprint: game.blueprint,
         completedCropPerfections: game.completedCropPerfections,
         fortune: game.fortune,
+        seedAugmentations: game.seedAugmentations,
         trade: {
           rabbitContractsCompleted:
             game.trade?.rabbitContractsCompleted ?? 0,
@@ -78,6 +82,7 @@ export function useGameDerivedState(game) {
       game.blueprint,
       game.completedCropPerfections,
       game.fortune,
+      game.seedAugmentations,
       game.trade?.rabbitContractsCompleted,
     ],
   )
@@ -94,7 +99,8 @@ export function useGameDerivedState(game) {
     (game.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1) *
       (hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY)
         ? 3
-        : 1),
+        : 1) *
+      getCapybaraHamsterEfficiencyMultiplier(game),
   )
   const nextRowDuplicatorCost = useMemo(
     () => getNextRowDuplicatorCost(game.rowDuplicators),

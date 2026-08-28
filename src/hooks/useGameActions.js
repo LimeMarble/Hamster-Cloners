@@ -13,6 +13,7 @@ import {
   resetForBlueprintExpansion,
   resetForRowDuplicators,
   purchaseRabbitUnlock,
+  purchaseSeedAugmentation,
   UNIONIZATION_HAMSTER_COUNT,
   unlockCropPerfection,
 } from '../game/gameLogic.js'
@@ -254,6 +255,12 @@ export function useGameActions({
     )
   }
 
+  function buySeedAugmentation(augmentationId) {
+    updateGame((currentGame) =>
+      purchaseSeedAugmentation(currentGame, augmentationId) ?? currentGame,
+    )
+  }
+
   function openAugmentation() {
     if (isAugmentationTabVisible) {
       setActiveTab('augmentation')
@@ -299,6 +306,9 @@ export function useGameActions({
       onClaimRabbitContract: claimRabbitDelivery,
       onPurchaseRabbitUnlock: buyRabbitUnlock,
       onCompleteCapybaraDemonstration: completeCapybaraDemo,
+    },
+    augmentationActions: {
+      onPurchaseSeedAugmentation: buySeedAugmentation,
     },
     inventionsActions: {
       onUnlockEnrichingLeek: () => unlockPerfection('enrichingLeek'),

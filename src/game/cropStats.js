@@ -15,6 +15,7 @@ import {
   getGlobalHamsterEfficiencyEffects,
   getGlobalPassiveEffectMultiplier,
   getGlobalRowProductionEffects,
+  getHarvestBonusConnections,
   getGroupedGlobalHarvestEffects,
   getLeechingGourdTurnipEffect,
   getMirrorCornEffectMultiplier,
@@ -37,6 +38,7 @@ export function getBlueprintCropStats(
   activeHamsters = 0,
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
+  seedAugmentations = {},
 ) {
   const crop = blueprint.cells[index]
   const definition = CROP_DEFINITIONS[crop]
@@ -55,6 +57,12 @@ export function getBlueprintCropStats(
     fortuneModifiers.harvestMultiplier,
   )
   const neighboringConnections = getAdjacentCropConnections(blueprint, index)
+  const harvestBonusConnections = getHarvestBonusConnections(
+    blueprint,
+    index,
+    completedCropPerfections,
+    seedAugmentations,
+  )
   const baseHamsterEfficiencyBonus = getCropHamsterEfficiencyBonus(
     crop,
     completedCropPerfections,
@@ -172,7 +180,7 @@ export function getBlueprintCropStats(
 
   const cropYieldBonusesByCrop = new Map()
 
-  neighboringConnections.forEach(
+  harvestBonusConnections.forEach(
     ({ index: neighborIndex, adjacencyDistance }) => {
       const sourceCropId = blueprint.cells[neighborIndex]
       const baseCropYieldBonus = getAdjacentHarvestModifier(
@@ -180,6 +188,7 @@ export function getBlueprintCropStats(
         sourceCropId,
         completedCropPerfections,
         passiveEffectMultiplier,
+        seedAugmentations,
       )
       const adjacencyStrength = getRootTunnelAdjacencyStrength(adjacencyDistance)
       const cropYieldBonus =
@@ -253,7 +262,7 @@ export function getBlueprintCropStats(
     )
   const harvestDestroyedByAppleTree =
     harvestDestructionMultiplier === 0 || fortuneHarvestMultiplier === 0
-  const adjacentYieldBonus = neighboringConnections.reduce(
+  const adjacentYieldBonus = harvestBonusConnections.reduce(
     (totalBonus, { index: neighborIndex, adjacencyDistance }) => {
       const sourceCropId = blueprint.cells[neighborIndex]
       const baseCropYieldBonus = getAdjacentHarvestModifier(
@@ -261,6 +270,7 @@ export function getBlueprintCropStats(
         sourceCropId,
         completedCropPerfections,
         passiveEffectMultiplier,
+        seedAugmentations,
       )
       const adjacencyStrength = getRootTunnelAdjacencyStrength(adjacencyDistance)
 
@@ -348,6 +358,7 @@ export function getBlueprintCropStats(
     completedCropPerfections,
     rabbitContractsCompleted,
     passiveEffectMultiplier,
+    seedAugmentations,
   )
   const globalHarvestMultiplier = fieldProductionSnapshot.globalHarvestMultiplier
   const harvestYield = doesNotHarvest(crop) || harvestDestroyedByAppleTree

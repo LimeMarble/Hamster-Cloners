@@ -21,6 +21,7 @@ import {
   getSplitweedAnchorIndex,
   getSplitweedFootprint,
 } from './cropFootprintLogic.js'
+import { getAugmentedHarvestConnections } from './augmentationLogic.js'
 
 export {
   getAdjacentCropConnections,
@@ -34,6 +35,21 @@ export {
 
 export function getPlantedCropCount(blueprint, crop = 'leek') {
   return blueprint.cells.filter((cell) => cell === crop).length
+}
+
+export function getHarvestBonusConnections(
+  blueprint,
+  index,
+  completedCropPerfections = [],
+  seedAugmentations = {},
+) {
+  return getAugmentedHarvestConnections(
+    blueprint,
+    index,
+    getAdjacentCropConnections(blueprint, index),
+    completedCropPerfections,
+    seedAugmentations,
+  )
 }
 
 export function getMonocropCropCount(blueprint, crop) {
@@ -887,13 +903,18 @@ export function getAdjacentHarvestModifier(
   crop,
   completedCropPerfections,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const effectCrop = crop === 'splitweedPart' ? 'knotweed' : crop
 
   return getMonocropAdjustedCropBonus(
     blueprint,
     effectCrop,
-    getAdjacentCropYieldBonus(effectCrop, completedCropPerfections) +
+    getAdjacentCropYieldBonus(
+      effectCrop,
+      completedCropPerfections,
+      seedAugmentations,
+    ) +
       (CROP_DEFINITIONS[effectCrop]?.adjacentHarvestModifier ?? 0),
     completedCropPerfections,
   ) * passiveEffectMultiplier

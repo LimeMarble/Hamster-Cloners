@@ -1,3 +1,7 @@
+import {
+  getLeekAugmentationYieldBonus,
+  hasLeekDiagonalAugmentation,
+} from './augmentationLogic.js'
 export const SWEET_POTATO_UNLOCK_HAMSTER_COUNT = 125
 export const TURNIP_UNLOCK_CROP_COUNT = 1e8
 export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
@@ -351,7 +355,30 @@ export function getCropPlacementName(cropId, completedCropPerfections) {
     : getCropName(cropId, completedCropPerfections)
 }
 
-export function getCropEffectDescription(cropId, completedCropPerfections) {
+function getPerfectionEffectDescription(
+  cropId,
+  perfection,
+  seedAugmentations,
+) {
+  if (cropId !== 'leek' || perfection?.id !== 'enrichingLeek') {
+    return perfection.effectDescription
+  }
+
+  const adjacentCropYieldBonus =
+    perfection.adjacentCropYieldBonus +
+    getLeekAugmentationYieldBonus(seedAugmentations)
+  const adjacencyDescription = hasLeekDiagonalAugmentation(seedAugmentations)
+    ? 'orthogonally and diagonally adjacent crops'
+    : 'adjacent crops'
+
+  return `+${adjacentCropYieldBonus} Crop yield to ${adjacencyDescription}`
+}
+
+export function getCropEffectDescription(
+  cropId,
+  completedCropPerfections,
+  seedAugmentations = {},
+) {
   const cropDefinition = CROP_DEFINITIONS[cropId]
   const perfection = getCropPerfection(cropId, completedCropPerfections)
 
@@ -364,13 +391,14 @@ export function getCropEffectDescription(cropId, completedCropPerfections) {
   }
 
   return perfection
-    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} · ${perfection.effectDescription}`
+    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations)}`
     : cropDefinition.effectDescription
 }
 
 export function getCropPlacementEffectDescription(
   cropId,
   completedCropPerfections,
+  seedAugmentations = {},
 ) {
   const cropDefinition = CROP_DEFINITIONS[cropId]
   const perfection = getCropPerfection(cropId, completedCropPerfections)
@@ -380,10 +408,9 @@ export function getCropPlacementEffectDescription(
   }
 
   return perfection
-    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} · ${perfection.effectDescription}`
+    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations)}`
     : cropDefinition.effectDescription
 }
-
 export function isCropEffectModifier(cropId) {
   return Boolean(CROP_DEFINITIONS[cropId]?.adjacentCropEffectModifier)
 }
@@ -399,11 +426,18 @@ export function canBeMirrorCornTarget(cropId) {
   return CROP_DEFINITIONS[cropId]?.canBeMirrorCornTarget !== false
 }
 
-export function getAdjacentCropYieldBonus(cropId, completedCropPerfections) {
-  return (
+export function getAdjacentCropYieldBonus(
+  cropId,
+  completedCropPerfections,
+  seedAugmentations = {},
+) {
+  const baseBonus =
     getCropPerfection(cropId, completedCropPerfections)
       ?.adjacentCropYieldBonus ?? 0
-  )
+
+  return cropId === 'leek' && baseBonus > 0
+    ? baseBonus + getLeekAugmentationYieldBonus(seedAugmentations)
+    : baseBonus
 }
 
 export function getUnlockedCropIds(

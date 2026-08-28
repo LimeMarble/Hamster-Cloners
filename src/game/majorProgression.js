@@ -282,7 +282,24 @@ export const MAJOR_PROGRESSION_GOALS = [
       ),
     getCurrent: getCapybaraBlueprintCropYield,
     requiresAction: true,
-  },]
+  },
+  {
+    id: 'capybara-demonstration-one',
+    category: 'Demonstration',
+    title: 'Capybara Demonstration 1: Beyond Fortune',
+    target: CAPYBARA_DEMONSTRATIONS[1].target,
+    unit: 'blueprint Crop yield',
+    description:
+      'Reach 1e23 intrinsic blueprint Crop yield without a planted 4-Leaf Clover or active Breeze of Fortune effects.',
+    isComplete: (game) =>
+      hasCompletedCapybaraDemonstration(
+        game,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+      ),
+    getCurrent: getCapybaraBlueprintCropYield,
+    requiresAction: true,
+  },
+]
 
 export function getNextMajorProgressionGoal(game) {
   const goal = MAJOR_PROGRESSION_GOALS.find(

@@ -961,7 +961,7 @@ test('Wheat replaces the unobtainable Sweet Potato logarithmic perfection', () =
     expectedGlobalEffect,
   )
 })
-test('Splitweed costs 6e38 Crops and stays locked before Row Duplicators', () => {
+test('Splitweed costs 3e38 Crops and stays locked before Row Duplicators', () => {
   const lockedGame = {
     crops: CROP_PERFECTIONS.splitweed.cost,
     hasUnlockedCropPerfection: true,
@@ -973,7 +973,7 @@ test('Splitweed costs 6e38 Crops and stays locked before Row Duplicators', () =>
     hasUnlockedRowDuplicators: true,
   }
 
-  assert.equal(CROP_PERFECTIONS.splitweed.cost, 6e38)
+  assert.equal(CROP_PERFECTIONS.splitweed.cost, 3e38)
   assert.equal(CROP_PERFECTIONS.splitweed.requiresRowDuplicators, true)
   assert.equal(getCropName('knotweed'), 'Knotweed')
   assert.equal(getCropName('knotweed', ['splitweed']), 'Splitweed')

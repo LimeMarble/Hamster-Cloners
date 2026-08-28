@@ -27,6 +27,7 @@ import {
   hasRabbitUnlock,
   RABBIT_UNLOCK_IDS,
 } from './tradeLogic.js'
+import { getCapybaraHamsterEfficiencyMultiplier } from './capybaraLogic.js'
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
   SIMULATION_TICK_INTERVAL_MS / 1000
@@ -102,6 +103,7 @@ export function advanceGameSimulationStep(
     currentGame.testingCheats?.cropMultiplierEnabled ? 10 : 1,
     currentGame.trade?.rabbitContractsCompleted ?? 0,
     fortuneModifiers,
+    currentGame.seedAugmentations,
   )
   const productionForTick = productionSnapshotForTick.total
   const nextCrops = currentGame.crops + productionForTick
@@ -143,7 +145,8 @@ export function advanceGameSimulationStep(
         RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY,
       )
         ? 3
-        : 1),
+        : 1) *
+      getCapybaraHamsterEfficiencyMultiplier(currentGame),
   )
   const rowsProducedForTick = rowsBuiltPerSecond * safeElapsedSeconds
   const hasUnlockedRootTunnel =

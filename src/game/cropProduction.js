@@ -14,7 +14,6 @@ import {
 import { createFarmlandMultipliers } from './blueprintLogic.js'
 import {
   doesNotHarvest,
-  getAdjacentCropConnections,
   getAdjacentCropEffectMultiplier,
   getAdjacentHarvestDestructionMultiplier,
   getAdjacentHarvestModifier,
@@ -24,6 +23,7 @@ import {
   getGlobalHamsterEfficiencyMultiplier,
   getGlobalRowProductionMultiplier,
   getGlobalHarvestMultiplier,
+  getHarvestBonusConnections,
   getGlobalPassiveEffectMultiplier,
   getMirrorCornEffectMultiplier,
   getMonocropCropCount,
@@ -249,6 +249,7 @@ export function getBaseFieldProductionSnapshot(
   completedCropPerfections = [],
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const monocropThresholdBonus = getMonocropThresholdBonus(
@@ -269,7 +270,12 @@ export function getBaseFieldProductionSnapshot(
       return null
     }
 
-    const adjacentConnections = getAdjacentCropConnections(blueprint, index)
+    const adjacentConnections = getHarvestBonusConnections(
+      blueprint,
+      index,
+      completedCropPerfections,
+      seedAugmentations,
+    )
     const harvestDestructionMultiplier =
       getAdjacentHarvestDestructionMultiplier(
         blueprint,
@@ -285,6 +291,7 @@ export function getBaseFieldProductionSnapshot(
           neighborCrop,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         )
         const adjacencyStrength =
           getRootTunnelAdjacencyStrength(adjacencyDistance)
@@ -378,12 +385,14 @@ export function getBaseFieldIncome(
   completedCropPerfections = [],
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   return getBaseFieldProductionSnapshot(
     blueprint,
     completedCropPerfections,
     rabbitContractsCompleted,
     passiveEffectMultiplier,
+    seedAugmentations,
   ).total
 }
 
@@ -392,12 +401,14 @@ export function getBaseFieldIncomeByCrop(
   completedCropPerfections = [],
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   return getBaseFieldProductionSnapshot(
     blueprint,
     completedCropPerfections,
     rabbitContractsCompleted,
     passiveEffectMultiplier,
+    seedAugmentations,
   ).byCrop
 }
 export function getIncomeMultiplier(farmland) {
@@ -451,6 +462,7 @@ export function getCropProductionPerSecond(
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
+  seedAugmentations = {},
 ) {
   const modifiers = normalizeCropProductionModifiers(fortuneModifiers)
 
@@ -460,6 +472,7 @@ export function getCropProductionPerSecond(
       completedCropPerfections,
       rabbitContractsCompleted,
       modifiers.passiveEffectMultiplier,
+      seedAugmentations,
     ) *
     getIncomeMultiplier(farmland) *
     Math.max(0, Number(externalCropMultiplier) || 0) *
@@ -475,6 +488,7 @@ export function getCropProductionSnapshotPerSecond(
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
+  seedAugmentations = {},
 ) {
   const modifiers = normalizeCropProductionModifiers(fortuneModifiers)
   const fieldSnapshot = getBaseFieldProductionSnapshot(
@@ -482,6 +496,7 @@ export function getCropProductionSnapshotPerSecond(
     completedCropPerfections,
     rabbitContractsCompleted,
     modifiers.passiveEffectMultiplier,
+    seedAugmentations,
   )
   const multiplier =
     getIncomeMultiplier(farmland) *
@@ -575,6 +590,7 @@ export function getProductionForTick(
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
+  seedAugmentations = {},
 ) {
   return (
     getCropProductionPerSecond(
@@ -584,6 +600,7 @@ export function getProductionForTick(
       externalCropMultiplier,
       rabbitContractsCompleted,
       fortuneModifiers,
+      seedAugmentations,
     ) *
     (tickIntervalMs / 1000)
   )
@@ -597,6 +614,7 @@ export function getProductionSnapshotForTick(
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
+  seedAugmentations = {},
 ) {
   const productionPerSecond = getCropProductionSnapshotPerSecond(
     blueprint,
@@ -605,6 +623,7 @@ export function getProductionSnapshotForTick(
     externalCropMultiplier,
     rabbitContractsCompleted,
     fortuneModifiers,
+    seedAugmentations,
   )
   const tickLengthSeconds = tickIntervalMs / 1000
 

@@ -122,6 +122,7 @@ export function CropHoverInspector({
   activeHamsters,
   rabbitContractsCompleted,
   fortune,
+  seedAugmentations,
   cursor,
 }) {
   const stats = getBlueprintCropStats(
@@ -132,6 +133,7 @@ export function CropHoverInspector({
     activeHamsters,
     rabbitContractsCompleted,
     getFortuneModifiers(fortune),
+    seedAugmentations,
   )
 
   if (!stats) {
@@ -184,7 +186,11 @@ export function CropHoverInspector({
         ) : null}
       </dl>
       <p className="crop-hover-own-effect">
-        {getCropEffectDescription(stats.crop, completedCropPerfections)}
+        {getCropEffectDescription(
+          stats.crop,
+          completedCropPerfections,
+          seedAugmentations,
+        )}
       </p>
       <h4>Received effects</h4>
       {stats.receivedEffects.length > 0 ? (

@@ -211,35 +211,68 @@ function CapybaraDemonstrations({
             demonstration.id,
             { blueprintCropYield },
           )
-          const progress = status.completed ? 1 : status.progress
+          const hasSecondaryObjective = Boolean(status.secondaryObjective)
+          const statusLabel = status.secondaryCompleted
+            ? 'Mastered'
+            : status.completed
+              ? hasSecondaryObjective
+                ? 'Passed · Bonus challenge'
+                : 'Passed'
+              : !status.hasPrerequisite
+                ? 'Locked'
+                : !status.restrictionsMet
+                  ? 'Restricted'
+                  : 'In progress'
+          const buttonLabel = status.completed
+            ? hasSecondaryObjective
+              ? status.secondaryCompleted
+                ? 'Secondary condition cleared'
+                : status.canComplete
+                  ? 'Clear secondary condition'
+                  : status.hasReachedGoal
+                    ? 'Secondary condition not met'
+                    : 'Goal not reached'
+              : 'Demonstration passed'
+            : !status.hasPrerequisite
+              ? 'Complete Demonstration 0 first'
+              : !status.restrictionsMet
+                ? 'Restrictions not met'
+                : status.canComplete
+                  ? 'Pass demonstration'
+                  : 'Goal not reached'
 
           return (
             <article
-              className={`capybara-demonstration-card ${status.completed ? 'capybara-demonstration-completed' : ''}`}
+              className={'capybara-demonstration-card' +
+                (status.completed ? ' capybara-demonstration-completed' : '')}
               key={demonstration.id}
             >
-              <div className="capybara-demonstration-heading">
+              <div className='capybara-demonstration-heading'>
                 <div>
-                  <p className="eyebrow">
+                  <p className='eyebrow'>
                     Demonstration {demonstration.number}
                   </p>
                   <h3>{demonstration.name}</h3>
                 </div>
-                <strong>{status.completed ? 'Passed' : 'In progress'}</strong>
+                <strong>{statusLabel}</strong>
               </div>
 
-              <p className="trade-copy">{demonstration.goal}</p>
+              <p className='trade-copy'>{demonstration.goal}</p>
               <div
-                className="rabbit-contract-track"
-                role="progressbar"
-                aria-label={`Demonstration ${demonstration.number} progress`}
+                className='rabbit-contract-track'
+                role='progressbar'
+                aria-label={
+                  'Demonstration ' + demonstration.number + ' progress'
+                }
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-valuenow={Math.round(progress * 1000) / 10}
+                aria-valuenow={Math.round(status.progress * 1000) / 10}
               >
-                <span style={{ width: `${progress * 100}%` }} />
+                <span
+                  style={{ width: String(status.progress * 100) + '%' }}
+                />
               </div>
-              <div className="capybara-demonstration-value">
+              <div className='capybara-demonstration-value'>
                 <span>Blueprint Crop yield</span>
                 <strong>
                   <FormattedNumber value={status.current} /> /{' '}
@@ -247,7 +280,7 @@ function CapybaraDemonstrations({
                 </strong>
               </div>
 
-              <dl className="capybara-demonstration-details">
+              <dl className='capybara-demonstration-details'>
                 <div>
                   <dt>Restrictions</dt>
                   <dd>
@@ -269,19 +302,35 @@ function CapybaraDemonstrations({
                 </div>
               </dl>
 
+              {status.secondaryVisible ? (
+                <div className='capybara-secondary-objective'>
+                  <p className='eyebrow'>Secondary condition revealed</p>
+                  <h4>{status.secondaryObjective.condition}</h4>
+                  <p>
+                    <strong>
+                      {status.secondaryCompleted
+                        ? 'Cleared'
+                        : status.secondaryConditionMet
+                          ? 'Condition met'
+                          : 'Condition not met'}
+                    </strong>
+                  </p>
+                  <p>
+                    <strong>{status.secondaryObjective.rewardName}</strong> —{' '}
+                    {status.secondaryObjective.rewardDescription}
+                  </p>
+                </div>
+              ) : null}
+
               <button
-                type="button"
-                className="trade-primary-button"
+                type='button'
+                className='trade-primary-button'
                 onClick={() =>
                   onCompleteCapybaraDemonstration(demonstration.id)
                 }
                 disabled={!status.canComplete}
               >
-                {status.completed
-                  ? 'Demonstration passed'
-                  : status.canComplete
-                    ? 'Pass demonstration'
-                    : 'Goal not reached'}
+                {buttonLabel}
               </button>
             </article>
           )

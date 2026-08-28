@@ -14,6 +14,7 @@ import {
   STARTING_CROPS,
 } from './gameConfig.js'
 import { createInitialFortuneState } from './fortuneLogic.js'
+import { createInitialSeedAugmentationState } from './augmentationLogic.js'
 import { normalizeMultiTileCropCells } from './cropFootprintLogic.js'
 
 function normalizeUniqueCloverCells(cells) {
@@ -115,7 +116,9 @@ export function createInitialGame() {
     fortune: createInitialFortuneState(),
     capybara: {
       completedDemonstrations: [],
+      completedSecondaryObjectives: [],
     },
+    seedAugmentations: createInitialSeedAugmentationState(),
     trade: {
       established: false,
       rabbitRelations: 0,

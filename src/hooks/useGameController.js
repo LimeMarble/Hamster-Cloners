@@ -46,7 +46,7 @@ export function useGameController() {
     updateGame,
     areInventionsUnlocked: derived.areInventionsUnlocked,
     isTradeTabVisible: derived.isTradeTabVisible,
-    isAugmentationTabVisible: derived.isAugmentationTabVisible,
+      isAugmentationTabVisible: derived.isAugmentationTabVisible,
     resetBlueprintEditor: blueprintEditor.resetBlueprintEditor,
   })
   const testing = useTestingCheats({
@@ -63,7 +63,7 @@ export function useGameController() {
       activeTab: actions.activeTab,
       areInventionsUnlocked: derived.areInventionsUnlocked,
       isTradeTabVisible: derived.isTradeTabVisible,
-    isAugmentationTabVisible: derived.isAugmentationTabVisible,
+      isAugmentationTabVisible: derived.isAugmentationTabVisible,
       showInventionsUnlockPrompt: derived.showInventionsUnlockPrompt,
       inventionsUnlockCount: INVENTIONS_HAMSTER_UNLOCK_COUNT,
       ...actions.navigationActions,
@@ -126,6 +126,7 @@ export function useGameController() {
       },
       augmentation: {
         game,
+        ...actions.augmentationActions,
       },
       inventions: {
         game,

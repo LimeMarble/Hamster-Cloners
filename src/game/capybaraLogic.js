@@ -4,6 +4,11 @@ import { RABBIT_UNLOCK_IDS, hasRabbitUnlock } from './tradeLogic.js'
 
 export const CAPYBARA_DEMONSTRATION_IDS = Object.freeze({
   INTRODUCTION: 'introduction',
+  DEMONSTRATION_ONE: 'demonstrationOne',
+})
+
+export const CAPYBARA_SECONDARY_OBJECTIVE_IDS = Object.freeze({
+  INTRODUCTION_NO_CLOVER: 'introductionNoClover',
 })
 
 export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
@@ -19,11 +24,42 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     rewardDescription:
       'Allows further modifications of perfected Crops at a steep Crop price.',
     hint: 'Luck may need to be on your side...',
+    secondaryObjective: Object.freeze({
+      id: CAPYBARA_SECONDARY_OBJECTIVE_IDS.INTRODUCTION_NO_CLOVER,
+      condition:
+        'Have no 4-Leaf Clover planted and no active Breeze of Fortune effects.',
+      rewardName: 'Independent Engineering',
+      rewardDescription:
+        'Hamster Efficiency ×2 for every Capybara demonstration completed.',
+    }),
+  },
+  {
+    id: CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+    number: 1,
+    name: 'Beyond Fortune',
+    goal: 'Have a field blueprint with a Crop yield of at least 1e23 Crops.',
+    target: 1e23,
+    unit: 'blueprint Crop yield',
+    restrictions: [
+      'No 4-Leaf Clover may be planted',
+      'No Breeze of Fortune effects may be active',
+    ],
+    rewardName: '???',
+    rewardDescription:
+      'The Capybaras have not revealed this demonstration\'s reward yet.',
+    hint: 'This target is not currently obtainable.',
+    prerequisiteDemonstrationId: CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+    requiresNoClover: true,
   },
 ])
 
 const CAPYBARA_DEMONSTRATION_ID_SET = new Set(
   CAPYBARA_DEMONSTRATIONS.map(({ id }) => id),
+)
+const CAPYBARA_SECONDARY_OBJECTIVE_ID_SET = new Set(
+  CAPYBARA_DEMONSTRATIONS.flatMap(({ secondaryObjective }) =>
+    secondaryObjective ? [secondaryObjective.id] : [],
+  ),
 )
 
 function toNonNegativeNumber(value) {
@@ -35,6 +71,7 @@ function toNonNegativeNumber(value) {
 export function createInitialCapybaraState() {
   return {
     completedDemonstrations: [],
+    completedSecondaryObjectives: [],
   }
 }
 
@@ -55,11 +92,26 @@ export function normalizeCapybaraState(rawCapybara) {
           ),
         ]
       : [],
+    completedSecondaryObjectives: Array.isArray(
+      rawCapybara.completedSecondaryObjectives,
+    )
+      ? [
+          ...new Set(
+            rawCapybara.completedSecondaryObjectives.filter((id) =>
+              CAPYBARA_SECONDARY_OBJECTIVE_ID_SET.has(id),
+            ),
+          ),
+        ]
+      : [],
   }
 }
 
 export function hasCompletedCapybaraDemonstration(game, demonstrationId) {
   return game.capybara?.completedDemonstrations?.includes(demonstrationId) === true
+}
+
+export function hasCompletedCapybaraSecondaryObjective(game, objectiveId) {
+  return game.capybara?.completedSecondaryObjectives?.includes(objectiveId) === true
 }
 
 export function hasSeedAugmentation(game) {
@@ -69,6 +121,19 @@ export function hasSeedAugmentation(game) {
   )
 }
 
+export function getCapybaraHamsterEfficiencyMultiplier(game) {
+  if (
+    !hasCompletedCapybaraSecondaryObjective(
+      game,
+      CAPYBARA_SECONDARY_OBJECTIVE_IDS.INTRODUCTION_NO_CLOVER,
+    )
+  ) {
+    return 1
+  }
+
+  return 2 ** normalizeCapybaraState(game.capybara).completedDemonstrations.length
+}
+
 export function getCapybaraBlueprintCropYield(game) {
   const fortuneModifiers = getFortuneModifiers(game.fortune)
   const snapshot = getBaseFieldProductionSnapshot(
@@ -76,6 +141,7 @@ export function getCapybaraBlueprintCropYield(game) {
     game.completedCropPerfections,
     game.trade?.rabbitContractsCompleted ?? 0,
     fortuneModifiers.passiveEffectMultiplier,
+    game.seedAugmentations,
   )
 
   return Math.max(
@@ -84,6 +150,17 @@ export function getCapybaraBlueprintCropYield(game) {
       fortuneModifiers.cropYieldMultiplier *
       fortuneModifiers.harvestMultiplier,
   )
+}
+
+function isNoCloverConditionMet(game) {
+  const hasPlantedClover = game.blueprint?.cells?.includes('fourLeafClover') === true
+  const hasActiveCloverEffect =
+    Array.isArray(game.fortune?.activeEffects) &&
+    game.fortune.activeEffects.some(
+      (effect) => Number(effect?.remainingSeconds) > 0,
+    )
+
+  return !hasPlantedClover && !hasActiveCloverEffect
 }
 
 export function getCapybaraDemonstrationStatus(
@@ -95,27 +172,54 @@ export function getCapybaraDemonstrationStatus(
     ({ id }) => id === demonstrationId,
   )
 
-  if (!demonstration) {
-    return null
-  }
+  if (!demonstration) return null
 
   const current = toNonNegativeNumber(
     metrics.blueprintCropYield ?? getCapybaraBlueprintCropYield(game),
   )
   const completed = hasCompletedCapybaraDemonstration(game, demonstrationId)
-  const hasContact = hasRabbitUnlock(
-    game,
-    RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
-  )
+  const secondaryObjective = demonstration.secondaryObjective
+  const secondaryCompleted = secondaryObjective
+    ? hasCompletedCapybaraSecondaryObjective(game, secondaryObjective.id)
+    : false
+  const secondaryConditionMet = secondaryObjective
+    ? isNoCloverConditionMet(game)
+    : false
+  const hasContact = hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT)
+  const hasReachedGoal = current >= demonstration.target
+  const hasPrerequisite = demonstration.prerequisiteDemonstrationId
+    ? hasCompletedCapybaraDemonstration(
+        game,
+        demonstration.prerequisiteDemonstrationId,
+      )
+    : true
+  const restrictionsMet = demonstration.requiresNoClover
+    ? isNoCloverConditionMet(game)
+    : true
 
   return {
     ...demonstration,
     current,
-    progress: demonstration.target > 0
-      ? Math.min(1, current / demonstration.target)
-      : 0,
+    progress:
+      demonstration.target > 0
+        ? Math.min(1, current / demonstration.target)
+        : 0,
     completed,
-    canComplete: hasContact && !completed && current >= demonstration.target,
+    hasReachedGoal,
+    hasPrerequisite,
+    restrictionsMet,
+    secondaryVisible: completed && Boolean(secondaryObjective),
+    secondaryCompleted,
+    secondaryConditionMet,
+    canComplete:
+      hasContact &&
+      hasPrerequisite &&
+      hasReachedGoal &&
+      restrictionsMet &&
+      (!completed ||
+        (Boolean(secondaryObjective) &&
+          !secondaryCompleted &&
+          secondaryConditionMet)),
   }
 }
 
@@ -124,26 +228,29 @@ export function completeCapybaraDemonstration(
   demonstrationId,
   metrics,
 ) {
-  const status = getCapybaraDemonstrationStatus(
-    game,
-    demonstrationId,
-    metrics,
-  )
-
-  if (!status?.canComplete) {
-    return null
-  }
+  const status = getCapybaraDemonstrationStatus(game, demonstrationId, metrics)
+  if (!status?.canComplete) return null
 
   const capybara = normalizeCapybaraState(game.capybara)
+  const isFirstCompletion = !status.completed
+  const completesSecondary =
+    Boolean(status.secondaryObjective) &&
+    !status.secondaryCompleted &&
+    status.secondaryConditionMet
 
   return {
     ...game,
     capybara: {
       ...capybara,
-      completedDemonstrations: [
-        ...capybara.completedDemonstrations,
-        demonstrationId,
-      ],
+      completedDemonstrations: isFirstCompletion
+        ? [...capybara.completedDemonstrations, demonstrationId]
+        : capybara.completedDemonstrations,
+      completedSecondaryObjectives: completesSecondary
+        ? [
+            ...capybara.completedSecondaryObjectives,
+            status.secondaryObjective.id,
+          ]
+        : capybara.completedSecondaryObjectives,
     },
   }
 }

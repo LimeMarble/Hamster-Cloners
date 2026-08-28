@@ -218,6 +218,7 @@ export function BlueprintEdit({
                         ? getCropPlacementEffectDescription(
                             cropId,
                             game.completedCropPerfections,
+                            game.seedAugmentations,
                           )
                         : crop.unlockDescription}
                     </small>
@@ -292,6 +293,7 @@ export function BlueprintEdit({
             activeHamsters={game.hamsters}
             rabbitContractsCompleted={rabbitContractsCompleted}
             fortune={game.fortune}
+            seedAugmentations={game.seedAugmentations}
             cursor={hoveredEditorCrop}
           />
         ) : null}
