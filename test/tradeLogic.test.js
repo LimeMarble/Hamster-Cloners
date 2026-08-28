@@ -4,6 +4,7 @@ import {
   RABBIT_ACTIVE_CONTRACT_COUNT,
   RABBIT_BLAZING_CONTRACT_RATE,
   RABBIT_BLAZING_PACE_SWITCH_SECONDS,
+  RABBIT_BULK_CONTRACT_RATE,
   RABBIT_CONTRACT_AVERAGE_FACTOR,
   RABBIT_UNLOCKS,
   RABBIT_UNLOCK_IDS,
@@ -409,6 +410,176 @@ test('the Contractor claims every finished Rabbit contract automatically', () =>
   assert.equal(advancedTrade.rabbitContractsCompleted, 2)
   assert.equal(advancedTrade.rabbitContracts[0].progress, 0)
   assert.equal(advancedTrade.rabbitContracts[1].progress, 0)
+})
+
+test('the Contractor batches estimates above 10 per second every 0.1 seconds', () => {
+  const initialGame = createInitialGame()
+  const fieldsPlanted = 1e40
+  const estimatedCompletionsPerSecond = 7140
+  const productionPerSecond =
+    estimatedCompletionsPerSecond *
+    fieldsPlanted *
+    RABBIT_CONTRACT_AVERAGE_FACTOR
+  const frozenContracts = [
+    {
+      cropId: 'leek',
+      factor: 3e7,
+      fieldsPlanted,
+      requiredAmount: fieldsPlanted * 3e7,
+      progress: 123,
+      relationsReward: 120,
+    },
+    null,
+    null,
+  ]
+  let game = {
+    ...initialGame,
+    farmland: {
+      ...initialGame.farmland,
+      columns: fieldsPlanted,
+    },
+    trade: {
+      ...initialGame.trade,
+      established: true,
+      rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
+      rabbitContracts: frozenContracts,
+      rabbitContractPaceSampleSeconds: 0,
+      rabbitContractEstimatedCompletionsPerSecond:
+        estimatedCompletionsPerSecond,
+    },
+  }
+  let randomCalls = 0
+  const random = () => {
+    randomCalls += 1
+    return 0
+  }
+
+  for (let tick = 0; tick < 5; tick += 1) {
+    game = {
+      ...game,
+      trade: advanceRabbitContract(
+        game,
+        { leek: productionPerSecond / 60 },
+        random,
+        1 / 60,
+      ),
+    }
+  }
+
+  assert.equal(game.trade.rabbitContractsCompleted, 0)
+  assert.deepEqual(game.trade.rabbitContracts, frozenContracts)
+
+  game = {
+    ...game,
+    trade: advanceRabbitContract(
+      game,
+      { leek: productionPerSecond / 60 },
+      random,
+      1 / 60,
+    ),
+  }
+
+  assert.equal(RABBIT_BULK_CONTRACT_RATE, 10)
+  assert.ok(
+    Math.abs(
+      game.trade.rabbitContractEstimatedCompletionsPerSecond -
+        estimatedCompletionsPerSecond,
+    ) < 1e-9,
+  )
+  assert.equal(game.trade.rabbitContractsCompleted, 714)
+  assert.equal(game.trade.rabbitRelations, 714 * 120)
+  assert.deepEqual(game.trade.rabbitContracts, frozenContracts)
+  assert.equal(randomCalls, 0)
+  assert.ok(game.trade.rabbitBulkContractElapsedSeconds < 1e-9)
+})
+
+test('bulk Rabbit completion fractions carry between 0.1-second awards', () => {
+  const initialGame = createInitialGame()
+  const fieldsPlanted = 1e40
+  const estimatedCompletionsPerSecond = 10.5
+  const productionPerSecond =
+    estimatedCompletionsPerSecond *
+    fieldsPlanted *
+    RABBIT_CONTRACT_AVERAGE_FACTOR
+  const frozenContracts = [
+    {
+      cropId: 'leek',
+      factor: 3e7,
+      fieldsPlanted,
+      requiredAmount: fieldsPlanted * 3e7,
+      progress: 0,
+      relationsReward: 120,
+    },
+    null,
+    null,
+  ]
+  let game = {
+    ...initialGame,
+    farmland: {
+      ...initialGame.farmland,
+      columns: fieldsPlanted,
+    },
+    trade: {
+      ...initialGame.trade,
+      established: true,
+      rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
+      rabbitContracts: frozenContracts,
+      rabbitContractPaceSampleSeconds: 0,
+      rabbitContractEstimatedCompletionsPerSecond:
+        estimatedCompletionsPerSecond,
+    },
+  }
+
+  for (let interval = 0; interval < 20; interval += 1) {
+    game = {
+      ...game,
+      trade: advanceRabbitContract(
+        game,
+        { leek: productionPerSecond / 10 },
+        () => 0,
+        0.1,
+      ),
+    }
+  }
+
+  assert.equal(game.trade.rabbitContractsCompleted, 21)
+  assert.equal(game.trade.rabbitRelations, 21 * 120)
+  assert.ok(game.trade.rabbitBulkContractFractionalCompletions < 1e-9)
+  assert.deepEqual(game.trade.rabbitContracts, frozenContracts)
+})
+
+test('exactly 10 Rabbit contracts per second keeps individual processing', () => {
+  const initialGame = createInitialGame()
+  const contract = {
+    cropId: 'leek',
+    factor: 1e7,
+    fieldsPlanted: 1,
+    requiredAmount: 10,
+    progress: 0,
+    relationsReward: 3,
+  }
+  const game = {
+    ...initialGame,
+    trade: {
+      ...initialGame.trade,
+      established: true,
+      rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
+      rabbitContracts: [contract, null, null],
+      rabbitContractPaceSampleSeconds: 0,
+      rabbitContractEstimatedCompletionsPerSecond:
+        RABBIT_BULK_CONTRACT_RATE,
+    },
+  }
+  const advancedTrade = advanceRabbitContract(
+    game,
+    { leek: 20 },
+    () => 0,
+    0.01,
+  )
+
+  assert.equal(advancedTrade.rabbitContractsCompleted, 1)
+  assert.equal(advancedTrade.rabbitRelations, 3)
+  assert.equal(advancedTrade.rabbitBulkContractElapsedSeconds, 0)
 })
 
 test('Rabbit relation expansions appear before efficiency upgrades and grant blueprint space without a reset', () => {

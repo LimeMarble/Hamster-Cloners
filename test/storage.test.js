@@ -288,6 +288,9 @@ test('Trade state persists with safe migration defaults', () => {
       established: true,
       rabbitRelations: 4321,
       rabbitUnlocks: ['hamsterEfficiency', 'hamsterEfficiency', 'invalid'],
+      rabbitBulkContractElapsedSeconds: 0.04,
+      rabbitBulkContractFractionalCompletions: 0.25,
+      rabbitBulkRelationRemainder: 0.75,
       rabbitContract: {
         cropId: 'leek',
         factor: 3e7,
@@ -307,6 +310,9 @@ test('Trade state persists with safe migration defaults', () => {
   assert.equal(tradeSave.trade.rabbitContracts[0].cropId, 'leek')
   assert.equal(tradeSave.trade.rabbitContracts[0].progress, 2e47)
   assert.equal(tradeSave.trade.rabbitContractsCompleted, 0)
+  assert.equal(tradeSave.trade.rabbitBulkContractElapsedSeconds, 0.04)
+  assert.equal(tradeSave.trade.rabbitBulkContractFractionalCompletions, 0.25)
+  assert.equal(tradeSave.trade.rabbitBulkRelationRemainder, 0.75)
   assert.deepEqual(olderSave.trade, {
     established: false,
     rabbitRelations: 0,
@@ -317,6 +323,9 @@ test('Trade state persists with safe migration defaults', () => {
     rabbitContractPaceTransitionSeconds: 0,
     rabbitContractPaceSampleSeconds: 0.1,
     rabbitContractEstimatedCompletionsPerSecond: 0,
+    rabbitBulkContractElapsedSeconds: 0,
+    rabbitBulkContractFractionalCompletions: 0,
+    rabbitBulkRelationRemainder: 0,
   })
 })
 test('legacy Rabbit blueprint expansions migrate to free blueprint space', () => {

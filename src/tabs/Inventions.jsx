@@ -173,56 +173,6 @@ export function Inventions({
                 Crops
               </p>
             ) : null}
-            {game.hasUnlockedLentil ? (
-              <>
-                <article className="invention-card crop-perfection-card">
-                  <div>
-                    <p className="eyebrow">Lentil perfection</p>
-                    <h2>{CROP_PERFECTIONS.samplingLentil.name}</h2>
-                    <p>
-                      Raises Lentil&apos;s global harvest boost from ×1.25 to
-                      ×1.8. Each adjacent traded Crop also adds +1× to a
-                      separate global harvest multiplier; that adjacency
-                      multiplier cannot be boosted.
-                    </p>
-                  </div>
-                  {hasSamplingLentil ? (
-                    <span className="invention-complete">Perfected</span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="primary-button"
-                      onClick={onUnlockSamplingLentil}
-                      disabled={!canUnlockSamplingLentil}
-                    >
-                      Spend{' '}
-                      <FormattedNumber
-                        value={CROP_PERFECTIONS.samplingLentil.cost}
-                        maximumFractionDigits={0}
-                      />{' '}
-                      Crops
-                    </button>
-                  )}
-                </article>
-                {!hasSamplingLentil ? (
-                  <p className="invention-progress">
-                    <FormattedNumber
-                      value={Math.min(
-                        game.crops,
-                        CROP_PERFECTIONS.samplingLentil.cost,
-                      )}
-                      maximumFractionDigits={0}
-                    />{' '}
-                    /{' '}
-                    <FormattedNumber
-                      value={CROP_PERFECTIONS.samplingLentil.cost}
-                      maximumFractionDigits={0}
-                    />{' '}
-                    Crops
-                  </p>
-                ) : null}
-              </>
-            ) : null}
             {game.hasUnlockedRowDuplicators ? (
               <>
                 <article className="invention-card crop-perfection-card">
@@ -268,6 +218,56 @@ export function Inventions({
                     /{' '}
                     <FormattedNumber
                       value={CROP_PERFECTIONS.splitweed.cost}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    Crops
+                  </p>
+                ) : null}
+              </>
+            ) : null}
+            {game.hasUnlockedLentil && game.hasUnlockedRowDuplicators ? (
+              <>
+                <article className="invention-card crop-perfection-card">
+                  <div>
+                    <p className="eyebrow">Lentil perfection</p>
+                    <h2>{CROP_PERFECTIONS.samplingLentil.name}</h2>
+                    <p>
+                      Raises Lentil&apos;s global harvest boost from ×1.25 to
+                      ×1.8. Each adjacent traded Crop also adds +1× to a
+                      separate global harvest multiplier; that adjacency
+                      multiplier cannot be boosted.
+                    </p>
+                  </div>
+                  {hasSamplingLentil ? (
+                    <span className="invention-complete">Perfected</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={onUnlockSamplingLentil}
+                      disabled={!canUnlockSamplingLentil}
+                    >
+                      Spend{' '}
+                      <FormattedNumber
+                        value={CROP_PERFECTIONS.samplingLentil.cost}
+                        maximumFractionDigits={0}
+                      />{' '}
+                      Crops
+                    </button>
+                  )}
+                </article>
+                {!hasSamplingLentil ? (
+                  <p className="invention-progress">
+                    <FormattedNumber
+                      value={Math.min(
+                        game.crops,
+                        CROP_PERFECTIONS.samplingLentil.cost,
+                      )}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    /{' '}
+                    <FormattedNumber
+                      value={CROP_PERFECTIONS.samplingLentil.cost}
                       maximumFractionDigits={0}
                     />{' '}
                     Crops

@@ -13,6 +13,8 @@ export const RABBIT_CONTRACT_AVERAGE_FACTOR =
 export const RABBIT_BLAZING_CONTRACT_RATE = 5
 export const RABBIT_BLAZING_PACE_SWITCH_SECONDS = 5
 export const RABBIT_CONTRACT_PACE_SAMPLE_SECONDS = 0.1
+export const RABBIT_BULK_CONTRACT_RATE = 10
+export const RABBIT_BULK_CONTRACT_INTERVAL_SECONDS = 0.1
 
 export const RABBIT_UNLOCK_IDS = Object.freeze({
   CARROT: 'carrot',
@@ -112,6 +114,9 @@ export function createInitialTradeState() {
     rabbitContractPaceTransitionSeconds: 0,
     rabbitContractPaceSampleSeconds: RABBIT_CONTRACT_PACE_SAMPLE_SECONDS,
     rabbitContractEstimatedCompletionsPerSecond: 0,
+    rabbitBulkContractElapsedSeconds: 0,
+    rabbitBulkContractFractionalCompletions: 0,
+    rabbitBulkRelationRemainder: 0,
   }
 }
 
@@ -259,6 +264,35 @@ export function getRabbitContractRelationsReward(fieldsPlanted, factor) {
   )
 }
 
+export function getRabbitBulkAverageRelationsPerContract(game) {
+  const eligibleCropIds = getRabbitContractCropIds(game)
+
+  if (eligibleCropIds.length === 0) return 0
+
+  const fieldsPlanted = Math.max(1, getFieldsPlanted(game.farmland))
+  const averageBaseReward = getRabbitContractRelationsReward(
+    fieldsPlanted,
+    RABBIT_CONTRACT_AVERAGE_FACTOR,
+  )
+  const relationMultiplier = getRabbitRelationsMultiplier(
+    game.blueprint,
+    game.completedCropPerfections,
+    getFortuneModifiers(game).passiveEffectMultiplier,
+  )
+  const totalReward = eligibleCropIds.reduce(
+    (sum, cropId) =>
+      sum +
+      Math.floor(
+        averageBaseReward *
+          (cropId === 'carrot' ? 2 : 1) *
+          relationMultiplier,
+      ),
+    0,
+  )
+
+  return totalReward / eligibleCropIds.length
+}
+
 export function createRabbitContract(game, random = Math.random) {
   const eligibleCropIds = getRabbitContractCropIds(game)
 
@@ -380,6 +414,18 @@ export function normalizeTradeState(rawTrade) {
     rabbitContractEstimatedCompletionsPerSecond: toNonNegativeNumber(
       rawTrade.rabbitContractEstimatedCompletionsPerSecond,
     ),
+    rabbitBulkContractElapsedSeconds: Math.min(
+      RABBIT_BULK_CONTRACT_INTERVAL_SECONDS,
+      toNonNegativeNumber(rawTrade.rabbitBulkContractElapsedSeconds),
+    ),
+    rabbitBulkContractFractionalCompletions: Math.min(
+      1 - Number.EPSILON,
+      toNonNegativeNumber(rawTrade.rabbitBulkContractFractionalCompletions),
+    ),
+    rabbitBulkRelationRemainder: Math.min(
+      1 - Number.EPSILON,
+      toNonNegativeNumber(rawTrade.rabbitBulkRelationRemainder),
+    ),
   }
 }
 
@@ -410,6 +456,66 @@ export function establishTradeRelations(game, random = Math.random) {
   }
 }
 
+function advanceRabbitContractsInBulk(
+  game,
+  completionRate,
+  elapsedSeconds,
+) {
+  const accumulatedSeconds =
+    toNonNegativeNumber(game.trade.rabbitBulkContractElapsedSeconds) +
+    toNonNegativeNumber(elapsedSeconds)
+  const completedIntervals = Math.floor(
+    (accumulatedSeconds + 1e-9) /
+      RABBIT_BULK_CONTRACT_INTERVAL_SECONDS,
+  )
+
+  if (completedIntervals === 0) {
+    return {
+      ...game.trade,
+      rabbitBulkContractElapsedSeconds: accumulatedSeconds,
+    }
+  }
+
+  const elapsedRemainder =
+    accumulatedSeconds -
+    completedIntervals * RABBIT_BULK_CONTRACT_INTERVAL_SECONDS
+  const exactCompletions =
+    toNonNegativeNumber(game.trade.rabbitBulkContractFractionalCompletions) +
+    toNonNegativeNumber(completionRate) *
+      completedIntervals *
+      RABBIT_BULK_CONTRACT_INTERVAL_SECONDS
+  const completedContracts = Math.floor(exactCompletions + 1e-9)
+  const fractionalCompletions = Math.max(
+    0,
+    exactCompletions - completedContracts,
+  )
+
+  if (completedContracts === 0) {
+    return {
+      ...game.trade,
+      rabbitBulkContractElapsedSeconds: Math.max(0, elapsedRemainder),
+      rabbitBulkContractFractionalCompletions: fractionalCompletions,
+    }
+  }
+
+  const exactRelations =
+    toNonNegativeNumber(game.trade.rabbitBulkRelationRemainder) +
+    completedContracts * getRabbitBulkAverageRelationsPerContract(game)
+  const gainedRelations = Math.floor(exactRelations + 1e-9)
+
+  return {
+    ...game.trade,
+    rabbitRelations:
+      toNonNegativeNumber(game.trade.rabbitRelations) + gainedRelations,
+    rabbitContractsCompleted:
+      Math.floor(toNonNegativeNumber(game.trade.rabbitContractsCompleted)) +
+      completedContracts,
+    rabbitBulkContractElapsedSeconds: Math.max(0, elapsedRemainder),
+    rabbitBulkContractFractionalCompletions: fractionalCompletions,
+    rabbitBulkRelationRemainder: Math.max(0, exactRelations - gainedRelations),
+  }
+}
+
 export function advanceRabbitContract(
   game,
   productionByCrop,
@@ -420,11 +526,46 @@ export function advanceRabbitContract(
     return game.trade
   }
 
+  const safeElapsedSeconds = toNonNegativeNumber(elapsedSeconds)
+  const productionPerSecondByCrop = safeElapsedSeconds > 0
+    ? Object.fromEntries(
+        Object.entries(productionByCrop ?? {}).map(([cropId, amount]) => [
+          cropId,
+          toNonNegativeNumber(amount) / safeElapsedSeconds,
+        ]),
+      )
+    : {}
+  const paceState = advanceRabbitContractPaceState(
+    game,
+    productionPerSecondByCrop,
+    safeElapsedSeconds,
+  )
+  const tradeWithPace = {
+    ...game.trade,
+    ...paceState,
+  }
+  const hasContractor = hasRabbitUnlock(
+    game,
+    RABBIT_UNLOCK_IDS.CONTRACTOR,
+  )
+
+  if (
+    hasContractor &&
+    paceState.rabbitContractEstimatedCompletionsPerSecond >
+      RABBIT_BULK_CONTRACT_RATE
+  ) {
+    return advanceRabbitContractsInBulk(
+      { ...game, trade: tradeWithPace },
+      paceState.rabbitContractEstimatedCompletionsPerSecond,
+      safeElapsedSeconds,
+    )
+  }
+
   const currentContracts = Array.isArray(game.trade.rabbitContracts)
     ? game.trade.rabbitContracts
     : normalizeRabbitContracts(game.trade)
   const rabbitContracts = currentContracts.map((currentContract) => {
-    const contract = currentContract ?? createRabbitContract(game)
+    const contract = currentContract ?? createRabbitContract(game, random)
 
     if (!contract) {
       return null
@@ -443,27 +584,19 @@ export function advanceRabbitContract(
       ),
     }
   })
-
-  const safeElapsedSeconds = toNonNegativeNumber(elapsedSeconds)
-  const productionPerSecondByCrop = safeElapsedSeconds > 0
-    ? Object.fromEntries(
-        Object.entries(productionByCrop ?? {}).map(([cropId, amount]) => [
-          cropId,
-          toNonNegativeNumber(amount) / safeElapsedSeconds,
-        ]),
-      )
-    : {}
   const advancedTrade = {
-    ...game.trade,
-    ...advanceRabbitContractPaceState(
-      game,
-      productionPerSecondByCrop,
-      safeElapsedSeconds,
-    ),
+    ...tradeWithPace,
     rabbitContracts,
+    rabbitBulkContractElapsedSeconds: 0,
+    rabbitBulkContractFractionalCompletions: toNonNegativeNumber(
+      game.trade.rabbitBulkContractFractionalCompletions,
+    ),
+    rabbitBulkRelationRemainder: toNonNegativeNumber(
+      game.trade.rabbitBulkRelationRemainder,
+    ),
   }
 
-  if (!hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CONTRACTOR)) {
+  if (!hasContractor) {
     return advancedTrade
   }
 

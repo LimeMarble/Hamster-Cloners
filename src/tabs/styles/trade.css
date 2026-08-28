@@ -148,6 +148,12 @@
   background: #0b150c;
 }
 
+.rabbit-contract-card-blazing {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+}
+
 .rabbit-contract-crop {
   display: flex;
   align-items: center;

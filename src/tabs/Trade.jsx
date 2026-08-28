@@ -456,7 +456,7 @@ export function Trade({
                 </div>
                 <div className="rabbit-contract-grid">
                   {hasBlazingContractPace ? (
-                    <article className="rabbit-contract-card">
+                    <article className="rabbit-contract-card rabbit-contract-card-blazing">
                       <p className="eyebrow">Rabbit contracts</p>
                       <h3>
                         Rabbit contracts are being completed at a blazing fast
