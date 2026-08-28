@@ -1,11 +1,8 @@
-import {
-  getBlueprintSlots,
-  getUnlockedBlueprintSlotCount,
-} from './blueprintLogic.js'
+import { getUnlockedBlueprintSlotCount } from './blueprintLogic.js'
 import {
   getColumnsProducedForTick,
   getCropHamsterEfficiencyMultiplier,
-  getProductionSnapshotForTick,
+  getCropProductionSnapshotPerSecond,
   getRowsProducedPerSecond,
   getRowDuplicatorEffectivenessMultiplier,
   getRowDuplicatorExternalMultiplier,
@@ -95,17 +92,17 @@ export function advanceGameSimulationStep(
   }
 
   const fortuneModifiers = getFortuneModifiers(currentGame)
-  const productionSnapshotForTick = getProductionSnapshotForTick(
+  const productionSnapshotPerSecond = getCropProductionSnapshotPerSecond(
     currentGame.blueprint,
     currentGame.farmland,
     currentGame.completedCropPerfections,
-    safeElapsedSeconds * 1000,
     currentGame.testingCheats?.cropMultiplierEnabled ? 10 : 1,
     currentGame.trade?.rabbitContractsCompleted ?? 0,
     fortuneModifiers,
     currentGame.seedAugmentations,
   )
-  const productionForTick = productionSnapshotForTick.total
+  const productionForTick =
+    productionSnapshotPerSecond.total * safeElapsedSeconds
   const nextCrops = currentGame.crops + productionForTick
   const rowDuplicatorEffectivenessMultiplier =
     getRowDuplicatorEffectivenessMultiplier(
@@ -161,7 +158,11 @@ export function advanceGameSimulationStep(
   const hasUnlockedSunflower =
     currentGame.hasUnlockedSunflower ||
     nextCrops >= SUNFLOWER_UNLOCK_CROP_COUNT
-  const currentBlueprintSlots = getBlueprintSlots(currentGame)
+  const currentBlueprintSlots =
+    Array.isArray(currentGame.blueprintSlots) &&
+    currentGame.blueprintSlots.length > 0
+      ? currentGame.blueprintSlots
+      : [currentGame.blueprint]
   const activeBlueprintSlot = Math.min(
     Math.max(0, Math.floor(Number(currentGame.activeBlueprintSlot) || 0)),
     currentBlueprintSlots.length - 1,
@@ -171,10 +172,14 @@ export function advanceGameSimulationStep(
     hasUnlockedRootTunnel,
     hasUnlockedSunflower,
   })
-  const nextBlueprintSlots = [...currentBlueprintSlots]
+  let nextBlueprintSlots = currentBlueprintSlots
 
-  while (nextBlueprintSlots.length < requiredBlueprintSlotCount) {
-    nextBlueprintSlots.push(currentGame.blueprint)
+  if (currentBlueprintSlots.length < requiredBlueprintSlotCount) {
+    nextBlueprintSlots = [...currentBlueprintSlots]
+
+    while (nextBlueprintSlots.length < requiredBlueprintSlotCount) {
+      nextBlueprintSlots.push(currentGame.blueprint)
+    }
   }
 
   const nextGame = {
@@ -204,9 +209,10 @@ export function advanceGameSimulationStep(
       nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
     trade: advanceRabbitContract(
       currentGame,
-      productionSnapshotForTick.byCrop,
+      productionSnapshotPerSecond.byCrop,
       random,
       safeElapsedSeconds,
+      true,
     ),
     farmland: {
       ...currentGame.farmland,

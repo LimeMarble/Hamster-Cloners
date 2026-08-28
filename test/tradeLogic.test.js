@@ -230,6 +230,39 @@ test('crop-specific production advances and completes one selected Rabbit contra
   assert.equal(claimedGame.trade.rabbitContracts.length, RABBIT_ACTIVE_CONTRACT_COUNT)
 })
 
+test('Rabbit contracts can consume cached per-second production rates', () => {
+  const game = {
+    ...createInitialGame(),
+    trade: {
+      established: true,
+      rabbitRelations: 0,
+      rabbitContractsCompleted: 0,
+      rabbitUnlocks: [],
+      rabbitContracts: [
+        {
+          cropId: 'leek',
+          factor: 1e7,
+          fieldsPlanted: 1,
+          requiredAmount: 20,
+          progress: 4,
+          relationsReward: 3,
+        },
+        null,
+        null,
+      ],
+    },
+  }
+  const advancedTrade = advanceRabbitContract(
+    game,
+    { leek: 12 },
+    Math.random,
+    0.5,
+    true,
+  )
+
+  assert.equal(advancedTrade.rabbitContracts[0].progress, 10)
+})
+
 test('Carrot Rabbit relation bonus stays active alongside Apple Saplings', () => {
   const carrotBlueprint = createBlueprint({
     rows: 1,

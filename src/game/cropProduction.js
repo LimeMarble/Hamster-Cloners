@@ -38,13 +38,22 @@ import {
 const getCachedHamsterEfficiency = createBlueprintCalculationCache()
 const getCachedRowDuplicatorEffectiveness = createBlueprintCalculationCache()
 const getCachedBaseFieldProduction = createBlueprintCalculationCache()
+const getCachedCropProductionPerSecond = createBlueprintCalculationCache({
+  structuralFallback: false,
+})
+const getCachedProductionForTick = createBlueprintCalculationCache({
+  structuralFallback: false,
+})
+
+const EMPTY_COMPLETED_CROP_PERFECTIONS = Object.freeze([])
+const EMPTY_SEED_AUGMENTATIONS = Object.freeze({})
 
 export function getCropHamsterEfficiencyMultiplier(
   blueprint,
-  completedCropPerfections = [],
+  completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   rowsProducedPerSecond = 0,
   passiveEffectMultiplier = 1,
-  seedAugmentations = {},
+  seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
 ) {
   return getCachedHamsterEfficiency(
     blueprint,
@@ -146,10 +155,10 @@ function calculateCropHamsterEfficiencyMultiplier(
 }
 export function getRowDuplicatorEffectivenessMultiplier(
   blueprint,
-  completedCropPerfections = [],
+  completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   activeHamsters = 0,
   passiveEffectMultiplier = 1,
-  seedAugmentations = {},
+  seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
 ) {
   return getCachedRowDuplicatorEffectiveness(
     blueprint,
@@ -249,7 +258,7 @@ export function getCarrotHighHarvestEffect(
   blueprint,
   contributions,
   baseGlobalHarvestMultiplier = 1,
-  completedCropPerfections = [],
+  completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   passiveEffectMultiplier = 1,
 ) {
 
@@ -315,10 +324,10 @@ export function getCarrotHighHarvestEffect(
 }
 export function getBaseFieldProductionSnapshot(
   blueprint,
-  completedCropPerfections = [],
+  completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
-  seedAugmentations = {},
+  seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
 ) {
   const rabbitContractDependency = blueprint.cells.includes('carrot')
     ? rabbitContractsCompleted
@@ -502,10 +511,10 @@ function calculateBaseFieldProductionSnapshot(
 }
 export function getBaseFieldIncome(
   blueprint,
-  completedCropPerfections = [],
+  completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
-  seedAugmentations = {},
+  seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
 ) {
   return getBaseFieldProductionSnapshot(
     blueprint,
@@ -518,10 +527,10 @@ export function getBaseFieldIncome(
 
 export function getBaseFieldIncomeByCrop(
   blueprint,
-  completedCropPerfections = [],
+  completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
-  seedAugmentations = {},
+  seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
 ) {
   return getBaseFieldProductionSnapshot(
     blueprint,
@@ -578,61 +587,87 @@ function normalizeCropProductionModifiers(modifiers = {}) {
 export function getCropProductionPerSecond(
   blueprint,
   farmland,
-  completedCropPerfections = [],
+  completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
-  seedAugmentations = {},
+  seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
 ) {
-  const modifiers = normalizeCropProductionModifiers(fortuneModifiers)
-
-  return (
-    getBaseFieldIncome(
-      blueprint,
-      completedCropPerfections,
-      rabbitContractsCompleted,
-      modifiers.passiveEffectMultiplier,
-      seedAugmentations,
-    ) *
-    getIncomeMultiplier(farmland) *
-    Math.max(0, Number(externalCropMultiplier) || 0) *
-    modifiers.cropYieldMultiplier *
-    modifiers.harvestMultiplier
-  )
+  return getCropProductionSnapshotPerSecond(
+    blueprint,
+    farmland,
+    completedCropPerfections,
+    externalCropMultiplier,
+    rabbitContractsCompleted,
+    fortuneModifiers,
+    seedAugmentations,
+  ).total
 }
 
 export function getCropProductionSnapshotPerSecond(
   blueprint,
   farmland,
-  completedCropPerfections = [],
+  completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
-  seedAugmentations = {},
+  seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
 ) {
   const modifiers = normalizeCropProductionModifiers(fortuneModifiers)
-  const fieldSnapshot = getBaseFieldProductionSnapshot(
-    blueprint,
-    completedCropPerfections,
-    rabbitContractsCompleted,
-    modifiers.passiveEffectMultiplier,
-    seedAugmentations,
+  const effectiveFarmland = getEffectiveFarmlandMultipliers(farmland)
+  const safeExternalCropMultiplier = Math.max(
+    0,
+    Number(externalCropMultiplier) || 0,
   )
-  const multiplier =
-    getIncomeMultiplier(farmland) *
-    Math.max(0, Number(externalCropMultiplier) || 0) *
-    modifiers.cropYieldMultiplier *
-    modifiers.harvestMultiplier
+  const rabbitContractDependency = blueprint.cells.includes('carrot')
+    ? rabbitContractsCompleted
+    : 0
 
-  return {
-    total: fieldSnapshot.total * multiplier,
-    byCrop: Object.fromEntries(
-      Object.entries(fieldSnapshot.byCrop).map(([cropId, amount]) => [
-        cropId,
-        amount * multiplier,
-      ]),
-    ),
-  }
+  return getCachedCropProductionPerSecond(
+    blueprint,
+    [
+      completedCropPerfections,
+      rabbitContractDependency,
+      modifiers.passiveEffectMultiplier,
+      modifiers.cropYieldMultiplier,
+      modifiers.harvestMultiplier,
+      seedAugmentations,
+      effectiveFarmland.rows,
+      effectiveFarmland.columns,
+      effectiveFarmland.floors,
+      effectiveFarmland.farms,
+      effectiveFarmland.otherMultiplier,
+      safeExternalCropMultiplier,
+    ],
+    () => {
+      const fieldSnapshot = getBaseFieldProductionSnapshot(
+        blueprint,
+        completedCropPerfections,
+        rabbitContractsCompleted,
+        modifiers.passiveEffectMultiplier,
+        seedAugmentations,
+      )
+      const multiplier =
+        effectiveFarmland.rows *
+        effectiveFarmland.columns *
+        effectiveFarmland.floors *
+        effectiveFarmland.farms *
+        effectiveFarmland.otherMultiplier *
+        safeExternalCropMultiplier *
+        modifiers.cropYieldMultiplier *
+        modifiers.harvestMultiplier
+
+      return {
+        total: fieldSnapshot.total * multiplier,
+        byCrop: Object.fromEntries(
+          Object.entries(fieldSnapshot.byCrop).map(([cropId, amount]) => [
+            cropId,
+            amount * multiplier,
+          ]),
+        ),
+      }
+    },
+  )
 }
 export function getColumnsProducedPerSecond(
   hamsters,
@@ -705,36 +740,34 @@ export function getRowDuplicatorExternalMultiplier(multiplier = 1) {
 export function getProductionForTick(
   blueprint,
   farmland,
-  completedCropPerfections = [],
+  completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
-  seedAugmentations = {},
+  seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
 ) {
-  return (
-    getCropProductionPerSecond(
-      blueprint,
-      farmland,
-      completedCropPerfections,
-      externalCropMultiplier,
-      rabbitContractsCompleted,
-      fortuneModifiers,
-      seedAugmentations,
-    ) *
-    (tickIntervalMs / 1000)
-  )
+  return getProductionSnapshotForTick(
+    blueprint,
+    farmland,
+    completedCropPerfections,
+    tickIntervalMs,
+    externalCropMultiplier,
+    rabbitContractsCompleted,
+    fortuneModifiers,
+    seedAugmentations,
+  ).total
 }
 
 export function getProductionSnapshotForTick(
   blueprint,
   farmland,
-  completedCropPerfections = [],
+  completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
   externalCropMultiplier = 1,
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
-  seedAugmentations = {},
+  seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
 ) {
   const productionPerSecond = getCropProductionSnapshotPerSecond(
     blueprint,
@@ -747,15 +780,19 @@ export function getProductionSnapshotForTick(
   )
   const tickLengthSeconds = tickIntervalMs / 1000
 
-  return {
-    total: productionPerSecond.total * tickLengthSeconds,
-    byCrop: Object.fromEntries(
-      Object.entries(productionPerSecond.byCrop).map(([cropId, amount]) => [
-        cropId,
-        amount * tickLengthSeconds,
-      ]),
-    ),
-  }
+  return getCachedProductionForTick(
+    blueprint,
+    [productionPerSecond, tickLengthSeconds],
+    () => ({
+      total: productionPerSecond.total * tickLengthSeconds,
+      byCrop: Object.fromEntries(
+        Object.entries(productionPerSecond.byCrop).map(([cropId, amount]) => [
+          cropId,
+          amount * tickLengthSeconds,
+        ]),
+      ),
+    }),
+  )
 }
 export function getColumnsProducedForTick(
   hamsters,

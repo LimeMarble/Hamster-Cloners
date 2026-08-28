@@ -521,20 +521,23 @@ export function advanceRabbitContract(
   productionByCrop,
   random = Math.random,
   elapsedSeconds = 0,
+  productionIsPerSecond = false,
 ) {
   if (game.trade?.established !== true) {
     return game.trade
   }
 
   const safeElapsedSeconds = toNonNegativeNumber(elapsedSeconds)
-  const productionPerSecondByCrop = safeElapsedSeconds > 0
-    ? Object.fromEntries(
-        Object.entries(productionByCrop ?? {}).map(([cropId, amount]) => [
-          cropId,
-          toNonNegativeNumber(amount) / safeElapsedSeconds,
-        ]),
-      )
-    : {}
+  const productionPerSecondByCrop = productionIsPerSecond
+    ? productionByCrop ?? {}
+    : safeElapsedSeconds > 0
+      ? Object.fromEntries(
+          Object.entries(productionByCrop ?? {}).map(([cropId, amount]) => [
+            cropId,
+            toNonNegativeNumber(amount) / safeElapsedSeconds,
+          ]),
+        )
+      : {}
   const paceState = advanceRabbitContractPaceState(
     game,
     productionPerSecondByCrop,
@@ -571,10 +574,11 @@ export function advanceRabbitContract(
       return null
     }
 
-    const producedAmount = Math.max(
-      0,
-      Number(productionByCrop?.[contract.cropId]) || 0,
-    )
+    const producedAmount =
+      Math.max(
+        0,
+        Number(productionByCrop?.[contract.cropId]) || 0,
+      ) * (productionIsPerSecond ? safeElapsedSeconds : 1)
 
     return {
       ...contract,

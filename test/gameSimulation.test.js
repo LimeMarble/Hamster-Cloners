@@ -103,3 +103,13 @@ test('Blueprint editing pauses production but still advances time', () => {
   assert.deepEqual(advancedGame.farmland, initialGame.farmland)
   assert.ok(Math.abs(advancedGame.playtimeSeconds - 5) < 1e-10)
 })
+
+test('simulation preserves blueprint slots until another slot unlocks', () => {
+  const game = createInitialGame()
+  const advancedGame = advanceGameSimulationStep(
+    game,
+    ACTIVE_SIMULATION_STEP_SECONDS,
+  )
+
+  assert.strictEqual(advancedGame.blueprintSlots, game.blueprintSlots)
+})
