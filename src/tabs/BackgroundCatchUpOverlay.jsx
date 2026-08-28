@@ -2,15 +2,7 @@ import {
   CATCH_UP_SPEED_FACTOR,
   SKIPPED_CATCH_UP_STEPS,
 } from '../game/gameLogic.js'
-
-const wholeNumberFormatter = new Intl.NumberFormat('en-US', {
-  maximumFractionDigits: 0,
-})
-
-function formatWholeNumber(value) {
-  const number = Number(value)
-  return Number.isFinite(number) ? wholeNumberFormatter.format(number) : '∞'
-}
+import { FormattedNumber } from './ui.jsx'
 
 export function BackgroundCatchUpOverlay({
   ticksRemaining,
@@ -41,7 +33,7 @@ export function BackgroundCatchUpOverlay({
         <h2 id="background-catch-up-title">Processing background ticks</h2>
 
         <div className="background-catch-up-counter" aria-live="polite">
-          <strong>{formatWholeNumber(ticksRemaining)}</strong>
+          <strong><FormattedNumber value={ticksRemaining} maximumFractionDigits={0} /></strong>
           <span>ticks left to process</span>
         </div>
 
@@ -57,10 +49,11 @@ export function BackgroundCatchUpOverlay({
         </div>
 
         <p className="background-catch-up-compression">
-          {strategy === 'skipped'
-            ? 'The remaining time is being approximated in 1,000 ticks.'
-            : 'Current catch-up compression: ×' +
-              formatWholeNumber(compressionMultiplier)}
+          {strategy === 'skipped' ? (
+            <>The remaining time is being approximated in <FormattedNumber value={SKIPPED_CATCH_UP_STEPS} maximumFractionDigits={0} /> ticks.</>
+          ) : (
+            <>Current catch-up compression: ×<FormattedNumber value={compressionMultiplier} maximumFractionDigits={0} /></>
+          )}
         </p>
         <p id="background-catch-up-description">
           Larger compression processes the same missed time with fewer, broader
@@ -79,7 +72,7 @@ export function BackgroundCatchUpOverlay({
             onClick={onSkip}
           >
             &ldquo;Skip&rdquo; to{' '}
-            {formatWholeNumber(SKIPPED_CATCH_UP_STEPS)} ticks
+            <FormattedNumber value={SKIPPED_CATCH_UP_STEPS} maximumFractionDigits={0} /> ticks
           </button>
         </div>
       </section>

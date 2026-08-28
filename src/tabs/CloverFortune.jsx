@@ -2,6 +2,7 @@ import {
   getFortuneEffect,
   normalizeFortuneState,
 } from '../game/fortuneLogic.js'
+import { FormattedNumber } from './ui.jsx'
 
 export function CloverFortune({ fortune, onCollect }) {
   const state = normalizeFortuneState(fortune)
@@ -33,7 +34,7 @@ export function CloverFortune({ fortune, onCollect }) {
               <div key={activeEffect.id}>
                 <strong>{effect.name}</strong>
                 <span>{effect.description}</span>
-                <time>{Math.ceil(activeEffect.remainingSeconds)}s</time>
+                <time><FormattedNumber value={Math.ceil(activeEffect.remainingSeconds)} maximumFractionDigits={0} />s</time>
               </div>
             ) : null
           })}

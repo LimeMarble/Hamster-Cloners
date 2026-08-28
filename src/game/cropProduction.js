@@ -12,6 +12,7 @@ import {
   SIMULATION_TICK_INTERVAL_MS,
 } from './gameConfig.js'
 import { createFarmlandMultipliers } from './blueprintLogic.js'
+import { createBlueprintCalculationCache } from './blueprintCalculationCache.js'
 import {
   doesNotHarvest,
   getAdjacentCropEffectMultiplier,
@@ -30,8 +31,13 @@ import {
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
+  getSamplingLentilTradedCropEffect,
   isMirrorCornOverloaded,
 } from './cropEffects.js'
+
+const getCachedHamsterEfficiency = createBlueprintCalculationCache()
+const getCachedRowDuplicatorEffectiveness = createBlueprintCalculationCache()
+const getCachedBaseFieldProduction = createBlueprintCalculationCache()
 
 export function getCropHamsterEfficiencyMultiplier(
   blueprint,
@@ -39,6 +45,31 @@ export function getCropHamsterEfficiencyMultiplier(
   rowsProducedPerSecond = 0,
   passiveEffectMultiplier = 1,
   seedAugmentations = {},
+) {
+  return getCachedHamsterEfficiency(
+    blueprint,
+    [
+      completedCropPerfections,
+      rowsProducedPerSecond,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    ],
+    () => calculateCropHamsterEfficiencyMultiplier(
+      blueprint,
+      completedCropPerfections,
+      rowsProducedPerSecond,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    ),
+  )
+}
+
+function calculateCropHamsterEfficiencyMultiplier(
+  blueprint,
+  completedCropPerfections,
+  rowsProducedPerSecond,
+  passiveEffectMultiplier,
+  seedAugmentations,
 ) {
   const effectBlueprint = getMirrorCornEffectBlueprint(
     blueprint,
@@ -119,6 +150,31 @@ export function getRowDuplicatorEffectivenessMultiplier(
   activeHamsters = 0,
   passiveEffectMultiplier = 1,
   seedAugmentations = {},
+) {
+  return getCachedRowDuplicatorEffectiveness(
+    blueprint,
+    [
+      completedCropPerfections,
+      activeHamsters,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    ],
+    () => calculateRowDuplicatorEffectivenessMultiplier(
+      blueprint,
+      completedCropPerfections,
+      activeHamsters,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    ),
+  )
+}
+
+function calculateRowDuplicatorEffectivenessMultiplier(
+  blueprint,
+  completedCropPerfections,
+  activeHamsters,
+  passiveEffectMultiplier,
+  seedAugmentations,
 ) {
   const effectBlueprint = getMirrorCornEffectBlueprint(
     blueprint,
@@ -264,6 +320,35 @@ export function getBaseFieldProductionSnapshot(
   passiveEffectMultiplier = 1,
   seedAugmentations = {},
 ) {
+  const rabbitContractDependency = blueprint.cells.includes('carrot')
+    ? rabbitContractsCompleted
+    : 0
+
+  return getCachedBaseFieldProduction(
+    blueprint,
+    [
+      completedCropPerfections,
+      rabbitContractDependency,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    ],
+    () => calculateBaseFieldProductionSnapshot(
+      blueprint,
+      completedCropPerfections,
+      rabbitContractsCompleted,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    ),
+  )
+}
+
+function calculateBaseFieldProductionSnapshot(
+  blueprint,
+  completedCropPerfections,
+  rabbitContractsCompleted,
+  passiveEffectMultiplier,
+  seedAugmentations,
+) {
   const effectBlueprint = getMirrorCornEffectBlueprint(
     blueprint,
     completedCropPerfections,
@@ -383,8 +468,16 @@ export function getBaseFieldProductionSnapshot(
     completedCropPerfections,
     passiveEffectMultiplier,
   )
+  const samplingLentilTradedCropEffect =
+    getSamplingLentilTradedCropEffect(
+      effectBlueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+    )
   const globalHarvestMultiplier =
-    baseGlobalHarvestMultiplier * carrotHighHarvestEffect.multiplier
+    baseGlobalHarvestMultiplier *
+    carrotHighHarvestEffect.multiplier *
+    samplingLentilTradedCropEffect.multiplier
   const byCrop = contributions.reduce((cropTotals, contribution) => {
     if (!contribution) return cropTotals
 
@@ -404,6 +497,7 @@ export function getBaseFieldProductionSnapshot(
     byCrop,
     globalHarvestMultiplier,
     carrotHighHarvestEffect,
+    samplingLentilTradedCropEffect,
   }
 }
 export function getBaseFieldIncome(

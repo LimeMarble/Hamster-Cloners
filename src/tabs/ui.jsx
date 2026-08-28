@@ -73,7 +73,7 @@ function RootTunnelDistance({ distances }) {
   return (
     <span className="crop-hover-tunnel-distance">
       {' '}via Root Tunnel (distance{distances.length === 1 ? '' : 's'}{' '}
-      {distances.join(', ')})
+      {distances.map((distance) => getCachedFormattedNumber(distance, 2)).join(', ')})
     </span>
   )
 }
@@ -199,7 +199,7 @@ export function CropHoverInspector({
             if (effect.type === 'crop-effect-modifier') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop effects from {effect.count}{' '}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop effects from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
                   {effect.count === 1 ? '' : 's'}
                   <RootTunnelDistance distances={effect.adjacencyDistances} />
@@ -210,7 +210,7 @@ export function CropHoverInspector({
             if (effect.type === 'mirror-corn') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop effects from {effect.count} Mirror Corn
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop effects from <FormattedNumber value={effect.count} maximumFractionDigits={0} /> Mirror Corn
                   {effect.count === 1 ? '' : 's'}
                 </li>
               )
@@ -219,7 +219,7 @@ export function CropHoverInspector({
             if (effect.type === 'mirror-corn-overload') {
               return (
                 <li key={effect.type + '-' + effectIndex}>
-                  Reflected sunlight overload: {effect.count} reflections exceeds the safe limit of {effect.safeLimit}. This Crop's harvest and all passive effects are destroyed.
+                  Reflected sunlight overload: <FormattedNumber value={effect.count} maximumFractionDigits={0} /> reflections exceeds the safe limit of <FormattedNumber value={effect.safeLimit} maximumFractionDigits={0} />. This Crop's harvest and all passive effects are destroyed.
                 </li>
               )
             }
@@ -282,7 +282,7 @@ export function CropHoverInspector({
             if (effect.type === 'global-hamster-efficiency') {
               return (
                 <li key={effectIndex}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Hamster Efficiency from {effect.count}{' '}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Hamster Efficiency from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
 {effect.count === 1 ? '' : 's'} (cannot be boosted)
                 </li>
@@ -292,7 +292,7 @@ export function CropHoverInspector({
             if (effect.type === 'global-row-production') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Row production from {effect.count}{' '}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Row production from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
                   {effect.count === 1 ? '' : 's'} (cannot be boosted)
                 </li>
@@ -301,15 +301,23 @@ export function CropHoverInspector({
             if (effect.type === 'carrot-high-harvest') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from {effect.qualifyingCropTypeCount}{' '}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from <FormattedNumber value={effect.qualifyingCropTypeCount} maximumFractionDigits={0} />{' '}
                   high-harvest Crop type{effect.qualifyingCropTypeCount === 1 ? '' : 's'} and Carrots
+                </li>
+              )
+            }
+            if (effect.type === 'sampling-lentil-trade') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from Sampling Lentil beside{' '}
+                  <FormattedNumber value={effect.adjacentTradedCropCount} maximumFractionDigits={2} /> traded Crop adjacencies (cannot be boosted)
                 </li>
               )
             }
             if (effect.type === 'global-harvest') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from {effect.count}{' '}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
                   {effect.count === 1 ? '' : 's'}
 
@@ -328,7 +336,7 @@ export function CropHoverInspector({
             return (
               <li key={`${effect.type}-${effectIndex}`}>
                 {effect.bonus >= 0 ? '+' : '−'}
-                <FormattedNumber value={Math.abs(effect.bonus)} maximumFractionDigits={2} /> Crop yield from {effect.count}{' '}
+                <FormattedNumber value={Math.abs(effect.bonus)} maximumFractionDigits={2} /> Crop yield from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                 {getCropName(effect.sourceCropId, completedCropPerfections)}
                 {effect.count === 1 ? '' : 's'}
                 <RootTunnelDistance distances={effect.adjacencyDistances} />

@@ -23,8 +23,8 @@ export function HamsterPurchase({
           <p className="eyebrow">Workforce</p>
           <h2>Hamster Cloners</h2>
         </div>
-        <span className="hamster-badge" aria-label={`${game.hamsters} hamster cloners`}>
-          {game.hamsters}
+        <span className="hamster-badge" aria-label="Hamster Cloners owned">
+          <FormattedNumber value={game.hamsters} maximumFractionDigits={0} />
         </span>
       </div>
       <p className="card-copy">

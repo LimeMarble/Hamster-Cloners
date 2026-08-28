@@ -22,7 +22,10 @@ function getAdvanceMode(elapsedSeconds) {
 export function useGameState(isEditingBlueprintRef) {
   const [initialSnapshot] = useState(() => {
     const snapshot = loadGameSnapshot()
-    setActiveNumberNotation(snapshot.game.numberNotation)
+    setActiveNumberNotation(
+      snapshot.game.numberNotation,
+      snapshot.game.suffixScientificExponent,
+    )
     return snapshot
   })
   const [game, setRenderedGame] = useState(initialSnapshot.game)
@@ -67,7 +70,10 @@ export function useGameState(isEditingBlueprintRef) {
     revisionRef.current += 1
     gameRef.current = nextGame
     simulatedAtRef.current = simulatedAt
-    setActiveNumberNotation(nextGame.numberNotation)
+    setActiveNumberNotation(
+      nextGame.numberNotation,
+      nextGame.suffixScientificExponent,
+    )
     setRenderedGame(nextGame)
     setBackgroundCatchUp(null)
     workerRef.current?.postMessage({
@@ -190,7 +196,10 @@ export function useGameState(isEditingBlueprintRef) {
 
       gameRef.current = message.game
       simulatedAtRef.current = snapshotTimestamp
-      setActiveNumberNotation(message.game.numberNotation)
+      setActiveNumberNotation(
+        message.game.numberNotation,
+        message.game.suffixScientificExponent,
+      )
       setRenderedGame(message.game)
     }
 
@@ -217,7 +226,10 @@ export function useGameState(isEditingBlueprintRef) {
 
       if (now - fallbackLastVisualAt >= VISUAL_UPDATE_INTERVAL_MS) {
         fallbackLastVisualAt = now
-        setActiveNumberNotation(gameRef.current.numberNotation)
+        setActiveNumberNotation(
+          gameRef.current.numberNotation,
+          gameRef.current.suffixScientificExponent,
+        )
         setRenderedGame(gameRef.current)
       }
 

@@ -40,7 +40,8 @@ export function Blueprint({
           />
         ) : null}
         <span className="size-pill">
-          {game.blueprint.rows} × {game.blueprint.columns}
+          <FormattedNumber value={game.blueprint.rows} maximumFractionDigits={0} /> ×{' '}
+          <FormattedNumber value={game.blueprint.columns} maximumFractionDigits={0} />
         </span>
       </div>
 

@@ -327,11 +327,13 @@ export function useGameDerivedState(game) {
     canUnlockEnrichingLeek: canUnlockCropPerfection(game, 'enrichingLeek'),
     canUnlockMirrorCorn: canUnlockCropPerfection(game, 'mirrorCorn'),
     canUnlockLeechingGourd: canUnlockCropPerfection(game, 'leechingGourd'),
+    canUnlockSamplingLentil: canUnlockCropPerfection(game, 'samplingLentil'),
     canUnlockSplitweed: canUnlockCropPerfection(game, 'splitweed'),
     canUnlockRows: canUnlockRowDuplicators(game),
     hasEnrichingLeek: completedCropPerfections.includes('enrichingLeek'),
     hasMirrorCorn: completedCropPerfections.includes('mirrorCorn'),
     hasLeechingGourd: completedCropPerfections.includes('leechingGourd'),
+    hasSamplingLentil: completedCropPerfections.includes('samplingLentil'),
     hasSplitweed: completedCropPerfections.includes('splitweed'),
   }
 }

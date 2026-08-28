@@ -276,7 +276,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     target: CAPYBARA_DEMONSTRATIONS[0].target,
     unit: 'blueprint Crop yield',
     description:
-      'Reach 500B intrinsic blueprint Crop yield and complete the demonstration in Trade. Luck may need to be on your side...',
+      'Reach the required intrinsic blueprint Crop yield and complete the demonstration in Trade. Luck may need to be on your side...',
     isComplete: (game) =>
       hasCompletedCapybaraDemonstration(
         game,
@@ -293,7 +293,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     target: CAPYBARA_DEMONSTRATIONS[1].target,
     unit: 'blueprint Crop yield',
     description:
-      'Reach 1e23 intrinsic blueprint Crop yield without a planted 4-Leaf Clover or active Breeze of Fortune effects.',
+      'Reach the required intrinsic blueprint Crop yield without a planted 4-Leaf Clover or active Breeze of Fortune effects.',
     isComplete: (game) =>
       hasCompletedCapybaraDemonstration(
         game,
@@ -302,6 +302,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: getCapybaraBlueprintCropYield,
     requiresAction: true,
   },
+  createPerfectionGoal('samplingLentil'),
 ]
 
 export function getNextMajorProgressionGoal(game) {

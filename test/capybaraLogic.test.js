@@ -233,6 +233,10 @@ test('Demonstration 1 visibly bans Clover and active Breeze effects', () => {
   }
 
   assert.equal(target, 1e23)
+  assert.equal(
+    CAPYBARA_DEMONSTRATIONS[1].rewardName,
+    'Establish contact with ????',
+  )
   assert.deepEqual(CAPYBARA_DEMONSTRATIONS[1].restrictions, [
     'No 4-Leaf Clover may be planted',
     'No Breeze of Fortune effects may be active',

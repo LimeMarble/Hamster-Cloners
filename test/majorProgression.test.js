@@ -34,6 +34,7 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'capybara-contact',
       'capybara-demonstration-introduction',
       'capybara-demonstration-one',
+    'perfection-samplingLentil',
     ],
   )
 })

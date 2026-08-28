@@ -432,6 +432,12 @@ export function getBlueprintCropStats(
       ...fieldProductionSnapshot.carrotHighHarvestEffect,
     })
   }
+  if (fieldProductionSnapshot.samplingLentilTradedCropEffect.multiplier !== 1) {
+    receivedEffects.push({
+      type: 'sampling-lentil-trade',
+      ...fieldProductionSnapshot.samplingLentilTradedCropEffect,
+    })
+  }
   globalRowProductionEffects.forEach((effect) => {
     receivedEffects.push({ type: 'global-row-production', ...effect })
   })

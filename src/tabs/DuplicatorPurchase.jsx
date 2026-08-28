@@ -17,8 +17,8 @@ export function DuplicatorPurchase({
           <p className="eyebrow">Income engine</p>
           <h2>Row Duplicators</h2>
         </div>
-        <span className="hamster-badge" aria-label={`${game.rowDuplicators} Row Duplicators`}>
-          {game.rowDuplicators}
+        <span className="hamster-badge" aria-label="Row Duplicators owned">
+          <FormattedNumber value={game.rowDuplicators} maximumFractionDigits={0} />
         </span>
       </div>
       <p className="card-copy">

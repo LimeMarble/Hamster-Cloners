@@ -12,6 +12,7 @@ export const RABBIT_CONTRACT_AVERAGE_FACTOR =
   (RABBIT_CONTRACT_MIN_FACTOR + RABBIT_CONTRACT_MAX_FACTOR) / 2
 export const RABBIT_BLAZING_CONTRACT_RATE = 5
 export const RABBIT_BLAZING_PACE_SWITCH_SECONDS = 5
+export const RABBIT_CONTRACT_PACE_SAMPLE_SECONDS = 0.1
 
 export const RABBIT_UNLOCK_IDS = Object.freeze({
   CARROT: 'carrot',
@@ -109,6 +110,8 @@ export function createInitialTradeState() {
     rabbitUnlocks: [],
     rabbitContractsBlazing: false,
     rabbitContractPaceTransitionSeconds: 0,
+    rabbitContractPaceSampleSeconds: RABBIT_CONTRACT_PACE_SAMPLE_SECONDS,
+    rabbitContractEstimatedCompletionsPerSecond: 0,
   }
 }
 
@@ -155,38 +158,76 @@ export function advanceRabbitContractPaceState(
   elapsedSeconds,
 ) {
   const isBlazing = game.trade?.rabbitContractsBlazing === true
-  const completionRate = getRabbitContractCompletionsPerSecond(
-    game,
-    productionPerSecondByCrop,
-  )
   const hasContractor = hasRabbitUnlock(
     game,
     RABBIT_UNLOCK_IDS.CONTRACTOR,
   )
+  const safeElapsedSeconds = toNonNegativeNumber(elapsedSeconds)
+
+  if (!hasContractor) {
+    return {
+      rabbitContractsBlazing: false,
+      rabbitContractPaceTransitionSeconds: 0,
+      rabbitContractPaceSampleSeconds: RABBIT_CONTRACT_PACE_SAMPLE_SECONDS,
+      rabbitContractEstimatedCompletionsPerSecond: 0,
+    }
+  }
+
+  const accumulatedSampleSeconds =
+    toNonNegativeNumber(game.trade?.rabbitContractPaceSampleSeconds) +
+    safeElapsedSeconds
+  const completedSampleIntervals = Math.floor(
+    (accumulatedSampleSeconds + 1e-9) /
+      RABBIT_CONTRACT_PACE_SAMPLE_SECONDS,
+  )
+  const shouldSample = completedSampleIntervals > 0
+  const completionRate = shouldSample
+    ? getRabbitContractCompletionsPerSecond(
+        game,
+        productionPerSecondByCrop,
+      )
+    : toNonNegativeNumber(
+        game.trade?.rabbitContractEstimatedCompletionsPerSecond,
+      )
+  const sampleRemainder = shouldSample
+    ? accumulatedSampleSeconds -
+      completedSampleIntervals * RABBIT_CONTRACT_PACE_SAMPLE_SECONDS
+    : accumulatedSampleSeconds
+  const nextSampleSeconds = Math.max(
+    0,
+    sampleRemainder < 1e-9 ? 0 : sampleRemainder,
+  )
   const shouldSwitch = isBlazing
-    ? !hasContractor || completionRate < RABBIT_BLAZING_CONTRACT_RATE
-    : hasContractor && completionRate > RABBIT_BLAZING_CONTRACT_RATE
+    ? completionRate < RABBIT_BLAZING_CONTRACT_RATE
+    : completionRate > RABBIT_BLAZING_CONTRACT_RATE
+  const paceSampleState = {
+    rabbitContractPaceSampleSeconds: nextSampleSeconds,
+    rabbitContractEstimatedCompletionsPerSecond: completionRate,
+  }
 
   if (!shouldSwitch) {
     return {
       rabbitContractsBlazing: isBlazing,
       rabbitContractPaceTransitionSeconds: 0,
+      ...paceSampleState,
     }
   }
 
   const transitionSeconds =
     toNonNegativeNumber(
       game.trade?.rabbitContractPaceTransitionSeconds,
-    ) + toNonNegativeNumber(elapsedSeconds)
+    ) + safeElapsedSeconds
 
   return transitionSeconds >= RABBIT_BLAZING_PACE_SWITCH_SECONDS
     ? {
         rabbitContractsBlazing: !isBlazing,
         rabbitContractPaceTransitionSeconds: 0,
+        ...paceSampleState,
       }
     : {
         rabbitContractsBlazing: isBlazing,
         rabbitContractPaceTransitionSeconds: transitionSeconds,
+        ...paceSampleState,
       }
 }
 
@@ -329,6 +370,16 @@ export function normalizeTradeState(rawTrade) {
       RABBIT_BLAZING_PACE_SWITCH_SECONDS,
       toNonNegativeNumber(rawTrade.rabbitContractPaceTransitionSeconds),
     ),
+    rabbitContractPaceSampleSeconds: Math.min(
+      RABBIT_CONTRACT_PACE_SAMPLE_SECONDS,
+      toNonNegativeNumber(
+        rawTrade.rabbitContractPaceSampleSeconds,
+        RABBIT_CONTRACT_PACE_SAMPLE_SECONDS,
+      ),
+    ),
+    rabbitContractEstimatedCompletionsPerSecond: toNonNegativeNumber(
+      rawTrade.rabbitContractEstimatedCompletionsPerSecond,
+    ),
   }
 }
 
@@ -416,11 +467,57 @@ export function advanceRabbitContract(
     return advancedTrade
   }
 
-  return rabbitContracts.reduce(
-    (trade, _contract, index) =>
-      claimRabbitContract({ ...game, trade }, index, random)?.trade ?? trade,
-    advancedTrade,
+  return claimCompletedRabbitContracts(
+    { ...game, trade: advancedTrade },
+    random,
   )
+}
+
+function claimCompletedRabbitContracts(game, random) {
+  const contracts = game.trade.rabbitContracts
+  const completedIndexes = contracts.flatMap((contract, index) =>
+    contract && contract.progress >= contract.requiredAmount ? [index] : [],
+  )
+
+  if (completedIndexes.length === 0) {
+    return game.trade
+  }
+
+  const relationMultiplier = getRabbitRelationsMultiplier(
+    game.blueprint,
+    game.completedCropPerfections,
+    getFortuneModifiers(game).passiveEffectMultiplier,
+  )
+  const completedIndexSet = new Set(completedIndexes)
+  const gainedRelations = completedIndexes.reduce(
+    (total, index) =>
+      total +
+      Math.floor(
+        toNonNegativeNumber(contracts[index].relationsReward) *
+          relationMultiplier,
+      ),
+    0,
+  )
+  const gameWithRelations = {
+    ...game,
+    trade: {
+      ...game.trade,
+      rabbitRelations:
+        toNonNegativeNumber(game.trade.rabbitRelations) + gainedRelations,
+      rabbitContractsCompleted:
+        Math.floor(toNonNegativeNumber(game.trade.rabbitContractsCompleted)) +
+        completedIndexes.length,
+    },
+  }
+
+  return {
+    ...gameWithRelations.trade,
+    rabbitContracts: contracts.map((contract, index) =>
+      completedIndexSet.has(index)
+        ? createRabbitContract(gameWithRelations, random)
+        : contract,
+    ),
+  }
 }
 
 export function claimRabbitContract(

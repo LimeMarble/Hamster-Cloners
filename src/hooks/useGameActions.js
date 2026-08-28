@@ -322,6 +322,7 @@ export function useGameActions({
       onUnlockEnrichingLeek: () => unlockPerfection('enrichingLeek'),
       onUnlockMirrorCorn: () => unlockPerfection('mirrorCorn'),
       onUnlockLeechingGourd: () => unlockPerfection('leechingGourd'),
+      onUnlockSamplingLentil: () => unlockPerfection('samplingLentil'),
       onUnlockSplitweed: () => unlockPerfection('splitweed'),
       onRequestRowDuplicatorUnlock: () =>
         setIsRowDuplicatorUnlockPending(true),
@@ -347,6 +348,15 @@ export function useGameActions({
           ...currentGame,
           numberNotation:
             numberNotation === 'scientific' ? 'scientific' : 'suffix',
+        })),
+      onSuffixScientificExponentChange: (suffixScientificExponent) =>
+        updateGame((currentGame) => ({
+          ...currentGame,
+          suffixScientificExponent: [33, 303, 3003].includes(
+            Number(suffixScientificExponent),
+          )
+            ? Number(suffixScientificExponent)
+            : 303,
         })),
       onExportSave: exportSave,
       onImportSave: importSave,

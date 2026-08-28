@@ -268,10 +268,18 @@ test('testing panel unlock and toggle states persist safely', () => {
   })
 })
 
-test('number notation persists and defaults safely to suffix notation', () => {
-  assert.equal(normalizeGame({ numberNotation: 'scientific' }).numberNotation, 'scientific')
+test('number notation and suffix threshold persist with safe defaults', () => {
+  const scientific = normalizeGame({
+    numberNotation: 'scientific',
+    suffixScientificExponent: 33,
+  })
+
+  assert.equal(scientific.numberNotation, 'scientific')
+  assert.equal(scientific.suffixScientificExponent, 33)
   assert.equal(normalizeGame({ numberNotation: 'unknown' }).numberNotation, 'suffix')
+  assert.equal(normalizeGame({ suffixScientificExponent: 999 }).suffixScientificExponent, 303)
   assert.equal(normalizeGame({}).numberNotation, 'suffix')
+  assert.equal(normalizeGame({}).suffixScientificExponent, 303)
 })
 
 test('Trade state persists with safe migration defaults', () => {
@@ -307,6 +315,8 @@ test('Trade state persists with safe migration defaults', () => {
     rabbitUnlocks: [],
     rabbitContractsBlazing: false,
     rabbitContractPaceTransitionSeconds: 0,
+    rabbitContractPaceSampleSeconds: 0.1,
+    rabbitContractEstimatedCompletionsPerSecond: 0,
   })
 })
 test('legacy Rabbit blueprint expansions migrate to free blueprint space', () => {

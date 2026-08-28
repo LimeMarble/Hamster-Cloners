@@ -5,6 +5,7 @@ import {
   hasLeekDiagonalAugmentation,
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
+import { getCachedFormattedNumber } from './numberFormat.js'
 export const SWEET_POTATO_UNLOCK_HAMSTER_COUNT = 125
 export const TURNIP_UNLOCK_CROP_COUNT = 1e8
 export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
@@ -130,7 +131,7 @@ export const CROP_DEFINITIONS = {
     temporarilyUnavailable: true,
     effectDescription:
       'Transfers crop adjacencies at ×0.8 strength per tunnel tile; carries all effects except Mirror Corn.',
-    unlockDescription: 'Unlocks at 1.8e308 Crops',
+    unlockDescription: 'Reward for Capybara Demonstration 2',
   },
   sunflower: {
     name: 'Sunflower',
@@ -160,6 +161,7 @@ export const CROP_DEFINITIONS = {
     baseYield: 40,
     hamsterEfficiencyBonus: 0,
     canBeMirrorCornTarget: false,
+    tradeFaction: 'rabbits',
     rabbitRelationsBonusAtZero: 0.04,
     globalHarvestBonusAtZero: 0.1,
     globalHarvestBonusPerContract: 0.004,
@@ -176,6 +178,7 @@ export const CROP_DEFINITIONS = {
     baseYield: 0,
     hamsterEfficiencyBonus: 0,
     doesNotHarvest: true,
+    tradeFaction: 'rabbits',
     effectDescription:
       'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · only one can be planted per blueprint',
     unlockDescription: 'Unlock with 77,777 Rabbit relations',
@@ -279,6 +282,17 @@ export const CROP_PERFECTIONS = {
     effectDescription:
       'Globally multiplies Hamster Efficiency by 1 + Sweet Potatoes × log10(Rows/sec) · this multiplier cannot be boosted',
   },
+  samplingLentil: {
+    id: 'samplingLentil',
+    cropId: 'lentil',
+    name: 'Sampling Lentil',
+    cost: 1e87,
+    globalHarvestMultiplier: 1.8,
+    tradedCropGlobalHarvestBonus: 1,
+    baseEffectDescription: '25 Crops per slot · ×1.8 all Crop harvest',
+    effectDescription:
+      '+1× all Crop harvest per adjacent traded Crop as a separate global multiplier · traded-Crop multiplier cannot be boosted',
+  },
   splitweed: {
     id: 'splitweed',
     cropId: 'knotweed',
@@ -299,6 +313,37 @@ export const CROP_PERFECTIONS = {
 }
 
 export const CROP_PERFECTION_IDS = Object.keys(CROP_PERFECTIONS)
+
+export function getCropUnlockDescription(cropId) {
+  const format = (value) => getCachedFormattedNumber(value, 0)
+
+  switch (cropId) {
+    case 'sweetPotato':
+      return `Unlocks at ${format(SWEET_POTATO_UNLOCK_HAMSTER_COUNT)} Hamsters after Pumpkin`
+    case 'turnip':
+      return `Unlocks at ${format(TURNIP_UNLOCK_CROP_COUNT)} Crops`
+    case 'appleTree':
+      return `Unlocks at ${format(APPLE_TREE_UNLOCK_CROP_COUNT)} Crops`
+    case 'lentil':
+      return `Unlocks at ${format(LENTIL_UNLOCK_CROP_COUNT)} Crops`
+    case 'knotweed':
+      return `Unlocks at ${format(KNOTWEED_UNLOCK_CROP_COUNT)} Crops`
+    case 'wheat':
+      return `Unlocks at ${format(WHEAT_UNLOCK_CROP_COUNT)} Crops after Row Duplicators`
+    case 'rootTunnel':
+      return 'Reward for Capybara Demonstration 2'
+    case 'sunflower':
+      return `Unlocks at ${format(SUNFLOWER_UNLOCK_CROP_COUNT)} Crops`
+    case 'canola':
+      return `Unlocks at ${format(CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT)} Row Duplicators`
+    case 'carrot':
+      return `Unlock with ${format(500)} Rabbit relations`
+    case 'fourLeafClover':
+      return `Unlock with ${format(27777)} Rabbit relations`
+    default:
+      return CROP_DEFINITIONS[cropId]?.unlockDescription ?? ''
+  }
+}
 
 export function isKnownCrop(crop) {
   return KNOWN_CROP_IDS.includes(crop)
@@ -453,6 +498,13 @@ export function canCropPassiveBeAffectedBy(cropId, bypassTier) {
 
 export function canBeMirrorCornTarget(cropId) {
   return CROP_DEFINITIONS[cropId]?.canBeMirrorCornTarget !== false
+}
+
+export function isTradedCrop(cropId) {
+  return (
+    cropId !== 'rootTunnel' &&
+    Boolean(CROP_DEFINITIONS[cropId]?.tradeFaction)
+  )
 }
 
 export function getAdjacentCropYieldBonus(

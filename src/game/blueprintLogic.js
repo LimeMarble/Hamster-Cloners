@@ -118,6 +118,7 @@ export function createInitialGame() {
       rabbitUnlocks: [],
     },
     numberNotation: 'suffix',
+    suffixScientificExponent: 303,
     testingPanelUnlocked: false,
     testingPanelVisible: false,
     testingCheats: {

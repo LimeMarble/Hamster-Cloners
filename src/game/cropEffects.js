@@ -12,6 +12,7 @@ import {
   canCropPassiveBeAffectedBy,
   getAdjacentCropYieldBonus,
   getCropPerfection,
+  isTradedCrop,
 } from './crops.js'
 import {
   getAdjacentCropConnections,
@@ -28,6 +29,9 @@ import {
   getMirrorCornReflectionLimitBonus,
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
+import { createBlueprintCalculationCache } from './blueprintCalculationCache.js'
+
+const getCachedRabbitRelationsMultiplier = createBlueprintCalculationCache()
 
 export {
   getAdjacentCropConnections,
@@ -818,6 +822,58 @@ function getCarrotContractBonus(
   )
 }
 
+export function getSamplingLentilTradedCropEffect(
+  blueprint,
+  completedCropPerfections = [],
+  passiveEffectMultiplier = 1,
+) {
+  const samplingLentil = getCropPerfection(
+    'lentil',
+    completedCropPerfections,
+  )
+  const bonusPerAdjacency =
+    samplingLentil?.tradedCropGlobalHarvestBonus
+
+  if (bonusPerAdjacency === undefined) {
+    return { adjacentTradedCropCount: 0, multiplier: 1 }
+  }
+
+  const lentilCount = getMonocropCropCount(blueprint, 'lentil')
+  const fieldSize = blueprint.rows * blueprint.columns
+  const adjustedBonusPerAdjacency =
+    applyMonocropPenaltyToBonus(
+      bonusPerAdjacency,
+      lentilCount,
+      fieldSize,
+      getMonocropThresholdBonus(blueprint, completedCropPerfections),
+    ) * getGlobalPassiveEffectMultiplier(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+    )
+  const adjacentTradedCropCount = blueprint.cells.reduce(
+    (total, crop, index) => {
+      if (crop !== 'lentil') return total
+
+      return total + getAdjacentCropConnections(blueprint, index).reduce(
+        (adjacentTotal, connection) =>
+          isTradedCrop(blueprint.cells[connection.index])
+            ? adjacentTotal +
+              getRootTunnelAdjacencyStrength(connection.adjacencyDistance)
+            : adjacentTotal,
+        0,
+      )
+    },
+    0,
+  )
+
+  return {
+    adjacentTradedCropCount,
+    multiplier:
+      1 + adjacentTradedCropCount * adjustedBonusPerAdjacency,
+  }
+}
+
 export function getGlobalHarvestEffects(
   blueprint,
   completedCropPerfections = [],
@@ -840,6 +896,8 @@ export function getGlobalHarvestEffects(
 
   return blueprint.cells.flatMap((crop, index) => {
     const definition = CROP_DEFINITIONS[crop]
+    const effectDefinition =
+      getCropPerfection(crop, completedCropPerfections) ?? definition
     const globalHarvestMultiplier =
       crop === 'carrot'
         ? 1 +
@@ -849,7 +907,7 @@ export function getGlobalHarvestEffects(
             'globalHarvestBonusPerContract',
             rabbitContractsCompleted,
           )
-        : definition?.globalHarvestMultiplier
+        : effectDefinition?.globalHarvestMultiplier
 
     if (globalHarvestMultiplier === undefined) {
       return []
@@ -998,11 +1056,15 @@ export function getRabbitRelationsMultiplier(
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
 ) {
-  return getRabbitRelationsEffects(
+  return getCachedRabbitRelationsMultiplier(
     blueprint,
-    completedCropPerfections,
-    passiveEffectMultiplier,
-  ).reduce((multiplier, effect) => multiplier * effect.multiplier, 1)
+    [completedCropPerfections, passiveEffectMultiplier],
+    () => getRabbitRelationsEffects(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+    ).reduce((multiplier, effect) => multiplier * effect.multiplier, 1),
+  )
 }
 export function getAdjacentHarvestModifier(
   blueprint,

@@ -136,11 +136,13 @@ export function useGameController() {
         canUnlockEnrichingLeek: derived.canUnlockEnrichingLeek,
         canUnlockMirrorCorn: derived.canUnlockMirrorCorn,
         canUnlockLeechingGourd: derived.canUnlockLeechingGourd,
+        canUnlockSamplingLentil: derived.canUnlockSamplingLentil,
         canUnlockSplitweed: derived.canUnlockSplitweed,
         canUnlockRows: derived.canUnlockRows,
         hasEnrichingLeek: derived.hasEnrichingLeek,
         hasMirrorCorn: derived.hasMirrorCorn,
         hasLeechingGourd: derived.hasLeechingGourd,
+        hasSamplingLentil: derived.hasSamplingLentil,
         hasSplitweed: derived.hasSplitweed,
         pendingBlueprintExpansion: actions.pendingBlueprintExpansion,
         isRowDuplicatorUnlockPending:
@@ -154,6 +156,7 @@ export function useGameController() {
       options: {
         ...actions.options,
         numberNotation: game.numberNotation,
+        suffixScientificExponent: game.suffixScientificExponent,
         codeEntry: testing.codeEntry,
       },
     },

@@ -76,7 +76,10 @@ test('formats the third suffix layer from scientific notation strings', () => {
 
   suffixes.forEach(([exponent, suffix]) => {
     assert.equal(getSuffixForExponent(exponent), suffix)
-    assert.equal(formatNumber(`1e${exponent}`), `1.00${suffix}`)
+    assert.equal(
+      formatNumber(`1e${exponent}`, 1, 'suffix', 3003),
+      `1.00${suffix}`,
+    )
   })
   assert.equal(getSuffixForExponent(306), 'UCent')
   assert.equal(getSuffixForExponent(309), 'DCent')
@@ -89,11 +92,18 @@ test('formats scientific notation with three significant figures', () => {
   assert.equal(formatNumber('1e55', 1, 'scientific'), '1.00e55')
 })
 
-test('forces scientific notation from e3003 onward', () => {
+test('suffix notation uses a configurable scientific threshold', () => {
+  assert.equal(formatNumber('1e33', 1, 'suffix', 33), '1.00e33')
+  assert.equal(formatNumber('1e33', 1, 'suffix', 303), '1.00Dc')
+  assert.equal(formatNumber('1e303'), '1.00e303')
+  assert.equal(formatNumber('1e303', 1, 'suffix', 3003), '1.00Cent')
   assert.equal(getSuffixForExponent(3000), 'NoNgNcnt')
-  assert.equal(formatNumber('1e3000'), '1.00NoNgNcnt')
-  assert.equal(formatNumber('1e3003'), '1.00e3003')
-  assert.equal(formatNumber('1e4000'), '1.00e4000')
+  assert.equal(
+    formatNumber('1e3000', 1, 'suffix', 3003),
+    '1.00NoNgNcnt',
+  )
+  assert.equal(formatNumber('1e3003', 1, 'suffix', 3003), '1.00e3003')
+  assert.equal(formatNumber('1e4000', 1, 'suffix', 3003), '1.00e4000')
 })
 
 test('formats break_infinity Decimal values beyond native Number limits', () => {
@@ -112,5 +122,9 @@ test('shares a cache key until a rounded display value changes', () => {
   assert.notEqual(
     getFormatCacheKey(1_000_000),
     getFormatCacheKey(1_000_000, 1, 'scientific'),
+  )
+  assert.notEqual(
+    getFormatCacheKey('1e303', 1, 'suffix', 303),
+    getFormatCacheKey('1e303', 1, 'suffix', 3003),
   )
 })

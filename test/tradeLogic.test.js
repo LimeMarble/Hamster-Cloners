@@ -55,6 +55,8 @@ test('Rabbit pace uses the slowest grown crop and five-second hysteresis', () =>
   assert.deepEqual(paceState, {
     rabbitContractsBlazing: false,
     rabbitContractPaceTransitionSeconds: 4,
+    rabbitContractPaceSampleSeconds: 0,
+    rabbitContractEstimatedCompletionsPerSecond: 5.1,
   })
 
   paceState = advanceRabbitContractPaceState(
@@ -65,6 +67,8 @@ test('Rabbit pace uses the slowest grown crop and five-second hysteresis', () =>
   assert.deepEqual(paceState, {
     rabbitContractsBlazing: true,
     rabbitContractPaceTransitionSeconds: 0,
+    rabbitContractPaceSampleSeconds: 0,
+    rabbitContractEstimatedCompletionsPerSecond: 5.1,
   })
 
   const exactThresholdState = advanceRabbitContractPaceState(
@@ -75,6 +79,8 @@ test('Rabbit pace uses the slowest grown crop and five-second hysteresis', () =>
   assert.deepEqual(exactThresholdState, {
     rabbitContractsBlazing: true,
     rabbitContractPaceTransitionSeconds: 0,
+    rabbitContractPaceSampleSeconds: 0,
+    rabbitContractEstimatedCompletionsPerSecond: 5,
   })
 
   paceState = advanceRabbitContractPaceState(
@@ -85,6 +91,8 @@ test('Rabbit pace uses the slowest grown crop and five-second hysteresis', () =>
   assert.deepEqual(paceState, {
     rabbitContractsBlazing: true,
     rabbitContractPaceTransitionSeconds: 4,
+    rabbitContractPaceSampleSeconds: 0,
+    rabbitContractEstimatedCompletionsPerSecond: 4.9,
   })
 
   paceState = advanceRabbitContractPaceState(
@@ -95,6 +103,8 @@ test('Rabbit pace uses the slowest grown crop and five-second hysteresis', () =>
   assert.deepEqual(paceState, {
     rabbitContractsBlazing: false,
     rabbitContractPaceTransitionSeconds: 0,
+    rabbitContractPaceSampleSeconds: 0,
+    rabbitContractEstimatedCompletionsPerSecond: 4.9,
   })
 
   assert.deepEqual(
@@ -102,8 +112,41 @@ test('Rabbit pace uses the slowest grown crop and five-second hysteresis', () =>
     {
       rabbitContractsBlazing: false,
       rabbitContractPaceTransitionSeconds: 0,
+      rabbitContractPaceSampleSeconds: 0.1,
+      rabbitContractEstimatedCompletionsPerSecond: 0,
     },
   )
+})
+
+test('Rabbit pace estimates are sampled at 10 Hz instead of every simulation tick', () => {
+  const initialGame = createInitialGame()
+  const game = {
+    ...initialGame,
+    trade: {
+      ...initialGame.trade,
+      rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
+      rabbitContractPaceSampleSeconds: 0,
+      rabbitContractEstimatedCompletionsPerSecond: 0,
+    },
+  }
+  const production = { leek: 1.53e8 }
+  const first = advanceRabbitContractPaceState(game, production, 0.04)
+  const second = advanceRabbitContractPaceState(
+    { ...game, trade: { ...game.trade, ...first } },
+    production,
+    0.04,
+  )
+  const sampled = advanceRabbitContractPaceState(
+    { ...game, trade: { ...game.trade, ...second } },
+    production,
+    0.02,
+  )
+
+  assert.equal(first.rabbitContractEstimatedCompletionsPerSecond, 0)
+  assert.equal(second.rabbitContractEstimatedCompletionsPerSecond, 0)
+  assert.equal(sampled.rabbitContractEstimatedCompletionsPerSecond, 5.1)
+  assert.equal(sampled.rabbitContractPaceTransitionSeconds, 0.02)
+  assert.equal(sampled.rabbitContractPaceSampleSeconds, 0)
 })
 test('Rabbit contracts scale from Fields planted and choose a 10M-50M factor', () => {
   const game = {

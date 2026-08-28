@@ -6,7 +6,8 @@ import {
   RABBIT_UNLOCKS,
   TRADE_ESTABLISHMENT_COST,
   getCapybaraDemonstrationStatus,
-  getRabbitContractCompletionsPerSecond,
+  hasCompletedCapybaraDemonstration,
+  CAPYBARA_DEMONSTRATION_IDS,
   getRabbitRelationsMultiplier,
   hasRabbitUnlock,
 } from '../game/gameLogic.js'
@@ -259,7 +260,10 @@ function CapybaraDemonstrations({
                 <strong>{statusLabel}</strong>
               </div>
 
-              <p className='trade-copy'>{demonstration.goal}</p>
+              <p className='trade-copy'>
+                Have a field blueprint with a Crop yield of at least{' '}
+                <FormattedNumber value={demonstration.target} /> Crops.
+              </p>
               <div
                 className='rabbit-contract-track'
                 role='progressbar'
@@ -355,6 +359,10 @@ export function Trade({
     game,
     RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
   )
+  const hasUnknownSpeciesContact = hasCompletedCapybaraDemonstration(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+  )
   const rabbitContracts = game.trade.rabbitContracts ?? []
   const rabbitContractsCompleted =
     game.trade.rabbitContractsCompleted ?? 0
@@ -363,10 +371,7 @@ export function Trade({
     game.completedCropPerfections,
   )
   const rabbitContractCompletionRate =
-    getRabbitContractCompletionsPerSecond(
-      game,
-      rabbitContractProductionPerSecondByCrop,
-    )
+    game.trade.rabbitContractEstimatedCompletionsPerSecond ?? 0
   const hasBlazingContractPace =
     game.trade.rabbitContractsBlazing === true
 
@@ -413,6 +418,16 @@ export function Trade({
                 aria-pressed={activeRelation === 'capybaras'}
               >
                 Capybaras
+              </button>
+            ) : null}
+            {hasUnknownSpeciesContact ? (
+              <button
+                type="button"
+                className={`trade-relation-tab ${activeRelation === 'unknown' ? 'trade-relation-tab-active' : ''}`}
+                onClick={() => setActiveRelation('unknown')}
+                aria-pressed={activeRelation === 'unknown'}
+              >
+                ????
               </button>
             ) : null}
           </nav>
@@ -489,7 +504,7 @@ export function Trade({
                 onPurchaseRabbitUnlock={onPurchaseRabbitUnlock}
               />
             </div>
-          ) : hasCapybaraContact ? (
+          ) : activeRelation === 'capybaras' && hasCapybaraContact ? (
             <CapybaraDemonstrations
               game={game}
               blueprintCropYield={capybaraBlueprintCropYield}
@@ -497,6 +512,20 @@ export function Trade({
                 onCompleteCapybaraDemonstration
               }
             />
+          ) : activeRelation === 'unknown' && hasUnknownSpeciesContact ? (
+            <section className="trading-group" aria-labelledby="unknown-species-title">
+              <div className="trading-group-title">
+                <span aria-hidden="true">?</span>
+                <div>
+                  <p className="eyebrow">New contact</p>
+                  <h2 id="unknown-species-title">????</h2>
+                </div>
+              </div>
+              <p className="trade-copy">
+                Contact has been established, but nothing else is known about
+                this species yet.
+              </p>
+            </section>
           ) : null}
         </>
       ) : (

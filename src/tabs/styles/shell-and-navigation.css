@@ -300,6 +300,23 @@ h2 {
   min-width: min(100%, 250px);
 }
 
+.notation-threshold {
+  display: grid;
+  gap: 8px;
+}
+
+.notation-threshold > span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.notation-threshold-options {
+  grid-template-columns: repeat(3, minmax(80px, 1fr));
+  min-width: min(100%, 360px);
+}
+
 .notation-option {
   padding: 10px 13px;
   border: 1px solid var(--line);

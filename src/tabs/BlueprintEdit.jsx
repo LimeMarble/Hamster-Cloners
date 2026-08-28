@@ -1,7 +1,7 @@
 import {
-  CROP_DEFINITIONS,
   getCropName,
   getCropPlacementEffectDescription,
+  getCropUnlockDescription,
 } from '../game/crops.js'
 import { getMirrorCornMaximumReflections } from '../game/gameLogic.js'
 import {
@@ -203,7 +203,6 @@ export function BlueprintEdit({
             <p className="eyebrow">Selected crop</p>
             <div className="crop-options">
               {visibleCropIds.map((cropId) => {
-                const crop = CROP_DEFINITIONS[cropId]
                 const unlocked = unlockedCropIds.includes(cropId)
 
                 return (
@@ -231,7 +230,7 @@ export function BlueprintEdit({
                             game.completedCropPerfections,
                             game.seedAugmentations,
                           )
-                        : crop.unlockDescription}
+                        : getCropUnlockDescription(cropId)}
                     </small>
                   </button>
                 )
@@ -247,12 +246,13 @@ export function BlueprintEdit({
           <div>
             <p className="eyebrow">Blueprint transfer</p>
             <h3 id="blueprint-transfer-title">
-              Blueprint {game.activeBlueprintSlot + 1}
+              Blueprint <FormattedNumber value={game.activeBlueprintSlot + 1} maximumFractionDigits={0} />
             </h3>
             <p>
-              Export or replace only this slot. Imports must match the current{' '}
-              {game.blueprint.rows}×{game.blueprint.columns} grid and your crop
-              unlocks.
+              Export or replace only this slot. The current grid is{' '}
+              <FormattedNumber value={game.blueprint.rows} maximumFractionDigits={0} />×<FormattedNumber value={game.blueprint.columns} maximumFractionDigits={0} />;
+              imported blueprints are cropped or padded from the top-left and
+              must use your unlocked Crops.
             </p>
           </div>
           <div className="blueprint-transfer-actions">

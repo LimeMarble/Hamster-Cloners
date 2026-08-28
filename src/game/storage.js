@@ -308,6 +308,11 @@ export function normalizeGame(rawGame) {
     trade,
     numberNotation:
       rawGame.numberNotation === 'scientific' ? 'scientific' : 'suffix',
+    suffixScientificExponent: [33, 303, 3003].includes(
+      Number(rawGame.suffixScientificExponent),
+    )
+      ? Number(rawGame.suffixScientificExponent)
+      : 303,
     testingPanelUnlocked: rawGame.testingPanelUnlocked === true,
     testingPanelVisible:
       rawGame.testingPanelUnlocked === true &&

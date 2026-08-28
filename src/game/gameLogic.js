@@ -18,6 +18,7 @@ export {
   getGlobalRowProductionMultiplier,
   getRabbitRelationsEffects,
   getRabbitRelationsMultiplier,
+  getSamplingLentilTradedCropEffect,
   getLeechingGourdTurnipEffect,
   getMirrorCornEffectBlueprint,
   getMirrorCornEffectMultiplier,

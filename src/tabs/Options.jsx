@@ -1,6 +1,8 @@
 export function Options({
   numberNotation,
   onNumberNotationChange,
+  suffixScientificExponent,
+  onSuffixScientificExponentChange,
   saveCode,
   onSaveCodeChange,
   saveTransferStatus,
@@ -19,8 +21,9 @@ export function Options({
           <p className="eyebrow">Number display</p>
           <h2>Notation</h2>
           <p>
-            Choose how large values are abbreviated. Scientific notation is
-            always used from e3003 onward.
+            Choose how large values are abbreviated. Suffix notation can
+            switch to scientific at your selected exponent and is always
+            scientific from e3003 onward.
           </p>
         </div>
         <div className="notation-options" role="group" aria-label="Number notation">
@@ -41,6 +44,28 @@ export function Options({
             Scientific
           </button>
         </div>
+        {numberNotation === 'suffix' ? (
+          <div className="notation-threshold">
+            <span>Switch suffix to scientific at</span>
+            <div
+              className="notation-options notation-threshold-options"
+              role="group"
+              aria-label="Suffix scientific threshold"
+            >
+              {[33, 303, 3003].map((exponent) => (
+                <button
+                  type="button"
+                  className={`notation-option ${suffixScientificExponent === exponent ? 'notation-option-active' : ''}`}
+                  key={exponent}
+                  onClick={() => onSuffixScientificExponentChange(exponent)}
+                  aria-pressed={suffixScientificExponent === exponent}
+                >
+                  1e{exponent}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </article>
       <article className="invention-card code-entry-card">
         <div>
