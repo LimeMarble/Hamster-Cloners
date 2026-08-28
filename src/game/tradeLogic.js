@@ -8,7 +8,10 @@ export const TRADE_ESTABLISHMENT_COST = 1e57
 export const RABBIT_CONTRACT_MIN_FACTOR = 1e7
 export const RABBIT_CONTRACT_MAX_FACTOR = 5e7
 export const RABBIT_ACTIVE_CONTRACT_COUNT = 3
+export const RABBIT_CONTRACT_AVERAGE_FACTOR =
+  (RABBIT_CONTRACT_MIN_FACTOR + RABBIT_CONTRACT_MAX_FACTOR) / 2
 export const RABBIT_BLAZING_CONTRACT_RATE = 5
+export const RABBIT_BLAZING_PACE_SWITCH_SECONDS = 5
 
 export const RABBIT_UNLOCK_IDS = Object.freeze({
   CARROT: 'carrot',
@@ -104,6 +107,8 @@ export function createInitialTradeState() {
     rabbitContractsCompleted: 0,
     rabbitContracts: [],
     rabbitUnlocks: [],
+    rabbitContractsBlazing: false,
+    rabbitContractPaceTransitionSeconds: 0,
   }
 }
 
@@ -125,33 +130,64 @@ export function hasRabbitUnlock(game, unlockId) {
 }
 
 export function getRabbitContractCompletionsPerSecond(
-  contracts,
+  game,
   productionByCrop,
 ) {
-  if (!Array.isArray(contracts)) return 0
+  const averageContractSize =
+    Math.max(1, getFieldsPlanted(game.farmland)) *
+    RABBIT_CONTRACT_AVERAGE_FACTOR
+  const grownCropRates = Object.entries(productionByCrop ?? {}).flatMap(
+    ([cropId, productionPerSecond]) =>
+      isRabbitContractCropEligible(cropId)
+        ? [
+            toNonNegativeNumber(productionPerSecond) /
+              averageContractSize,
+          ]
+        : [],
+  )
 
-  return contracts.reduce((totalRate, contract) => {
-    const requiredAmount = toNonNegativeNumber(contract?.requiredAmount)
-    const productionPerSecond = toNonNegativeNumber(
-      productionByCrop?.[contract?.cropId],
-    )
-
-    return requiredAmount > 0
-      ? totalRate + productionPerSecond / requiredAmount
-      : totalRate
-  }, 0)
+  return grownCropRates.length > 0 ? Math.min(...grownCropRates) : 0
 }
 
-export function hasBlazingRabbitContractPace(
+export function advanceRabbitContractPaceState(
   game,
-  contracts,
-  productionByCrop,
+  productionPerSecondByCrop,
+  elapsedSeconds,
 ) {
-  return (
-    hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CONTRACTOR) &&
-    getRabbitContractCompletionsPerSecond(contracts, productionByCrop) >
-      RABBIT_BLAZING_CONTRACT_RATE
+  const isBlazing = game.trade?.rabbitContractsBlazing === true
+  const completionRate = getRabbitContractCompletionsPerSecond(
+    game,
+    productionPerSecondByCrop,
   )
+  const hasContractor = hasRabbitUnlock(
+    game,
+    RABBIT_UNLOCK_IDS.CONTRACTOR,
+  )
+  const shouldSwitch = isBlazing
+    ? !hasContractor || completionRate < RABBIT_BLAZING_CONTRACT_RATE
+    : hasContractor && completionRate > RABBIT_BLAZING_CONTRACT_RATE
+
+  if (!shouldSwitch) {
+    return {
+      rabbitContractsBlazing: isBlazing,
+      rabbitContractPaceTransitionSeconds: 0,
+    }
+  }
+
+  const transitionSeconds =
+    toNonNegativeNumber(
+      game.trade?.rabbitContractPaceTransitionSeconds,
+    ) + toNonNegativeNumber(elapsedSeconds)
+
+  return transitionSeconds >= RABBIT_BLAZING_PACE_SWITCH_SECONDS
+    ? {
+        rabbitContractsBlazing: !isBlazing,
+        rabbitContractPaceTransitionSeconds: 0,
+      }
+    : {
+        rabbitContractsBlazing: isBlazing,
+        rabbitContractPaceTransitionSeconds: transitionSeconds,
+      }
 }
 
 export function getRabbitContractCropIds(game) {
@@ -288,6 +324,11 @@ export function normalizeTradeState(rawTrade) {
           ),
         ]
       : [],
+    rabbitContractsBlazing: rawTrade.rabbitContractsBlazing === true,
+    rabbitContractPaceTransitionSeconds: Math.min(
+      RABBIT_BLAZING_PACE_SWITCH_SECONDS,
+      toNonNegativeNumber(rawTrade.rabbitContractPaceTransitionSeconds),
+    ),
   }
 }
 
@@ -322,6 +363,7 @@ export function advanceRabbitContract(
   game,
   productionByCrop,
   random = Math.random,
+  elapsedSeconds = 0,
 ) {
   if (game.trade?.established !== true) {
     return game.trade
@@ -351,8 +393,22 @@ export function advanceRabbitContract(
     }
   })
 
+  const safeElapsedSeconds = toNonNegativeNumber(elapsedSeconds)
+  const productionPerSecondByCrop = safeElapsedSeconds > 0
+    ? Object.fromEntries(
+        Object.entries(productionByCrop ?? {}).map(([cropId, amount]) => [
+          cropId,
+          toNonNegativeNumber(amount) / safeElapsedSeconds,
+        ]),
+      )
+    : {}
   const advancedTrade = {
     ...game.trade,
+    ...advanceRabbitContractPaceState(
+      game,
+      productionPerSecondByCrop,
+      safeElapsedSeconds,
+    ),
     rabbitContracts,
   }
 

@@ -206,6 +206,7 @@ export function advanceGameSimulationStep(
       currentGame,
       productionSnapshotForTick.byCrop,
       random,
+      safeElapsedSeconds,
     ),
     farmland: {
       ...currentGame.farmland,

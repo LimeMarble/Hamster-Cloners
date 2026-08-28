@@ -3,10 +3,13 @@ import test from 'node:test'
 import {
   RABBIT_ACTIVE_CONTRACT_COUNT,
   RABBIT_BLAZING_CONTRACT_RATE,
+  RABBIT_BLAZING_PACE_SWITCH_SECONDS,
+  RABBIT_CONTRACT_AVERAGE_FACTOR,
   RABBIT_UNLOCKS,
   RABBIT_UNLOCK_IDS,
   TRADE_ESTABLISHMENT_COST,
   advanceRabbitContract,
+  advanceRabbitContractPaceState,
   claimRabbitContract,
   createBlueprint,
   createInitialGame,
@@ -17,7 +20,6 @@ import {
   getRabbitContractCompletionsPerSecond,
   getRabbitContractRelationsReward,
   getRabbitRelationsMultiplier,
-  hasBlazingRabbitContractPace,
   hasRabbitUnlock,
   isRabbitContractCropEligible,
   purchaseRabbitUnlock,
@@ -29,57 +31,80 @@ test('Rabbit relation rewards match the logarithmic fields formula', () => {
   assert.equal(getRabbitContractRelationsReward(1e20, 50e6), 100)
 })
 
-test('Rabbit contract throughput switches above five completions per second', () => {
-  const game = createInitialGame()
-  const contracts = [
-    { cropId: 'leek', requiredAmount: 100 },
-    { cropId: 'corn', requiredAmount: 200 },
-    null,
-  ]
-  const exactThresholdProduction = { leek: 400, corn: 200 }
-  const blazingProduction = { leek: 400, corn: 202 }
+test('Rabbit pace uses the slowest grown crop and five-second hysteresis', () => {
+  const initialGame = createInitialGame()
+  const game = {
+    ...initialGame,
+    trade: {
+      ...initialGame.trade,
+      rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
+    },
+  }
+  const exactThresholdProduction = { leek: 1.5e8, corn: 1e30 }
+  const blazingProduction = { leek: 1.53e8, corn: 1e30 }
+  const underThresholdProduction = { leek: 1.47e8, corn: 1e30 }
 
+  assert.equal(RABBIT_CONTRACT_AVERAGE_FACTOR, 3e7)
+  assert.equal(RABBIT_BLAZING_PACE_SWITCH_SECONDS, 5)
   assert.equal(
-    getRabbitContractCompletionsPerSecond(
-      contracts,
-      exactThresholdProduction,
-    ),
+    getRabbitContractCompletionsPerSecond(game, exactThresholdProduction),
     RABBIT_BLAZING_CONTRACT_RATE,
   )
-  assert.equal(
-    hasBlazingRabbitContractPace(
-      {
-        ...game,
-        trade: {
-          ...game.trade,
-          rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
-        },
-      },
-      contracts,
-      exactThresholdProduction,
-    ),
-    false,
+
+  let paceState = advanceRabbitContractPaceState(game, blazingProduction, 4)
+  assert.deepEqual(paceState, {
+    rabbitContractsBlazing: false,
+    rabbitContractPaceTransitionSeconds: 4,
+  })
+
+  paceState = advanceRabbitContractPaceState(
+    { ...game, trade: { ...game.trade, ...paceState } },
+    blazingProduction,
+    1,
   )
-  assert.equal(
-    hasBlazingRabbitContractPace(
-      {
-        ...game,
-        trade: {
-          ...game.trade,
-          rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
-        },
-      },
-      contracts,
-      blazingProduction,
-    ),
-    true,
+  assert.deepEqual(paceState, {
+    rabbitContractsBlazing: true,
+    rabbitContractPaceTransitionSeconds: 0,
+  })
+
+  const exactThresholdState = advanceRabbitContractPaceState(
+    { ...game, trade: { ...game.trade, ...paceState } },
+    exactThresholdProduction,
+    10,
   )
-  assert.equal(
-    hasBlazingRabbitContractPace(game, contracts, blazingProduction),
-    false,
+  assert.deepEqual(exactThresholdState, {
+    rabbitContractsBlazing: true,
+    rabbitContractPaceTransitionSeconds: 0,
+  })
+
+  paceState = advanceRabbitContractPaceState(
+    { ...game, trade: { ...game.trade, ...paceState } },
+    underThresholdProduction,
+    4,
+  )
+  assert.deepEqual(paceState, {
+    rabbitContractsBlazing: true,
+    rabbitContractPaceTransitionSeconds: 4,
+  })
+
+  paceState = advanceRabbitContractPaceState(
+    { ...game, trade: { ...game.trade, ...paceState } },
+    underThresholdProduction,
+    1,
+  )
+  assert.deepEqual(paceState, {
+    rabbitContractsBlazing: false,
+    rabbitContractPaceTransitionSeconds: 0,
+  })
+
+  assert.deepEqual(
+    advanceRabbitContractPaceState(initialGame, blazingProduction, 10),
+    {
+      rabbitContractsBlazing: false,
+      rabbitContractPaceTransitionSeconds: 0,
+    },
   )
 })
-
 test('Rabbit contracts scale from Fields planted and choose a 10M-50M factor', () => {
   const game = {
     ...createInitialGame(),

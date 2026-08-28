@@ -305,6 +305,8 @@ test('Trade state persists with safe migration defaults', () => {
     rabbitContractsCompleted: 0,
     rabbitContracts: [],
     rabbitUnlocks: [],
+    rabbitContractsBlazing: false,
+    rabbitContractPaceTransitionSeconds: 0,
   })
 })
 test('legacy Rabbit blueprint expansions migrate to free blueprint space', () => {

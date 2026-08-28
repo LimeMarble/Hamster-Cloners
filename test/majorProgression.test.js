@@ -202,6 +202,21 @@ test('major progression advances to the earliest unfinished goal', () => {
   const secondDemonstrationGoal = getNextMajorProgressionGoal(game)
   assert.equal(secondDemonstrationGoal.id, 'capybara-demonstration-one')
   assert.equal(secondDemonstrationGoal.target, 1e23)
+  assert.equal(secondDemonstrationGoal.displayProgressAsDash, false)
+
+  const cloverRestrictedGoal = getNextMajorProgressionGoal({
+    ...game,
+    blueprint: {
+      ...game.blueprint,
+      cells: game.blueprint.cells.map((crop, index) =>
+        index === 0 ? 'fourLeafClover' : crop,
+      ),
+    },
+  })
+  assert.equal(cloverRestrictedGoal.id, 'capybara-demonstration-one')
+  assert.equal(cloverRestrictedGoal.current, 0)
+  assert.equal(cloverRestrictedGoal.progress, 0)
+  assert.equal(cloverRestrictedGoal.displayProgressAsDash, true)
 
   game = {
     ...game,

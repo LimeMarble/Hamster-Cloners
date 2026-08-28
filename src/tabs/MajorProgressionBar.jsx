@@ -49,6 +49,8 @@ export function MajorProgressionBar({ goal }) {
                 'Complete'
               ) : goal.isReady ? (
                 'Ready to unlock'
+              ) : goal.displayProgressAsDash ? (
+                '-'
               ) : (
                 <>
                   <FormattedNumber value={goal.current} /> /{' '}

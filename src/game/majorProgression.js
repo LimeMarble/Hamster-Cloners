@@ -25,6 +25,7 @@ import {
   CAPYBARA_DEMONSTRATION_IDS,
   CAPYBARA_DEMONSTRATIONS,
   getCapybaraBlueprintCropYield,
+  getCapybaraDemonstrationStatus,
   hasCompletedCapybaraDemonstration,
 } from './capybaraLogic.js'
 
@@ -271,6 +272,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'capybara-demonstration-introduction',
     category: 'Demonstration',
     title: 'Capybara Demonstration 0: Introduction',
+    demonstrationId: CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
     target: CAPYBARA_DEMONSTRATIONS[0].target,
     unit: 'blueprint Crop yield',
     description:
@@ -287,6 +289,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'capybara-demonstration-one',
     category: 'Demonstration',
     title: 'Capybara Demonstration 1: Beyond Fortune',
+    demonstrationId: CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
     target: CAPYBARA_DEMONSTRATIONS[1].target,
     unit: 'blueprint Crop yield',
     description:
@@ -316,12 +319,22 @@ export function getNextMajorProgressionGoal(game) {
       target: 1,
       unit: 'Goals',
       progress: 1,
+      displayProgressAsDash: false,
       isReady: false,
       isComplete: true,
     }
   }
 
-  const current = getSafeProgressValue(goal.getCurrent(game))
+  const demonstrationStatus = goal.demonstrationId
+    ? getCapybaraDemonstrationStatus(game, goal.demonstrationId)
+    : null
+  const displayProgressAsDash =
+    demonstrationStatus?.number >= 1 &&
+    demonstrationStatus.requiresNoClover === true &&
+    demonstrationStatus.restrictionsMet === false
+  const current = displayProgressAsDash
+    ? 0
+    : getSafeProgressValue(goal.getCurrent(game))
   const target = getSafeProgressValue(goal.target)
   const progress = target > 0 ? Math.min(1, current / target) : 0
 
@@ -334,6 +347,7 @@ export function getNextMajorProgressionGoal(game) {
     target,
     unit: goal.unit,
     progress,
+    displayProgressAsDash,
     isReady: goal.requiresAction === true && current >= target,
     isComplete: false,
   }

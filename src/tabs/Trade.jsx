@@ -8,7 +8,6 @@ import {
   getCapybaraDemonstrationStatus,
   getRabbitContractCompletionsPerSecond,
   getRabbitRelationsMultiplier,
-  hasBlazingRabbitContractPace,
   hasRabbitUnlock,
 } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
@@ -365,14 +364,11 @@ export function Trade({
   )
   const rabbitContractCompletionRate =
     getRabbitContractCompletionsPerSecond(
-      rabbitContracts,
+      game,
       rabbitContractProductionPerSecondByCrop,
     )
-  const hasBlazingContractPace = hasBlazingRabbitContractPace(
-    game,
-    rabbitContracts,
-    rabbitContractProductionPerSecondByCrop,
-  )
+  const hasBlazingContractPace =
+    game.trade.rabbitContractsBlazing === true
 
   return (
     <section className="trade-panel" aria-labelledby="trade-title">
@@ -457,7 +453,9 @@ export function Trade({
                           value={rabbitContractCompletionRate}
                           maximumFractionDigits={2}
                         />{' '}
-                        contracts per second, above the{' '}
+                        contracts per second, estimated from the slowest grown
+                        eligible Crop and an average-sized contract. This is
+                        above the{' '}
                         <FormattedNumber
                           value={RABBIT_BLAZING_CONTRACT_RATE}
                           maximumFractionDigits={0}
