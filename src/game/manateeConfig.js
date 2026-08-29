@@ -155,7 +155,7 @@ export const MANATEE_SURVEYS = Object.freeze({
     name: 'Survey Mangrove Roots',
     description:
       'Search beneath the tangled mangrove roots for useful plant matter and buried Pete.',
-    referenceDurationSeconds: 5,
+    referenceDurationSeconds: 1,
     isUnderwater: true,
     rewards: [
       createReward('mangrove-root', MANATEE_RESOURCE_IDS.MANGROVE_ROOTS, 4, 5, 1, 2),
@@ -168,7 +168,7 @@ export const MANATEE_SURVEYS = Object.freeze({
     name: 'Survey Sediment',
     description:
       'Comb through underwater sediment for dense deposits and marsh plants.',
-    referenceDurationSeconds: 10,
+    referenceDurationSeconds: 2,
     isUnderwater: true,
     rewards: [
       createReward('pete', MANATEE_RESOURCE_IDS.PETE, 10, 12, 8, 10),
