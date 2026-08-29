@@ -10,6 +10,7 @@ import {
   getColumnsProducedPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getCropProductionSnapshotPerSecond,
+  getCloverBundleChancePerMinute,
   getFortuneModifiers,
 
   getHamsterCoordinationMultiplier,
@@ -69,6 +70,23 @@ export function useGameDerivedState(game) {
     ],
   )
   const productionPerSecond = cropProductionSnapshot.total
+  const cloverBundleChancePerMinute = useMemo(
+    () =>
+      getCloverBundleChancePerMinute({
+        blueprint: game.blueprint,
+        completedCropPerfections: game.completedCropPerfections,
+        farmland: game.farmland,
+        fortune: game.fortune,
+        seedAugmentations: game.seedAugmentations,
+      }),
+    [
+      game.blueprint,
+      game.completedCropPerfections,
+      game.farmland,
+      game.fortune,
+      game.seedAugmentations,
+    ],
+  )
   const capybaraBlueprintCropYield = useMemo(
     () =>
       getCapybaraBlueprintCropYield({
@@ -316,6 +334,7 @@ export function useGameDerivedState(game) {
     nextHamsterCost,
     majorProgressionGoal,
     productionPerSecond,
+    cloverBundleChancePerMinute,
     rabbitContractProductionPerSecondByCrop: cropProductionSnapshot.byCrop,
     capybaraBlueprintCropYield,
     isTradeTabVisible: game.hasUnlockedSunflower === true,

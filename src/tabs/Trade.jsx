@@ -12,6 +12,7 @@ import {
   hasRabbitUnlock,
 } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
+import { BlazingCarrotPerfection } from './BlazingCarrotPerfection.jsx'
 import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber } from './ui.jsx'
 import { ManateeRelations } from './ManateeRelations.jsx'
@@ -135,7 +136,13 @@ function RabbitContract({
   )
 }
 
-function RabbitUnlocks({ game, onPurchaseRabbitUnlock }) {
+function RabbitUnlocks({
+  game,
+  canUnlockBlazingCarrot,
+  hasBlazingCarrot,
+  onPurchaseRabbitUnlock,
+  onUnlockBlazingCarrot,
+}) {
   return (
     <section className="rabbit-unlocks" aria-labelledby="rabbit-unlocks-title">
       <div className="section-heading">
@@ -181,6 +188,12 @@ function RabbitUnlocks({ game, onPurchaseRabbitUnlock }) {
           )
         })}
       </div>
+      <BlazingCarrotPerfection
+        game={game}
+        canUnlock={canUnlockBlazingCarrot}
+        hasUnlocked={hasBlazingCarrot}
+        onUnlock={onUnlockBlazingCarrot}
+      />
     </section>
   )
 }
@@ -355,9 +368,12 @@ export function Trade({
   game,
   rabbitContractProductionPerSecondByCrop,
   capybaraBlueprintCropYield,
+  canUnlockBlazingCarrot,
+  hasBlazingCarrot,
   onEstablishTrade,
   onClaimRabbitContract,
   onPurchaseRabbitUnlock,
+  onUnlockBlazingCarrot,
   onCompleteCapybaraDemonstration,
   onStartManateeSurvey,
   onCollectManateeFind,
@@ -510,7 +526,10 @@ export function Trade({
               </section>
               <RabbitUnlocks
                 game={game}
+                canUnlockBlazingCarrot={canUnlockBlazingCarrot}
+                hasBlazingCarrot={hasBlazingCarrot}
                 onPurchaseRabbitUnlock={onPurchaseRabbitUnlock}
+                onUnlockBlazingCarrot={onUnlockBlazingCarrot}
               />
             </div>
           ) : activeRelation === 'capybaras' && hasCapybaraContact ? (

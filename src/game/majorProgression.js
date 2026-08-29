@@ -82,8 +82,9 @@ function createPerfectionGoal(perfectionId) {
     title: 'Unlock ' + perfection.name,
     target: perfection.cost,
     unit: usesRabbitRelations ? 'Rabbit relations' : 'Crops',
-    description:
-      'Purchase ' + perfection.name + ' in Inventions → Crop Perfection.',
+    description: usesRabbitRelations
+      ? 'Purchase ' + perfection.name + ' in Trade → Rabbit unlocks.'
+      : 'Purchase ' + perfection.name + ' in Inventions → Crop Perfection.',
     isComplete: (game) => hasCropPerfection(game, perfectionId),
     getCurrent: (game) =>
       usesRabbitRelations ? game.trade?.rabbitRelations : game.crops,

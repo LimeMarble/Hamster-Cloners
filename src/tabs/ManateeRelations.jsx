@@ -1,108 +1,69 @@
 import {
   MANATEE_BUILDING_IDS,
   MANATEE_BUILDINGS,
-  MANATEE_RESOURCE_IDS,
+  MANATEE_RESOURCES,
   MANATEE_SURVEY_IDS,
+  MANATEE_SURVEY_LENGTH_IDS,
   MANATEE_SURVEYS,
   canConstructManateeBuilding,
-  getHamsterCoordinationMultiplier,
   getBlazingCarrotSurveyTimeEffect,
   getFortuneModifiers,
+  getHamsterCoordinationMultiplier,
   getManateeDivingHamsterCapacity,
   getManateeSurveyingHamsterCount,
   getMarshSurveyDurationSeconds,
   getMarshSurveyWorkPerSecond,
   normalizeManateeState,
 } from '../game/gameLogic.js'
+import {
+  SurveyCropBonus,
+  SurveyProgress,
+  SurveyResults,
+  SurveyTime,
+} from './ManateeSurveyUi.jsx'
+import { UnderwaterMarsh } from './UnderwaterMarsh.jsx'
 import { FormattedNumber, WholeNumber } from './ui.jsx'
-
-function SurveyTime({ seconds }) {
-  if (!Number.isFinite(seconds)) {
-    return <>No progress at the current Hamster Coordination</>
-  }
-
-  return (
-    <>
-      <FormattedNumber
-        value={Math.max(0, Math.ceil(seconds))}
-        maximumFractionDigits={0}
-      />{' '}
-      seconds
-    </>
-  )
-}
 
 function ManateeResources({ resources }) {
   return (
     <dl className="manatee-resource-grid" aria-label="Manatee resources">
-      <div>
-        <dt>Wood</dt>
-        <dd>
-          <span className="manatee-resource-icon manatee-resource-icon-wood" aria-hidden="true" />
-          <FormattedNumber
-            value={resources[MANATEE_RESOURCE_IDS.WOOD]}
-            maximumFractionDigits={0}
-          />
-        </dd>
-      </div>
-      <div>
-        <dt>Stone</dt>
-        <dd>
-          <span className="manatee-resource-icon manatee-resource-icon-stone" aria-hidden="true" />
-          <FormattedNumber
-            value={resources[MANATEE_RESOURCE_IDS.STONE]}
-            maximumFractionDigits={0}
-          />
-        </dd>
-      </div>
+      {Object.values(MANATEE_RESOURCES).map((resource) => (
+        <div key={resource.id}>
+          <dt>{resource.name}</dt>
+          <dd>
+            <span
+              className={`manatee-resource-icon manatee-resource-icon-${resource.iconClass}`}
+              aria-hidden="true"
+            />
+            <FormattedNumber
+              value={resources[resource.id]}
+              maximumFractionDigits={0}
+            />
+          </dd>
+        </div>
+      ))}
     </dl>
   )
 }
 
-function MarshFind({ find, onCollect }) {
-  const resourceName =
-    find.resourceId === MANATEE_RESOURCE_IDS.WOOD ? 'Wood' : 'Stone'
-
-  return (
-    <button
-      type="button"
-      className={`manatee-find manatee-find-${find.kind}`}
-      style={{
-        left: `${find.x}%`,
-        top: `${find.y}%`,
-        '--find-rotation': `${find.rotation}deg`,
-      }}
-      onClick={() => onCollect(find.id)}
-      aria-label={`Collect ${find.kind} worth ${find.amount} ${resourceName}`}
-    >
-      <span className="manatee-find-shape" aria-hidden="true" />
-      <span className="manatee-find-value">
-        +<FormattedNumber value={find.amount} maximumFractionDigits={0} />{' '}
-        {resourceName}
-      </span>
-    </button>
-  )
-}
-
-function MarshSurvey({ game, state, onStartSurvey, onCollectFind }) {
+function MarshSurvey({
+  game,
+  state,
+  coordination,
+  surveyTimeEffect,
+  onStartSurvey,
+  onCollectFind,
+}) {
   const survey = MANATEE_SURVEYS[MANATEE_SURVEY_IDS.SEARCH_MARSH]
-  const activeSurvey = state.activeSurvey
-  const surveyingHamsters = getManateeSurveyingHamsterCount(game)
-  const coordination = getHamsterCoordinationMultiplier(
-    game.hamsters,
-    game.postUnionHamstersHired,
-  )
-  const surveyTimeEffect = getBlazingCarrotSurveyTimeEffect(
-    game.blueprint,
-    game.completedCropPerfections,
-    game.trade?.totalRabbitRelationsEarned ?? 0,
-    getFortuneModifiers(game.fortune).passiveEffectMultiplier,
-  )
-  const baseWorkRate = getMarshSurveyWorkPerSecond(
-    activeSurvey ? surveyingHamsters : game.hamsters,
-    coordination,
-  )
-  const currentWorkRate = baseWorkRate / surveyTimeEffect.multiplier
+  const activeSurvey =
+    state.activeSurvey?.id === survey.id ? state.activeSurvey : null
+  const hasFinds = state.pendingSurveyId === survey.id
+  const surveyingHamsters = activeSurvey
+    ? getManateeSurveyingHamsterCount(game)
+    : game.hamsters
+  const currentWorkRate =
+    getMarshSurveyWorkPerSecond(surveyingHamsters, coordination) /
+    surveyTimeEffect.multiplier
   const estimatedDuration = getMarshSurveyDurationSeconds(
     game.hamsters,
     coordination,
@@ -114,93 +75,43 @@ function MarshSurvey({ game, state, onStartSurvey, onCollectFind }) {
   const remainingSeconds = activeSurvey
     ? (survey.requiredWork - activeSurvey.workCompleted) / currentWorkRate
     : estimatedDuration
-  const hasFinds = state.pendingFinds.length > 0
+  const isBlocked = Boolean(
+    (state.activeSurvey && !activeSurvey) ||
+      (state.pendingFinds.length > 0 && !hasFinds),
+  )
 
   return (
     <article className="manatee-survey-card">
       <header className="manatee-card-heading">
         <div>
-          <p className="eyebrow">Initial survey</p>
+          <p className="eyebrow">Initial surface survey</p>
           <h3>{survey.name}</h3>
         </div>
         <span className="manatee-survey-status">
-          {hasFinds ? 'Results ready' : activeSurvey ? 'In progress' : 'Available'}
+          {hasFinds
+            ? 'Results ready'
+            : activeSurvey
+              ? 'In progress'
+              : isBlocked
+                ? 'Unavailable'
+                : 'Available'}
         </span>
       </header>
       <p className="trade-copy">{survey.description}</p>
-      {surveyTimeEffect.activeCarrotCount > 0 ? (
-        <p className="manatee-survey-crop-bonus">
-          Blazing Carrots shorten this survey by{' '}
-          <strong>
-            <FormattedNumber
-              value={surveyTimeEffect.reduction * 100}
-              maximumFractionDigits={2}
-            />
-            %
-          </strong>{' '}
-          ({' '}
-          <FormattedNumber
-            value={surveyTimeEffect.contributingCarrotCount}
-            maximumFractionDigits={2}
-          />{' '}
-          effective of{' '}
-          <WholeNumber value={surveyTimeEffect.activeCarrotCount} /> active).
-        </p>
-      ) : null}
+      <SurveyCropBonus surveyTimeEffect={surveyTimeEffect} />
 
       {hasFinds ? (
-        <section className="manatee-marsh-results" aria-label="Marsh survey results">
-          <div className="manatee-results-heading">
-            <div>
-              <p className="eyebrow">Survey results</p>
-              <h4>Collect the finds</h4>
-            </div>
-            <p>
-              <FormattedNumber
-                value={state.pendingFinds.length}
-                maximumFractionDigits={0}
-              />{' '}
-              objects remain
-            </p>
-          </div>
-          <div className="manatee-marsh-scene">
-            <div className="manatee-marsh-water" aria-hidden="true" />
-            {state.pendingFinds.map((find) => (
-              <MarshFind
-                key={find.id}
-                find={find}
-                onCollect={onCollectFind}
-              />
-            ))}
-          </div>
-          <p className="manatee-interaction-note">
-            Select each branch and pebble in the marsh to collect it.
-          </p>
-        </section>
+        <SurveyResults
+          state={state}
+          survey={survey}
+          onCollectFind={onCollectFind}
+        />
       ) : activeSurvey ? (
-        <div className="manatee-survey-progress">
-          <div className="manatee-progress-copy">
-            <span>
-              <WholeNumber value={surveyingHamsters} /> hamsters surveying
-            </span>
-            <strong>
-              <SurveyTime seconds={remainingSeconds} /> remaining
-            </strong>
-          </div>
-          <div
-            className="manatee-progress-track"
-            role="progressbar"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            aria-valuenow={Math.round(progress * 100)}
-          >
-            <span style={{ width: `${progress * 100}%` }} />
-          </div>
-          <p className="manatee-workforce-warning">
-            Surveying hamsters still contribute their full Hamster Coordination,
-            but each one is temporarily removed from Columns/sec.
-          </p>
-        </div>
+        <SurveyProgress
+          allocatedHamsters={surveyingHamsters}
+          progress={progress}
+          remainingSeconds={remainingSeconds}
+        />
       ) : (
         <div className="manatee-survey-start">
           <dl>
@@ -214,14 +125,21 @@ function MarshSurvey({ game, state, onStartSurvey, onCollectFind }) {
             </div>
           </dl>
           <p>
-            This first survey silently sends every owned hamster. Allocation
-            controls begin with later surveys.
+            This surface survey silently sends every owned hamster. Underwater
+            expeditions introduce control over the allocated diving team.
           </p>
           <button
             type="button"
             className="trade-primary-button"
-            onClick={onStartSurvey}
-            disabled={game.hamsters <= 0 || currentWorkRate <= 0}
+            onClick={() =>
+              onStartSurvey(
+                survey.id,
+                MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+              )
+            }
+            disabled={
+              isBlocked || game.hamsters <= 0 || currentWorkRate <= 0
+            }
           >
             Search the Marsh
           </button>
@@ -254,30 +172,23 @@ function DivingCabinSite({ game, state, onConstructBuilding }) {
         <h3>{building.name}</h3>
         <p className="trade-copy">{building.description}</p>
         <dl className="manatee-building-costs">
-          <div>
-            <dt>Wood</dt>
-            <dd>
-              <FormattedNumber
-                value={state.resources[MANATEE_RESOURCE_IDS.WOOD]}
-                maximumFractionDigits={0}
-              />{' '}
-              / <FormattedNumber value={building.cost.wood} maximumFractionDigits={0} />
-            </dd>
-          </div>
-          <div>
-            <dt>Stone</dt>
-            <dd>
-              <FormattedNumber
-                value={state.resources[MANATEE_RESOURCE_IDS.STONE]}
-                maximumFractionDigits={0}
-              />{' '}
-              / <FormattedNumber value={building.cost.stone} maximumFractionDigits={0} />
-            </dd>
-          </div>
+          {Object.entries(building.cost).map(([resourceId, amount]) => (
+            <div key={resourceId}>
+              <dt>{MANATEE_RESOURCES[resourceId].name}</dt>
+              <dd>
+                <FormattedNumber
+                  value={state.resources[resourceId]}
+                  maximumFractionDigits={0}
+                />{' '}
+                / <FormattedNumber value={amount} maximumFractionDigits={0} />
+              </dd>
+            </div>
+          ))}
         </dl>
         {isComplete ? (
           <p className="manatee-capacity-note">
-            Diving hamster capacity: <strong><WholeNumber value={divingCapacity} /></strong>
+            Diving hamster capacity:{' '}
+            <strong><WholeNumber value={divingCapacity} /></strong>
           </p>
         ) : (
           <button
@@ -301,6 +212,16 @@ export function ManateeRelations({
   onConstructManateeBuilding,
 }) {
   const state = normalizeManateeState(game.manatees)
+  const coordination = getHamsterCoordinationMultiplier(
+    game.hamsters,
+    game.postUnionHamstersHired,
+  )
+  const surveyTimeEffect = getBlazingCarrotSurveyTimeEffect(
+    game.blueprint,
+    game.completedCropPerfections,
+    game.trade?.totalRabbitRelationsEarned ?? 0,
+    getFortuneModifiers(game.fortune).passiveEffectMultiplier,
+  )
 
   return (
     <section className="trading-group manatee-relations" aria-labelledby="manatees-title">
@@ -320,6 +241,8 @@ export function ManateeRelations({
         <MarshSurvey
           game={game}
           state={state}
+          coordination={coordination}
+          surveyTimeEffect={surveyTimeEffect}
           onStartSurvey={onStartManateeSurvey}
           onCollectFind={onCollectManateeFind}
         />
@@ -329,6 +252,14 @@ export function ManateeRelations({
           onConstructBuilding={onConstructManateeBuilding}
         />
       </div>
+      <UnderwaterMarsh
+        game={game}
+        state={state}
+        coordination={coordination}
+        surveyTimeEffect={surveyTimeEffect}
+        onStartSurvey={onStartManateeSurvey}
+        onCollectFind={onCollectManateeFind}
+      />
     </section>
   )
 }

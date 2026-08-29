@@ -1,7 +1,11 @@
 import { FormattedNumber, WholeNumber } from './ui.jsx'
 import { formatPlaytime } from './uiHelpers.js'
 
-export function Statistics({ game, unlockedCropIds }) {
+export function Statistics({
+  game,
+  unlockedCropIds,
+  cloverBundleChancePerMinute,
+}) {
   return (
     <section className="inventions-panel statistics-panel" aria-labelledby="statistics-title">
       <p className="eyebrow">Lifetime progress</p>
@@ -39,7 +43,18 @@ export function Statistics({ game, unlockedCropIds }) {
           <dd>
             <FormattedNumber value={game.trade?.rabbitContractsCompleted ?? 0} maximumFractionDigits={0} />
           </dd>
-        </div>        <div className="statistics-playtime">
+        </div>
+        <div>
+          <dt>Clover Bundle chance per minute</dt>
+          <dd>
+            <FormattedNumber
+              value={cloverBundleChancePerMinute * 100}
+              maximumFractionDigits={2}
+            />
+            %
+          </dd>
+        </div>
+        <div className="statistics-playtime">
           <dt>Playtime</dt>
           <dd>{formatPlaytime(game.playtimeSeconds)}</dd>
         </div>

@@ -278,9 +278,14 @@ export function useGameActions({
     )
   }
 
-  function startMarshSurvey() {
+  function startMarshSurvey(surveyId, lengthId, allocatedHamsters) {
     updateGame((currentGame) =>
-      startManateeSurvey(currentGame) ?? currentGame,
+      startManateeSurvey(
+        currentGame,
+        surveyId,
+        lengthId,
+        allocatedHamsters,
+      ) ?? currentGame,
     )
   }
 
@@ -352,6 +357,7 @@ export function useGameActions({
       onEstablishTrade: establishTrade,
       onClaimRabbitContract: claimRabbitDelivery,
       onPurchaseRabbitUnlock: buyRabbitUnlock,
+      onUnlockBlazingCarrot: () => unlockPerfection('blazingCarrot'),
       onCompleteCapybaraDemonstration: completeCapybaraDemo,
       onStartManateeSurvey: startMarshSurvey,
       onCollectManateeFind: collectMarshFind,
@@ -365,7 +371,6 @@ export function useGameActions({
       onUnlockEnrichingLeek: () => unlockPerfection('enrichingLeek'),
       onUnlockMirrorCorn: () => unlockPerfection('mirrorCorn'),
       onUnlockLeechingGourd: () => unlockPerfection('leechingGourd'),
-      onUnlockBlazingCarrot: () => unlockPerfection('blazingCarrot'),
       onUnlockSamplingLentil: () => unlockPerfection('samplingLentil'),
       onUnlockSplitweed: () => unlockPerfection('splitweed'),
       onRequestRowDuplicatorUnlock: () =>

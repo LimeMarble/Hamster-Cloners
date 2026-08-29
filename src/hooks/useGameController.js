@@ -125,6 +125,8 @@ export function useGameController() {
         game,
         capybaraBlueprintCropYield:
           derived.capybaraBlueprintCropYield,
+        canUnlockBlazingCarrot: derived.canUnlockBlazingCarrot,
+        hasBlazingCarrot: derived.hasBlazingCarrot,
         rabbitContractProductionPerSecondByCrop:
           derived.rabbitContractProductionPerSecondByCrop,
         ...actions.tradeActions,
@@ -141,14 +143,12 @@ export function useGameController() {
         canUnlockEnrichingLeek: derived.canUnlockEnrichingLeek,
         canUnlockMirrorCorn: derived.canUnlockMirrorCorn,
         canUnlockLeechingGourd: derived.canUnlockLeechingGourd,
-        canUnlockBlazingCarrot: derived.canUnlockBlazingCarrot,
         canUnlockSamplingLentil: derived.canUnlockSamplingLentil,
         canUnlockSplitweed: derived.canUnlockSplitweed,
         canUnlockRows: derived.canUnlockRows,
         hasEnrichingLeek: derived.hasEnrichingLeek,
         hasMirrorCorn: derived.hasMirrorCorn,
         hasLeechingGourd: derived.hasLeechingGourd,
-        hasBlazingCarrot: derived.hasBlazingCarrot,
         hasSamplingLentil: derived.hasSamplingLentil,
         hasSplitweed: derived.hasSplitweed,
         pendingBlueprintExpansion: actions.pendingBlueprintExpansion,
@@ -159,6 +159,7 @@ export function useGameController() {
       statistics: {
         game,
         unlockedCropIds: derived.unlockedCropIds,
+        cloverBundleChancePerMinute: derived.cloverBundleChancePerMinute,
       },
       options: {
         ...actions.options,

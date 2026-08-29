@@ -5,6 +5,7 @@ import {
   MANATEE_BUILDING_IDS,
   MANATEE_RESOURCE_IDS,
   MANATEE_SURVEY_IDS,
+  MANATEE_SURVEY_LENGTH_IDS,
   MANATEE_SURVEYS,
   advanceGameSimulationStep,
   advanceManateeSurveyState,
@@ -13,6 +14,9 @@ import {
   createInitialGame,
   getColumnsProducedPerSecond,
   getManateeDivingHamsterCapacity,
+  getManateeSurveyDurationMultiplier,
+  getManateeSurveyDurationSeconds,
+  getManateeSurveyRewardMultipliers,
   getManateeSurveyingHamsterCount,
   getMarshSurveyDurationSeconds,
   startManateeSurvey,
@@ -27,6 +31,58 @@ test('Search the Marsh matches the requested Hamster Coordination calibration', 
   assert.ok(threeOctillionDuration > 15)
   assert.ok(threeOctillionDuration < 16)
   assert.ok(baselineDuration / threeOctillionDuration > 3.8)
+})
+
+test('underwater expeditions have three reward tiers and configurable default time scaling', () => {
+  const mangroveSurveyId = MANATEE_SURVEY_IDS.MANGROVE_ROOTS
+  const sedimentSurveyId = MANATEE_SURVEY_IDS.SEDIMENT
+
+  assert.equal(
+    getManateeSurveyDurationSeconds(
+      1875,
+      1e24,
+      mangroveSurveyId,
+      MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    ),
+    5,
+  )
+  assert.equal(
+    getManateeSurveyDurationSeconds(
+      1875,
+      1e24,
+      sedimentSurveyId,
+      MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    ),
+    10,
+  )
+  assert.equal(
+    getManateeSurveyDurationMultiplier(
+      mangroveSurveyId,
+      MANATEE_SURVEY_LENGTH_IDS.EXTENDED,
+    ),
+    15,
+  )
+  assert.equal(
+    getManateeSurveyDurationMultiplier(
+      mangroveSurveyId,
+      MANATEE_SURVEY_LENGTH_IDS.THOROUGH,
+    ),
+    225,
+  )
+  assert.deepEqual(
+    getManateeSurveyRewardMultipliers(
+      mangroveSurveyId,
+      MANATEE_SURVEY_LENGTH_IDS.EXTENDED,
+    ),
+    { objectCount: 2, objectValue: 4 },
+  )
+  assert.deepEqual(
+    getManateeSurveyRewardMultipliers(
+      mangroveSurveyId,
+      MANATEE_SURVEY_LENGTH_IDS.THOROUGH,
+    ),
+    { objectCount: 4, objectValue: 16 },
+  )
 })
 
 test('the initial marsh survey silently allocates every owned hamster', () => {
@@ -44,6 +100,121 @@ test('the initial marsh survey silently allocates every owned hamster', () => {
   assert.equal(startedGame.manatees.activeSurvey.allocatedHamsters, 1875)
   assert.equal(getManateeSurveyingHamsterCount(startedGame), 1875)
   assert.equal(startManateeSurvey(startedGame), null)
+})
+
+test('the Diving Cabin unlocks explicit underwater hamster allocation', () => {
+  const initialGame = {
+    ...createInitialGame(),
+    hamsters: 1875,
+  }
+
+  assert.equal(
+    startManateeSurvey(
+      initialGame,
+      MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
+    ),
+    null,
+  )
+
+  const divingGame = {
+    ...initialGame,
+    manatees: {
+      ...initialGame.manatees,
+      completedBuildings: [MANATEE_BUILDING_IDS.DIVING_CABIN],
+    },
+  }
+  const allocatedGame = startManateeSurvey(
+    divingGame,
+    MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    17,
+  )
+  const cappedGame = startManateeSurvey(
+    divingGame,
+    MANATEE_SURVEY_IDS.SEDIMENT,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    999,
+  )
+
+  assert.equal(allocatedGame.manatees.activeSurvey.allocatedHamsters, 17)
+  assert.equal(cappedGame.manatees.activeSurvey.allocatedHamsters, 50)
+})
+
+test('underwater expeditions produce their configured finds and tier scaling', () => {
+  const baseGame = {
+    ...createInitialGame(),
+    hamsters: 1875,
+    manatees: {
+      ...createInitialGame().manatees,
+      completedBuildings: [MANATEE_BUILDING_IDS.DIVING_CABIN],
+    },
+  }
+  const completeSurvey = (surveyId, lengthId) => {
+    const startedGame = startManateeSurvey(
+      baseGame,
+      surveyId,
+      lengthId,
+      50,
+    )
+    const duration = getManateeSurveyDurationSeconds(
+      50,
+      1e24,
+      surveyId,
+      lengthId,
+    )
+
+    return advanceManateeSurveyState(
+      startedGame.manatees,
+      duration * 1.000001,
+      1e24,
+      () => 0,
+    )
+  }
+
+  const mangrove = completeSurvey(
+    MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+  )
+  assert.equal(
+    mangrove.pendingFinds.filter((find) => find.kind === 'mangrove-root').length,
+    4,
+  )
+  assert.equal(
+    mangrove.pendingFinds.filter((find) => find.kind === 'mangrove-leaf').length,
+    8,
+  )
+  assert.equal(
+    mangrove.pendingFinds.filter((find) => find.kind === 'pete').length,
+    0,
+  )
+
+  const sediment = completeSurvey(
+    MANATEE_SURVEY_IDS.SEDIMENT,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+  )
+  assert.equal(sediment.pendingFinds.filter((find) => find.kind === 'pete').length, 10)
+  assert.equal(
+    sediment.pendingFinds.filter((find) => find.kind === 'water-lettuce').length,
+    0,
+  )
+  assert.equal(
+    sediment.pendingFinds.filter((find) => find.kind === 'musk-grass').length,
+    1,
+  )
+  assert.equal(
+    sediment.pendingFinds.filter((find) => find.kind === 'limestone').length,
+    5,
+  )
+
+  const extendedMangrove = completeSurvey(
+    MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
+    MANATEE_SURVEY_LENGTH_IDS.EXTENDED,
+  )
+  const extendedRoots = extendedMangrove.pendingFinds.filter(
+    (find) => find.kind === 'mangrove-root',
+  )
+  assert.equal(extendedRoots.length, 8)
+  assert.ok(extendedRoots.every((find) => find.amount === 4))
 })
 
 test('a completed marsh survey creates individually collectible branches and pebbles', () => {
@@ -79,7 +250,10 @@ test('a completed marsh survey creates individually collectible branches and peb
     completedState.pendingFinds[0].id,
   )
 
-  assert.equal(firstCollected.manatees.resources.wood, 20)
+  assert.equal(
+    firstCollected.manatees.resources[MANATEE_RESOURCE_IDS.MANGROVE_WOOD],
+    20,
+  )
   assert.equal(
     firstCollected.manatees.pendingFinds.length,
     completedState.pendingFinds.length - 1,
@@ -90,8 +264,14 @@ test('a completed marsh survey creates individually collectible branches and peb
     gameWithFinds,
   )
 
-  assert.equal(fullyCollected.manatees.resources.wood, 100)
-  assert.equal(fullyCollected.manatees.resources.stone, 30)
+  assert.equal(
+    fullyCollected.manatees.resources[MANATEE_RESOURCE_IDS.MANGROVE_WOOD],
+    100,
+  )
+  assert.equal(
+    fullyCollected.manatees.resources[MANATEE_RESOURCE_IDS.LIMESTONE],
+    30,
+  )
   assert.equal(fullyCollected.manatees.pendingFinds.length, 0)
 })
 
@@ -101,8 +281,8 @@ test('the Diving Cabin is one-and-done and grants an extensible 50-hamster capac
     manatees: {
       ...createInitialGame().manatees,
       resources: {
-        [MANATEE_RESOURCE_IDS.WOOD]: 100,
-        [MANATEE_RESOURCE_IDS.STONE]: 25,
+        [MANATEE_RESOURCE_IDS.MANGROVE_WOOD]: 100,
+        [MANATEE_RESOURCE_IDS.LIMESTONE]: 25,
       },
     },
   }
@@ -116,8 +296,14 @@ test('the Diving Cabin is one-and-done and grants an extensible 50-hamster capac
       MANATEE_BUILDING_IDS.DIVING_CABIN,
     ),
   )
-  assert.equal(builtGame.manatees.resources.wood, 0)
-  assert.equal(builtGame.manatees.resources.stone, 0)
+  assert.equal(
+    builtGame.manatees.resources[MANATEE_RESOURCE_IDS.MANGROVE_WOOD],
+    0,
+  )
+  assert.equal(
+    builtGame.manatees.resources[MANATEE_RESOURCE_IDS.LIMESTONE],
+    0,
+  )
   assert.equal(getManateeDivingHamsterCapacity(builtGame), 50)
   assert.equal(
     constructManateeBuilding(
@@ -189,7 +375,14 @@ test('Manatee resources, survey progress, finds, and buildings survive save norm
     },
   })
 
-  assert.deepEqual(normalized.manatees.resources, { wood: 123, stone: 45 })
+  assert.equal(
+    normalized.manatees.resources[MANATEE_RESOURCE_IDS.MANGROVE_WOOD],
+    123,
+  )
+  assert.equal(
+    normalized.manatees.resources[MANATEE_RESOURCE_IDS.LIMESTONE],
+    45,
+  )
   assert.equal(
     normalized.manatees.activeSurvey.workCompleted,
     survey.requiredWork / 2,

@@ -1,76 +1,56 @@
-export const MANATEE_SURVEY_IDS = Object.freeze({
-  SEARCH_MARSH: 'searchMarsh',
-})
+import {
+  DEFAULT_MANATEE_SURVEY_TIME_LENGTH_SCALE,
+  MANATEE_BUILDING_IDS,
+  MANATEE_BUILDINGS,
+  MANATEE_RESOURCE_IDS,
+  MANATEE_RESOURCES,
+  MANATEE_SURVEY_IDS,
+  MANATEE_SURVEY_LENGTH_IDS,
+  MANATEE_SURVEY_LENGTHS,
+  MANATEE_SURVEYS,
+  getManateeSurveyDurationMultiplier,
+  getManateeSurveyLength,
+  getManateeSurveyRequiredWork,
+  getManateeSurveyRewardMultipliers,
+  getManateeSurveyTimeLengthScale,
+} from './manateeConfig.js'
 
-export const MANATEE_RESOURCE_IDS = Object.freeze({
-  WOOD: 'wood',
-  STONE: 'stone',
-})
+export {
+  DEFAULT_MANATEE_SURVEY_TIME_LENGTH_SCALE,
+  MANATEE_BUILDING_IDS,
+  MANATEE_BUILDINGS,
+  MANATEE_RESOURCE_IDS,
+  MANATEE_RESOURCES,
+  MANATEE_SURVEY_IDS,
+  MANATEE_SURVEY_LENGTH_IDS,
+  MANATEE_SURVEY_LENGTHS,
+  MANATEE_SURVEYS,
+  getManateeSurveyDurationMultiplier,
+  getManateeSurveyLength,
+  getManateeSurveyRequiredWork,
+  getManateeSurveyRewardMultipliers,
+  getManateeSurveyTimeLengthScale,
+}
 
-export const MANATEE_BUILDING_IDS = Object.freeze({
-  DIVING_CABIN: 'divingCabin',
-})
-
-const MARSH_REFERENCE_HAMSTERS = 1875
-const MARSH_REFERENCE_COORDINATION = 1e24
-const MARSH_REFERENCE_DURATION_SECONDS = 60
-const MARSH_REFERENCE_COORDINATION_LOG = Math.log10(
-  MARSH_REFERENCE_COORDINATION,
+const FIND_RESOURCE_BY_KIND = new Map(
+  Object.values(MANATEE_SURVEYS).flatMap((survey) =>
+    survey.rewards.map((reward) => [reward.kind, reward.resourceId]),
+  ),
 )
-const MARSH_REQUIRED_WORK =
-  MARSH_REFERENCE_DURATION_SECONDS *
-  MARSH_REFERENCE_HAMSTERS *
-  MARSH_REFERENCE_COORDINATION_LOG ** 10
-
-export const MANATEE_SURVEYS = Object.freeze({
-  [MANATEE_SURVEY_IDS.SEARCH_MARSH]: Object.freeze({
-    id: MANATEE_SURVEY_IDS.SEARCH_MARSH,
-    name: 'Search the Marsh',
-    description:
-      'Survey the marshland close to the water for construction materials.',
-    requiredWork: MARSH_REQUIRED_WORK,
-    referenceHamsters: MARSH_REFERENCE_HAMSTERS,
-    referenceCoordination: MARSH_REFERENCE_COORDINATION,
-    referenceDurationSeconds: MARSH_REFERENCE_DURATION_SECONDS,
-    rewards: Object.freeze({
-      branches: Object.freeze({
-        minimumCount: 5,
-        maximumCount: 7,
-        minimumAmount: 20,
-        maximumAmount: 30,
-      }),
-      pebbles: Object.freeze({
-        minimumCount: 3,
-        maximumCount: 4,
-        minimumAmount: 10,
-        maximumAmount: 12,
-      }),
-    }),
-  }),
-})
-
-export const MANATEE_BUILDINGS = Object.freeze({
-  [MANATEE_BUILDING_IDS.DIVING_CABIN]: Object.freeze({
-    id: MANATEE_BUILDING_IDS.DIVING_CABIN,
-    name: 'Diving Cabin',
-    description:
-      'Stores 50 sets of hamster-sized diving gear graciously provided by Capybaras.',
-    cost: Object.freeze({
-      [MANATEE_RESOURCE_IDS.WOOD]: 100,
-      [MANATEE_RESOURCE_IDS.STONE]: 25,
-    }),
-    divingHamsterCapacity: 50,
-  }),
+const LEGACY_RESOURCE_IDS = Object.freeze({
+  [MANATEE_RESOURCE_IDS.MANGROVE_WOOD]: 'wood',
+  [MANATEE_RESOURCE_IDS.LIMESTONE]: 'stone',
 })
 
 export function createInitialManateeState() {
   return {
-    resources: {
-      [MANATEE_RESOURCE_IDS.WOOD]: 0,
-      [MANATEE_RESOURCE_IDS.STONE]: 0,
-    },
+    resources: Object.fromEntries(
+      Object.keys(MANATEE_RESOURCES).map((resourceId) => [resourceId, 0]),
+    ),
     activeSurvey: null,
     pendingFinds: [],
+    pendingSurveyId: null,
+    pendingSurveyLengthId: null,
     completedBuildings: [],
     nextFindId: 1,
   }
@@ -86,20 +66,22 @@ function toNonNegativeInteger(value, fallback = 0) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback
 }
 
+function getNormalizedResourceId(resourceId) {
+  if (Object.hasOwn(MANATEE_RESOURCES, resourceId)) return resourceId
+  if (resourceId === 'wood') return MANATEE_RESOURCE_IDS.MANGROVE_WOOD
+  if (resourceId === 'stone') return MANATEE_RESOURCE_IDS.LIMESTONE
+  return null
+}
+
 function normalizeFind(rawFind, index) {
   if (!rawFind || typeof rawFind !== 'object') return null
 
-  const kind = rawFind.kind === 'branch' || rawFind.kind === 'pebble'
-    ? rawFind.kind
-    : null
-  if (!kind) return null
-
+  const kind = typeof rawFind.kind === 'string' ? rawFind.kind : ''
   const resourceId =
-    kind === 'branch'
-      ? MANATEE_RESOURCE_IDS.WOOD
-      : MANATEE_RESOURCE_IDS.STONE
+    FIND_RESOURCE_BY_KIND.get(kind) ??
+    getNormalizedResourceId(rawFind.resourceId)
   const amount = toNonNegativeInteger(rawFind.amount, 0)
-  if (amount <= 0) return null
+  if (!kind || !resourceId || amount <= 0) return null
 
   return {
     id:
@@ -113,9 +95,12 @@ function normalizeFind(rawFind, index) {
     y: Math.min(88, Math.max(12, toNonNegativeNumber(rawFind.y, 50))),
     rotation: Math.min(
       40,
-      Math.max(-40, Number.isFinite(Number(rawFind.rotation))
-        ? Number(rawFind.rotation)
-        : 0),
+      Math.max(
+        -40,
+        Number.isFinite(Number(rawFind.rotation))
+          ? Number(rawFind.rotation)
+          : 0,
+      ),
     ),
   }
 }
@@ -124,46 +109,70 @@ export function normalizeManateeState(rawState) {
   const initialState = createInitialManateeState()
   if (!rawState || typeof rawState !== 'object') return initialState
 
+  const pendingFinds = Array.isArray(rawState.pendingFinds)
+    ? rawState.pendingFinds.map(normalizeFind).filter(Boolean)
+    : []
   const rawSurvey = rawState.activeSurvey
+  const activeSurveyDefinition = MANATEE_SURVEYS[rawSurvey?.id]
+  const activeSurveyLength = getManateeSurveyLength(
+    activeSurveyDefinition?.id,
+    rawSurvey?.lengthId,
+  )
   const activeSurvey =
-    rawSurvey?.id === MANATEE_SURVEY_IDS.SEARCH_MARSH &&
+    activeSurveyDefinition &&
     toNonNegativeInteger(rawSurvey.allocatedHamsters, 0) > 0
       ? {
-          id: MANATEE_SURVEY_IDS.SEARCH_MARSH,
+          id: activeSurveyDefinition.id,
+          lengthId: activeSurveyLength.id,
           allocatedHamsters: toNonNegativeInteger(
             rawSurvey.allocatedHamsters,
             0,
           ),
           workCompleted: Math.min(
-            MANATEE_SURVEYS[MANATEE_SURVEY_IDS.SEARCH_MARSH].requiredWork,
+            getManateeSurveyRequiredWork(
+              activeSurveyDefinition.id,
+              activeSurveyLength.id,
+            ),
             toNonNegativeNumber(rawSurvey.workCompleted, 0),
           ),
         }
       : null
-  const pendingFinds = Array.isArray(rawState.pendingFinds)
-    ? rawState.pendingFinds
-        .map(normalizeFind)
-        .filter(Boolean)
-    : []
   const completedBuildings = Array.isArray(rawState.completedBuildings)
     ? [...new Set(rawState.completedBuildings)].filter((buildingId) =>
         Object.hasOwn(MANATEE_BUILDINGS, buildingId),
       )
     : []
+  const pendingSurvey = MANATEE_SURVEYS[rawState.pendingSurveyId]
+  const pendingSurveyId =
+    pendingFinds.length > 0
+      ? pendingSurvey?.id ?? MANATEE_SURVEY_IDS.SEARCH_MARSH
+      : null
+  const pendingSurveyLengthId = pendingSurveyId
+    ? getManateeSurveyLength(
+        pendingSurveyId,
+        rawState.pendingSurveyLengthId,
+      ).id
+    : null
 
   return {
-    resources: {
-      [MANATEE_RESOURCE_IDS.WOOD]: toNonNegativeInteger(
-        rawState.resources?.[MANATEE_RESOURCE_IDS.WOOD],
-        0,
-      ),
-      [MANATEE_RESOURCE_IDS.STONE]: toNonNegativeInteger(
-        rawState.resources?.[MANATEE_RESOURCE_IDS.STONE],
-        0,
-      ),
-    },
+    resources: Object.fromEntries(
+      Object.keys(MANATEE_RESOURCES).map((resourceId) => {
+        const legacyResourceId = LEGACY_RESOURCE_IDS[resourceId]
+        const savedAmount = rawState.resources?.[resourceId]
+        const legacyAmount = legacyResourceId
+          ? rawState.resources?.[legacyResourceId]
+          : undefined
+
+        return [
+          resourceId,
+          toNonNegativeInteger(savedAmount ?? legacyAmount, 0),
+        ]
+      }),
+    ),
     activeSurvey,
     pendingFinds,
+    pendingSurveyId,
+    pendingSurveyLengthId,
     completedBuildings,
     nextFindId: Math.max(
       pendingFinds.length + 1,
@@ -189,26 +198,40 @@ export function getMarshSurveyWorkPerSecond(
   return safeHamsters * coordinationLog ** 10
 }
 
-export function getMarshSurveyDurationSeconds(
+export function getManateeSurveyDurationSeconds(
   allocatedHamsters,
   hamsterCoordination,
+  surveyId,
+  lengthId = MANATEE_SURVEY_LENGTH_IDS.STANDARD,
   surveyDurationMultiplier = 1,
 ) {
   const workPerSecond = getMarshSurveyWorkPerSecond(
     allocatedHamsters,
     hamsterCoordination,
   )
-
   const safeDurationMultiplier = Math.max(
     Number.EPSILON,
     Number(surveyDurationMultiplier) || 1,
   )
 
   return workPerSecond > 0
-    ? (MANATEE_SURVEYS[MANATEE_SURVEY_IDS.SEARCH_MARSH].requiredWork /
-        workPerSecond) *
+    ? (getManateeSurveyRequiredWork(surveyId, lengthId) / workPerSecond) *
         safeDurationMultiplier
     : Infinity
+}
+
+export function getMarshSurveyDurationSeconds(
+  allocatedHamsters,
+  hamsterCoordination,
+  surveyDurationMultiplier = 1,
+) {
+  return getManateeSurveyDurationSeconds(
+    allocatedHamsters,
+    hamsterCoordination,
+    MANATEE_SURVEY_IDS.SEARCH_MARSH,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    surveyDurationMultiplier,
+  )
 }
 
 export function getManateeSurveyingHamsterCount(game) {
@@ -231,27 +254,38 @@ export function getManateeDivingHamsterCapacity(game) {
   )
 }
 
-export function startManateeSurvey(game) {
+export function startManateeSurvey(
+  game,
+  surveyId = MANATEE_SURVEY_IDS.SEARCH_MARSH,
+  lengthId = MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+  requestedHamsters,
+) {
   const state = normalizeManateeState(game?.manatees)
-  const allocatedHamsters = Math.max(
-    0,
-    Math.floor(Number(game?.hamsters) || 0),
-  )
-
-  if (
-    allocatedHamsters === 0 ||
-    state.activeSurvey ||
-    state.pendingFinds.length > 0
-  ) {
+  const survey = MANATEE_SURVEYS[surveyId]
+  if (!survey || state.activeSurvey || state.pendingFinds.length > 0) {
     return null
   }
+
+  const ownedHamsters = Math.max(0, Math.floor(Number(game?.hamsters) || 0))
+  const divingCapacity = getManateeDivingHamsterCapacity(game)
+  const requestedUnderwaterHamsters =
+    requestedHamsters === undefined
+      ? divingCapacity
+      : Math.max(0, Math.floor(Number(requestedHamsters) || 0))
+  const allocatedHamsters = survey.isUnderwater
+    ? Math.min(ownedHamsters, divingCapacity, requestedUnderwaterHamsters)
+    : ownedHamsters
+  if (allocatedHamsters === 0) return null
+
+  const normalizedLength = getManateeSurveyLength(survey.id, lengthId)
 
   return {
     ...game,
     manatees: {
       ...state,
       activeSurvey: {
-        id: MANATEE_SURVEY_IDS.SEARCH_MARSH,
+        id: survey.id,
+        lengthId: normalizedLength.id,
         allocatedHamsters,
         workCompleted: 0,
       },
@@ -270,68 +304,74 @@ function getRandomInteger(random, minimum, maximum) {
 }
 
 function createFind(
-  kind,
+  reward,
   amount,
   idNumber,
   placementIndex,
+  totalFindCount,
   random,
 ) {
-  const column = placementIndex % 4
-  const row = Math.floor(placementIndex / 4)
-  const xJitter = getRandomUnit(random) * 8 - 4
-  const yJitter = getRandomUnit(random) * 8 - 4
+  const columnCount = Math.min(
+    6,
+    Math.max(1, Math.ceil(Math.sqrt(totalFindCount))),
+  )
+  const rowCount = Math.max(1, Math.ceil(totalFindCount / columnCount))
+  const column = placementIndex % columnCount
+  const row = Math.floor(placementIndex / columnCount)
+  const xJitter = getRandomUnit(random) * 4 - 2
+  const yJitter = getRandomUnit(random) * 4 - 2
 
   return {
     id: `manatee-find-${idNumber}`,
-    kind,
-    resourceId:
-      kind === 'branch'
-        ? MANATEE_RESOURCE_IDS.WOOD
-        : MANATEE_RESOURCE_IDS.STONE,
+    kind: reward.kind,
+    resourceId: reward.resourceId,
     amount,
-    x: 13 + column * 24.5 + xJitter,
-    y: 20 + row * 31 + yJitter,
-    rotation:
-      kind === 'branch'
-        ? getRandomUnit(random) * 50 - 25
-        : getRandomUnit(random) * 20 - 10,
+    x: 8 + ((column + 0.5) * 84) / columnCount + xJitter,
+    y: 12 + ((row + 0.5) * 76) / rowCount + yJitter,
+    rotation: getRandomUnit(random) * 40 - 20,
   }
 }
 
-function createMarshFinds(state, random) {
-  const survey = MANATEE_SURVEYS[MANATEE_SURVEY_IDS.SEARCH_MARSH]
-  const branchCount = getRandomInteger(
-    random,
-    survey.rewards.branches.minimumCount,
-    survey.rewards.branches.maximumCount,
+function createSurveyFinds(state, survey, lengthId, random) {
+  const rewardMultipliers = getManateeSurveyRewardMultipliers(
+    survey.id,
+    lengthId,
   )
-  const pebbleCount = getRandomInteger(
-    random,
-    survey.rewards.pebbles.minimumCount,
-    survey.rewards.pebbles.maximumCount,
+  const rewardsWithCounts = survey.rewards.map((reward) => ({
+    reward,
+    count: getRandomInteger(
+      random,
+      reward.minimumCount * rewardMultipliers.objectCount,
+      reward.maximumCount * rewardMultipliers.objectCount,
+    ),
+  }))
+  const totalFindCount = rewardsWithCounts.reduce(
+    (total, entry) => total + entry.count,
+    0,
   )
   const finds = []
   let nextFindId = state.nextFindId
 
-  for (let index = 0; index < branchCount; index += 1) {
-    const amount = getRandomInteger(
-      random,
-      survey.rewards.branches.minimumAmount,
-      survey.rewards.branches.maximumAmount,
-    )
-    finds.push(createFind('branch', amount, nextFindId, finds.length, random))
-    nextFindId += 1
-  }
-
-  for (let index = 0; index < pebbleCount; index += 1) {
-    const amount = getRandomInteger(
-      random,
-      survey.rewards.pebbles.minimumAmount,
-      survey.rewards.pebbles.maximumAmount,
-    )
-    finds.push(createFind('pebble', amount, nextFindId, finds.length, random))
-    nextFindId += 1
-  }
+  rewardsWithCounts.forEach(({ reward, count }) => {
+    for (let index = 0; index < count; index += 1) {
+      const amount = getRandomInteger(
+        random,
+        reward.minimumAmount * rewardMultipliers.objectValue,
+        reward.maximumAmount * rewardMultipliers.objectValue,
+      )
+      finds.push(
+        createFind(
+          reward,
+          amount,
+          nextFindId,
+          finds.length,
+          totalFindCount,
+          random,
+        ),
+      )
+      nextFindId += 1
+    }
+  })
 
   return { finds, nextFindId }
 }
@@ -359,8 +399,12 @@ export function advanceManateeSurveyState(
     state.activeSurvey.workCompleted +
     (baseWorkPerSecond / safeDurationMultiplier) * safeElapsedSeconds
   const survey = MANATEE_SURVEYS[state.activeSurvey.id]
+  const requiredWork = getManateeSurveyRequiredWork(
+    survey.id,
+    state.activeSurvey.lengthId,
+  )
 
-  if (workCompleted < survey.requiredWork) {
+  if (workCompleted < requiredWork) {
     return {
       ...state,
       activeSurvey: {
@@ -370,12 +414,19 @@ export function advanceManateeSurveyState(
     }
   }
 
-  const results = createMarshFinds(state, random)
+  const results = createSurveyFinds(
+    state,
+    survey,
+    state.activeSurvey.lengthId,
+    random,
+  )
 
   return {
     ...state,
     activeSurvey: null,
     pendingFinds: results.finds,
+    pendingSurveyId: survey.id,
+    pendingSurveyLengthId: state.activeSurvey.lengthId,
     nextFindId: results.nextFindId,
   }
 }
@@ -385,6 +436,10 @@ export function collectManateeFind(game, findId) {
   const find = state.pendingFinds.find((candidate) => candidate.id === findId)
   if (!find) return null
 
+  const pendingFinds = state.pendingFinds.filter(
+    (candidate) => candidate.id !== findId,
+  )
+
   return {
     ...game,
     manatees: {
@@ -393,9 +448,10 @@ export function collectManateeFind(game, findId) {
         ...state.resources,
         [find.resourceId]: state.resources[find.resourceId] + find.amount,
       },
-      pendingFinds: state.pendingFinds.filter(
-        (candidate) => candidate.id !== findId,
-      ),
+      pendingFinds,
+      pendingSurveyId: pendingFinds.length > 0 ? state.pendingSurveyId : null,
+      pendingSurveyLengthId:
+        pendingFinds.length > 0 ? state.pendingSurveyLengthId : null,
     },
   }
 }
