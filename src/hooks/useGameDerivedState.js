@@ -14,6 +14,7 @@ import {
 
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
+  getManateeSurveyingHamsterCount,
   getNextHamsterCost,
   getNextMajorProgressionGoal,
   getNextRowDuplicatorCost,
@@ -167,17 +168,27 @@ export function useGameDerivedState(game) {
       game.seedAugmentations,
     ],
   )
+  const surveyingHamsters = useMemo(
+    () =>
+      getManateeSurveyingHamsterCount({
+        hamsters: game.hamsters,
+        manatees: game.manatees,
+      }),
+    [game.hamsters, game.manatees],
+  )
   const columnsBuiltPerSecond = useMemo(
     () =>
       getColumnsProducedPerSecond(
-        game.hamsters,
+        Math.max(0, game.hamsters - surveyingHamsters),
         game.postUnionHamstersHired,
         cropHamsterEfficiencyMultiplier,
         hamsterExternalMultiplier,
+        game.hamsters,
       ),
     [
       game.hamsters,
       game.postUnionHamstersHired,
+      surveyingHamsters,
       cropHamsterEfficiencyMultiplier,
       hamsterExternalMultiplier,
     ],

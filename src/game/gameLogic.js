@@ -8,6 +8,7 @@ export * from './fortuneLogic.js'
 export * from './gameSimulation.js'
 export * from './capybaraLogic.js'
 export * from './augmentationLogic.js'
+export * from './manateeLogic.js'
 export {
   getAdjacentCropConnections,
   getAdjacentCropEffectModifier,

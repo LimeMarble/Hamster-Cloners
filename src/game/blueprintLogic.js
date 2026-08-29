@@ -15,6 +15,7 @@ import {
 } from './gameConfig.js'
 import { createInitialFortuneState } from './fortuneLogic.js'
 import { createInitialSeedAugmentationState } from './augmentationLogic.js'
+import { createInitialManateeState } from './manateeLogic.js'
 import { normalizeMultiTileCropCells } from './cropFootprintLogic.js'
 
 function normalizeUniqueCloverCells(cells) {
@@ -110,6 +111,7 @@ export function createInitialGame() {
       completedSecondaryObjectives: [],
     },
     seedAugmentations: createInitialSeedAugmentationState(),
+    manatees: createInitialManateeState(),
     trade: {
       established: false,
       rabbitRelations: 0,

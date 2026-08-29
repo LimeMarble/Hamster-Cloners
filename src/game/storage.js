@@ -2,6 +2,7 @@ import { normalizeTradeState, RABBIT_UNLOCK_IDS } from './tradeLogic.js'
 import { normalizeFortuneState } from './fortuneLogic.js'
 import { normalizeCapybaraState } from './capybaraLogic.js'
 import { normalizeSeedAugmentationState } from './augmentationLogic.js'
+import { normalizeManateeState } from './manateeLogic.js'
 import {
   BLUEPRINT_EXPANSIONS,
   BLUEPRINT_EXPANSION_TRACKS,
@@ -305,6 +306,7 @@ export function normalizeGame(rawGame) {
     seedAugmentations: normalizeSeedAugmentationState(
       rawGame.seedAugmentations,
     ),
+    manatees: normalizeManateeState(rawGame.manatees),
     trade,
     numberNotation:
       rawGame.numberNotation === 'scientific' ? 'scientific' : 'suffix',

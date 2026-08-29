@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
   claimRabbitContract,
+  collectManateeFind,
+  constructManateeBuilding,
   completeCapybaraDemonstration,
   createInitialGame,
   establishTradeRelations,
@@ -12,6 +14,7 @@ import {
   getNextRowDuplicatorCost,
   resetForBlueprintExpansion,
   resetForRowDuplicators,
+  startManateeSurvey,
   purchaseRabbitUnlock,
   purchaseSeedAugmentation,
   toggleSeedAugmentation,
@@ -275,6 +278,24 @@ export function useGameActions({
     )
   }
 
+  function startMarshSurvey() {
+    updateGame((currentGame) =>
+      startManateeSurvey(currentGame) ?? currentGame,
+    )
+  }
+
+  function collectMarshFind(findId) {
+    updateGame((currentGame) =>
+      collectManateeFind(currentGame, findId) ?? currentGame,
+    )
+  }
+
+  function buildManateeBuilding(buildingId) {
+    updateGame((currentGame) =>
+      constructManateeBuilding(currentGame, buildingId) ?? currentGame,
+    )
+  }
+
   function buySeedAugmentation(augmentationId) {
     updateGame((currentGame) =>
       purchaseSeedAugmentation(currentGame, augmentationId) ?? currentGame,
@@ -332,6 +353,9 @@ export function useGameActions({
       onClaimRabbitContract: claimRabbitDelivery,
       onPurchaseRabbitUnlock: buyRabbitUnlock,
       onCompleteCapybaraDemonstration: completeCapybaraDemo,
+      onStartManateeSurvey: startMarshSurvey,
+      onCollectManateeFind: collectMarshFind,
+      onConstructManateeBuilding: buildManateeBuilding,
     },
     augmentationActions: {
       onPurchaseSeedAugmentation: buySeedAugmentation,

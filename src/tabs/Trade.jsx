@@ -14,6 +14,7 @@ import {
 import { getCropName } from '../game/crops.js'
 import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber } from './ui.jsx'
+import { ManateeRelations } from './ManateeRelations.jsx'
 
 function EstablishTradeCard({ game, onEstablishTrade }) {
   const canAfford = game.crops >= TRADE_ESTABLISHMENT_COST
@@ -358,6 +359,9 @@ export function Trade({
   onClaimRabbitContract,
   onPurchaseRabbitUnlock,
   onCompleteCapybaraDemonstration,
+  onStartManateeSurvey,
+  onCollectManateeFind,
+  onConstructManateeBuilding,
 }) {
   const [activeRelation, setActiveRelation] = useState('rabbits')
   const hasCapybaraContact = hasRabbitUnlock(
@@ -518,19 +522,14 @@ export function Trade({
               }
             />
           ) : activeRelation === 'manatees' && hasManateeContact ? (
-            <section className="trading-group" aria-labelledby="manatees-title">
-              <div className="trading-group-title">
-                <span aria-hidden="true">🌊</span>
-                <div>
-                  <p className="eyebrow">New contact</p>
-                  <h2 id="manatees-title">Manatees</h2>
-                </div>
-              </div>
-              <p className="trade-copy">
-                Contact with the Manatees has been established. Their trade
-                options are not available yet.
-              </p>
-            </section>
+            <ManateeRelations
+              game={game}
+              onStartManateeSurvey={onStartManateeSurvey}
+              onCollectManateeFind={onCollectManateeFind}
+              onConstructManateeBuilding={
+                onConstructManateeBuilding
+              }
+            />
           ) : null}
         </>
       ) : (

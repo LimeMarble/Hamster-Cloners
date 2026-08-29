@@ -674,13 +674,21 @@ export function getColumnsProducedPerSecond(
   postUnionHamstersHired = 0,
   cropHamsterEfficiencyMultiplier = 1,
   hamsterExternalMultiplier = 1,
+  coordinationHamsters = hamsters,
 ) {
   const safeHamsters = Math.max(0, Math.floor(Number(hamsters) || 0))
+  const safeCoordinationHamsters = Math.max(
+    0,
+    Math.floor(Number(coordinationHamsters) || 0),
+  )
 
   return (
     safeHamsters *
     COLUMNS_PER_HAMSTER_PER_SECOND *
-    getHamsterCoordinationMultiplier(safeHamsters, postUnionHamstersHired) *
+    getHamsterCoordinationMultiplier(
+      safeCoordinationHamsters,
+      postUnionHamstersHired,
+    ) *
     getHamsterExternalMultiplier(hamsterExternalMultiplier) *
     Math.max(0, Number(cropHamsterEfficiencyMultiplier) || 0)
   )
@@ -800,6 +808,7 @@ export function getColumnsProducedForTick(
   cropHamsterEfficiencyMultiplier = 1,
   tickIntervalMs = SIMULATION_TICK_INTERVAL_MS,
   hamsterExternalMultiplier = 1,
+  coordinationHamsters = hamsters,
 ) {
   return (
     getColumnsProducedPerSecond(
@@ -807,6 +816,7 @@ export function getColumnsProducedForTick(
       postUnionHamstersHired,
       cropHamsterEfficiencyMultiplier,
       hamsterExternalMultiplier,
+      coordinationHamsters,
     ) *
     (tickIntervalMs / 1000)
   )

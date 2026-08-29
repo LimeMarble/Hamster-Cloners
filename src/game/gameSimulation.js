@@ -3,6 +3,7 @@ import {
   getColumnsProducedForTick,
   getCropHamsterEfficiencyMultiplier,
   getCropProductionSnapshotPerSecond,
+  getHamsterCoordinationMultiplier,
   getRowsProducedPerSecond,
   getRowDuplicatorEffectivenessMultiplier,
   getRowDuplicatorExternalMultiplier,
@@ -25,6 +26,10 @@ import {
   RABBIT_UNLOCK_IDS,
 } from './tradeLogic.js'
 import { getCapybaraHamsterEfficiencyMultiplier } from './capybaraLogic.js'
+import {
+  advanceManateeSurveyState,
+  getManateeSurveyingHamsterCount,
+} from './manateeLogic.js'
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
   SIMULATION_TICK_INTERVAL_MS / 1000
@@ -127,8 +132,17 @@ export function advanceGameSimulationStep(
       )
     : 0
 
-  const columnsProducedForTick = getColumnsProducedForTick(
+  const hamsterCoordinationMultiplier = getHamsterCoordinationMultiplier(
     currentGame.hamsters,
+    currentGame.postUnionHamstersHired,
+  )
+  const surveyingHamsters = getManateeSurveyingHamsterCount(currentGame)
+  const productiveHamsters = Math.max(
+    0,
+    Math.floor(Number(currentGame.hamsters) || 0) - surveyingHamsters,
+  )
+  const columnsProducedForTick = getColumnsProducedForTick(
+    productiveHamsters,
     currentGame.postUnionHamstersHired,
     getCropHamsterEfficiencyMultiplier(
       currentGame.blueprint,
@@ -146,6 +160,7 @@ export function advanceGameSimulationStep(
         ? 3
         : 1) *
       getCapybaraHamsterEfficiencyMultiplier(currentGame),
+    currentGame.hamsters,
   )
   const rowsProducedForTick = rowsBuiltPerSecond * safeElapsedSeconds
   const hasUnlockedRootTunnel =
@@ -207,6 +222,12 @@ export function advanceGameSimulationStep(
     hasUnlockedCropPerfection:
       currentGame.hasUnlockedCropPerfection ||
       nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
+    manatees: advanceManateeSurveyState(
+      currentGame.manatees,
+      safeElapsedSeconds,
+      hamsterCoordinationMultiplier,
+      random,
+    ),
     trade: advanceRabbitContract(
       currentGame,
       productionSnapshotPerSecond.byCrop,
