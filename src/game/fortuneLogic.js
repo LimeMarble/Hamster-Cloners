@@ -277,11 +277,8 @@ export function advanceFortuneState(
   }
 }
 
-export function collectCloverBundle(game, random = Math.random) {
+export function addRandomFortuneEffect(game, random = Math.random) {
   const fortune = normalizeFortuneState(game.fortune)
-
-  if (!fortune.bundle) return game
-
   const effect = chooseFortuneEffect(random())
   const matchingEffect = fortune.activeEffects.some(
     (activeEffect) => activeEffect.id === effect.id,
@@ -312,6 +309,12 @@ export function collectCloverBundle(game, random = Math.random) {
       notice: { effectId: effect.id, remainingSeconds: 6 },
     },
   }
+}
+
+export function collectCloverBundle(game, random = Math.random) {
+  const fortune = normalizeFortuneState(game.fortune)
+
+  return fortune.bundle ? addRandomFortuneEffect(game, random) : game
 }
 export function spawnCloverBundle(game, random = Math.random) {
   const fortune = normalizeFortuneState(game.fortune)

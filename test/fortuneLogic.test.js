@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   FORTUNE_EFFECT_IDS,
+  addRandomFortuneEffect,
   FORTUNE_EFFECTS,
   advanceFortuneState,
   collectCloverBundle,
@@ -163,6 +164,28 @@ test('collecting the same timed Breeze adds its duration to the remaining timer'
     { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: 49 },
   ])
 })
+test('the Clover-effect cheat simulates collecting a bundle and stacks timers', () => {
+  const game = createCloverGame()
+  const firstEffect = addRandomFortuneEffect(game, () => 0)
+  const stackedEffect = addRandomFortuneEffect(firstEffect, () => 0)
+  const duration = FORTUNE_EFFECTS.find(
+    (effect) => effect.id === FORTUNE_EFFECT_IDS.DEMONSTRATION,
+  ).durationSeconds
+
+  assert.equal(firstEffect.fortune.bundle, null)
+  assert.deepEqual(firstEffect.fortune.activeEffects, [
+    { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: duration },
+  ])
+  assert.deepEqual(firstEffect.fortune.notice, {
+    effectId: FORTUNE_EFFECT_IDS.DEMONSTRATION,
+    remainingSeconds: 6,
+  })
+  assert.equal(
+    stackedEffect.fortune.activeEffects[0].remainingSeconds,
+    duration * 2,
+  )
+})
+
 test('testing helpers spawn a bundle and wipe only active Clover effects', () => {
   const game = {
     ...createCloverGame(),

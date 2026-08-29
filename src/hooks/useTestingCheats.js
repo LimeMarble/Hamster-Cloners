@@ -2,7 +2,7 @@ import { useState } from 'react'
 import {
   grantNextBlueprintExpansion,
   revokeLastBlueprintExpansion,
-  spawnCloverBundle,
+  addRandomFortuneEffect,
   wipeActiveFortuneEffects,
 } from '../game/gameLogic.js'
 
@@ -80,8 +80,8 @@ export function useTestingCheats({
     )
   }
 
-  function spawnTestingCloverBundle() {
-    updateGame((currentGame) => spawnCloverBundle(currentGame))
+  function addTestingCloverEffect() {
+    updateGame((currentGame) => addRandomFortuneEffect(currentGame))
   }
 
   function wipeTestingCloverEffects() {
@@ -123,7 +123,7 @@ export function useTestingCheats({
           onGrantRowExpansion: () => grantExpansion('row'),
           onRevokeColumnExpansion: () => revokeExpansion('column'),
           onRevokeRowExpansion: () => revokeExpansion('row'),
-          onSpawnCloverBundle: spawnTestingCloverBundle,
+          onAddCloverEffect: addTestingCloverEffect,
           onWipeCloverEffects: wipeTestingCloverEffects,
         }
       : null,

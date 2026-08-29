@@ -16,7 +16,7 @@ function TestingPanelContent({
   onGrantRowExpansion,
   onRevokeColumnExpansion,
   onRevokeRowExpansion,
-  onSpawnCloverBundle,
+  onAddCloverEffect,
   onWipeCloverEffects,
 }) {
   const columnsMaxed = columnExpansionCount >= maximumColumnExpansions
@@ -114,9 +114,9 @@ function TestingPanelContent({
             </button>            <button
               type="button"
               className="testing-action"
-              onClick={onSpawnCloverBundle}
+              onClick={onAddCloverEffect}
             >
-              Spawn Clover Bundle
+              Add random Clover effect
             </button>
             <button
               type="button"
