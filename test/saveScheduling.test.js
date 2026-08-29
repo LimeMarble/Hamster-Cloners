@@ -3,6 +3,7 @@ import test from 'node:test'
 import { createInitialGame } from '../src/game/blueprintLogic.js'
 import { AUTOSAVE_INTERVAL_MS } from '../src/game/gameConfig.js'
 import { saveGame } from '../src/game/storage.js'
+import { formatTimeSinceSave } from '../src/tabs/uiHelpers.js'
 
 test('autosaving is scheduled every two minutes', () => {
   assert.equal(AUTOSAVE_INTERVAL_MS, 120_000)
@@ -37,4 +38,13 @@ test('manual local saving reports success and storage failures', () => {
       globalThis.window = previousWindow
     }
   }
+})
+test('last-save elapsed time remains readable while updating every second', () => {
+  assert.equal(formatTimeSinceSave(null, 5_000), 'Not saved yet')
+  assert.equal(formatTimeSinceSave(1_000, 5_000), '4s ago')
+  assert.equal(formatTimeSinceSave(1_000, 66_000), '1m 5s ago')
+  assert.equal(
+    formatTimeSinceSave(1_000, 90_062_000),
+    '1d 1h 1m 1s ago',
+  )
 })

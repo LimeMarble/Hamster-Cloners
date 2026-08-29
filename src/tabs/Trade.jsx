@@ -298,8 +298,13 @@ function CapybaraDemonstrations({
                 <div>
                   <dt>Reward</dt>
                   <dd>
-                    <strong>{demonstration.rewardName}</strong> —{' '}
-                    {demonstration.rewardDescription}
+                    <strong>{demonstration.rewardName}</strong>
+                    {demonstration.rewardDescription ? (
+                      <>
+                        {demonstration.rewardJoiner ?? ' — '}
+                        {demonstration.rewardDescription}
+                      </>
+                    ) : null}
                   </dd>
                 </div>
                 <div>
@@ -359,7 +364,7 @@ export function Trade({
     game,
     RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
   )
-  const hasUnknownSpeciesContact = hasCompletedCapybaraDemonstration(
+  const hasManateeContact = hasCompletedCapybaraDemonstration(
     game,
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
   )
@@ -420,14 +425,14 @@ export function Trade({
                 Capybaras
               </button>
             ) : null}
-            {hasUnknownSpeciesContact ? (
+            {hasManateeContact ? (
               <button
                 type="button"
-                className={`trade-relation-tab ${activeRelation === 'unknown' ? 'trade-relation-tab-active' : ''}`}
-                onClick={() => setActiveRelation('unknown')}
-                aria-pressed={activeRelation === 'unknown'}
+                className={`trade-relation-tab ${activeRelation === 'manatees' ? 'trade-relation-tab-active' : ''}`}
+                onClick={() => setActiveRelation('manatees')}
+                aria-pressed={activeRelation === 'manatees'}
               >
-                ????
+                Manatees
               </button>
             ) : null}
           </nav>
@@ -512,18 +517,18 @@ export function Trade({
                 onCompleteCapybaraDemonstration
               }
             />
-          ) : activeRelation === 'unknown' && hasUnknownSpeciesContact ? (
-            <section className="trading-group" aria-labelledby="unknown-species-title">
+          ) : activeRelation === 'manatees' && hasManateeContact ? (
+            <section className="trading-group" aria-labelledby="manatees-title">
               <div className="trading-group-title">
-                <span aria-hidden="true">?</span>
+                <span aria-hidden="true">🌊</span>
                 <div>
                   <p className="eyebrow">New contact</p>
-                  <h2 id="unknown-species-title">????</h2>
+                  <h2 id="manatees-title">Manatees</h2>
                 </div>
               </div>
               <p className="trade-copy">
-                Contact has been established, but nothing else is known about
-                this species yet.
+                Contact with the Manatees has been established. Their trade
+                options are not available yet.
               </p>
             </section>
           ) : null}

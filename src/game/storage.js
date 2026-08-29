@@ -378,13 +378,15 @@ export function exportGame(game, savedAt = Date.now()) {
 export function importGameSnapshot(saveCode, currentTime = Date.now()) {
   const payload = parseSavePayload(saveCode)
   const now = toNonNegativeNumber(currentTime, Date.now())
+  const savedAt = Math.min(
+    toNonNegativeNumber(payload.savedAt, now),
+    now,
+  )
 
   return {
     game: normalizeGame(payload.game),
-    savedAt: Math.min(
-      toNonNegativeNumber(payload.savedAt, now),
-      now,
-    ),
+    savedAt,
+    lastSavedAt: savedAt,
   }
 }
 
@@ -403,7 +405,11 @@ export function loadGameSnapshot() {
         : null)
 
     if (!rawSave) {
-      return { game: createInitialGame(), savedAt: now }
+      return {
+        game: createInitialGame(),
+        savedAt: now,
+        lastSavedAt: null,
+      }
     }
 
     try {
@@ -411,11 +417,19 @@ export function loadGameSnapshot() {
     } catch {
       // Migrate pre-save-code JSON saves without taking away existing progress.
       const migratedGame = normalizeGame(JSON.parse(rawSave))
-      saveGame(migratedGame, now)
-      return { game: migratedGame, savedAt: now }
+      const didSave = saveGame(migratedGame, now)
+      return {
+        game: migratedGame,
+        savedAt: now,
+        lastSavedAt: didSave ? now : null,
+      }
     }
   } catch {
-    return { game: createInitialGame(), savedAt: now }
+    return {
+      game: createInitialGame(),
+      savedAt: now,
+      lastSavedAt: null,
+    }
   }
 }
 

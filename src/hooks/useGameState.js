@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ACTIVE_SIMULATION_STEP_SECONDS,
   advanceGameByElapsedTime,
@@ -30,6 +30,9 @@ export function useGameState(isEditingBlueprintRef) {
     return snapshot
   })
   const [game, setRenderedGame] = useState(initialSnapshot.game)
+  const [lastSavedAt, setLastSavedAt] = useState(
+    initialSnapshot.lastSavedAt,
+  )
   const [backgroundCatchUp, setBackgroundCatchUp] = useState(null)
   const gameRef = useRef(initialSnapshot.game)
   const workerRef = useRef(null)
@@ -109,9 +112,15 @@ export function useGameState(isEditingBlueprintRef) {
     })
   }
 
-  function saveCurrentGame() {
-    return saveGame(gameRef.current, simulatedAtRef.current)
-  }
+  const saveCurrentGame = useCallback(() => {
+    const didSave = saveGame(gameRef.current, simulatedAtRef.current)
+
+    if (didSave) {
+      setLastSavedAt(Date.now())
+    }
+
+    return didSave
+  }, [])
 
   function compressBackgroundCatchUp() {
     workerRef.current?.postMessage({ type: 'compress-catch-up' })
@@ -126,7 +135,7 @@ export function useGameState(isEditingBlueprintRef) {
     let isActive = true
 
     const persistGame = () => {
-      saveGame(gameRef.current, simulatedAtRef.current)
+      saveCurrentGame()
 
       if (isActive) {
         saveTimeoutId = window.setTimeout(
@@ -135,8 +144,7 @@ export function useGameState(isEditingBlueprintRef) {
         )
       }
     }
-    const persistImmediately = () =>
-      saveGame(gameRef.current, simulatedAtRef.current)
+    const persistImmediately = () => saveCurrentGame()
 
     saveTimeoutId = window.setTimeout(
       persistGame,
@@ -148,9 +156,9 @@ export function useGameState(isEditingBlueprintRef) {
       isActive = false
       window.clearTimeout(saveTimeoutId)
       window.removeEventListener('pagehide', persistImmediately)
-      persistImmediately()
+      saveGame(gameRef.current, simulatedAtRef.current)
     }
-  }, [])
+  }, [saveCurrentGame])
 
   useEffect(() => {
     let worker
@@ -303,7 +311,7 @@ export function useGameState(isEditingBlueprintRef) {
             now,
             visible: false,
           })
-          saveGame(gameRef.current, simulatedAtRef.current)
+          saveCurrentGame()
           return
         }
 
@@ -324,7 +332,7 @@ export function useGameState(isEditingBlueprintRef) {
         }
 
         setRenderedGame(gameRef.current)
-        saveGame(gameRef.current, now)
+        saveCurrentGame()
         return
       }
 
@@ -353,7 +361,7 @@ export function useGameState(isEditingBlueprintRef) {
         workerRef.current = null
       }
     }
-  }, [isEditingBlueprintRef])
+  }, [isEditingBlueprintRef, saveCurrentGame])
 
   return {
     game,
@@ -361,6 +369,7 @@ export function useGameState(isEditingBlueprintRef) {
     setGame: replaceGame,
     updateGame,
     saveCurrentGame,
+    lastSavedAt,
     setSimulationPaused,
     backgroundCatchUp,
     compressBackgroundCatchUp,

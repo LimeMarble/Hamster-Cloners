@@ -17,6 +17,7 @@ export function useGameController() {
     setGame,
     updateGame,
     saveCurrentGame,
+    lastSavedAt,
     setSimulationPaused,
     backgroundCatchUp,
     compressBackgroundCatchUp,
@@ -159,6 +160,7 @@ export function useGameController() {
       },
       options: {
         ...actions.options,
+        lastSavedAt,
         numberNotation: game.numberNotation,
         suffixScientificExponent: game.suffixScientificExponent,
         codeEntry: testing.codeEntry,

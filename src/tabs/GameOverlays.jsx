@@ -1,6 +1,5 @@
 import { BackgroundCatchUpOverlay } from './BackgroundCatchUpOverlay.jsx'
 import { BlueprintEdit } from './BlueprintEdit.jsx'
-import { CloverFortune } from './CloverFortune.jsx'
 import { TestingPanel } from './TestingPanel.jsx'
 
 function MonocropWarning({ onClose }) {
@@ -98,13 +97,11 @@ export function GameOverlays({
   blueprintMastery,
   unionConfirmation,
   testingPanel,
-  fortune,
 }) {
   return (
     <>
       {blueprintEditor ? <BlueprintEdit {...blueprintEditor} /> : null}
       {testingPanel ? <TestingPanel {...testingPanel} /> : null}
-      <CloverFortune {...fortune} />
       {monocropWarning.isOpen ? (
         <MonocropWarning onClose={monocropWarning.onClose} />
       ) : null}

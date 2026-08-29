@@ -235,7 +235,16 @@ test('Demonstration 1 visibly bans Clover and active Breeze effects', () => {
   assert.equal(target, 1e23)
   assert.equal(
     CAPYBARA_DEMONSTRATIONS[1].rewardName,
-    'Establish contact with ????',
+    'Establish contact with Manatees',
+  )
+  assert.equal(
+    CAPYBARA_DEMONSTRATIONS[1].rewardDescription,
+    "a species that didn't exactly get the best hand dealt to them by Fortune itself.",
+  )
+  assert.equal(CAPYBARA_DEMONSTRATIONS[1].rewardJoiner, ', ')
+  assert.equal(
+    CAPYBARA_DEMONSTRATIONS[1].hint,
+    'Augmentations are your best friend here.',
   )
   assert.deepEqual(CAPYBARA_DEMONSTRATIONS[1].restrictions, [
     'No 4-Leaf Clover may be planted',

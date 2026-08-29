@@ -1,4 +1,6 @@
-import { memo } from 'react'
+import { memo, useEffect, useState } from 'react'
+import { formatTimeSinceSave } from './uiHelpers.js'
+
 function OptionsContent({
   numberNotation,
   onNumberNotationChange,
@@ -6,6 +8,7 @@ function OptionsContent({
   onSuffixScientificExponentChange,
   manualSaveStatus,
   onSaveNow,
+  lastSavedAt,
   saveCode,
   onSaveCodeChange,
   saveTransferStatus,
@@ -15,6 +18,17 @@ function OptionsContent({
   onHardReset,
   codeEntry,
 }) {
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
+
+  useEffect(() => {
+    const intervalId = window.setInterval(
+      () => setCurrentTime(Date.now()),
+      1000,
+    )
+
+    return () => window.clearInterval(intervalId)
+  }, [])
+
   return (
     <section className="inventions-panel options-panel" aria-labelledby="options-title">
       <p className="eyebrow">Game options</p>
@@ -29,46 +43,52 @@ function OptionsContent({
             scientific from e3003 onward.
           </p>
         </div>
-        <div className="notation-options" role="group" aria-label="Number notation">
-          <button
-            type="button"
-            className={`notation-option ${numberNotation === 'suffix' ? 'notation-option-active' : ''}`}
-            onClick={() => onNumberNotationChange('suffix')}
-            aria-pressed={numberNotation === 'suffix'}
+        <div className="notation-controls">
+          <div
+            className="notation-options"
+            role="group"
+            aria-label="Number notation"
           >
-            Suffix
-          </button>
-          <button
-            type="button"
-            className={`notation-option ${numberNotation === 'scientific' ? 'notation-option-active' : ''}`}
-            onClick={() => onNumberNotationChange('scientific')}
-            aria-pressed={numberNotation === 'scientific'}
-          >
-            Scientific
-          </button>
-        </div>
-        {numberNotation === 'suffix' ? (
-          <div className="notation-threshold">
-            <span>Switch suffix to scientific at</span>
-            <div
-              className="notation-options notation-threshold-options"
-              role="group"
-              aria-label="Suffix scientific threshold"
+            <button
+              type="button"
+              className={`notation-option ${numberNotation === 'suffix' ? 'notation-option-active' : ''}`}
+              onClick={() => onNumberNotationChange('suffix')}
+              aria-pressed={numberNotation === 'suffix'}
             >
-              {[33, 303, 3003].map((exponent) => (
-                <button
-                  type="button"
-                  className={`notation-option ${suffixScientificExponent === exponent ? 'notation-option-active' : ''}`}
-                  key={exponent}
-                  onClick={() => onSuffixScientificExponentChange(exponent)}
-                  aria-pressed={suffixScientificExponent === exponent}
-                >
-                  1e{exponent}
-                </button>
-              ))}
-            </div>
+              Suffix
+            </button>
+            <button
+              type="button"
+              className={`notation-option ${numberNotation === 'scientific' ? 'notation-option-active' : ''}`}
+              onClick={() => onNumberNotationChange('scientific')}
+              aria-pressed={numberNotation === 'scientific'}
+            >
+              Scientific
+            </button>
           </div>
-        ) : null}
+          {numberNotation === 'suffix' ? (
+            <div className="notation-threshold">
+              <span>Switch suffix to scientific at</span>
+              <div
+                className="notation-options notation-threshold-options"
+                role="group"
+                aria-label="Suffix scientific threshold"
+              >
+                {[33, 303, 3003].map((exponent) => (
+                  <button
+                    type="button"
+                    className={`notation-option ${suffixScientificExponent === exponent ? 'notation-option-active' : ''}`}
+                    key={exponent}
+                    onClick={() => onSuffixScientificExponentChange(exponent)}
+                    aria-pressed={suffixScientificExponent === exponent}
+                  >
+                    1e{exponent}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
       </article>
       <article className="invention-card code-entry-card">
         <div>
@@ -121,6 +141,9 @@ function OptionsContent({
           <p>
             The game saves automatically every 2 minutes and whenever this
             page is closed or hidden.
+          </p>
+          <p className="manual-save-timer">
+            Last saved: {formatTimeSinceSave(lastSavedAt, currentTime)}
           </p>
         </div>
         <button
@@ -205,6 +228,7 @@ function areOptionsPropsEqual(previous, next) {
   return (
     previous.numberNotation === next.numberNotation &&
     previous.suffixScientificExponent === next.suffixScientificExponent &&
+    previous.lastSavedAt === next.lastSavedAt &&
     previous.manualSaveStatus === next.manualSaveStatus &&
     previous.saveCode === next.saveCode &&
     previous.saveTransferStatus === next.saveTransferStatus &&
