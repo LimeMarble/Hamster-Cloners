@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { FormattedNumber, WholeNumber } from './ui.jsx'
 
-export function MajorProgressionBar({ goal }) {
+function MajorProgressionBarContent({ goal }) {
   const [isMinimized, setIsMinimized] = useState(false)
   const progressPercent = Math.max(
     0,
@@ -92,3 +92,32 @@ export function MajorProgressionBar({ goal }) {
     </aside>
   )
 }
+
+const GOAL_DISPLAY_KEYS = [
+  'category',
+  'title',
+  'isComplete',
+  'isReady',
+  'displayProgressAsDash',
+  'current',
+  'target',
+  'unit',
+  'description',
+  'progress',
+]
+
+function areMajorProgressionPropsEqual(previous, next) {
+  return (
+    previous.numberNotation === next.numberNotation &&
+    previous.suffixScientificExponent ===
+      next.suffixScientificExponent &&
+    GOAL_DISPLAY_KEYS.every((key) =>
+      Object.is(previous.goal?.[key], next.goal?.[key]),
+    )
+  )
+}
+
+export const MajorProgressionBar = memo(
+  MajorProgressionBarContent,
+  areMajorProgressionPropsEqual,
+)

@@ -16,6 +16,7 @@ export function useGameController() {
     gameRef,
     setGame,
     updateGame,
+    saveCurrentGame,
     setSimulationPaused,
     backgroundCatchUp,
     compressBackgroundCatchUp,
@@ -44,6 +45,7 @@ export function useGameController() {
     gameRef,
     setGame,
     updateGame,
+    saveGameNow: saveCurrentGame,
     areInventionsUnlocked: derived.areInventionsUnlocked,
     isTradeTabVisible: derived.isTradeTabVisible,
       isAugmentationTabVisible: derived.isAugmentationTabVisible,
@@ -58,6 +60,8 @@ export function useGameController() {
   return {
     progression: {
       goal: derived.majorProgressionGoal,
+      numberNotation: game.numberNotation,
+      suffixScientificExponent: game.suffixScientificExponent,
     },
     navigation: {
       activeTab: actions.activeTab,
@@ -189,6 +193,8 @@ export function useGameController() {
       testingPanel: testing.testingPanel,
       fortune: {
         fortune: game.fortune,
+        numberNotation: game.numberNotation,
+        suffixScientificExponent: game.suffixScientificExponent,
         onCollect: () =>
           updateGame((currentGame) => collectCloverBundle(currentGame)),
       },

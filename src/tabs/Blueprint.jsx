@@ -1,10 +1,11 @@
+import { memo } from 'react'
 import { getFieldsPlanted } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
 import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber, MonocropStatus } from './ui.jsx'
 import { getBlueprintCropSummary } from './uiHelpers.js'
 
-export function Blueprint({
+function BlueprintPanel({
   game,
   fieldIncomePerSecond,
   showMonocropLimit,
@@ -152,3 +153,42 @@ export function Blueprint({
     </article>
   )
 }
+
+function getFlooredFarmlandValue(game, key) {
+  return Math.floor(Math.max(0, Number(game.farmland?.[key]) || 0))
+}
+
+function areBlueprintPropsEqual(previous, next) {
+  const previousGame = previous.game
+  const nextGame = next.game
+
+  return (
+    Object.is(previous.fieldIncomePerSecond, next.fieldIncomePerSecond) &&
+    previous.showMonocropLimit === next.showMonocropLimit &&
+    Object.is(previous.monocropLimit, next.monocropLimit) &&
+    Object.is(
+      previous.monocropPenaltyMultiplier,
+      next.monocropPenaltyMultiplier,
+    ) &&
+    previous.blueprintSlots === next.blueprintSlots &&
+    previous.unlockedBlueprintSlotCount ===
+      next.unlockedBlueprintSlotCount &&
+    previousGame.blueprint === nextGame.blueprint &&
+    previousGame.completedCropPerfections ===
+      nextGame.completedCropPerfections &&
+    previousGame.numberNotation === nextGame.numberNotation &&
+    previousGame.suffixScientificExponent ===
+      nextGame.suffixScientificExponent &&
+    previousGame.activeBlueprintSlot === nextGame.activeBlueprintSlot &&
+    previousGame.hasUnlockedKnotweed === nextGame.hasUnlockedKnotweed &&
+    previousGame.hasUnlockedRowDuplicators ===
+      nextGame.hasUnlockedRowDuplicators &&
+    ['rows', 'columns', 'floors', 'farms'].every(
+      (key) =>
+        getFlooredFarmlandValue(previousGame, key) ===
+        getFlooredFarmlandValue(nextGame, key),
+    )
+  )
+}
+
+export const Blueprint = memo(BlueprintPanel, areBlueprintPropsEqual)

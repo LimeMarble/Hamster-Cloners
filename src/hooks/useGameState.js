@@ -4,13 +4,14 @@ import {
   advanceGameByElapsedTime,
 } from '../game/gameSimulation.js'
 import {
+  AUTOSAVE_INTERVAL_MS,
   SIMULATION_TICK_INTERVAL_MS,
   VISUAL_UPDATE_INTERVAL_MS,
 } from '../game/gameConfig.js'
 import { loadGameSnapshot, saveGame } from '../game/storage.js'
 import { setActiveNumberNotation } from '../game/numberFormat.js'
+import { shareUnchangedStructure } from '../game/structuralSharing.js'
 
-const SAVE_INTERVAL_MS = 1000
 const ACTIVE_CATCH_UP_LIMIT_SECONDS = 1
 
 function getAdvanceMode(elapsedSeconds) {
@@ -108,6 +109,10 @@ export function useGameState(isEditingBlueprintRef) {
     })
   }
 
+  function saveCurrentGame() {
+    return saveGame(gameRef.current, simulatedAtRef.current)
+  }
+
   function compressBackgroundCatchUp() {
     workerRef.current?.postMessage({ type: 'compress-catch-up' })
   }
@@ -126,14 +131,17 @@ export function useGameState(isEditingBlueprintRef) {
       if (isActive) {
         saveTimeoutId = window.setTimeout(
           persistGame,
-          SAVE_INTERVAL_MS,
+          AUTOSAVE_INTERVAL_MS,
         )
       }
     }
     const persistImmediately = () =>
       saveGame(gameRef.current, simulatedAtRef.current)
 
-    saveTimeoutId = window.setTimeout(persistGame, SAVE_INTERVAL_MS)
+    saveTimeoutId = window.setTimeout(
+      persistGame,
+      AUTOSAVE_INTERVAL_MS,
+    )
     window.addEventListener('pagehide', persistImmediately)
 
     return () => {
@@ -194,13 +202,17 @@ export function useGameState(isEditingBlueprintRef) {
       const snapshotTimestamp = Number(message.simulatedAt)
       if (!Number.isFinite(snapshotTimestamp)) return
 
-      gameRef.current = message.game
+      const sharedGame = shareUnchangedStructure(
+        gameRef.current,
+        message.game,
+      )
+      gameRef.current = sharedGame
       simulatedAtRef.current = snapshotTimestamp
       setActiveNumberNotation(
-        message.game.numberNotation,
-        message.game.suffixScientificExponent,
+        sharedGame.numberNotation,
+        sharedGame.suffixScientificExponent,
       )
-      setRenderedGame(message.game)
+      setRenderedGame(sharedGame)
     }
 
     const runFallbackTick = () => {
@@ -348,6 +360,7 @@ export function useGameState(isEditingBlueprintRef) {
     gameRef,
     setGame: replaceGame,
     updateGame,
+    saveCurrentGame,
     setSimulationPaused,
     backgroundCatchUp,
     compressBackgroundCatchUp,

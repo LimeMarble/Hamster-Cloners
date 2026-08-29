@@ -241,7 +241,14 @@ export function useGameDerivedState(game) {
       visibleCropIds.filter((cropId) => unlockedCropIds.includes(cropId)),
     [visibleCropIds, unlockedCropIds],
   )
-  const blueprintSlots = useMemo(() => getBlueprintSlots(game), [game])
+  const blueprintSlots = useMemo(
+    () =>
+      getBlueprintSlots({
+        blueprint: game.blueprint,
+        blueprintSlots: game.blueprintSlots,
+      }),
+    [game.blueprint, game.blueprintSlots],
+  )
   const unlockedBlueprintSlotCount = getUnlockedBlueprintSlotCount(game)
   const monocropThresholdBonus = getMonocropThresholdBonus(
     game.blueprint,
@@ -275,7 +282,14 @@ export function useGameDerivedState(game) {
           : game.totalHamstersHired >= 100
             ? `???: ${formattedTotalHamstersHired} / ${UNIONIZATION_HAMSTER_COUNT}`
             : null
-  const blueprintExpansionTracks = getBlueprintExpansionTrackProgress(game)
+  const blueprintExpansionTracks = useMemo(
+    () =>
+      getBlueprintExpansionTrackProgress({
+        completedBlueprintExpansions:
+          game.completedBlueprintExpansions,
+      }),
+    [game.completedBlueprintExpansions],
+  )
   const completedCropPerfections = game.completedCropPerfections
   const majorProgressionGoal = useMemo(
     () => getNextMajorProgressionGoal(game),

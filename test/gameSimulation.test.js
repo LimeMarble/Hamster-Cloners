@@ -22,7 +22,7 @@ test('active simulation uses no more than one-sixtieth second per step', () => {
 test('catch-up defaults to fifteen-times compressed ticks', () => {
   const oneDayInSeconds = 24 * 60 * 60
 
-  assert.equal(CATCH_UP_COMPRESSION_FACTOR, 15)
+  assert.equal(CATCH_UP_COMPRESSION_FACTOR, 150)
   assert.equal(
     getSimulationStepSeconds(oneDayInSeconds, 'catch-up'),
     ACTIVE_SIMULATION_STEP_SECONDS * CATCH_UP_COMPRESSION_FACTOR,

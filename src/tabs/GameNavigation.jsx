@@ -1,4 +1,5 @@
-export function GameHeader() {
+import { memo } from 'react'
+function GameHeaderContent() {
   return (
     <header className="topbar">
       <a className="brand" href="#main" aria-label="Hamster Cloners home">
@@ -10,7 +11,7 @@ export function GameHeader() {
   )
 }
 
-export function GameNavigation({
+function GameNavigationContent({
   activeTab,
   areInventionsUnlocked,
   showInventionsUnlockPrompt,
@@ -92,3 +93,24 @@ export function GameNavigation({
     </nav>
   )
 }
+
+const NAVIGATION_DISPLAY_KEYS = [
+  'activeTab',
+  'areInventionsUnlocked',
+  'showInventionsUnlockPrompt',
+  'inventionsUnlockCount',
+  'isTradeTabVisible',
+  'isAugmentationTabVisible',
+]
+
+function areNavigationPropsEqual(previous, next) {
+  return NAVIGATION_DISPLAY_KEYS.every(
+    (key) => Object.is(previous[key], next[key]),
+  )
+}
+
+export const GameHeader = memo(GameHeaderContent)
+export const GameNavigation = memo(
+  GameNavigationContent,
+  areNavigationPropsEqual,
+)

@@ -1,24 +1,23 @@
+import { memo } from 'react'
 import { FormattedNumber, WholeNumber } from './ui.jsx'
 
-export function DuplicatorPurchase({
-  game,
+const DuplicatorDetails = memo(function DuplicatorDetails({
+  rowDuplicators,
   nextRowDuplicatorCost,
   rowDuplicatorEffectivenessMultiplier,
   rowDuplicatorCoordinationMultiplier,
   rowDuplicatorExternalMultiplier,
   rowsBuiltPerSecond,
-  onBuyRowDuplicator,
-  onBuyMaxRowDuplicators,
 }) {
   return (
-    <article className="replicator-card row-duplicator-upgrade-card">
+    <>
       <div className="section-heading">
         <div>
           <p className="eyebrow">Income engine</p>
           <h2>Row Duplicators</h2>
         </div>
         <span className="hamster-badge" aria-label="Row Duplicators owned">
-          <WholeNumber value={game.rowDuplicators} />
+          <WholeNumber value={rowDuplicators} />
         </span>
       </div>
       <p className="card-copy">
@@ -30,40 +29,88 @@ export function DuplicatorPurchase({
         <div>
           <dt>Rows built / sec</dt>
           <dd>
-            <FormattedNumber value={rowsBuiltPerSecond} maximumFractionDigits={2} />
+            <FormattedNumber
+              value={rowsBuiltPerSecond}
+              maximumFractionDigits={2}
+            />
           </dd>
         </div>
         <div>
           <dt>Duplicator coordination</dt>
           <dd>
-            x<FormattedNumber value={rowDuplicatorCoordinationMultiplier} maximumFractionDigits={2} />
+            x<FormattedNumber
+              value={rowDuplicatorCoordinationMultiplier}
+              maximumFractionDigits={2}
+            />
           </dd>
         </div>
         <div>
           <dt>Duplicator effectiveness</dt>
           <dd>
-            ×<FormattedNumber value={rowDuplicatorEffectivenessMultiplier} maximumFractionDigits={2} />
+            ×<FormattedNumber
+              value={rowDuplicatorEffectivenessMultiplier}
+              maximumFractionDigits={2}
+            />
           </dd>
         </div>
         <div>
           <dt>External multipliers</dt>
           <dd>
-            ×<FormattedNumber value={rowDuplicatorExternalMultiplier} maximumFractionDigits={2} />
+            ×<FormattedNumber
+              value={rowDuplicatorExternalMultiplier}
+              maximumFractionDigits={2}
+            />
           </dd>
         </div>
       </dl>
       <div className="replicator-summary next-lesson">
         <span>Next duplicator</span>
         <strong>
-          <FormattedNumber value={nextRowDuplicatorCost} maximumFractionDigits={0} /> Crops
+          <FormattedNumber
+            value={nextRowDuplicatorCost}
+            maximumFractionDigits={0}
+          />{' '}
+          Crops
         </strong>
       </div>
+    </>
+  )
+})
+
+export function DuplicatorPurchase({
+  game,
+  nextRowDuplicatorCost,
+  rowDuplicatorEffectivenessMultiplier,
+  rowDuplicatorCoordinationMultiplier,
+  rowDuplicatorExternalMultiplier,
+  rowsBuiltPerSecond,
+  onBuyRowDuplicator,
+  onBuyMaxRowDuplicators,
+}) {
+  const canAffordDuplicator = game.crops >= nextRowDuplicatorCost
+
+  return (
+    <article className="replicator-card row-duplicator-upgrade-card">
+      <DuplicatorDetails
+        rowDuplicators={game.rowDuplicators}
+        nextRowDuplicatorCost={nextRowDuplicatorCost}
+        rowDuplicatorEffectivenessMultiplier={
+          rowDuplicatorEffectivenessMultiplier
+        }
+        rowDuplicatorCoordinationMultiplier={
+          rowDuplicatorCoordinationMultiplier
+        }
+        rowDuplicatorExternalMultiplier={rowDuplicatorExternalMultiplier}
+        rowsBuiltPerSecond={rowsBuiltPerSecond}
+        numberNotation={game.numberNotation}
+        suffixScientificExponent={game.suffixScientificExponent}
+      />
       <div className="hire-actions">
         <button
           type="button"
           className="primary-button"
           onClick={onBuyRowDuplicator}
-          disabled={game.crops < nextRowDuplicatorCost}
+          disabled={!canAffordDuplicator}
         >
           Build Row Duplicator
         </button>
@@ -71,17 +118,18 @@ export function DuplicatorPurchase({
           type="button"
           className="secondary-button"
           onClick={onBuyMaxRowDuplicators}
-          disabled={game.crops < nextRowDuplicatorCost}
+          disabled={!canAffordDuplicator}
         >
           Buy max
         </button>
       </div>
       <p className="affordability" aria-live="polite">
-        {game.crops >= nextRowDuplicatorCost ? (
+        {canAffordDuplicator ? (
           'Ready to build another Row generator.'
         ) : (
           <>
-            <FormattedNumber value={nextRowDuplicatorCost - game.crops} /> more Crops needed.
+            <FormattedNumber value={nextRowDuplicatorCost - game.crops} /> more
+            Crops needed.
           </>
         )}
       </p>

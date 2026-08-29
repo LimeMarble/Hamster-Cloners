@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useMemo } from 'react'
 import {
   getBlueprintSlots,
   getDiagonalTileIndexes,
@@ -354,20 +355,29 @@ export function useBlueprintEditor({
 
   const getDisplayedCropName = (cropId) =>
     getCropPlacementName(cropId, game.completedCropPerfections)
-  const mirrorCornLinks = hasMirrorCorn
-    ? (game.blueprint.mirrorCornTargets ?? []).flatMap(
-        (targetIndex, sourceIndex) =>
-          targetIndex !== null && game.blueprint.cells[sourceIndex] === 'corn'
-            ? [{ sourceIndex, targetIndex }]
-            : [],
-      )
-    : []
-  const pendingMirrorCornLinks = pendingMirrorCornPlacement
-    ? pendingMirrorCornPlacement.targetIndexes.map((targetIndex) => ({
-        sourceIndex: pendingMirrorCornPlacement.sourceIndex,
-        targetIndex,
-      }))
-    : []
+  const mirrorCornLinks = useMemo(
+    () =>
+      hasMirrorCorn
+        ? (game.blueprint.mirrorCornTargets ?? []).flatMap(
+            (targetIndex, sourceIndex) =>
+              targetIndex !== null &&
+              game.blueprint.cells[sourceIndex] === 'corn'
+                ? [{ sourceIndex, targetIndex }]
+                : [],
+          )
+        : [],
+    [game.blueprint, hasMirrorCorn],
+  )
+  const pendingMirrorCornLinks = useMemo(
+    () =>
+      pendingMirrorCornPlacement
+        ? pendingMirrorCornPlacement.targetIndexes.map((targetIndex) => ({
+            sourceIndex: pendingMirrorCornPlacement.sourceIndex,
+            targetIndex,
+          }))
+        : [],
+    [pendingMirrorCornPlacement],
+  )
 
   return {
     onSelectBlueprintSlot: selectBlueprintSlot,

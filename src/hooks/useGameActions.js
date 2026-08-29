@@ -24,6 +24,7 @@ export function useGameActions({
   gameRef,
   setGame,
   updateGame,
+  saveGameNow,
   areInventionsUnlocked,
   isTradeTabVisible,
   isAugmentationTabVisible,
@@ -40,6 +41,7 @@ export function useGameActions({
   const [lastHardResetClickAt, setLastHardResetClickAt] = useState(0)
   const [saveCode, setSaveCode] = useState('')
   const [saveTransferStatus, setSaveTransferStatus] = useState(null)
+  const [manualSaveStatus, setManualSaveStatus] = useState(null)
 
   useEffect(() => {
     if (hardResetClicks === 0) {
@@ -184,7 +186,24 @@ export function useGameActions({
     setHardResetClicks(0)
     setLastHardResetClickAt(0)
     setSaveTransferStatus(null)
+    setManualSaveStatus(null)
     setActiveTab('options')
+  }
+
+  function manuallySaveGame() {
+    const didSave = saveGameNow()
+
+    setManualSaveStatus(
+      didSave
+        ? {
+            type: 'success',
+            message: 'Game saved locally.',
+          }
+        : {
+            type: 'error',
+            message: 'The game could not access local storage.',
+          },
+    )
   }
 
   async function exportSave() {
@@ -342,6 +361,8 @@ export function useGameActions({
       saveCode,
       onSaveCodeChange: setSaveCode,
       saveTransferStatus,
+      manualSaveStatus,
+      onSaveNow: manuallySaveGame,
       hardResetClicks,
       onNumberNotationChange: (numberNotation) =>
         updateGame((currentGame) => ({

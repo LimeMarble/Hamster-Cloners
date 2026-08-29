@@ -1,8 +1,11 @@
-export function Options({
+import { memo } from 'react'
+function OptionsContent({
   numberNotation,
   onNumberNotationChange,
   suffixScientificExponent,
   onSuffixScientificExponentChange,
+  manualSaveStatus,
+  onSaveNow,
   saveCode,
   onSaveCodeChange,
   saveTransferStatus,
@@ -111,6 +114,31 @@ export function Options({
           </p>
         ) : null}
       </article>
+      <article className="invention-card manual-save-card">
+        <div>
+          <p className="eyebrow">Local progress</p>
+          <h2>Save game</h2>
+          <p>
+            The game saves automatically every 2 minutes and whenever this
+            page is closed or hidden.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="primary-button"
+          onClick={onSaveNow}
+        >
+          Save now
+        </button>
+        {manualSaveStatus ? (
+          <p
+            className={`save-transfer-status save-transfer-status-${manualSaveStatus.type}`}
+            role="status"
+          >
+            {manualSaveStatus.message}
+          </p>
+        ) : null}
+      </article>
       <article className="invention-card save-transfer-card">
         <div>
           <p className="eyebrow">Save transfer</p>
@@ -172,3 +200,18 @@ export function Options({
     </section>
   )
 }
+
+function areOptionsPropsEqual(previous, next) {
+  return (
+    previous.numberNotation === next.numberNotation &&
+    previous.suffixScientificExponent === next.suffixScientificExponent &&
+    previous.manualSaveStatus === next.manualSaveStatus &&
+    previous.saveCode === next.saveCode &&
+    previous.saveTransferStatus === next.saveTransferStatus &&
+    previous.hardResetClicks === next.hardResetClicks &&
+    previous.codeEntry.codeInput === next.codeEntry.codeInput &&
+    previous.codeEntry.codeStatus === next.codeEntry.codeStatus
+  )
+}
+
+export const Options = memo(OptionsContent, areOptionsPropsEqual)

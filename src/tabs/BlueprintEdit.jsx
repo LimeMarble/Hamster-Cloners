@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import {
   getCropName,
   getCropPlacementEffectDescription,
@@ -12,7 +13,7 @@ import {
 } from './ui.jsx'
 import { CropVisual } from './CropVisual.jsx'
 
-export function BlueprintEdit({
+function BlueprintEditContent({
   game,
   fieldIncomePerSecond,
   hamsterEfficiencyMultiplier,
@@ -318,3 +319,58 @@ export function BlueprintEdit({
     </div>
   )
 }
+
+function areBlueprintEditorPropsEqual(previous, next) {
+  const previousGame = previous.game
+  const nextGame = next.game
+  const previousTransfer = previous.blueprintTransfer
+  const nextTransfer = next.blueprintTransfer
+
+  return (
+    previousGame.blueprint === nextGame.blueprint &&
+    previousGame.completedCropPerfections ===
+      nextGame.completedCropPerfections &&
+    previousGame.seedAugmentations === nextGame.seedAugmentations &&
+    previousGame.numberNotation === nextGame.numberNotation &&
+    previousGame.suffixScientificExponent ===
+      nextGame.suffixScientificExponent &&
+    previousGame.fortune === nextGame.fortune &&
+    previousGame.hasUnlockedSunflower === nextGame.hasUnlockedSunflower &&
+    previousGame.activeBlueprintSlot === nextGame.activeBlueprintSlot &&
+    previousGame.hamsters === nextGame.hamsters &&
+    Object.is(previous.fieldIncomePerSecond, next.fieldIncomePerSecond) &&
+    Object.is(
+      previous.hamsterEfficiencyMultiplier,
+      next.hamsterEfficiencyMultiplier,
+    ) &&
+    Object.is(
+      previous.duplicatorEfficiencyMultiplier,
+      next.duplicatorEfficiencyMultiplier,
+    ) &&
+    previous.selectedCrop === next.selectedCrop &&
+    previous.pendingMirrorCornPlacement ===
+      next.pendingMirrorCornPlacement &&
+    previous.hoveredEditorCrop === next.hoveredEditorCrop &&
+    previous.visibleCropIds === next.visibleCropIds &&
+    previous.unlockedCropIds === next.unlockedCropIds &&
+    Object.is(previous.rowsBuiltPerSecond, next.rowsBuiltPerSecond) &&
+    previous.rabbitContractsCompleted === next.rabbitContractsCompleted &&
+    previous.showMonocropLimit === next.showMonocropLimit &&
+    Object.is(previous.monocropLimit, next.monocropLimit) &&
+    Object.is(
+      previous.monocropPenaltyMultiplier,
+      next.monocropPenaltyMultiplier,
+    ) &&
+    previous.mirrorCornLinks === next.mirrorCornLinks &&
+    previous.pendingMirrorCornLinks === next.pendingMirrorCornLinks &&
+    previous.hasMirrorCorn === next.hasMirrorCorn &&
+    previousTransfer.blueprintCode === nextTransfer.blueprintCode &&
+    previousTransfer.blueprintTransferStatus ===
+      nextTransfer.blueprintTransferStatus
+  )
+}
+
+export const BlueprintEdit = memo(
+  BlueprintEditContent,
+  areBlueprintEditorPropsEqual,
+)

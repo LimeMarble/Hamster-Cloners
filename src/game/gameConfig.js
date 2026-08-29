@@ -1,5 +1,6 @@
 export const SIMULATION_TICK_INTERVAL_MS = 1000 / 60
 export const VISUAL_UPDATE_INTERVAL_MS = 100
+export const AUTOSAVE_INTERVAL_MS = 2 * 60 * 1000
 export const BASE_CROP_YIELD_PER_PLOT = 1
 export const INITIAL_BLUEPRINT_SIZE = { rows: 1, columns: 1 }
 export const STARTING_CROPS = 10

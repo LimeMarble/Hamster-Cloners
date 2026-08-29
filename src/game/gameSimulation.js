@@ -28,7 +28,7 @@ import { getCapybaraHamsterEfficiencyMultiplier } from './capybaraLogic.js'
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
   SIMULATION_TICK_INTERVAL_MS / 1000
-export const CATCH_UP_COMPRESSION_FACTOR = 15
+export const CATCH_UP_COMPRESSION_FACTOR = 150
 export const CATCH_UP_SPEED_FACTOR = 2
 export const SKIPPED_CATCH_UP_STEPS = 1000
 

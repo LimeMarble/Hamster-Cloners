@@ -1,10 +1,11 @@
+import { memo } from 'react'
 import {
   getFortuneEffect,
   normalizeFortuneState,
 } from '../game/fortuneLogic.js'
 import { FormattedNumber } from './ui.jsx'
 
-export function CloverFortune({ fortune, onCollect }) {
+function CloverFortuneContent({ fortune, onCollect }) {
   const state = normalizeFortuneState(fortune)
 
   return (
@@ -51,3 +52,11 @@ export function CloverFortune({ fortune, onCollect }) {
     </>
   )
 }
+
+export const CloverFortune = memo(
+  CloverFortuneContent,
+  (previous, next) =>
+    previous.fortune === next.fortune &&
+    previous.numberNotation === next.numberNotation &&
+    previous.suffixScientificExponent === next.suffixScientificExponent,
+)

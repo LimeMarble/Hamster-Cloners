@@ -426,7 +426,9 @@ export function loadGame() {
 export function saveGame(game, savedAt = Date.now()) {
   try {
     window.localStorage.setItem(SAVE_KEY, exportGame(game, savedAt))
+    return true
   } catch {
     // The game remains playable if storage is unavailable or full.
+    return false
   }
 }

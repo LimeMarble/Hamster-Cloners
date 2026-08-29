@@ -1,4 +1,5 @@
-export function TestingPanel({
+import { memo } from 'react'
+function TestingPanelContent({
   isVisible,
   cropMultiplierEnabled,
   hamsterEfficiencyEnabled,
@@ -130,3 +131,24 @@ export function TestingPanel({
     </div>
   )
 }
+
+const TESTING_PANEL_DISPLAY_KEYS = [
+  'isVisible',
+  'cropMultiplierEnabled',
+  'hamsterEfficiencyEnabled',
+  'columnExpansionCount',
+  'maximumColumnExpansions',
+  'rowExpansionCount',
+  'maximumRowExpansions',
+]
+
+function areTestingPanelPropsEqual(previous, next) {
+  return TESTING_PANEL_DISPLAY_KEYS.every(
+    (key) => Object.is(previous[key], next[key]),
+  )
+}
+
+export const TestingPanel = memo(
+  TestingPanelContent,
+  areTestingPanelPropsEqual,
+)
