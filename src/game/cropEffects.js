@@ -17,6 +17,7 @@ import {
 import {
   getAdjacentCropConnections,
   getLeechingGourdAdjacentCropConnections,
+  getOrthogonalIndexes,
   getRootTunnelAdjacencyStrength,
 } from './adjacencyLogic.js'
 import {
@@ -32,6 +33,8 @@ import {
 import { createBlueprintCalculationCache } from './blueprintCalculationCache.js'
 
 const getCachedRabbitRelationsMultiplier = createBlueprintCalculationCache()
+const getCachedBlazingCarrotSurveyTimeEffect =
+  createBlueprintCalculationCache()
 
 export {
   getAdjacentCropConnections,
@@ -45,6 +48,37 @@ export {
 
 export function getPlantedCropCount(blueprint, crop = 'leek') {
   return blueprint.cells.filter((cell) => cell === crop).length
+}
+
+export function isBlazingCarrotBurned(
+  blueprint,
+  index,
+  completedCropPerfections = [],
+) {
+  const perfection = getCropPerfection(
+    'carrot',
+    completedCropPerfections,
+  )
+
+  return Boolean(
+    perfection?.id === 'blazingCarrot' &&
+      blueprint.cells[index] === 'carrot' &&
+      getOrthogonalIndexes(blueprint, index).some(
+        (neighborIndex) => blueprint.cells[neighborIndex] === 'carrot',
+      ),
+  )
+}
+
+function getActiveBlazingCarrotIndexes(
+  blueprint,
+  completedCropPerfections = [],
+) {
+  return blueprint.cells.flatMap((crop, index) =>
+    crop === 'carrot' &&
+    !isBlazingCarrotBurned(blueprint, index, completedCropPerfections)
+      ? [index]
+      : [],
+  )
 }
 
 export function getHarvestBonusConnections(
@@ -879,6 +913,7 @@ export function getGlobalHarvestEffects(
   completedCropPerfections = [],
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
+  totalRabbitRelationsEarned = 0,
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCounts = Object.fromEntries(
@@ -898,16 +933,34 @@ export function getGlobalHarvestEffects(
     const definition = CROP_DEFINITIONS[crop]
     const effectDefinition =
       getCropPerfection(crop, completedCropPerfections) ?? definition
+    const isBlazingCarrot =
+      crop === 'carrot' && effectDefinition?.id === 'blazingCarrot'
+    const relationLog = Math.log10(
+      Math.max(1, Number(totalRabbitRelationsEarned) || 0),
+    )
     const globalHarvestMultiplier =
       crop === 'carrot'
         ? 1 +
-          getCarrotContractBonus(
-            definition,
-            'globalHarvestBonusAtZero',
-            'globalHarvestBonusPerContract',
-            rabbitContractsCompleted,
-          )
+          (isBlazingCarrot
+            ? Math.min(
+                effectDefinition.maximumRelationHarvestBonus,
+                relationLog *
+                  effectDefinition.globalHarvestBonusPerRelationLog,
+              )
+            : getCarrotContractBonus(
+                definition,
+                'globalHarvestBonusAtZero',
+                'globalHarvestBonusPerContract',
+                rabbitContractsCompleted,
+              ))
         : effectDefinition?.globalHarvestMultiplier
+
+    if (
+      isBlazingCarrot &&
+      isBlazingCarrotBurned(blueprint, index, completedCropPerfections)
+    ) {
+      return []
+    }
 
     if (globalHarvestMultiplier === undefined) {
       return []
@@ -936,6 +989,7 @@ export function getGlobalHarvestEffects(
     return [
       {
         sourceCropId: crop,
+        sourceIndex: index,
         bonus: adjustedBonus,
       },
     ]
@@ -947,6 +1001,7 @@ export function getGlobalHarvestMultiplier(
   completedCropPerfections = [],
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
+  totalRabbitRelationsEarned = 0,
 ) {
   const bonusesByCrop = new Map()
 
@@ -955,6 +1010,7 @@ export function getGlobalHarvestMultiplier(
     completedCropPerfections,
     rabbitContractsCompleted,
     passiveEffectMultiplier,
+    totalRabbitRelationsEarned,
   ).forEach(({ sourceCropId, bonus }) => {
     bonusesByCrop.set(
       sourceCropId,
@@ -973,6 +1029,7 @@ export function getGroupedGlobalHarvestEffects(
   completedCropPerfections = [],
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
+  totalRabbitRelationsEarned = 0,
 ) {
   const effectsByCrop = new Map()
 
@@ -981,6 +1038,7 @@ export function getGroupedGlobalHarvestEffects(
     completedCropPerfections,
     rabbitContractsCompleted,
     passiveEffectMultiplier,
+    totalRabbitRelationsEarned,
   ).forEach(({ sourceCropId, bonus }) => {
     const currentEffect = effectsByCrop.get(sourceCropId) ?? {
       count: 0,
@@ -1000,23 +1058,157 @@ export function getGroupedGlobalHarvestEffects(
   }))
 }
 
+function calculateBlazingCarrotSurveyTimeEffect(
+  blueprint,
+  completedCropPerfections = [],
+  totalRabbitRelationsEarned = 0,
+  passiveEffectMultiplier = 1,
+) {
+  const perfection = getCropPerfection(
+    'carrot',
+    completedCropPerfections,
+  )
+
+  if (perfection?.id !== 'blazingCarrot') {
+    return {
+      activeCarrotCount: 0,
+      contributingCarrotCount: 0,
+      relationLog: 0,
+      reduction: 0,
+      multiplier: 1,
+    }
+  }
+
+  const activeIndexes = getActiveBlazingCarrotIndexes(
+    blueprint,
+    completedCropPerfections,
+  )
+  const relationLog = Math.min(
+    perfection.maximumSurveyRelationLog,
+    Math.log10(Math.max(1, Number(totalRabbitRelationsEarned) || 0)),
+  )
+  const contributingCarrotCount = Math.min(
+    activeIndexes.length,
+    relationLog,
+  )
+
+  if (activeIndexes.length === 0 || contributingCarrotCount === 0) {
+    return {
+      activeCarrotCount: activeIndexes.length,
+      contributingCarrotCount,
+      relationLog,
+      reduction: 0,
+      multiplier: 1,
+    }
+  }
+
+  const baseReduction =
+    applyMonocropPenaltyToBonus(
+      perfection.surveyTimeReductionPerCrop,
+      getMonocropCropCount(blueprint, 'carrot'),
+      blueprint.rows * blueprint.columns,
+      getMonocropThresholdBonus(blueprint, completedCropPerfections),
+    ) *
+    getGlobalPassiveEffectMultiplier(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+    )
+  const uncappedReduction = activeIndexes.reduce(
+    (totalReduction, index) =>
+      totalReduction +
+      baseReduction *
+        getAdjacentCropEffectMultiplier(
+          blueprint,
+          index,
+          'carrot',
+          false,
+          completedCropPerfections,
+          passiveEffectMultiplier,
+        ),
+    0,
+  )
+  const reduction = Math.min(
+    perfection.maximumSurveyTimeReduction,
+    uncappedReduction *
+      (contributingCarrotCount / activeIndexes.length),
+  )
+
+  return {
+    activeCarrotCount: activeIndexes.length,
+    contributingCarrotCount,
+    relationLog,
+    reduction,
+    multiplier: 1 - reduction,
+  }
+}
+
+export function getBlazingCarrotSurveyTimeEffect(
+  blueprint,
+  completedCropPerfections = [],
+  totalRabbitRelationsEarned = 0,
+  passiveEffectMultiplier = 1,
+) {
+  return getCachedBlazingCarrotSurveyTimeEffect(
+    blueprint,
+    [
+      completedCropPerfections,
+      totalRabbitRelationsEarned,
+      passiveEffectMultiplier,
+    ],
+    () =>
+      calculateBlazingCarrotSurveyTimeEffect(
+        blueprint,
+        completedCropPerfections,
+        totalRabbitRelationsEarned,
+        passiveEffectMultiplier,
+      ),
+  )
+}
+export function getBlazingCarrotSurveyDurationMultiplier(
+  blueprint,
+  completedCropPerfections = [],
+  totalRabbitRelationsEarned = 0,
+  passiveEffectMultiplier = 1,
+) {
+  return getBlazingCarrotSurveyTimeEffect(
+    blueprint,
+    completedCropPerfections,
+    totalRabbitRelationsEarned,
+    passiveEffectMultiplier,
+  ).multiplier
+}
+
 export function getRabbitRelationsEffects(
   blueprint,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
 ) {
-
   const sourceCropId = 'carrot'
   const definition = CROP_DEFINITIONS[sourceCropId]
-  const count = getPlantedCropCount(blueprint, sourceCropId)
+  const perfection = getCropPerfection(
+    sourceCropId,
+    completedCropPerfections,
+  )
+  const effectDefinition = perfection ?? definition
+  const activeIndexes =
+    perfection?.id === 'blazingCarrot'
+      ? getActiveBlazingCarrotIndexes(
+          blueprint,
+          completedCropPerfections,
+        )
+      : blueprint.cells.flatMap((crop, index) =>
+          crop === sourceCropId ? [index] : [],
+        )
 
-  if (!definition || count === 0) {
+  if (!definition || activeIndexes.length === 0) {
     return []
   }
 
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCount = getMonocropCropCount(blueprint, sourceCropId)
-  const bonusPerCarrot = definition.rabbitRelationsBonusAtZero ?? 0
+  const bonusPerCarrot =
+    effectDefinition.rabbitRelationsBonusAtZero ?? 0
   const baseBonus =
     applyMonocropPenaltyToBonus(
       bonusPerCarrot,
@@ -1029,12 +1221,8 @@ export function getRabbitRelationsEffects(
       completedCropPerfections,
       passiveEffectMultiplier,
     )
-  const bonus = blueprint.cells.reduce((totalBonus, crop, index) => {
-    if (crop !== sourceCropId) {
-      return totalBonus
-    }
-
-    return (
+  const bonus = activeIndexes.reduce(
+    (totalBonus, index) =>
       totalBonus +
       baseBonus *
         getAdjacentCropEffectMultiplier(
@@ -1044,11 +1232,18 @@ export function getRabbitRelationsEffects(
           false,
           completedCropPerfections,
           passiveEffectMultiplier,
-        )
-    )
-  }, 0)
+        ),
+    0,
+  )
 
-  return [{ sourceCropId, count, bonus, multiplier: 1 + bonus }]
+  return [
+    {
+      sourceCropId,
+      count: activeIndexes.length,
+      bonus,
+      multiplier: 1 + bonus,
+    },
+  ]
 }
 
 export function getRabbitRelationsMultiplier(

@@ -232,7 +232,7 @@ test('Demonstration 1 visibly bans Clover and active Breeze effects', () => {
     },
   }
 
-  assert.equal(target, 1e23)
+  assert.equal(target, 1e24)
   assert.equal(
     CAPYBARA_DEMONSTRATIONS[1].rewardName,
     'Establish contact with Manatees',

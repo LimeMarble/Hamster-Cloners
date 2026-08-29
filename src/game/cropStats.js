@@ -26,6 +26,7 @@ import {
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
+  isBlazingCarrotBurned,
   isMirrorCornOverloaded,
 } from './cropEffects.js'
 import { getCropPassiveStats } from './cropPassiveStats.js'
@@ -43,12 +44,33 @@ export function getBlueprintCropStats(
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
   seedAugmentations = {},
+  totalRabbitRelationsEarned = 0,
 ) {
   const crop = sourceBlueprint.cells[index]
   const definition = CROP_DEFINITIONS[crop]
 
   if (!definition) {
     return null
+  }
+
+  const burnedByBlazingCarrot = isBlazingCarrotBurned(
+    sourceBlueprint,
+    index,
+    completedCropPerfections,
+  )
+
+  if (burnedByBlazingCarrot) {
+    return {
+      crop,
+      baseYield: getCropBaseYield(crop, completedCropPerfections),
+      harvestYield: 0,
+      hamsterEfficiencyBonus: 0,
+      passiveStats: [],
+      harvestDestroyedByAppleTree: false,
+      harvestDestroyedByBlazingCarrot: true,
+      externalCropBuffMultiplier: null,
+      receivedEffects: [{ type: 'blazing-carrot-burn' }],
+    }
   }
 
   const overloadedByMirrorCorn = isMirrorCornOverloaded(
@@ -365,6 +387,7 @@ export function getBlueprintCropStats(
     completedCropPerfections,
     rabbitContractsCompleted,
     passiveEffectMultiplier,
+    totalRabbitRelationsEarned,
   )
   const globalRowProductionEffects = getGlobalRowProductionEffects(
     blueprint,
@@ -385,6 +408,7 @@ export function getBlueprintCropStats(
     rabbitContractsCompleted,
     passiveEffectMultiplier,
     seedAugmentations,
+    totalRabbitRelationsEarned,
   )
   const globalHarvestMultiplier = fieldProductionSnapshot.globalHarvestMultiplier
   const harvestYield = doesNotHarvest(crop) || harvestDestroyedByAppleTree
@@ -479,6 +503,7 @@ export function getBlueprintCropStats(
     passiveEffectMultiplier,
     completedCropPerfections,
     rabbitContractsCompleted,
+    totalRabbitRelationsEarned,
     globalRowProductionEffects,
     globalHamsterEfficiencyEffects,
     baseGlobalPassiveEffectMultiplier,

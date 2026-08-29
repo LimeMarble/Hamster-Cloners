@@ -26,6 +26,7 @@ import {
   RABBIT_UNLOCK_IDS,
 } from './tradeLogic.js'
 import { getCapybaraHamsterEfficiencyMultiplier } from './capybaraLogic.js'
+import { getBlazingCarrotSurveyDurationMultiplier } from './cropEffects.js'
 import {
   advanceManateeSurveyState,
   getManateeSurveyingHamsterCount,
@@ -97,6 +98,13 @@ export function advanceGameSimulationStep(
   }
 
   const fortuneModifiers = getFortuneModifiers(currentGame)
+  const manateeSurveyDurationMultiplier =
+    getBlazingCarrotSurveyDurationMultiplier(
+      currentGame.blueprint,
+      currentGame.completedCropPerfections,
+      currentGame.trade?.totalRabbitRelationsEarned ?? 0,
+      fortuneModifiers.passiveEffectMultiplier,
+    )
   const productionSnapshotPerSecond = getCropProductionSnapshotPerSecond(
     currentGame.blueprint,
     currentGame.farmland,
@@ -105,6 +113,7 @@ export function advanceGameSimulationStep(
     currentGame.trade?.rabbitContractsCompleted ?? 0,
     fortuneModifiers,
     currentGame.seedAugmentations,
+    currentGame.trade?.totalRabbitRelationsEarned ?? 0,
   )
   const productionForTick =
     productionSnapshotPerSecond.total * safeElapsedSeconds
@@ -227,6 +236,7 @@ export function advanceGameSimulationStep(
       safeElapsedSeconds,
       hamsterCoordinationMultiplier,
       random,
+      manateeSurveyDurationMultiplier,
     ),
     trade: advanceRabbitContract(
       currentGame,

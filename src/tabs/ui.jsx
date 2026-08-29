@@ -128,6 +128,8 @@ export function CropHoverInspector({
   rowsProducedPerSecond,
   activeHamsters,
   rabbitContractsCompleted,
+  totalRabbitRelationsEarned,
+  revealManateeEffects,
   fortune,
   seedAugmentations,
   cursor,
@@ -141,6 +143,7 @@ export function CropHoverInspector({
     rabbitContractsCompleted,
     getFortuneModifiers(fortune),
     seedAugmentations,
+    totalRabbitRelationsEarned,
   )
 
   if (!stats) {
@@ -166,7 +169,8 @@ export function CropHoverInspector({
         <div>
           <dt>Harvest</dt>
           <dd>
-            {stats.harvestDestroyedByAppleTree ? (
+            {stats.harvestDestroyedByAppleTree ||
+            stats.harvestDestroyedByBlazingCarrot ? (
               'Destroyed'
             ) : (
               <>
@@ -197,12 +201,22 @@ export function CropHoverInspector({
           stats.crop,
           completedCropPerfections,
           seedAugmentations,
+          revealManateeEffects,
         )}
       </p>
       <h4>Received effects</h4>
       {stats.receivedEffects.length > 0 ? (
         <ul className="crop-hover-effects">
           {stats.receivedEffects.map((effect, effectIndex) => {
+            if (effect.type === 'blazing-carrot-burn') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Burned by an orthogonally adjacent Blazing Carrot; harvest
+                  and all passive effects are disabled.
+                </li>
+              )
+            }
+
             if (effect.type === 'crop-effect-modifier') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
@@ -309,7 +323,10 @@ export function CropHoverInspector({
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
                   ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from <FormattedNumber value={effect.qualifyingCropTypeCount} maximumFractionDigits={0} />{' '}
-                  high-harvest Crop type{effect.qualifyingCropTypeCount === 1 ? '' : 's'} and Carrots
+                  high-harvest Crop type{effect.qualifyingCropTypeCount === 1 ? '' : 's'} and{' '}
+                  <FormattedNumber value={effect.activeCarrotCount} maximumFractionDigits={0} />{' '}
+                  {getCropName('carrot', completedCropPerfections)}
+                  {effect.activeCarrotCount === 1 ? '' : 's'}
                 </li>
               )
             }

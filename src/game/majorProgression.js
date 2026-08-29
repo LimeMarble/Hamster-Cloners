@@ -73,17 +73,20 @@ function createCropGoal({
 
 function createPerfectionGoal(perfectionId) {
   const perfection = CROP_PERFECTIONS[perfectionId]
+  const usesRabbitRelations =
+    perfection.costCurrency === 'rabbitRelations'
 
   return {
     id: 'perfection-' + perfectionId,
     category: 'Crop perfection',
     title: 'Unlock ' + perfection.name,
     target: perfection.cost,
-    unit: 'Crops',
+    unit: usesRabbitRelations ? 'Rabbit relations' : 'Crops',
     description:
       'Purchase ' + perfection.name + ' in Inventions → Crop Perfection.',
     isComplete: (game) => hasCropPerfection(game, perfectionId),
-    getCurrent: (game) => game.crops,
+    getCurrent: (game) =>
+      usesRabbitRelations ? game.trade?.rabbitRelations : game.crops,
     requiresAction: true,
   }
 }
@@ -285,6 +288,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: getCapybaraBlueprintCropYield,
     requiresAction: true,
   },
+  createPerfectionGoal('blazingCarrot'),
   {
     id: 'capybara-demonstration-one',
     category: 'Demonstration',

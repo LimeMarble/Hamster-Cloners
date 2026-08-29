@@ -115,6 +115,7 @@ export function createInitialGame() {
     trade: {
       established: false,
       rabbitRelations: 0,
+      totalRabbitRelationsEarned: 0,
       rabbitContractsCompleted: 0,
       rabbitContracts: [],
       rabbitUnlocks: [],
@@ -229,6 +230,30 @@ export function getCropPerfectionCost(perfectionId) {
   return CROP_PERFECTIONS[perfectionId]?.cost ?? null
 }
 
+export function getCropPerfectionCurrency(perfectionId) {
+  return CROP_PERFECTIONS[perfectionId]?.costCurrency === 'rabbitRelations'
+    ? 'rabbitRelations'
+    : 'crops'
+}
+
+function hasRequiredPerfectionDemonstration(game, perfectionId) {
+  const requiredDemonstration =
+    CROP_PERFECTIONS[perfectionId]?.requiresCapybaraDemonstration
+
+  return (
+    !requiredDemonstration ||
+    game.capybara?.completedDemonstrations?.includes(
+      requiredDemonstration,
+    ) === true
+  )
+}
+
+function getCropPerfectionBalance(game, perfectionId) {
+  return getCropPerfectionCurrency(perfectionId) === 'rabbitRelations'
+    ? Math.max(0, Number(game.trade?.rabbitRelations) || 0)
+    : Math.max(0, Number(game.crops) || 0)
+}
+
 export function canUnlockCropPerfection(game, perfectionId) {
   const cost = getCropPerfectionCost(perfectionId)
 
@@ -238,8 +263,9 @@ export function canUnlockCropPerfection(game, perfectionId) {
     !isCropPerfectionTemporarilyUnavailable(perfectionId) &&
     (CROP_PERFECTIONS[perfectionId]?.requiresRowDuplicators !== true ||
       game.hasUnlockedRowDuplicators === true) &&
+    hasRequiredPerfectionDemonstration(game, perfectionId) &&
     !hasCropPerfection(getCompletedCropPerfections(game), perfectionId) &&
-    Math.max(0, Number(game.crops) || 0) >= cost
+    getCropPerfectionBalance(game, perfectionId) >= cost
   )
 }
 
@@ -254,6 +280,17 @@ export function unlockCropPerfection(game, perfectionId) {
     ...getCompletedCropPerfections(game),
     perfectionId,
   ]
+  const perfectionCurrency = getCropPerfectionCurrency(perfectionId)
+  const paymentState =
+    perfectionCurrency === 'rabbitRelations'
+      ? {
+          trade: {
+            ...game.trade,
+            rabbitRelations:
+              getCropPerfectionBalance(game, perfectionId) - cost,
+          },
+        }
+      : { crops: game.crops - cost }
   const shouldNormalizeSplitweed = perfectionId === 'splitweed'
   const normalizeUnlockedBlueprint = (blueprint) =>
     shouldNormalizeSplitweed && blueprint
@@ -262,7 +299,7 @@ export function unlockCropPerfection(game, perfectionId) {
 
   return {
     ...game,
-    crops: game.crops - cost,
+    ...paymentState,
     completedCropPerfections,
     ...(game.blueprint
       ? { blueprint: normalizeUnlockedBlueprint(game.blueprint) }

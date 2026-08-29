@@ -128,14 +128,6 @@
   text-transform: uppercase;
 }
 
-.manatee-survey-start {
-  display: grid;
-  gap: 13px;
-  padding: 14px;
-  border: 1px solid #2e5149;
-  background: #13231f;
-}
-
 .manatee-survey-start dl {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

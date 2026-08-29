@@ -313,6 +313,28 @@ export const CROP_PERFECTIONS = {
     effectDescription:
       '×0 global Crop passive effects unless nullified by Leeching Gourd · counts as 8 debuff crops for Leeching Gourd adjacency · +2 Monocrop limit and +0.5× Mirror Corn effectiveness per Splitweed · cannot be boosted',
   },
+  blazingCarrot: {
+    id: 'blazingCarrot',
+    cropId: 'carrot',
+    name: 'Blazing Carrot',
+    cost: 5e12,
+    costCurrency: 'rabbitRelations',
+    requiresCapybaraDemonstration: 'introduction',
+    rabbitRelationsBonusAtZero: 0.1,
+    globalHarvestBonusPerRelationLog: 0.5,
+    maximumRelationHarvestBonus: 19,
+    highHarvestThreshold: 1e12,
+    highHarvestGlobalHarvestBonus: 0.25,
+    surveyTimeReductionPerCrop: 0.02,
+    maximumSurveyRelationLog: 40,
+    maximumSurveyRelations: 1e40,
+    maximumSurveyTimeReduction: 0.8,
+    baseEffectDescription: '40 Crops per slot',
+    effectDescription:
+      '+10% Rabbit relations · +50% all Crop harvest per log10(total Rabbit relations earned), capped at +1,900% · +25% all Crop harvest per Crop type with at least 1T harvest · adjacent Blazing Carrots burn each other',
+    manateeEffectDescription:
+      '−2% survey time per active Blazing Carrot, with contributing Carrots limited by log10(total Rabbit relations earned) and capped at 10DDc relations',
+  },
 }
 
 export const CROP_PERFECTION_IDS = Object.keys(CROP_PERFECTIONS)
@@ -426,6 +448,7 @@ function getPerfectionEffectDescription(
   cropId,
   perfection,
   seedAugmentations,
+  revealManateeEffects = false,
 ) {
   if (cropId === 'corn' && perfection?.id === 'mirrorCorn') {
     const effectMultiplier =
@@ -436,6 +459,21 @@ function getPerfectionEffectDescription(
       getMirrorCornReflectionLimitBonus(seedAugmentations)
 
     return `Multiplies one diagonally adjacent Crop effect by ×${effectMultiplier} · each tile safely receives up to ${safeReflectionLimit} reflections; excess reflected sunlight destroys that Crop's harvest and passive effects`
+  }
+
+  if (cropId === 'carrot' && perfection?.id === 'blazingCarrot') {
+    const baseDescription =
+      `+${perfection.rabbitRelationsBonusAtZero * 100}% Rabbit relations · ` +
+      `+${perfection.globalHarvestBonusPerRelationLog * 100}% all Crop harvest per log10(total Rabbit relations earned), capped at +${perfection.maximumRelationHarvestBonus * 100}% · ` +
+      `+${perfection.highHarvestGlobalHarvestBonus * 100}% all Crop harvest per Crop type with at least ${getCachedFormattedNumber(perfection.highHarvestThreshold, 0)} harvest · ` +
+      'adjacent Blazing Carrots burn each other'
+
+    if (!revealManateeEffects) return baseDescription
+
+    return (
+      `${baseDescription} · −${perfection.surveyTimeReductionPerCrop * 100}% survey time per active Blazing Carrot, ` +
+      `with contributing Carrots limited by log10(total Rabbit relations earned), capped at −${perfection.maximumSurveyTimeReduction * 100}% at ${getCachedFormattedNumber(perfection.maximumSurveyRelations, 0)} total Rabbit relations`
+    )
   }
 
   if (cropId !== 'leek' || perfection?.id !== 'enrichingLeek') {
@@ -456,6 +494,7 @@ export function getCropEffectDescription(
   cropId,
   completedCropPerfections,
   seedAugmentations = {},
+  revealManateeEffects = false,
 ) {
   const cropDefinition = CROP_DEFINITIONS[cropId]
   const perfection = getCropPerfection(cropId, completedCropPerfections)
@@ -469,7 +508,7 @@ export function getCropEffectDescription(
   }
 
   return perfection
-    ? `${getPerfectionBaseEffectDescription(cropId, perfection, cropDefinition, seedAugmentations)} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations)}`
+    ? `${getPerfectionBaseEffectDescription(cropId, perfection, cropDefinition, seedAugmentations)} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations, revealManateeEffects)}`
     : cropDefinition.effectDescription
 }
 
@@ -477,6 +516,7 @@ export function getCropPlacementEffectDescription(
   cropId,
   completedCropPerfections,
   seedAugmentations = {},
+  revealManateeEffects = false,
 ) {
   const cropDefinition = CROP_DEFINITIONS[cropId]
   const perfection = getCropPerfection(cropId, completedCropPerfections)
@@ -486,7 +526,7 @@ export function getCropPlacementEffectDescription(
   }
 
   return perfection
-    ? `${getPerfectionBaseEffectDescription(cropId, perfection, cropDefinition, seedAugmentations)} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations)}`
+    ? `${getPerfectionBaseEffectDescription(cropId, perfection, cropDefinition, seedAugmentations)} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations, revealManateeEffects)}`
     : cropDefinition.effectDescription
 }
 export function isCropEffectModifier(cropId) {

@@ -192,15 +192,22 @@ export function getMarshSurveyWorkPerSecond(
 export function getMarshSurveyDurationSeconds(
   allocatedHamsters,
   hamsterCoordination,
+  surveyDurationMultiplier = 1,
 ) {
   const workPerSecond = getMarshSurveyWorkPerSecond(
     allocatedHamsters,
     hamsterCoordination,
   )
 
+  const safeDurationMultiplier = Math.max(
+    Number.EPSILON,
+    Number(surveyDurationMultiplier) || 1,
+  )
+
   return workPerSecond > 0
-    ? MANATEE_SURVEYS[MANATEE_SURVEY_IDS.SEARCH_MARSH].requiredWork /
-        workPerSecond
+    ? (MANATEE_SURVEYS[MANATEE_SURVEY_IDS.SEARCH_MARSH].requiredWork /
+        workPerSecond) *
+        safeDurationMultiplier
     : Infinity
 }
 
@@ -334,17 +341,23 @@ export function advanceManateeSurveyState(
   elapsedSeconds,
   hamsterCoordination,
   random = Math.random,
+  surveyDurationMultiplier = 1,
 ) {
   const state = normalizeManateeState(rawState)
   if (!state.activeSurvey) return rawState ?? state
 
   const safeElapsedSeconds = Math.max(0, Number(elapsedSeconds) || 0)
-  const workPerSecond = getMarshSurveyWorkPerSecond(
+  const baseWorkPerSecond = getMarshSurveyWorkPerSecond(
     state.activeSurvey.allocatedHamsters,
     hamsterCoordination,
   )
+  const safeDurationMultiplier = Math.max(
+    Number.EPSILON,
+    Number(surveyDurationMultiplier) || 1,
+  )
   const workCompleted =
-    state.activeSurvey.workCompleted + workPerSecond * safeElapsedSeconds
+    state.activeSurvey.workCompleted +
+    (baseWorkPerSecond / safeDurationMultiplier) * safeElapsedSeconds
   const survey = MANATEE_SURVEYS[state.activeSurvey.id]
 
   if (workCompleted < survey.requiredWork) {

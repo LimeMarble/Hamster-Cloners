@@ -305,6 +305,7 @@ test('Trade state persists with safe migration defaults', () => {
 
   assert.equal(tradeSave.trade.established, true)
   assert.equal(tradeSave.trade.rabbitRelations, 4321)
+  assert.equal(tradeSave.trade.totalRabbitRelationsEarned, 8765)
   assert.deepEqual(tradeSave.trade.rabbitUnlocks, ['hamsterEfficiency'])
   assert.equal(tradeSave.trade.rabbitContracts.length, 3)
   assert.equal(tradeSave.trade.rabbitContracts[0].cropId, 'leek')
@@ -316,6 +317,7 @@ test('Trade state persists with safe migration defaults', () => {
   assert.deepEqual(olderSave.trade, {
     established: false,
     rabbitRelations: 0,
+    totalRabbitRelationsEarned: 0,
     rabbitContractsCompleted: 0,
     rabbitContracts: [],
     rabbitUnlocks: [],

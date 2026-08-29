@@ -107,6 +107,7 @@ export function createInitialTradeState() {
   return {
     established: false,
     rabbitRelations: 0,
+    totalRabbitRelationsEarned: 0,
     rabbitContractsCompleted: 0,
     rabbitContracts: [],
     rabbitUnlocks: [],
@@ -385,20 +386,34 @@ export function normalizeTradeState(rawTrade) {
     return initialTrade
   }
 
+  const rabbitRelations = toNonNegativeNumber(rawTrade.rabbitRelations)
+  const rabbitUnlocks = Array.isArray(rawTrade.rabbitUnlocks)
+    ? [
+        ...new Set(
+          rawTrade.rabbitUnlocks.filter((id) => RABBIT_UNLOCK_ID_SET.has(id)),
+        ),
+      ]
+    : []
+  const inferredLifetimeRelations =
+    rabbitRelations +
+    rabbitUnlocks.reduce(
+      (spent, unlockId) =>
+        spent + (RABBIT_UNLOCKS.find(({ id }) => id === unlockId)?.cost ?? 0),
+      0,
+    )
+
   return {
     established: rawTrade.established === true,
-    rabbitRelations: toNonNegativeNumber(rawTrade.rabbitRelations),
+    rabbitRelations,
+    totalRabbitRelationsEarned: Math.max(
+      inferredLifetimeRelations,
+      toNonNegativeNumber(rawTrade.totalRabbitRelationsEarned),
+    ),
     rabbitContractsCompleted: Math.floor(
       toNonNegativeNumber(rawTrade.rabbitContractsCompleted),
     ),
     rabbitContracts: normalizeRabbitContracts(rawTrade),
-    rabbitUnlocks: Array.isArray(rawTrade.rabbitUnlocks)
-      ? [
-          ...new Set(
-            rawTrade.rabbitUnlocks.filter((id) => RABBIT_UNLOCK_ID_SET.has(id)),
-          ),
-        ]
-      : [],
+    rabbitUnlocks,
     rabbitContractsBlazing: rawTrade.rabbitContractsBlazing === true,
     rabbitContractPaceTransitionSeconds: Math.min(
       RABBIT_BLAZING_PACE_SWITCH_SECONDS,
@@ -507,6 +522,9 @@ function advanceRabbitContractsInBulk(
     ...game.trade,
     rabbitRelations:
       toNonNegativeNumber(game.trade.rabbitRelations) + gainedRelations,
+    totalRabbitRelationsEarned:
+      toNonNegativeNumber(game.trade.totalRabbitRelationsEarned) +
+      gainedRelations,
     rabbitContractsCompleted:
       Math.floor(toNonNegativeNumber(game.trade.rabbitContractsCompleted)) +
       completedContracts,
@@ -641,6 +659,9 @@ function claimCompletedRabbitContracts(game, random) {
       ...game.trade,
       rabbitRelations:
         toNonNegativeNumber(game.trade.rabbitRelations) + gainedRelations,
+      totalRabbitRelationsEarned:
+        toNonNegativeNumber(game.trade.totalRabbitRelationsEarned) +
+        gainedRelations,
       rabbitContractsCompleted:
         Math.floor(toNonNegativeNumber(game.trade.rabbitContractsCompleted)) +
         completedIndexes.length,
@@ -698,6 +719,9 @@ export function claimRabbitContract(
       ...game.trade,
       rabbitRelations:
         toNonNegativeNumber(game.trade.rabbitRelations) + gainedRelations,
+      totalRabbitRelationsEarned:
+        toNonNegativeNumber(game.trade.totalRabbitRelationsEarned) +
+        gainedRelations,
       rabbitContractsCompleted:
         Math.floor(toNonNegativeNumber(game.trade.rabbitContractsCompleted)) + 1,
       rabbitContracts: contracts.map((currentContract, index) =>

@@ -1,0 +1,41 @@
+.editor-plot-blazing-carrot-burned {
+  position: relative;
+  border-color: #dd6b28;
+  background: radial-gradient(circle, #52200d, #1c120c 72%);
+  box-shadow: inset 0 0 18px rgb(255 86 19 / 55%);
+}
+
+.editor-plot-blazing-carrot-burned::after {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  padding: 2px 4px;
+  border: 1px solid #ff9a52;
+  color: #ffe0c1;
+  background: #361006;
+  content: 'Burned';
+  font-size: 0.56rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.manatee-survey-crop-bonus {
+  margin: 0;
+  padding: 9px 11px;
+  border-left: 3px solid #d78037;
+  color: #e8c89d;
+  background: #24190f;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.manatee-survey-crop-bonus strong {
+  color: #ffd69e;
+}
+.manatee-survey-start {
+  display: grid;
+  gap: 13px;
+  padding: 14px;
+  border: 1px solid #2e5149;
+  background: #13231f;
+}

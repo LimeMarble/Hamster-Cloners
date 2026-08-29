@@ -33,6 +33,7 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'crop-four-leaf-clover',
       'capybara-contact',
       'capybara-demonstration-introduction',
+      'perfection-blazingCarrot',
       'capybara-demonstration-one',
     'perfection-samplingLentil',
     ],
@@ -202,7 +203,7 @@ test('major progression advances to the earliest unfinished goal', () => {
   }
   const secondDemonstrationGoal = getNextMajorProgressionGoal(game)
   assert.equal(secondDemonstrationGoal.id, 'capybara-demonstration-one')
-  assert.equal(secondDemonstrationGoal.target, 1e23)
+  assert.equal(secondDemonstrationGoal.target, 1e24)
   assert.equal(secondDemonstrationGoal.displayProgressAsDash, false)
 
   const cloverRestrictedGoal = getNextMajorProgressionGoal({

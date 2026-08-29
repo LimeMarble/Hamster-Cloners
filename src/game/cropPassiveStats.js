@@ -11,6 +11,7 @@ export function getCropPassiveStats({
   passiveEffectMultiplier,
   completedCropPerfections,
   rabbitContractsCompleted,
+  totalRabbitRelationsEarned,
   globalRowProductionEffects,
   globalHamsterEfficiencyEffects,
   baseGlobalPassiveEffectMultiplier,
@@ -102,16 +103,13 @@ export function getCropPassiveStats({
         ),
     })
   }
-  const cropOccurrenceIndex =
-    blueprint.cells
-      .slice(0, index + 1)
-      .filter((cell) => cell === crop).length - 1
   const ownGlobalHarvestEffect = cropEffects.getGlobalHarvestEffects(
     blueprint,
     completedCropPerfections,
     rabbitContractsCompleted,
     passiveEffectMultiplier,
-  ).filter((effect) => effect.sourceCropId === crop)[cropOccurrenceIndex]
+    totalRabbitRelationsEarned,
+  ).find((effect) => effect.sourceIndex === index)
   if (ownGlobalHarvestEffect) {
     passiveStats.push({
       id: 'global-crop-harvest',

@@ -1,5 +1,6 @@
 import { CROP_PERFECTIONS } from '../game/crops.js'
 import { ROW_DUPLICATORS_UNLOCK_CROP_COUNT } from '../game/gameLogic.js'
+import { BlazingCarrotPerfection } from './BlazingCarrotPerfection.jsx'
 import { FormattedNumber } from './ui.jsx'
 
 export function Inventions({
@@ -10,17 +11,20 @@ export function Inventions({
   canUnlockEnrichingLeek,
   canUnlockMirrorCorn,
   canUnlockLeechingGourd,
+  canUnlockBlazingCarrot,
   canUnlockSamplingLentil,
   canUnlockSplitweed,
   canUnlockRows,
   hasEnrichingLeek,
   hasMirrorCorn,
   hasLeechingGourd,
+  hasBlazingCarrot,
   hasSamplingLentil,
   hasSplitweed,
   onUnlockEnrichingLeek,
   onUnlockMirrorCorn,
   onUnlockLeechingGourd,
+  onUnlockBlazingCarrot,
   onUnlockSamplingLentil,
   onUnlockSplitweed,
   onRequestRowDuplicatorUnlock,
@@ -225,6 +229,12 @@ export function Inventions({
                 ) : null}
               </>
             ) : null}
+            <BlazingCarrotPerfection
+              game={game}
+              canUnlock={canUnlockBlazingCarrot}
+              hasUnlocked={hasBlazingCarrot}
+              onUnlock={onUnlockBlazingCarrot}
+            />
             {game.hasUnlockedLentil && game.hasUnlockedRowDuplicators ? (
               <>
                 <article className="invention-card crop-perfection-card">

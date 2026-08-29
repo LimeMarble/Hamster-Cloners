@@ -13,6 +13,8 @@ export {
   getAdjacentCropConnections,
   getAdjacentCropEffectModifier,
   getBlueprintMonocropMultiplier,
+  getBlazingCarrotSurveyDurationMultiplier,
+  getBlazingCarrotSurveyTimeEffect,
   getDiagonalTileIndexes,
   getGlobalPassiveEffectMultiplier,
   getGlobalRowProductionEffects,
@@ -33,6 +35,7 @@ export {
   getPlantedCropCount,
   getRootTunnelAdjacencyStrength,
   hasReachedMonocropLimit,
+  isBlazingCarrotBurned,
 } from './cropEffects.js'
 export * from './cropProduction.js'
 export * from './cropStats.js'

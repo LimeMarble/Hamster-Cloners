@@ -38,7 +38,7 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     number: 1,
     name: 'Beyond Fortune',
     goal: 'Reach the listed field-blueprint Crop-yield requirement.',
-    target: 1e23,
+    target: 1e24,
     unit: 'blueprint Crop yield',
     restrictions: [
       'No 4-Leaf Clover may be planted',
@@ -143,6 +143,7 @@ export function getCapybaraBlueprintCropYield(game) {
     game.trade?.rabbitContractsCompleted ?? 0,
     fortuneModifiers.passiveEffectMultiplier,
     game.seedAugmentations,
+    game.trade?.totalRabbitRelationsEarned ?? 0,
   )
 
   return Math.max(

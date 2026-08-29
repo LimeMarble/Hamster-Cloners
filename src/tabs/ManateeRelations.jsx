@@ -6,6 +6,8 @@ import {
   MANATEE_SURVEYS,
   canConstructManateeBuilding,
   getHamsterCoordinationMultiplier,
+  getBlazingCarrotSurveyTimeEffect,
+  getFortuneModifiers,
   getManateeDivingHamsterCapacity,
   getManateeSurveyingHamsterCount,
   getMarshSurveyDurationSeconds,
@@ -90,13 +92,21 @@ function MarshSurvey({ game, state, onStartSurvey, onCollectFind }) {
     game.hamsters,
     game.postUnionHamstersHired,
   )
-  const currentWorkRate = getMarshSurveyWorkPerSecond(
+  const surveyTimeEffect = getBlazingCarrotSurveyTimeEffect(
+    game.blueprint,
+    game.completedCropPerfections,
+    game.trade?.totalRabbitRelationsEarned ?? 0,
+    getFortuneModifiers(game.fortune).passiveEffectMultiplier,
+  )
+  const baseWorkRate = getMarshSurveyWorkPerSecond(
     activeSurvey ? surveyingHamsters : game.hamsters,
     coordination,
   )
+  const currentWorkRate = baseWorkRate / surveyTimeEffect.multiplier
   const estimatedDuration = getMarshSurveyDurationSeconds(
     game.hamsters,
     coordination,
+    surveyTimeEffect.multiplier,
   )
   const progress = activeSurvey
     ? Math.min(1, activeSurvey.workCompleted / survey.requiredWork)
@@ -118,6 +128,25 @@ function MarshSurvey({ game, state, onStartSurvey, onCollectFind }) {
         </span>
       </header>
       <p className="trade-copy">{survey.description}</p>
+      {surveyTimeEffect.activeCarrotCount > 0 ? (
+        <p className="manatee-survey-crop-bonus">
+          Blazing Carrots shorten this survey by{' '}
+          <strong>
+            <FormattedNumber
+              value={surveyTimeEffect.reduction * 100}
+              maximumFractionDigits={2}
+            />
+            %
+          </strong>{' '}
+          ({' '}
+          <FormattedNumber
+            value={surveyTimeEffect.contributingCarrotCount}
+            maximumFractionDigits={2}
+          />{' '}
+          effective of{' '}
+          <WholeNumber value={surveyTimeEffect.activeCarrotCount} /> active).
+        </p>
+      ) : null}
 
       {hasFinds ? (
         <section className="manatee-marsh-results" aria-label="Marsh survey results">

@@ -55,6 +55,7 @@ export function useGameDerivedState(game) {
         game.trade?.rabbitContractsCompleted ?? 0,
         fortuneModifiers,
         game.seedAugmentations,
+        game.trade?.totalRabbitRelationsEarned ?? 0,
       ),
     [
       game.blueprint,
@@ -62,6 +63,7 @@ export function useGameDerivedState(game) {
       game.completedCropPerfections,
       game.testingCheats?.cropMultiplierEnabled,
       game.trade?.rabbitContractsCompleted,
+      game.trade?.totalRabbitRelationsEarned,
       fortuneModifiers,
       game.seedAugmentations,
     ],
@@ -77,6 +79,8 @@ export function useGameDerivedState(game) {
         trade: {
           rabbitContractsCompleted:
             game.trade?.rabbitContractsCompleted ?? 0,
+          totalRabbitRelationsEarned:
+            game.trade?.totalRabbitRelationsEarned ?? 0,
         },
       }),
     [
@@ -85,6 +89,7 @@ export function useGameDerivedState(game) {
       game.fortune,
       game.seedAugmentations,
       game.trade?.rabbitContractsCompleted,
+      game.trade?.totalRabbitRelationsEarned,
     ],
   )
 
@@ -349,12 +354,14 @@ export function useGameDerivedState(game) {
     canUnlockEnrichingLeek: canUnlockCropPerfection(game, 'enrichingLeek'),
     canUnlockMirrorCorn: canUnlockCropPerfection(game, 'mirrorCorn'),
     canUnlockLeechingGourd: canUnlockCropPerfection(game, 'leechingGourd'),
+    canUnlockBlazingCarrot: canUnlockCropPerfection(game, 'blazingCarrot'),
     canUnlockSamplingLentil: canUnlockCropPerfection(game, 'samplingLentil'),
     canUnlockSplitweed: canUnlockCropPerfection(game, 'splitweed'),
     canUnlockRows: canUnlockRowDuplicators(game),
     hasEnrichingLeek: completedCropPerfections.includes('enrichingLeek'),
     hasMirrorCorn: completedCropPerfections.includes('mirrorCorn'),
     hasLeechingGourd: completedCropPerfections.includes('leechingGourd'),
+    hasBlazingCarrot: completedCropPerfections.includes('blazingCarrot'),
     hasSamplingLentil: completedCropPerfections.includes('samplingLentil'),
     hasSplitweed: completedCropPerfections.includes('splitweed'),
   }

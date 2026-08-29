@@ -365,6 +365,7 @@ export function useGameActions({
       onUnlockEnrichingLeek: () => unlockPerfection('enrichingLeek'),
       onUnlockMirrorCorn: () => unlockPerfection('mirrorCorn'),
       onUnlockLeechingGourd: () => unlockPerfection('leechingGourd'),
+      onUnlockBlazingCarrot: () => unlockPerfection('blazingCarrot'),
       onUnlockSamplingLentil: () => unlockPerfection('samplingLentil'),
       onUnlockSplitweed: () => unlockPerfection('splitweed'),
       onRequestRowDuplicatorUnlock: () =>

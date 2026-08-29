@@ -4,7 +4,10 @@ import {
   getCropPlacementEffectDescription,
   getCropUnlockDescription,
 } from '../game/crops.js'
-import { getMirrorCornMaximumReflections } from '../game/gameLogic.js'
+import {
+  getMirrorCornMaximumReflections,
+  isBlazingCarrotBurned,
+} from '../game/gameLogic.js'
 import {
   CropHoverInspector,
   FormattedNumber,
@@ -44,6 +47,10 @@ function BlueprintEditContent({
   const safeMirrorCornReflectionLimit = getMirrorCornMaximumReflections(
     game.seedAugmentations,
   )
+  const revealManateeEffects =
+    game.capybara?.completedDemonstrations?.includes(
+      'demonstrationOne',
+    ) === true
 
   return (
     <div className="modal-backdrop" role="presentation">
@@ -143,11 +150,16 @@ function BlueprintEditContent({
                   pendingMirrorCornPlacement?.sourceIndex === index
                 const isPendingMirrorCornTarget =
                   pendingMirrorCornPlacement?.targetIndexes.includes(index)
+                const isBurnedBlazingCarrot = isBlazingCarrotBurned(
+                  game.blueprint,
+                  index,
+                  game.completedCropPerfections,
+                )
 
                 return (
                   <button
                     type="button"
-                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''}`}
+                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${isBurnedBlazingCarrot ? 'editor-plot-blazing-carrot-burned' : ''}`}
                     key={index}
                     onClick={() => onEditorPlotClick(index, crop)}
                     onContextMenu={(event) =>
@@ -230,6 +242,7 @@ function BlueprintEditContent({
                             cropId,
                             game.completedCropPerfections,
                             game.seedAugmentations,
+                            revealManateeEffects,
                           )
                         : getCropUnlockDescription(cropId)}
                     </small>
@@ -304,6 +317,10 @@ function BlueprintEditContent({
             rowsProducedPerSecond={rowsBuiltPerSecond}
             activeHamsters={game.hamsters}
             rabbitContractsCompleted={rabbitContractsCompleted}
+            totalRabbitRelationsEarned={
+              game.trade?.totalRabbitRelationsEarned ?? 0
+            }
+            revealManateeEffects={revealManateeEffects}
             fortune={game.fortune}
             seedAugmentations={game.seedAugmentations}
             cursor={hoveredEditorCrop}

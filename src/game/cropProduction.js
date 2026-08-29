@@ -1,4 +1,4 @@
-import { CROP_DEFINITIONS } from './crops.js'
+import { CROP_DEFINITIONS, getCropPerfection } from './crops.js'
 import {
   applyMonocropPenaltyToBonus,
   getMonocropYieldMultiplier,
@@ -32,6 +32,7 @@ import {
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
   getSamplingLentilTradedCropEffect,
+  isBlazingCarrotBurned,
   isMirrorCornOverloaded,
 } from './cropEffects.js'
 
@@ -261,10 +262,21 @@ export function getCarrotHighHarvestEffect(
   completedCropPerfections = EMPTY_COMPLETED_CROP_PERFECTIONS,
   passiveEffectMultiplier = 1,
 ) {
-
-  const definition = CROP_DEFINITIONS.carrot
+  const baseDefinition = CROP_DEFINITIONS.carrot
+  const perfection = getCropPerfection(
+    'carrot',
+    completedCropPerfections,
+  )
+  const effectDefinition = perfection ?? baseDefinition
   const carrotCount = getMonocropCropCount(blueprint, 'carrot')
-  const highHarvestThreshold = definition?.highHarvestThreshold ?? Infinity
+  const activeCarrotIndexes = blueprint.cells.flatMap((crop, index) =>
+    crop === 'carrot' &&
+    !isBlazingCarrotBurned(blueprint, index, completedCropPerfections)
+      ? [index]
+      : [],
+  )
+  const highHarvestThreshold =
+    effectDefinition?.highHarvestThreshold ?? Infinity
   const harvestByCropType = contributions.reduce(
     (totals, contribution) => {
       if (!contribution) {
@@ -279,31 +291,39 @@ export function getCarrotHighHarvestEffect(
     {},
   )
   const qualifyingCropTypeCount = Object.values(harvestByCropType).filter(
-    (totalHarvest) => totalHarvest > highHarvestThreshold,
+    (totalHarvest) =>
+      perfection?.id === 'blazingCarrot'
+        ? totalHarvest >= highHarvestThreshold
+        : totalHarvest > highHarvestThreshold,
   ).length
 
-  if (!definition || carrotCount === 0 || qualifyingCropTypeCount === 0) {
-    return { qualifyingCropTypeCount, multiplier: 1 }
+  if (
+    !effectDefinition ||
+    activeCarrotIndexes.length === 0 ||
+    qualifyingCropTypeCount === 0
+  ) {
+    return {
+      activeCarrotCount: activeCarrotIndexes.length,
+      qualifyingCropTypeCount,
+      multiplier: 1,
+    }
   }
 
   const fieldSize = blueprint.rows * blueprint.columns
   const baseBonus =
     applyMonocropPenaltyToBonus(
-      definition.highHarvestGlobalHarvestBonus ?? 0,
+      effectDefinition.highHarvestGlobalHarvestBonus ?? 0,
       carrotCount,
       fieldSize,
       getMonocropThresholdBonus(blueprint, completedCropPerfections),
-    ) * getGlobalPassiveEffectMultiplier(
+    ) *
+    getGlobalPassiveEffectMultiplier(
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
     )
-  const carrotBonus = blueprint.cells.reduce((totalBonus, crop, index) => {
-    if (crop !== 'carrot') {
-      return totalBonus
-    }
-
-    return (
+  const carrotBonus = activeCarrotIndexes.reduce(
+    (totalBonus, index) =>
       totalBonus +
       baseBonus *
         getAdjacentCropEffectMultiplier(
@@ -313,11 +333,12 @@ export function getCarrotHighHarvestEffect(
           false,
           completedCropPerfections,
           passiveEffectMultiplier,
-        )
-    )
-  }, 0)
+        ),
+    0,
+  )
 
   return {
+    activeCarrotCount: activeCarrotIndexes.length,
     qualifyingCropTypeCount,
     multiplier: 1 + qualifyingCropTypeCount * carrotBonus,
   }
@@ -328,9 +349,14 @@ export function getBaseFieldProductionSnapshot(
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
   seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
+  totalRabbitRelationsEarned = 0,
 ) {
-  const rabbitContractDependency = blueprint.cells.includes('carrot')
+  const hasCarrot = blueprint.cells.includes('carrot')
+  const rabbitContractDependency = hasCarrot
     ? rabbitContractsCompleted
+    : 0
+  const rabbitRelationDependency = hasCarrot
+    ? totalRabbitRelationsEarned
     : 0
 
   return getCachedBaseFieldProduction(
@@ -338,6 +364,7 @@ export function getBaseFieldProductionSnapshot(
     [
       completedCropPerfections,
       rabbitContractDependency,
+      rabbitRelationDependency,
       passiveEffectMultiplier,
       seedAugmentations,
     ],
@@ -347,6 +374,7 @@ export function getBaseFieldProductionSnapshot(
       rabbitContractsCompleted,
       passiveEffectMultiplier,
       seedAugmentations,
+      totalRabbitRelationsEarned,
     ),
   )
 }
@@ -357,6 +385,7 @@ function calculateBaseFieldProductionSnapshot(
   rabbitContractsCompleted,
   passiveEffectMultiplier,
   seedAugmentations,
+  totalRabbitRelationsEarned,
 ) {
   const effectBlueprint = getMirrorCornEffectBlueprint(
     blueprint,
@@ -379,6 +408,16 @@ function calculateBaseFieldProductionSnapshot(
     const definition = CROP_DEFINITIONS[crop]
 
     if (!definition || doesNotHarvest(crop)) return null
+
+    if (
+      isBlazingCarrotBurned(
+        blueprint,
+        index,
+        completedCropPerfections,
+      )
+    ) {
+      return { cropId: crop, amount: 0 }
+    }
 
     if (
       isMirrorCornOverloaded(
@@ -469,6 +508,7 @@ function calculateBaseFieldProductionSnapshot(
     completedCropPerfections,
     rabbitContractsCompleted,
     passiveEffectMultiplier,
+    totalRabbitRelationsEarned,
   )
   const carrotHighHarvestEffect = getCarrotHighHarvestEffect(
     effectBlueprint,
@@ -592,6 +632,7 @@ export function getCropProductionPerSecond(
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
   seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
+  totalRabbitRelationsEarned = 0,
 ) {
   return getCropProductionSnapshotPerSecond(
     blueprint,
@@ -601,6 +642,7 @@ export function getCropProductionPerSecond(
     rabbitContractsCompleted,
     fortuneModifiers,
     seedAugmentations,
+    totalRabbitRelationsEarned,
   ).total
 }
 
@@ -612,6 +654,7 @@ export function getCropProductionSnapshotPerSecond(
   rabbitContractsCompleted = 0,
   fortuneModifiers = {},
   seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
+  totalRabbitRelationsEarned = 0,
 ) {
   const modifiers = normalizeCropProductionModifiers(fortuneModifiers)
   const effectiveFarmland = getEffectiveFarmlandMultipliers(farmland)
@@ -619,8 +662,12 @@ export function getCropProductionSnapshotPerSecond(
     0,
     Number(externalCropMultiplier) || 0,
   )
-  const rabbitContractDependency = blueprint.cells.includes('carrot')
+  const hasCarrot = blueprint.cells.includes('carrot')
+  const rabbitContractDependency = hasCarrot
     ? rabbitContractsCompleted
+    : 0
+  const rabbitRelationDependency = hasCarrot
+    ? totalRabbitRelationsEarned
     : 0
 
   return getCachedCropProductionPerSecond(
@@ -628,6 +675,7 @@ export function getCropProductionSnapshotPerSecond(
     [
       completedCropPerfections,
       rabbitContractDependency,
+      rabbitRelationDependency,
       modifiers.passiveEffectMultiplier,
       modifiers.cropYieldMultiplier,
       modifiers.harvestMultiplier,
@@ -646,6 +694,7 @@ export function getCropProductionSnapshotPerSecond(
         rabbitContractsCompleted,
         modifiers.passiveEffectMultiplier,
         seedAugmentations,
+        totalRabbitRelationsEarned,
       )
       const multiplier =
         effectiveFarmland.rows *

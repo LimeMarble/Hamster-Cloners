@@ -24,9 +24,9 @@ test('Search the Marsh matches the requested Hamster Coordination calibration', 
   const threeOctillionDuration = getMarshSurveyDurationSeconds(1875, 3e27)
 
   assert.ok(Math.abs(baselineDuration - 60) < 1e-10)
-  assert.ok(threeOctillionDuration > 30)
-  assert.ok(threeOctillionDuration < 31)
-  assert.ok(baselineDuration / threeOctillionDuration > 1.95)
+  assert.ok(threeOctillionDuration > 15)
+  assert.ok(threeOctillionDuration < 16)
+  assert.ok(baselineDuration / threeOctillionDuration > 3.8)
 })
 
 test('the initial marsh survey silently allocates every owned hamster', () => {

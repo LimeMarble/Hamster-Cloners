@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   createBlueprint,
   getBaseFieldProductionSnapshot,
+  getBlazingCarrotSurveyTimeEffect,
   getCropProductionSnapshotPerSecond,
   getProductionSnapshotForTick,
   getRabbitRelationsMultiplier,
@@ -153,6 +154,39 @@ test('Rabbit relation multiplier reuses cached blueprint analysis', () => {
     1.04,
   )
 
+  assert.ok(readsAfterFirstCalculation > 1)
+  assert.equal(cellReads - readsAfterFirstCalculation, 1)
+})
+test('Blazing Carrot survey effects reuse cached blueprint analysis between simulation ticks', () => {
+  const baseBlueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['carrot', 'leek'],
+  })
+  const cells = baseBlueprint.cells
+  let cellReads = 0
+  const blueprint = {
+    ...baseBlueprint,
+    get cells() {
+      cellReads += 1
+      return cells
+    },
+  }
+  const completedCropPerfections = ['blazingCarrot']
+
+  const first = getBlazingCarrotSurveyTimeEffect(
+    blueprint,
+    completedCropPerfections,
+    1e10,
+  )
+  const readsAfterFirstCalculation = cellReads
+  const repeated = getBlazingCarrotSurveyTimeEffect(
+    blueprint,
+    completedCropPerfections,
+    1e10,
+  )
+
+  assert.strictEqual(repeated, first)
   assert.ok(readsAfterFirstCalculation > 1)
   assert.equal(cellReads - readsAfterFirstCalculation, 1)
 })
