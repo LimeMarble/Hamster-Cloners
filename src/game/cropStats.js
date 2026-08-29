@@ -1,5 +1,9 @@
 import { getMonocropYieldMultiplier } from './monocropPenalty.js'
-import { CROP_DEFINITIONS, isCropEffectModifier } from './crops.js'
+import {
+  CROP_DEFINITIONS,
+  getCropPerfection,
+  isCropEffectModifier,
+} from './crops.js'
 import { getBaseFieldProductionSnapshot } from './cropProduction.js'
 import {
   doesNotHarvest,
@@ -18,6 +22,7 @@ import {
   getHarvestBonusConnections,
   getGroupedGlobalHarvestEffects,
   getLeechingGourdTurnipEffect,
+  getMuskGrassNetworkSize,
   getMirrorCornEffectBlueprint,
   getMirrorCornEffectMultiplier,
   getMirrorCornMaximumReflections,
@@ -27,6 +32,7 @@ import {
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
   isBlazingCarrotBurned,
+  isCropFullySurroundedByMuskGrass,
   isMirrorCornOverloaded,
 } from './cropEffects.js'
 import { getCropPassiveStats } from './cropPassiveStats.js'
@@ -134,6 +140,22 @@ export function getBlueprintCropStats(
     seedAugmentations,
   )
   const receivedEffects = []
+  const effectDefinition =
+    getCropPerfection(crop, completedCropPerfections) ?? definition
+
+  if (crop === 'muskGrass') {
+    receivedEffects.push({
+      type: 'musk-grass-network',
+      count: getMuskGrassNetworkSize(blueprint, index),
+    })
+  }
+
+  if (
+    effectDefinition.hasDebuff &&
+    isCropFullySurroundedByMuskGrass(blueprint, index)
+  ) {
+    receivedEffects.push({ type: 'musk-grass-debuff-nullification' })
+  }
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCount = getMonocropCropCount(blueprint, crop)
   const monocropMultiplier = getMonocropYieldMultiplier(

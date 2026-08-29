@@ -41,8 +41,8 @@ function MarshFind({ find, onCollect }) {
   )
 }
 
-export function SurveyResults({ state, survey, onCollectFind }) {
-  const rowCount = Math.max(1, Math.ceil(state.pendingFinds.length / 6))
+export function SurveyResults({ finds, survey, onCollectFind }) {
+  const rowCount = Math.max(1, Math.ceil(finds.length / 6))
 
   return (
     <section
@@ -56,7 +56,7 @@ export function SurveyResults({ state, survey, onCollectFind }) {
         </div>
         <p>
           <FormattedNumber
-            value={state.pendingFinds.length}
+            value={finds.length}
             maximumFractionDigits={0}
           />{' '}
           objects remain
@@ -67,7 +67,7 @@ export function SurveyResults({ state, survey, onCollectFind }) {
         style={{ minHeight: `${Math.max(350, rowCount * 82)}px` }}
       >
         <div className="manatee-marsh-water" aria-hidden="true" />
-        {state.pendingFinds.map((find) => (
+        {finds.map((find) => (
           <MarshFind key={find.id} find={find} onCollect={onCollectFind} />
         ))}
       </div>

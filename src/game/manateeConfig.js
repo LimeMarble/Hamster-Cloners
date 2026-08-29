@@ -2,7 +2,26 @@ export const MANATEE_SURVEY_IDS = Object.freeze({
   SEARCH_MARSH: 'searchMarsh',
   MANGROVE_ROOTS: 'mangroveRoots',
   SEDIMENT: 'sediment',
+  TEND_MUSK_GRASS: 'tendMuskGrass',
 })
+
+export const MANATEE_ZONE_IDS = Object.freeze({
+  MARSH: 'marsh',
+  UNDERWATER_MARSH: 'underwaterMarsh',
+})
+
+export const MANATEE_ZONES = Object.freeze([
+  Object.freeze({
+    id: MANATEE_ZONE_IDS.MARSH,
+    name: 'Marsh',
+    description: 'Survey the shoreline and construct surface structures.',
+  }),
+  Object.freeze({
+    id: MANATEE_ZONE_IDS.UNDERWATER_MARSH,
+    name: 'Underwater Marsh',
+    description: 'Send equipped hamsters beneath the marsh water.',
+  }),
+])
 
 export const MANATEE_SURVEY_LENGTH_IDS = Object.freeze({
   STANDARD: 'standard',
@@ -80,7 +99,11 @@ export const MANATEE_RESOURCES = Object.freeze({
 
 export const MANATEE_BUILDING_IDS = Object.freeze({
   DIVING_CABIN: 'divingCabin',
+  SUBMERGED_GARDEN: 'submergedGarden',
 })
+
+export const MANATEE_GARDEN_TENDING_HAMSTER_COUNT = 10
+export const MANATEE_GARDEN_TENDING_DURATION_SECONDS = 600
 
 const MARSH_REFERENCE_HAMSTERS = 1875
 const MARSH_REFERENCE_COORDINATION = 1e24
@@ -121,19 +144,38 @@ function createSurvey({
   referenceDurationSeconds,
   rewards,
   isUnderwater = false,
+  supportsTimeLengths = isUnderwater,
   timeLengthScale,
+  fixedDurationSeconds,
+  fixedHamsterAllocation,
+  requiredBuildingId,
+  requiredBuildingStage,
 }) {
+  const hasFixedDuration = Number(fixedDurationSeconds) > 0
+
   return Object.freeze({
     id,
     name,
     description,
-    requiredWork: getRequiredWork(referenceDurationSeconds),
+    requiredWork: hasFixedDuration
+      ? Number(fixedDurationSeconds)
+      : getRequiredWork(referenceDurationSeconds),
     referenceHamsters: MARSH_REFERENCE_HAMSTERS,
     referenceCoordination: MARSH_REFERENCE_COORDINATION,
     referenceDurationSeconds,
     rewards: Object.freeze(rewards),
     isUnderwater,
-    supportsTimeLengths: isUnderwater,
+    supportsTimeLengths,
+    ...(hasFixedDuration
+      ? { fixedDurationSeconds: Number(fixedDurationSeconds) }
+      : {}),
+    ...(Number(fixedHamsterAllocation) > 0
+      ? { fixedHamsterAllocation: Math.floor(fixedHamsterAllocation) }
+      : {}),
+    ...(requiredBuildingId ? { requiredBuildingId } : {}),
+    ...(Number(requiredBuildingStage) > 0
+      ? { requiredBuildingStage: Math.floor(requiredBuildingStage) }
+      : {}),
     ...(timeLengthScale === undefined ? {} : { timeLengthScale }),
   })
 }
@@ -177,6 +219,29 @@ export const MANATEE_SURVEYS = Object.freeze({
       createReward('limestone', MANATEE_RESOURCE_IDS.LIMESTONE, 5, 5, 10, 15),
     ],
   }),
+  [MANATEE_SURVEY_IDS.TEND_MUSK_GRASS]: createSurvey({
+    id: MANATEE_SURVEY_IDS.TEND_MUSK_GRASS,
+    name: 'Tend Musk Grass',
+    description:
+      'Send a fixed team of 10 hamsters to cultivate Musk Grass in the Submerged Garden.',
+    referenceDurationSeconds: MANATEE_GARDEN_TENDING_DURATION_SECONDS,
+    fixedDurationSeconds: MANATEE_GARDEN_TENDING_DURATION_SECONDS,
+    fixedHamsterAllocation: MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
+    isUnderwater: true,
+    supportsTimeLengths: false,
+    requiredBuildingId: MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+    requiredBuildingStage: 1,
+    rewards: [
+      createReward(
+        'musk-grass',
+        MANATEE_RESOURCE_IDS.MUSK_GRASS,
+        25,
+        25,
+        5,
+        10,
+      ),
+    ],
+  }),
 })
 
 export const MANATEE_BUILDINGS = Object.freeze({
@@ -190,6 +255,48 @@ export const MANATEE_BUILDINGS = Object.freeze({
       [MANATEE_RESOURCE_IDS.LIMESTONE]: 25,
     }),
     divingHamsterCapacity: 50,
+  }),
+  [MANATEE_BUILDING_IDS.SUBMERGED_GARDEN]: Object.freeze({
+    id: MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+    name: 'Submerged Garden',
+    description:
+      'An underwater cultivation site that begins empty and can support three specialized growing stages.',
+    cost: Object.freeze({
+      [MANATEE_RESOURCE_IDS.LIMESTONE]: 200,
+      [MANATEE_RESOURCE_IDS.MANGROVE_ROOTS]: 40,
+      [MANATEE_RESOURCE_IDS.MANGROVE_LEAVES]: 50,
+      [MANATEE_RESOURCE_IDS.PETE]: 300,
+      [MANATEE_RESOURCE_IDS.WATER_LETTUCE]: 20,
+      [MANATEE_RESOURCE_IDS.MUSK_GRASS]: 15,
+    }),
+    maximumStage: 3,
+    stages: Object.freeze([
+      Object.freeze({
+        stage: 1,
+        name: 'Musk Grass Bed',
+        description:
+          'Unlocks Musk Grass crop access and lets 10 hamsters tend it for 600 seconds.',
+        cropId: 'muskGrass',
+        resourceId: MANATEE_RESOURCE_IDS.MUSK_GRASS,
+        surveyId: MANATEE_SURVEY_IDS.TEND_MUSK_GRASS,
+        cost: Object.freeze({
+          [MANATEE_RESOURCE_IDS.PETE]: 550,
+          [MANATEE_RESOURCE_IDS.MUSK_GRASS]: 50,
+        }),
+        implemented: true,
+      }),
+      Object.freeze({
+        stage: 2,
+        name: 'Water Lettuce Bed',
+        cropId: 'waterLettuce',
+        implemented: false,
+      }),
+      Object.freeze({
+        stage: 3,
+        name: 'Undecided Garden Stage',
+        implemented: false,
+      }),
+    ]),
   }),
 })
 

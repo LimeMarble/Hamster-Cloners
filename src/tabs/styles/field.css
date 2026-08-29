@@ -290,6 +290,12 @@
   background: #123a20;
 }
 
+.plot-muskGrass,
+.editor-plot-muskGrass {
+  border-color: #4fa988;
+  background: #12322a;
+}
+
 .plot-leechingGourd,
 .plot-leechingGourdPart,
 .editor-plot-leechingGourd,
@@ -342,6 +348,11 @@
 .plot-fourLeafClover span,
 .editor-plot-fourLeafClover span {
   color: #8ef0a0;
+}
+
+.plot-muskGrass span,
+.editor-plot-muskGrass span {
+  color: #79d8ae;
 }
 
 .plot-knotweed span,
@@ -409,4 +420,3 @@ dt {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-

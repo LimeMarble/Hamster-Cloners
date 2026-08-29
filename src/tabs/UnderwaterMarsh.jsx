@@ -5,11 +5,13 @@ import {
   MANATEE_SURVEY_LENGTHS,
   MANATEE_SURVEYS,
   getManateeDivingHamsterCapacity,
+  getManateeRemainingDivingHamsterCapacity,
+  getManateeRemainingHamsterCount,
   getManateeSurveyDurationMultiplier,
   getManateeSurveyDurationSeconds,
   getManateeSurveyRequiredWork,
   getManateeSurveyRewardMultipliers,
-  getManateeSurveyingHamsterCount,
+  getManateeSurveyAllocatedHamsterCount,
   getMarshSurveyWorkPerSecond,
 } from '../game/gameLogic.js'
 import {
@@ -18,6 +20,7 @@ import {
   SurveyResults,
   SurveyTime,
 } from './ManateeSurveyUi.jsx'
+import { SubmergedGarden } from './SubmergedGarden.jsx'
 import { FormattedNumber, WholeNumber } from './ui.jsx'
 
 const UNDERWATER_SURVEY_IDS = Object.freeze([
@@ -86,13 +89,21 @@ function UnderwaterSurvey({
     Math.max(1, Math.min(game.hamsters, divingCapacity)),
   )
   const survey = MANATEE_SURVEYS[surveyId]
-  const activeSurvey =
-    state.activeSurvey?.id === survey.id ? state.activeSurvey : null
-  const hasFinds = state.pendingSurveyId === survey.id
+  const activeSurvey = state.activeSurveys.find(
+    (candidate) => candidate.id === survey.id,
+  )
+  const surveyFinds = state.pendingFinds.filter(
+    (find) => find.surveyId === survey.id,
+  )
+  const hasFinds = surveyFinds.length > 0
+  const availableHamsters = Math.min(
+    getManateeRemainingHamsterCount(game),
+    getManateeRemainingDivingHamsterCapacity(game),
+  )
   const displayedLengthId = activeSurvey?.lengthId ?? selectedLengthId
   const allocatedHamsters = activeSurvey
-    ? getManateeSurveyingHamsterCount(game)
-    : Math.min(game.hamsters, divingCapacity, selectedHamsters)
+    ? getManateeSurveyAllocatedHamsterCount(game, survey.id)
+    : Math.min(availableHamsters, selectedHamsters)
   const currentWorkRate =
     getMarshSurveyWorkPerSecond(allocatedHamsters, coordination) /
     surveyTimeEffect.multiplier
@@ -113,10 +124,6 @@ function UnderwaterSurvey({
   const remainingSeconds = activeSurvey
     ? (requiredWork - activeSurvey.workCompleted) / currentWorkRate
     : estimatedDuration
-  const isBlocked = Boolean(
-    (state.activeSurvey && !activeSurvey) ||
-      (state.pendingFinds.length > 0 && !hasFinds),
-  )
 
   return (
     <article className="manatee-survey-card manatee-underwater-survey-card">
@@ -130,8 +137,8 @@ function UnderwaterSurvey({
             ? 'Results ready'
             : activeSurvey
               ? 'In progress'
-              : isBlocked
-                ? 'Unavailable'
+              : availableHamsters <= 0
+                ? 'No gear or hamsters free'
                 : 'Available'}
         </span>
       </header>
@@ -140,7 +147,7 @@ function UnderwaterSurvey({
 
       {hasFinds ? (
         <SurveyResults
-          state={state}
+          finds={surveyFinds}
           survey={survey}
           onCollectFind={onCollectFind}
         />
@@ -155,7 +162,7 @@ function UnderwaterSurvey({
           <SurveyLengthSelector
             survey={survey}
             selectedLengthId={selectedLengthId}
-            disabled={isBlocked}
+            disabled={availableHamsters <= 0}
             onSelect={setSelectedLengthId}
           />
           <label className="manatee-hamster-allocation">
@@ -166,13 +173,13 @@ function UnderwaterSurvey({
             <input
               type="range"
               min="1"
-              max={Math.max(1, Math.min(game.hamsters, divingCapacity))}
+              max={Math.max(1, availableHamsters)}
               step="1"
               value={Math.max(1, allocatedHamsters)}
               onChange={(event) =>
                 setSelectedHamsters(Number(event.target.value))
               }
-              disabled={isBlocked || game.hamsters <= 0}
+              disabled={availableHamsters <= 0}
               aria-label={`${survey.name} hamsters allocated`}
             />
           </label>
@@ -197,7 +204,7 @@ function UnderwaterSurvey({
               )
             }
             disabled={
-              isBlocked || allocatedHamsters <= 0 || currentWorkRate <= 0
+              allocatedHamsters <= 0 || currentWorkRate <= 0
             }
           >
             Begin {survey.name}
@@ -215,46 +222,70 @@ export function UnderwaterMarsh({
   surveyTimeEffect,
   onStartSurvey,
   onCollectFind,
+  onConstructBuilding,
+  onUpgradeBuilding,
 }) {
   const divingCapacity = getManateeDivingHamsterCapacity(game)
 
   return (
-    <section className="manatee-underwater-section" aria-labelledby="underwater-marsh-title">
+    <section className="manatee-underwater-section manatee-zone" aria-labelledby="underwater-marsh-title">
       <div className="section-heading">
         <div>
           <p className="eyebrow">Diving territory</p>
           <h3 id="underwater-marsh-title">Underwater Marsh</h3>
         </div>
       </div>
-      {divingCapacity <= 0 ? (
-        <p className="manatee-underwater-locked">
-          Complete the Diving Cabin to equip hamsters for underwater
-          expeditions.
-        </p>
-      ) : (
-        <>
-          <p className="trade-copy">
-            Choose a duration and allocate part of the diving team. Longer
-            choices multiply object counts and values, but occupy those
-            hamsters much longer.
+      <section
+        className="manatee-zone-group"
+        aria-label="Underwater Marsh surveys"
+      >
+        <p className="eyebrow">Surveys</p>
+        {divingCapacity <= 0 ? (
+          <p className="manatee-underwater-locked">
+            Complete the Diving Cabin in the Marsh to equip hamsters for
+            underwater expeditions.
           </p>
-          <div className="manatee-expedition-grid">
-            {UNDERWATER_SURVEY_IDS.map((surveyId) => (
-              <UnderwaterSurvey
-                key={surveyId}
-                game={game}
-                state={state}
-                surveyId={surveyId}
-                coordination={coordination}
-                surveyTimeEffect={surveyTimeEffect}
-                divingCapacity={divingCapacity}
-                onStartSurvey={onStartSurvey}
-                onCollectFind={onCollectFind}
-              />
-            ))}
-          </div>
-        </>
-      )}
+        ) : (
+          <>
+            <p className="trade-copy">
+              Choose a duration and allocate part of the shared diving team.
+              Different expeditions can run together as long as enough
+              hamsters and diving gear remain. Longer choices multiply object
+              counts and values, but occupy those hamsters much longer.
+            </p>
+            <div className="manatee-expedition-grid">
+              {UNDERWATER_SURVEY_IDS.map((surveyId) => (
+                <UnderwaterSurvey
+                  key={surveyId}
+                  game={game}
+                  state={state}
+                  surveyId={surveyId}
+                  coordination={coordination}
+                  surveyTimeEffect={surveyTimeEffect}
+                  divingCapacity={divingCapacity}
+                  onStartSurvey={onStartSurvey}
+                  onCollectFind={onCollectFind}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+      <section
+        className="manatee-zone-group"
+        aria-label="Underwater Marsh structures"
+      >
+        <p className="eyebrow">Structures</p>
+        <SubmergedGarden
+          game={game}
+          state={state}
+          coordination={coordination}
+          onConstructBuilding={onConstructBuilding}
+          onUpgradeBuilding={onUpgradeBuilding}
+          onStartSurvey={onStartSurvey}
+          onCollectFind={onCollectFind}
+        />
+      </section>
     </section>
   )
 }

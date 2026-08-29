@@ -254,6 +254,22 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'musk-grass-network') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Connected network: <FormattedNumber value={effect.count} maximumFractionDigits={0} /> Musk Grass
+                </li>
+              )
+            }
+
+            if (effect.type === 'musk-grass-debuff-nullification') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Debuffs nullified by a complete Musk Grass surround.
+                </li>
+              )
+            }
+
             if (effect.type === 'harvest-destruction') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>

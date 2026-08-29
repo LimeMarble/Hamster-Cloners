@@ -186,6 +186,17 @@ export const CROP_DEFINITIONS = {
       'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · only one can be planted per blueprint',
     unlockDescription: 'Unlock with 77,777 Rabbit relations',
   },
+  muskGrass: {
+    name: 'Musk Grass',
+    icon: '🌱',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    monocropCountWeight: 1,
+    effectDescription:
+      'Destroys its own harvest · can fill at most one third of the Monocrop limit · each connected network multiplies its Leeching Gourd adjacency contribution · a complete orthogonal and diagonal surround nullifies that Crop\'s debuffs',
+    unlockDescription: 'Unlock through the Musk Grass Bed in the Submerged Garden',
+  },
   leechingGourd: {
     name: 'Leeching Gourd',
     icon: '🎃',
@@ -579,6 +590,7 @@ export function getUnlockedCropIds(
   hasUnlockedCarrot = false,
   hasUnlockedFourLeafClover = false,
   hasUnlockedWheat = false,
+  unlockedManateeCropIds = [],
 ) {
   const unlockedCrops = ['leek']
 
@@ -621,6 +633,9 @@ export function getUnlockedCropIds(
   if (hasUnlockedFourLeafClover) {
     unlockedCrops.push('fourLeafClover')
   }
+  if (unlockedManateeCropIds.includes('muskGrass')) {
+    unlockedCrops.push('muskGrass')
+  }
 
   return unlockedCrops
 }
@@ -631,10 +646,13 @@ export function getVisibleCropIds(
   hasUnlockedRowDuplicators = false,
 ) {
   const visibleCropIds = ['leek']
+  const progressionCropIds = CROP_IDS.filter(
+    (cropId) => cropId !== 'muskGrass',
+  )
 
-  for (let index = 1; index < CROP_IDS.length; index += 1) {
-    const cropId = CROP_IDS[index]
-    const previousCropId = CROP_IDS[index - 1]
+  for (let index = 1; index < progressionCropIds.length; index += 1) {
+    const cropId = progressionCropIds[index]
+    const previousCropId = progressionCropIds[index - 1]
 
     if (!unlockedCropIds.includes(previousCropId)) {
       break
@@ -659,6 +677,10 @@ export function getVisibleCropIds(
     }
 
     visibleCropIds.push(cropId)
+  }
+
+  if (unlockedCropIds.includes('muskGrass')) {
+    visibleCropIds.push('muskGrass')
   }
 
   return visibleCropIds

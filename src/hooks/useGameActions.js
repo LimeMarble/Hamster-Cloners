@@ -12,6 +12,7 @@ import {
   getMaxHamsterPurchase,
   getNextHamsterCost,
   getNextRowDuplicatorCost,
+  MANATEE_ZONE_IDS,
   resetForBlueprintExpansion,
   resetForRowDuplicators,
   startManateeSurvey,
@@ -20,6 +21,7 @@ import {
   toggleSeedAugmentation,
   UNIONIZATION_HAMSTER_COUNT,
   unlockCropPerfection,
+  upgradeManateeBuilding,
 } from '../game/gameLogic.js'
 import { exportGame, importGame } from '../game/storage.js'
 
@@ -35,6 +37,10 @@ export function useGameActions({
 }) {
   const [activeTab, setActiveTab] = useState('field')
   const [activeInventionsTab, setActiveInventionsTab] = useState('blueprint')
+  const [activeTradeRelation, setActiveTradeRelation] = useState('rabbits')
+  const [activeManateeZone, setActiveManateeZone] = useState(
+    MANATEE_ZONE_IDS.MARSH,
+  )
   const [isUnionConfirmationOpen, setIsUnionConfirmationOpen] = useState(false)
   const [pendingBlueprintExpansionId, setPendingBlueprintExpansionId] =
     useState(null)
@@ -301,6 +307,12 @@ export function useGameActions({
     )
   }
 
+  function improveManateeBuilding(buildingId) {
+    updateGame((currentGame) =>
+      upgradeManateeBuilding(currentGame, buildingId) ?? currentGame,
+    )
+  }
+
   function buySeedAugmentation(augmentationId) {
     updateGame((currentGame) =>
       purchaseSeedAugmentation(currentGame, augmentationId) ?? currentGame,
@@ -354,6 +366,10 @@ export function useGameActions({
       onBuyMaxRowDuplicators: buyMaxRowDuplicators,
     },
     tradeActions: {
+      activeRelation: activeTradeRelation,
+      onActiveRelationChange: setActiveTradeRelation,
+      activeManateeZone,
+      onActiveManateeZoneChange: setActiveManateeZone,
       onEstablishTrade: establishTrade,
       onClaimRabbitContract: claimRabbitDelivery,
       onPurchaseRabbitUnlock: buyRabbitUnlock,
@@ -362,6 +378,7 @@ export function useGameActions({
       onStartManateeSurvey: startMarshSurvey,
       onCollectManateeFind: collectMarshFind,
       onConstructManateeBuilding: buildManateeBuilding,
+      onUpgradeManateeBuilding: improveManateeBuilding,
     },
     augmentationActions: {
       onPurchaseSeedAugmentation: buySeedAugmentation,

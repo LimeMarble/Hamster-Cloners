@@ -31,6 +31,11 @@ import {
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
 import { createBlueprintCalculationCache } from './blueprintCalculationCache.js'
+import {
+  getMuskGrassNetworkSize,
+  getMuskGrassNetworkSizeByIndex,
+  isCropFullySurroundedByMuskGrass,
+} from './muskGrassLogic.js'
 
 const getCachedRabbitRelationsMultiplier = createBlueprintCalculationCache()
 const getCachedBlazingCarrotSurveyTimeEffect =
@@ -45,6 +50,12 @@ export {
   getRootTunnelAdjacencyStrength,
   isRootTunnel,
 } from './adjacencyLogic.js'
+
+export {
+  getMuskGrassNetworkSize,
+  getMuskGrassNetworkSizeByIndex,
+  isCropFullySurroundedByMuskGrass,
+}
 
 export function getPlantedCropCount(blueprint, crop = 'leek') {
   return blueprint.cells.filter((cell) => cell === crop).length
@@ -100,6 +111,32 @@ export function getMonocropCropCount(blueprint, crop) {
   return (
     getPlantedCropCount(blueprint, crop) *
     (CROP_DEFINITIONS[crop]?.monocropCountWeight ?? 1)
+  )
+}
+
+export function getMuskGrassPlacementLimit(
+  blueprint,
+  completedCropPerfections = [],
+) {
+  const fieldSize = blueprint.rows * blueprint.columns
+  const monocropLimit = getMonocropThreshold(
+    fieldSize,
+    getMonocropThresholdBonus(blueprint, completedCropPerfections),
+  )
+
+  return Math.max(0, Math.floor(monocropLimit / 3))
+}
+
+export function canPlaceMuskGrass(
+  blueprint,
+  index,
+  completedCropPerfections = [],
+) {
+  if (blueprint.cells[index] === 'muskGrass') return true
+
+  return (
+    getPlantedCropCount(blueprint, 'muskGrass') <
+    getMuskGrassPlacementLimit(blueprint, completedCropPerfections)
   )
 }
 
@@ -215,6 +252,7 @@ export function getLeechingGourdTurnipEffect(
   passiveEffectMultiplier = 1,
 ) {
   const nearestConnections = new Map()
+  const muskGrassNetworkSizes = getMuskGrassNetworkSizeByIndex(blueprint)
 
   getLeechingGourdAdjacentCropConnections(blueprint).forEach((connection) => {
     const splitweedAnchorIndex = getSplitweedAnchorIndex(
@@ -241,6 +279,20 @@ export function getLeechingGourdTurnipEffect(
       const definition = CROP_DEFINITIONS[crop]
       const perfection = getCropPerfection(crop, completedCropPerfections)
       const effectDefinition = perfection ?? definition
+
+      if (crop === 'muskGrass' && adjacencyDistance === 0) {
+        const networkSize = muskGrassNetworkSizes.get(index) ?? 1
+        return [
+          {
+            index,
+            crop,
+            adjacencyDistance,
+            strength: 1,
+            networkSize,
+            contribution: networkSize,
+          },
+        ]
+      }
 
       if (!effectDefinition?.hasDebuff) {
         return []
@@ -316,6 +368,12 @@ export function getLeechingGourdDebuffMultiplier(blueprint, index) {
     : 1
 }
 
+export function getCropDebuffMultiplier(blueprint, index) {
+  return isCropFullySurroundedByMuskGrass(blueprint, index)
+    ? 0
+    : getLeechingGourdDebuffMultiplier(blueprint, index)
+}
+
 export function getAdjacentCropEffectMultiplier(
   blueprint,
   index,
@@ -324,8 +382,8 @@ export function getAdjacentCropEffectMultiplier(
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
 ) {
-  const gourdDebuffMultiplier = isDebuff
-    ? getLeechingGourdDebuffMultiplier(blueprint, index)
+  const debuffMultiplier = isDebuff
+    ? getCropDebuffMultiplier(blueprint, index)
     : 1
 
   if (
@@ -334,11 +392,11 @@ export function getAdjacentCropEffectMultiplier(
       CROP_EFFECT_BYPASS_TIERS.STANDARD,
     )
   ) {
-    return gourdDebuffMultiplier
+    return debuffMultiplier
   }
 
   return (
-    gourdDebuffMultiplier *
+    debuffMultiplier *
     getAdjacentCropConnections(blueprint, index).reduce(
       (multiplier, { index: neighborIndex, adjacencyDistance }) =>
         multiplier *
@@ -647,7 +705,7 @@ export function getGlobalPassiveEffectMultiplier(
       multiplier *
       (1 -
         (1 - splitweed.globalPassiveEffectMultiplier) *
-          getLeechingGourdDebuffMultiplier(blueprint, index))
+          getCropDebuffMultiplier(blueprint, index))
     )
   }, passiveEffectMultiplier)
 }

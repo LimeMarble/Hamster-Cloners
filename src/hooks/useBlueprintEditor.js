@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMemo } from 'react'
 import {
+  canPlaceMuskGrass,
   getBlueprintSlots,
   getDiagonalTileIndexes,
   getLeechingGourdFootprint,
@@ -122,6 +123,17 @@ export function useBlueprintEditor({
     }
 
     const currentGame = gameRef.current
+    if (
+      crop === 'muskGrass' &&
+      !canPlaceMuskGrass(
+        currentGame.blueprint,
+        index,
+        currentGame.completedCropPerfections,
+      )
+    ) {
+      return
+    }
+
     if (
       crop === 'fourLeafClover' &&
       currentGame.blueprint.cells.some(
@@ -316,6 +328,7 @@ export function useBlueprintEditor({
     hasMirrorCorn,
     hasLeechingGourd,
     hasSplitweed,
+    completedCropPerfections: game.completedCropPerfections,
   })
 
   function handleEditorPlotContextMenu(index, crop, event) {

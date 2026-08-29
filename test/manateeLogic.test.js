@@ -14,6 +14,8 @@ import {
   createInitialGame,
   getColumnsProducedPerSecond,
   getManateeDivingHamsterCapacity,
+  getManateeRemainingDivingHamsterCapacity,
+  getManateeRemainingHamsterCount,
   getManateeSurveyDurationMultiplier,
   getManateeSurveyDurationSeconds,
   getManateeSurveyRewardMultipliers,
@@ -44,7 +46,7 @@ test('underwater expeditions have three reward tiers and configurable default ti
       mangroveSurveyId,
       MANATEE_SURVEY_LENGTH_IDS.STANDARD,
     ),
-    5,
+    1,
   )
   assert.equal(
     getManateeSurveyDurationSeconds(
@@ -53,7 +55,7 @@ test('underwater expeditions have three reward tiers and configurable default ti
       sedimentSurveyId,
       MANATEE_SURVEY_LENGTH_IDS.STANDARD,
     ),
-    10,
+    2,
   )
   assert.equal(
     getManateeSurveyDurationMultiplier(
@@ -94,10 +96,10 @@ test('the initial marsh survey silently allocates every owned hamster', () => {
   const startedGame = startManateeSurvey(game)
 
   assert.equal(
-    startedGame.manatees.activeSurvey.id,
+    startedGame.manatees.activeSurveys[0].id,
     MANATEE_SURVEY_IDS.SEARCH_MARSH,
   )
-  assert.equal(startedGame.manatees.activeSurvey.allocatedHamsters, 1875)
+  assert.equal(startedGame.manatees.activeSurveys[0].allocatedHamsters, 1875)
   assert.equal(getManateeSurveyingHamsterCount(startedGame), 1875)
   assert.equal(startManateeSurvey(startedGame), null)
 })
@@ -136,8 +138,98 @@ test('the Diving Cabin unlocks explicit underwater hamster allocation', () => {
     999,
   )
 
-  assert.equal(allocatedGame.manatees.activeSurvey.allocatedHamsters, 17)
-  assert.equal(cappedGame.manatees.activeSurvey.allocatedHamsters, 50)
+  assert.equal(allocatedGame.manatees.activeSurveys[0].allocatedHamsters, 17)
+  assert.equal(cappedGame.manatees.activeSurveys[0].allocatedHamsters, 50)
+})
+
+test('different surveys run together without exceeding shared hamster or diving capacity', () => {
+  const initialGame = {
+    ...createInitialGame(),
+    hamsters: 100,
+    manatees: {
+      ...createInitialGame().manatees,
+      completedBuildings: [MANATEE_BUILDING_IDS.DIVING_CABIN],
+    },
+  }
+  const mangroveGame = startManateeSurvey(
+    initialGame,
+    MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    30,
+  )
+  const sedimentGame = startManateeSurvey(
+    mangroveGame,
+    MANATEE_SURVEY_IDS.SEDIMENT,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    40,
+  )
+  const marshGame = startManateeSurvey(
+    sedimentGame,
+    MANATEE_SURVEY_IDS.SEARCH_MARSH,
+  )
+
+  assert.deepEqual(
+    marshGame.manatees.activeSurveys.map((survey) => [
+      survey.id,
+      survey.allocatedHamsters,
+    ]),
+    [
+      [MANATEE_SURVEY_IDS.MANGROVE_ROOTS, 30],
+      [MANATEE_SURVEY_IDS.SEDIMENT, 20],
+      [MANATEE_SURVEY_IDS.SEARCH_MARSH, 50],
+    ],
+  )
+  assert.equal(getManateeSurveyingHamsterCount(marshGame), 100)
+  assert.equal(getManateeRemainingHamsterCount(marshGame), 0)
+  assert.equal(getManateeRemainingDivingHamsterCapacity(marshGame), 0)
+  assert.equal(
+    startManateeSurvey(
+      marshGame,
+      MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
+    ),
+    null,
+  )
+})
+
+test('concurrent survey completions keep each expedition results separate', () => {
+  const initialGame = {
+    ...createInitialGame(),
+    hamsters: 50,
+    manatees: {
+      ...createInitialGame().manatees,
+      completedBuildings: [MANATEE_BUILDING_IDS.DIVING_CABIN],
+    },
+  }
+  const mangroveGame = startManateeSurvey(
+    initialGame,
+    MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    25,
+  )
+  const concurrentGame = startManateeSurvey(
+    mangroveGame,
+    MANATEE_SURVEY_IDS.SEDIMENT,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    25,
+  )
+  const completedState = advanceManateeSurveyState(
+    concurrentGame.manatees,
+    1e6,
+    1e24,
+    () => 0,
+  )
+
+  assert.equal(completedState.activeSurveys.length, 0)
+  assert.ok(
+    completedState.pendingFinds.some(
+      (find) => find.surveyId === MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
+    ),
+  )
+  assert.ok(
+    completedState.pendingFinds.some(
+      (find) => find.surveyId === MANATEE_SURVEY_IDS.SEDIMENT,
+    ),
+  )
 })
 
 test('underwater expeditions produce their configured finds and tier scaling', () => {
@@ -235,7 +327,7 @@ test('a completed marsh survey creates individually collectible branches and peb
     (find) => find.kind === 'pebble',
   )
 
-  assert.equal(completedState.activeSurvey, null)
+  assert.equal(completedState.activeSurveys.length, 0)
   assert.equal(branches.length, 5)
   assert.equal(pebbles.length, 3)
   assert.ok(branches.every((find) => find.amount === 20))
@@ -344,8 +436,8 @@ test('surveying removes hamsters from Columns per second without reducing Coordi
 
   assert.equal(advancedGame.farmland.columns, game.farmland.columns)
   assert.ok(
-    advancedGame.manatees.activeSurvey.workCompleted >
-      game.manatees.activeSurvey.workCompleted,
+    advancedGame.manatees.activeSurveys[0].workCompleted >
+      game.manatees.activeSurveys[0].workCompleted,
   )
 })
 
@@ -384,10 +476,14 @@ test('Manatee resources, survey progress, finds, and buildings survive save norm
     45,
   )
   assert.equal(
-    normalized.manatees.activeSurvey.workCompleted,
+    normalized.manatees.activeSurveys[0].workCompleted,
     survey.requiredWork / 2,
   )
   assert.equal(normalized.manatees.pendingFinds[0].id, 'saved-branch')
+  assert.equal(
+    normalized.manatees.pendingFinds[0].surveyId,
+    MANATEE_SURVEY_IDS.SEARCH_MARSH,
+  )
   assert.deepEqual(normalized.manatees.completedBuildings, [
     MANATEE_BUILDING_IDS.DIVING_CABIN,
   ])

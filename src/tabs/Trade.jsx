@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   CAPYBARA_DEMONSTRATIONS,
   RABBIT_BLAZING_CONTRACT_RATE,
@@ -366,10 +365,14 @@ function CapybaraDemonstrations({
 }
 export function Trade({
   game,
+  activeRelation,
+  activeManateeZone,
   rabbitContractProductionPerSecondByCrop,
   capybaraBlueprintCropYield,
   canUnlockBlazingCarrot,
   hasBlazingCarrot,
+  onActiveRelationChange,
+  onActiveManateeZoneChange,
   onEstablishTrade,
   onClaimRabbitContract,
   onPurchaseRabbitUnlock,
@@ -378,8 +381,8 @@ export function Trade({
   onStartManateeSurvey,
   onCollectManateeFind,
   onConstructManateeBuilding,
+  onUpgradeManateeBuilding,
 }) {
-  const [activeRelation, setActiveRelation] = useState('rabbits')
   const hasCapybaraContact = hasRabbitUnlock(
     game,
     RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
@@ -430,7 +433,7 @@ export function Trade({
             <button
               type="button"
               className={`trade-relation-tab ${activeRelation === 'rabbits' ? 'trade-relation-tab-active' : ''}`}
-              onClick={() => setActiveRelation('rabbits')}
+              onClick={() => onActiveRelationChange('rabbits')}
               aria-pressed={activeRelation === 'rabbits'}
             >
               Rabbits
@@ -439,7 +442,7 @@ export function Trade({
               <button
                 type="button"
                 className={`trade-relation-tab ${activeRelation === 'capybaras' ? 'trade-relation-tab-active' : ''}`}
-                onClick={() => setActiveRelation('capybaras')}
+                onClick={() => onActiveRelationChange('capybaras')}
                 aria-pressed={activeRelation === 'capybaras'}
               >
                 Capybaras
@@ -449,7 +452,7 @@ export function Trade({
               <button
                 type="button"
                 className={`trade-relation-tab ${activeRelation === 'manatees' ? 'trade-relation-tab-active' : ''}`}
-                onClick={() => setActiveRelation('manatees')}
+                onClick={() => onActiveRelationChange('manatees')}
                 aria-pressed={activeRelation === 'manatees'}
               >
                 Manatees
@@ -543,11 +546,14 @@ export function Trade({
           ) : activeRelation === 'manatees' && hasManateeContact ? (
             <ManateeRelations
               game={game}
+              activeZone={activeManateeZone}
+              onActiveZoneChange={onActiveManateeZoneChange}
               onStartManateeSurvey={onStartManateeSurvey}
               onCollectManateeFind={onCollectManateeFind}
               onConstructManateeBuilding={
                 onConstructManateeBuilding
               }
+              onUpgradeManateeBuilding={onUpgradeManateeBuilding}
             />
           ) : null}
         </>

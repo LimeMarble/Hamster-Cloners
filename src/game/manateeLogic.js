@@ -2,29 +2,48 @@ import {
   DEFAULT_MANATEE_SURVEY_TIME_LENGTH_SCALE,
   MANATEE_BUILDING_IDS,
   MANATEE_BUILDINGS,
+  MANATEE_GARDEN_TENDING_DURATION_SECONDS,
+  MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
   MANATEE_RESOURCE_IDS,
   MANATEE_RESOURCES,
   MANATEE_SURVEY_IDS,
   MANATEE_SURVEY_LENGTH_IDS,
   MANATEE_SURVEY_LENGTHS,
   MANATEE_SURVEYS,
+  MANATEE_ZONE_IDS,
+  MANATEE_ZONES,
   getManateeSurveyDurationMultiplier,
   getManateeSurveyLength,
   getManateeSurveyRequiredWork,
   getManateeSurveyRewardMultipliers,
   getManateeSurveyTimeLengthScale,
 } from './manateeConfig.js'
+import {
+  createInitialManateeState,
+  getManateeBuildingStage,
+  getManateeDivingHamsterCapacity,
+  getManateeRemainingDivingHamsterCapacity,
+  getManateeRemainingHamsterCount,
+  getManateeSurveyAllocatedHamsterCount,
+  getManateeSurveyingHamsterCount,
+  getUnlockedManateeCropIds,
+  normalizeManateeState,
+} from './manateeState.js'
 
 export {
   DEFAULT_MANATEE_SURVEY_TIME_LENGTH_SCALE,
   MANATEE_BUILDING_IDS,
   MANATEE_BUILDINGS,
+  MANATEE_GARDEN_TENDING_DURATION_SECONDS,
+  MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
   MANATEE_RESOURCE_IDS,
   MANATEE_RESOURCES,
   MANATEE_SURVEY_IDS,
   MANATEE_SURVEY_LENGTH_IDS,
   MANATEE_SURVEY_LENGTHS,
   MANATEE_SURVEYS,
+  MANATEE_ZONE_IDS,
+  MANATEE_ZONES,
   getManateeSurveyDurationMultiplier,
   getManateeSurveyLength,
   getManateeSurveyRequiredWork,
@@ -32,153 +51,16 @@ export {
   getManateeSurveyTimeLengthScale,
 }
 
-const FIND_RESOURCE_BY_KIND = new Map(
-  Object.values(MANATEE_SURVEYS).flatMap((survey) =>
-    survey.rewards.map((reward) => [reward.kind, reward.resourceId]),
-  ),
-)
-const LEGACY_RESOURCE_IDS = Object.freeze({
-  [MANATEE_RESOURCE_IDS.MANGROVE_WOOD]: 'wood',
-  [MANATEE_RESOURCE_IDS.LIMESTONE]: 'stone',
-})
-
-export function createInitialManateeState() {
-  return {
-    resources: Object.fromEntries(
-      Object.keys(MANATEE_RESOURCES).map((resourceId) => [resourceId, 0]),
-    ),
-    activeSurvey: null,
-    pendingFinds: [],
-    pendingSurveyId: null,
-    pendingSurveyLengthId: null,
-    completedBuildings: [],
-    nextFindId: 1,
-  }
-}
-
-function toNonNegativeNumber(value, fallback = 0) {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
-}
-
-function toNonNegativeInteger(value, fallback = 0) {
-  const parsed = Number(value)
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback
-}
-
-function getNormalizedResourceId(resourceId) {
-  if (Object.hasOwn(MANATEE_RESOURCES, resourceId)) return resourceId
-  if (resourceId === 'wood') return MANATEE_RESOURCE_IDS.MANGROVE_WOOD
-  if (resourceId === 'stone') return MANATEE_RESOURCE_IDS.LIMESTONE
-  return null
-}
-
-function normalizeFind(rawFind, index) {
-  if (!rawFind || typeof rawFind !== 'object') return null
-
-  const kind = typeof rawFind.kind === 'string' ? rawFind.kind : ''
-  const resourceId =
-    FIND_RESOURCE_BY_KIND.get(kind) ??
-    getNormalizedResourceId(rawFind.resourceId)
-  const amount = toNonNegativeInteger(rawFind.amount, 0)
-  if (!kind || !resourceId || amount <= 0) return null
-
-  return {
-    id:
-      typeof rawFind.id === 'string' && rawFind.id.length > 0
-        ? rawFind.id
-        : `recovered-find-${index + 1}`,
-    kind,
-    resourceId,
-    amount,
-    x: Math.min(92, Math.max(8, toNonNegativeNumber(rawFind.x, 50))),
-    y: Math.min(88, Math.max(12, toNonNegativeNumber(rawFind.y, 50))),
-    rotation: Math.min(
-      40,
-      Math.max(
-        -40,
-        Number.isFinite(Number(rawFind.rotation))
-          ? Number(rawFind.rotation)
-          : 0,
-      ),
-    ),
-  }
-}
-
-export function normalizeManateeState(rawState) {
-  const initialState = createInitialManateeState()
-  if (!rawState || typeof rawState !== 'object') return initialState
-
-  const pendingFinds = Array.isArray(rawState.pendingFinds)
-    ? rawState.pendingFinds.map(normalizeFind).filter(Boolean)
-    : []
-  const rawSurvey = rawState.activeSurvey
-  const activeSurveyDefinition = MANATEE_SURVEYS[rawSurvey?.id]
-  const activeSurveyLength = getManateeSurveyLength(
-    activeSurveyDefinition?.id,
-    rawSurvey?.lengthId,
-  )
-  const activeSurvey =
-    activeSurveyDefinition &&
-    toNonNegativeInteger(rawSurvey.allocatedHamsters, 0) > 0
-      ? {
-          id: activeSurveyDefinition.id,
-          lengthId: activeSurveyLength.id,
-          allocatedHamsters: toNonNegativeInteger(
-            rawSurvey.allocatedHamsters,
-            0,
-          ),
-          workCompleted: Math.min(
-            getManateeSurveyRequiredWork(
-              activeSurveyDefinition.id,
-              activeSurveyLength.id,
-            ),
-            toNonNegativeNumber(rawSurvey.workCompleted, 0),
-          ),
-        }
-      : null
-  const completedBuildings = Array.isArray(rawState.completedBuildings)
-    ? [...new Set(rawState.completedBuildings)].filter((buildingId) =>
-        Object.hasOwn(MANATEE_BUILDINGS, buildingId),
-      )
-    : []
-  const pendingSurvey = MANATEE_SURVEYS[rawState.pendingSurveyId]
-  const pendingSurveyId =
-    pendingFinds.length > 0
-      ? pendingSurvey?.id ?? MANATEE_SURVEY_IDS.SEARCH_MARSH
-      : null
-  const pendingSurveyLengthId = pendingSurveyId
-    ? getManateeSurveyLength(
-        pendingSurveyId,
-        rawState.pendingSurveyLengthId,
-      ).id
-    : null
-
-  return {
-    resources: Object.fromEntries(
-      Object.keys(MANATEE_RESOURCES).map((resourceId) => {
-        const legacyResourceId = LEGACY_RESOURCE_IDS[resourceId]
-        const savedAmount = rawState.resources?.[resourceId]
-        const legacyAmount = legacyResourceId
-          ? rawState.resources?.[legacyResourceId]
-          : undefined
-
-        return [
-          resourceId,
-          toNonNegativeInteger(savedAmount ?? legacyAmount, 0),
-        ]
-      }),
-    ),
-    activeSurvey,
-    pendingFinds,
-    pendingSurveyId,
-    pendingSurveyLengthId,
-    completedBuildings,
-    nextFindId: Math.max(
-      pendingFinds.length + 1,
-      toNonNegativeInteger(rawState.nextFindId, initialState.nextFindId),
-    ),
-  }
+export {
+  createInitialManateeState,
+  getManateeBuildingStage,
+  getManateeDivingHamsterCapacity,
+  getManateeRemainingDivingHamsterCapacity,
+  getManateeRemainingHamsterCount,
+  getManateeSurveyAllocatedHamsterCount,
+  getManateeSurveyingHamsterCount,
+  getUnlockedManateeCropIds,
+  normalizeManateeState,
 }
 
 export function getMarshSurveyWorkPerSecond(
@@ -198,6 +80,24 @@ export function getMarshSurveyWorkPerSecond(
   return safeHamsters * coordinationLog ** 10
 }
 
+export function getManateeSurveyWorkPerSecond(
+  allocatedHamsters,
+  hamsterCoordination,
+  surveyId,
+) {
+  const survey = MANATEE_SURVEYS[surveyId]
+  const safeHamsters = Math.max(
+    0,
+    Math.floor(Number(allocatedHamsters) || 0),
+  )
+
+  if (survey?.fixedDurationSeconds) {
+    return safeHamsters >= survey.fixedHamsterAllocation ? 1 : 0
+  }
+
+  return getMarshSurveyWorkPerSecond(safeHamsters, hamsterCoordination)
+}
+
 export function getManateeSurveyDurationSeconds(
   allocatedHamsters,
   hamsterCoordination,
@@ -205,18 +105,24 @@ export function getManateeSurveyDurationSeconds(
   lengthId = MANATEE_SURVEY_LENGTH_IDS.STANDARD,
   surveyDurationMultiplier = 1,
 ) {
-  const workPerSecond = getMarshSurveyWorkPerSecond(
+  const survey = MANATEE_SURVEYS[surveyId]
+  const workPerSecond = getManateeSurveyWorkPerSecond(
     allocatedHamsters,
     hamsterCoordination,
+    surveyId,
   )
   const safeDurationMultiplier = Math.max(
     Number.EPSILON,
     Number(surveyDurationMultiplier) || 1,
   )
 
+  const appliedDurationMultiplier = survey?.fixedDurationSeconds
+    ? 1
+    : safeDurationMultiplier
+
   return workPerSecond > 0
     ? (getManateeSurveyRequiredWork(surveyId, lengthId) / workPerSecond) *
-        safeDurationMultiplier
+        appliedDurationMultiplier
     : Infinity
 }
 
@@ -234,26 +140,6 @@ export function getMarshSurveyDurationSeconds(
   )
 }
 
-export function getManateeSurveyingHamsterCount(game) {
-  const state = normalizeManateeState(game?.manatees)
-  if (!state.activeSurvey) return 0
-
-  return Math.min(
-    Math.max(0, Math.floor(Number(game?.hamsters) || 0)),
-    state.activeSurvey.allocatedHamsters,
-  )
-}
-
-export function getManateeDivingHamsterCapacity(game) {
-  const state = normalizeManateeState(game?.manatees)
-
-  return state.completedBuildings.reduce(
-    (total, buildingId) =>
-      total + (MANATEE_BUILDINGS[buildingId]?.divingHamsterCapacity ?? 0),
-    0,
-  )
-}
-
 export function startManateeSurvey(
   game,
   surveyId = MANATEE_SURVEY_IDS.SEARCH_MARSH,
@@ -262,19 +148,47 @@ export function startManateeSurvey(
 ) {
   const state = normalizeManateeState(game?.manatees)
   const survey = MANATEE_SURVEYS[surveyId]
-  if (!survey || state.activeSurvey || state.pendingFinds.length > 0) {
+  const surveyIsBusy = state.activeSurveys.some(
+    (activeSurvey) => activeSurvey.id === surveyId,
+  )
+  const surveyHasFinds = state.pendingFinds.some(
+    (find) => find.surveyId === surveyId,
+  )
+  if (!survey || surveyIsBusy || surveyHasFinds) {
+    return null
+  }
+  if (
+    survey.requiredBuildingId &&
+    (!state.completedBuildings.includes(survey.requiredBuildingId) ||
+      getManateeBuildingStage(game, survey.requiredBuildingId) <
+        (survey.requiredBuildingStage ?? 0))
+  ) {
     return null
   }
 
-  const ownedHamsters = Math.max(0, Math.floor(Number(game?.hamsters) || 0))
-  const divingCapacity = getManateeDivingHamsterCapacity(game)
+  const remainingHamsters = getManateeRemainingHamsterCount(game)
+  const remainingDivingCapacity =
+    getManateeRemainingDivingHamsterCapacity(game)
   const requestedUnderwaterHamsters =
     requestedHamsters === undefined
-      ? divingCapacity
+      ? remainingDivingCapacity
       : Math.max(0, Math.floor(Number(requestedHamsters) || 0))
-  const allocatedHamsters = survey.isUnderwater
-    ? Math.min(ownedHamsters, divingCapacity, requestedUnderwaterHamsters)
-    : ownedHamsters
+  const fixedHamsterAllocation = survey.fixedHamsterAllocation ?? 0
+  const hasFixedTeamAvailable =
+    remainingHamsters >= fixedHamsterAllocation &&
+    (!survey.isUnderwater ||
+      remainingDivingCapacity >= fixedHamsterAllocation)
+  const allocatedHamsters = fixedHamsterAllocation > 0
+    ? hasFixedTeamAvailable
+      ? fixedHamsterAllocation
+      : 0
+    : survey.isUnderwater
+      ? Math.min(
+          remainingHamsters,
+          remainingDivingCapacity,
+          requestedUnderwaterHamsters,
+        )
+      : remainingHamsters
   if (allocatedHamsters === 0) return null
 
   const normalizedLength = getManateeSurveyLength(survey.id, lengthId)
@@ -283,12 +197,15 @@ export function startManateeSurvey(
     ...game,
     manatees: {
       ...state,
-      activeSurvey: {
-        id: survey.id,
-        lengthId: normalizedLength.id,
-        allocatedHamsters,
-        workCompleted: 0,
-      },
+      activeSurveys: [
+        ...state.activeSurveys,
+        {
+          id: survey.id,
+          lengthId: normalizedLength.id,
+          allocatedHamsters,
+          workCompleted: 0,
+        },
+      ],
     },
   }
 }
@@ -309,6 +226,8 @@ function createFind(
   idNumber,
   placementIndex,
   totalFindCount,
+  surveyId,
+  surveyLengthId,
   random,
 ) {
   const columnCount = Math.min(
@@ -326,13 +245,15 @@ function createFind(
     kind: reward.kind,
     resourceId: reward.resourceId,
     amount,
+    surveyId,
+    surveyLengthId,
     x: 8 + ((column + 0.5) * 84) / columnCount + xJitter,
     y: 12 + ((row + 0.5) * 76) / rowCount + yJitter,
     rotation: getRandomUnit(random) * 40 - 20,
   }
 }
 
-function createSurveyFinds(state, survey, lengthId, random) {
+function createSurveyFinds(nextFindId, survey, lengthId, random) {
   const rewardMultipliers = getManateeSurveyRewardMultipliers(
     survey.id,
     lengthId,
@@ -350,7 +271,7 @@ function createSurveyFinds(state, survey, lengthId, random) {
     0,
   )
   const finds = []
-  let nextFindId = state.nextFindId
+  let followingFindId = nextFindId
 
   rewardsWithCounts.forEach(({ reward, count }) => {
     for (let index = 0; index < count; index += 1) {
@@ -363,17 +284,19 @@ function createSurveyFinds(state, survey, lengthId, random) {
         createFind(
           reward,
           amount,
-          nextFindId,
+          followingFindId,
           finds.length,
           totalFindCount,
+          survey.id,
+          lengthId,
           random,
         ),
       )
-      nextFindId += 1
+      followingFindId += 1
     }
   })
 
-  return { finds, nextFindId }
+  return { finds, nextFindId: followingFindId }
 }
 
 export function advanceManateeSurveyState(
@@ -384,50 +307,55 @@ export function advanceManateeSurveyState(
   surveyDurationMultiplier = 1,
 ) {
   const state = normalizeManateeState(rawState)
-  if (!state.activeSurvey) return rawState ?? state
+  if (state.activeSurveys.length === 0) return rawState ?? state
 
   const safeElapsedSeconds = Math.max(0, Number(elapsedSeconds) || 0)
-  const baseWorkPerSecond = getMarshSurveyWorkPerSecond(
-    state.activeSurvey.allocatedHamsters,
-    hamsterCoordination,
-  )
   const safeDurationMultiplier = Math.max(
     Number.EPSILON,
     Number(surveyDurationMultiplier) || 1,
   )
-  const workCompleted =
-    state.activeSurvey.workCompleted +
-    (baseWorkPerSecond / safeDurationMultiplier) * safeElapsedSeconds
-  const survey = MANATEE_SURVEYS[state.activeSurvey.id]
-  const requiredWork = getManateeSurveyRequiredWork(
-    survey.id,
-    state.activeSurvey.lengthId,
-  )
+  const activeSurveys = []
+  const completedFinds = []
+  let nextFindId = state.nextFindId
 
-  if (workCompleted < requiredWork) {
-    return {
-      ...state,
-      activeSurvey: {
-        ...state.activeSurvey,
-        workCompleted,
-      },
+  state.activeSurveys.forEach((activeSurvey) => {
+    const survey = MANATEE_SURVEYS[activeSurvey.id]
+    const baseWorkPerSecond = getManateeSurveyWorkPerSecond(
+      activeSurvey.allocatedHamsters,
+      hamsterCoordination,
+      survey.id,
+    )
+    const appliedDurationMultiplier = survey.fixedDurationSeconds
+      ? 1
+      : safeDurationMultiplier
+    const workCompleted =
+      activeSurvey.workCompleted +
+      (baseWorkPerSecond / appliedDurationMultiplier) * safeElapsedSeconds
+    const requiredWork = getManateeSurveyRequiredWork(
+      survey.id,
+      activeSurvey.lengthId,
+    )
+
+    if (workCompleted < requiredWork) {
+      activeSurveys.push({ ...activeSurvey, workCompleted })
+      return
     }
-  }
 
-  const results = createSurveyFinds(
-    state,
-    survey,
-    state.activeSurvey.lengthId,
-    random,
-  )
+    const results = createSurveyFinds(
+      nextFindId,
+      survey,
+      activeSurvey.lengthId,
+      random,
+    )
+    completedFinds.push(...results.finds)
+    nextFindId = results.nextFindId
+  })
 
   return {
     ...state,
-    activeSurvey: null,
-    pendingFinds: results.finds,
-    pendingSurveyId: survey.id,
-    pendingSurveyLengthId: state.activeSurvey.lengthId,
-    nextFindId: results.nextFindId,
+    activeSurveys,
+    pendingFinds: [...state.pendingFinds, ...completedFinds],
+    nextFindId,
   }
 }
 
@@ -449,9 +377,6 @@ export function collectManateeFind(game, findId) {
         [find.resourceId]: state.resources[find.resourceId] + find.amount,
       },
       pendingFinds,
-      pendingSurveyId: pendingFinds.length > 0 ? state.pendingSurveyId : null,
-      pendingSurveyLengthId:
-        pendingFinds.length > 0 ? state.pendingSurveyLengthId : null,
     },
   }
 }
@@ -486,6 +411,58 @@ export function constructManateeBuilding(game, buildingId) {
       ...state,
       resources: nextResources,
       completedBuildings: [...state.completedBuildings, buildingId],
+      buildingStages: {
+        ...state.buildingStages,
+        [buildingId]: 0,
+      },
+    },
+  }
+}
+
+export function getNextManateeBuildingStage(game, buildingId) {
+  const state = normalizeManateeState(game?.manatees)
+  if (!state.completedBuildings.includes(buildingId)) return null
+
+  const building = MANATEE_BUILDINGS[buildingId]
+  const currentStage = state.buildingStages[buildingId] ?? 0
+  return (
+    building?.stages?.find((stage) => stage.stage === currentStage + 1) ??
+    null
+  )
+}
+
+export function canUpgradeManateeBuilding(game, buildingId) {
+  const state = normalizeManateeState(game?.manatees)
+  const nextStage = getNextManateeBuildingStage(game, buildingId)
+
+  return Boolean(
+    nextStage?.implemented === true &&
+      Object.entries(nextStage.cost ?? {}).every(
+        ([resourceId, amount]) => state.resources[resourceId] >= amount,
+      ),
+  )
+}
+
+export function upgradeManateeBuilding(game, buildingId) {
+  if (!canUpgradeManateeBuilding(game, buildingId)) return null
+
+  const state = normalizeManateeState(game?.manatees)
+  const nextStage = getNextManateeBuildingStage(game, buildingId)
+  const nextResources = { ...state.resources }
+
+  Object.entries(nextStage.cost).forEach(([resourceId, amount]) => {
+    nextResources[resourceId] -= amount
+  })
+
+  return {
+    ...game,
+    manatees: {
+      ...state,
+      resources: nextResources,
+      buildingStages: {
+        ...state.buildingStages,
+        [buildingId]: nextStage.stage,
+      },
     },
   }
 }

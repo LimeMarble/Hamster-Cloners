@@ -1,5 +1,6 @@
 import { createBlueprint } from './blueprintLogic.js'
 import { isKnownCrop } from './crops.js'
+import { getMuskGrassPlacementLimit } from './cropEffects.js'
 
 export const BLUEPRINT_FORMAT_VERSION = 1
 const BLUEPRINT_FORMAT_TYPE = 'hamster-cloners-blueprint'
@@ -123,6 +124,7 @@ export function importBlueprint(
     hasMirrorCorn = false,
     hasLeechingGourd = false,
     hasSplitweed = false,
+    completedCropPerfections = [],
   },
 ) {
   const rawBlueprint = parseBlueprintCode(blueprintCode)
@@ -185,6 +187,21 @@ export function importBlueprint(
 
   if (lockedCrop !== undefined) {
     throw new Error('This blueprint contains a crop you have not unlocked.')
+  }
+
+  const muskGrassCount = resizedBlueprint.cells.filter(
+    (crop) => crop === 'muskGrass',
+  ).length
+  if (
+    muskGrassCount >
+    getMuskGrassPlacementLimit(
+      resizedBlueprint,
+      completedCropPerfections,
+    )
+  ) {
+    throw new Error(
+      'This blueprint contains more Musk Grass than its placement limit allows.',
+    )
   }
 
   if (

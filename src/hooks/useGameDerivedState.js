@@ -16,6 +16,7 @@ import {
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
   getManateeSurveyingHamsterCount,
+  getUnlockedManateeCropIds,
   getNextHamsterCost,
   getNextMajorProgressionGoal,
   getNextRowDuplicatorCost,
@@ -224,6 +225,10 @@ export function useGameDerivedState(game) {
     game,
     RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
   )
+  const unlockedManateeCropIds = useMemo(
+    () => getUnlockedManateeCropIds({ manatees: game.manatees }),
+    [game.manatees],
+  )
   const unlockedCropIds = useMemo(
     () =>
       getUnlockedCropIds(
@@ -240,6 +245,7 @@ export function useGameDerivedState(game) {
         hasUnlockedCarrot,
         hasUnlockedFourLeafClover,
         game.hasUnlockedWheat,
+        unlockedManateeCropIds,
       ),
     [
       game.blueprint,
@@ -255,6 +261,7 @@ export function useGameDerivedState(game) {
       hasUnlockedCarrot,
       hasUnlockedFourLeafClover,
       game.hasUnlockedWheat,
+      unlockedManateeCropIds,
     ],
   )
   const visibleCropIds = useMemo(
