@@ -26,16 +26,43 @@ function CloverFortuneContent({ fortune, onCollect }) {
       ) : null}
 
       {state.activeEffects.length > 0 ? (
-        <aside className="fortune-active-effects" aria-live="polite">
-          <span className="fortune-panel-label">Breezes of fortune</span>
+        <aside
+          className="fortune-active-effects"
+          aria-label="Active Breezes of Fortune"
+          aria-live="polite"
+        >
           {state.activeEffects.map((activeEffect) => {
             const effect = getFortuneEffect(activeEffect.id)
+            const remainingSeconds = Math.ceil(activeEffect.remainingSeconds)
 
             return effect ? (
-              <div key={activeEffect.id}>
-                <strong>{effect.name}</strong>
-                <span>{effect.description}</span>
-                <time><FormattedNumber value={Math.ceil(activeEffect.remainingSeconds)} maximumFractionDigits={0} />s</time>
+              <div
+                className="fortune-effect-box"
+                key={activeEffect.id}
+                tabIndex={0}
+                aria-label={`${effect.name}: ${effect.description}. ${remainingSeconds} seconds remaining.`}
+              >
+                <span className="fortune-effect-icon" aria-hidden="true">
+                  {effect.icon}
+                </span>
+                <time className="fortune-effect-time">
+                  <FormattedNumber
+                    value={remainingSeconds}
+                    maximumFractionDigits={0}
+                  />
+                  s
+                </time>
+                <div className="fortune-effect-tooltip" role="tooltip">
+                  <strong>{effect.name}</strong>
+                  <span>{effect.description}</span>
+                  <time>
+                    <FormattedNumber
+                      value={remainingSeconds}
+                      maximumFractionDigits={0}
+                    />{' '}
+                    seconds remaining
+                  </time>
+                </div>
               </div>
             ) : null
           })}

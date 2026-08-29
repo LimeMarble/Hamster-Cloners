@@ -22,6 +22,7 @@ export const FORTUNE_EFFECTS = Object.freeze([
   {
     id: FORTUNE_EFFECT_IDS.DEMONSTRATION,
     name: "Fortune's Demonstration",
+    icon: '✦',
     weight: 0.17,
     durationSeconds: 37,
     description: '+10% Crop passive effects',
@@ -30,6 +31,7 @@ export const FORTUNE_EFFECTS = Object.freeze([
   {
     id: FORTUNE_EFFECT_IDS.BOUNTY,
     name: "Fortune's Bounty",
+    icon: '×',
     weight: 0.52,
     durationSeconds: 117,
     description: 'Crop yields ×17.77',
@@ -38,6 +40,7 @@ export const FORTUNE_EFFECTS = Object.freeze([
   {
     id: FORTUNE_EFFECT_IDS.MIRAGE,
     name: "Fortune's Mirage",
+    icon: '◇',
     weight: 0.2,
     durationSeconds: 0,
     description: 'Nothing happens',
@@ -45,6 +48,7 @@ export const FORTUNE_EFFECTS = Object.freeze([
   {
     id: FORTUNE_EFFECT_IDS.OPUS,
     name: "Fortune's Opus",
+    icon: '★',
     weight: 0.11,
     durationSeconds: 27,
     description: 'Crop yields ×7.77 and +7.77% Crop passive effects',
