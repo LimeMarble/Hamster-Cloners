@@ -128,6 +128,12 @@ export function getBlueprintCropStats(
   const passiveEffectMultiplier = normalizeFortuneMultiplier(
     fortuneModifiers.passiveEffectMultiplier,
   )
+  const allPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
   const cropYieldMultiplier = normalizeFortuneMultiplier(
     fortuneModifiers.cropYieldMultiplier,
   )
@@ -250,6 +256,7 @@ export function getBlueprintCropStats(
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
 
     if (leechingGourdEffect.debuffContribution > 0) {
@@ -420,7 +427,7 @@ export function getBlueprintCropStats(
     bonus > 0 ? bonus * monocropMultiplier : bonus / monocropMultiplier
   const hamsterEfficiencyBonus =
     adjustForMonocrop(baseHamsterEfficiencyBonus) *
-    passiveEffectMultiplier *
+    allPassiveEffectMultiplier *
     cropEffectMultiplier *
     getAugmentedMirrorCornEffectMultiplier(index)
   const baseGlobalPassiveEffectMultiplier =
@@ -553,6 +560,7 @@ export function getBlueprintCropStats(
     hamsterEfficiencyBonus,
     monocropMultiplier,
     passiveEffectMultiplier,
+    allPassiveEffectMultiplier,
     completedCropPerfections,
     rabbitContractsCompleted,
     totalRabbitRelationsEarned,

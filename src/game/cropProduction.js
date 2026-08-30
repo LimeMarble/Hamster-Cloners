@@ -99,6 +99,12 @@ function calculateCropHamsterEfficiencyMultiplier(
       getMonocropCropCount(effectBlueprint, crop),
     ]),
   )
+  const allPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
+    effectBlueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
   const additiveCropBonus = effectBlueprint.cells.reduce(
     (totalBonus, crop, index) => {
       const baseHamsterEfficiencyBonus = getCropHamsterEfficiencyBonus(
@@ -136,7 +142,7 @@ function calculateCropHamsterEfficiencyMultiplier(
       return (
         totalBonus +
         adjustForMonocrop(baseHamsterEfficiencyBonus) *
-          passiveEffectMultiplier *
+          allPassiveEffectMultiplier *
           adjacentCropBonusMultiplier *
           mirrorCornEffectMultiplier
       )
@@ -207,6 +213,12 @@ function calculateRowDuplicatorEffectivenessMultiplier(
       getMonocropCropCount(effectBlueprint, crop),
     ]),
   )
+  const allPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
+    effectBlueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
   const additiveEffectivenessBonus = effectBlueprint.cells.reduce(
     (totalBonus, crop, index) => {
       const baseEffectivenessBonus =
@@ -243,7 +255,7 @@ function calculateRowDuplicatorEffectivenessMultiplier(
       return (
         totalBonus +
         adjustedBonus *
-          passiveEffectMultiplier *
+          allPassiveEffectMultiplier *
           adjacentCropBonusMultiplier *
           mirrorCornEffectMultiplier
       )

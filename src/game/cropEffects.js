@@ -46,6 +46,8 @@ import {
 const getCachedRabbitRelationsMultiplier = createBlueprintCalculationCache()
 const getCachedBlazingCarrotSurveyTimeEffect =
   createBlueprintCalculationCache()
+const getCachedGlobalPassiveEffectMultiplier =
+  createBlueprintCalculationCache()
 
 export {
   getAdjacentCropConnections,
@@ -376,6 +378,7 @@ export function getLeechingGourdTurnipEffect(
   blueprint,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const nearestConnections = new Map()
   const shoalGrassNetworkSizes = getShoalGrassNetworkSizeByIndex(blueprint)
@@ -443,11 +446,17 @@ export function getLeechingGourdTurnipEffect(
     (total, effect) => total + effect.contribution,
     0,
   )
+  const allPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
 
   return {
     adjacencyEffects,
     debuffContribution,
-    multiplier: 1 + debuffContribution * 0.05 * passiveEffectMultiplier,
+    multiplier: 1 + debuffContribution * 0.05 * allPassiveEffectMultiplier,
   }
 }
 
@@ -557,6 +566,13 @@ export function getAdjacentHarvestDestructionEffects(
   passiveEffectMultiplier = 1,
   seedAugmentations = {},
 ) {
+  const allPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
+
   return getAdjacentCropConnections(blueprint, index).flatMap(
     ({ index: sourceIndex, adjacencyDistance }) => {
       if (!destroysAdjacentHarvests(blueprint.cells[sourceIndex])) {
@@ -574,7 +590,7 @@ export function getAdjacentHarvestDestructionEffects(
         )
       const strength =
         (1 - baseDestructionMultiplier) *
-        passiveEffectMultiplier *
+        allPassiveEffectMultiplier *
         getAdjacentCropEffectMultiplier(
           blueprint,
           sourceIndex,
@@ -778,6 +794,8 @@ export function getMirrorCornEffectMultiplier(
     seedAugmentations,
   )
 
+  if (mirrorCornTargetCount === 0) return 1
+
   const mirrorCornEffectiveness =
     (mirrorCorn?.diagonalTargetEffectMultiplier ?? 1) +
     getMirrorCornEffectivenessBonus(seedAugmentations) +
@@ -786,6 +804,12 @@ export function getMirrorCornEffectMultiplier(
       completedCropPerfections,
       seedAugmentations,
     )
+  const allPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
 
   return (
     getMonocropAdjustedCropEffectMultiplier(
@@ -794,7 +818,7 @@ export function getMirrorCornEffectMultiplier(
       mirrorCornEffectiveness,
       completedCropPerfections,
       seedAugmentations,
-    ) * passiveEffectMultiplier
+    ) * allPassiveEffectMultiplier
   ) ** mirrorCornTargetCount
 }
 
@@ -940,6 +964,24 @@ export function getGlobalPassiveEffectMultiplier(
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
   seedAugmentations = {},
+) {
+  return getCachedGlobalPassiveEffectMultiplier(
+    blueprint,
+    [completedCropPerfections, passiveEffectMultiplier, seedAugmentations],
+    () => calculateGlobalPassiveEffectMultiplier(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    ),
+  )
+}
+
+function calculateGlobalPassiveEffectMultiplier(
+  blueprint,
+  completedCropPerfections,
+  passiveEffectMultiplier,
+  seedAugmentations,
 ) {
   if (isWaterLettuceFieldInfested(blueprint)) return 0
 
@@ -1146,6 +1188,7 @@ export function getAdjacentCropEffectModifier(
           blueprint,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         ).multiplier
       : adjacentCropEffectModifier
   const monocropAdjustedBaseMultiplier =
@@ -1156,18 +1199,24 @@ export function getAdjacentCropEffectModifier(
       completedCropPerfections,
       seedAugmentations,
     )
-  const fortuneAdjustedBaseMultiplier =
+  const allPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
+  const passiveAdjustedBaseMultiplier =
     monocropAdjustedBaseMultiplier >= 1
-      ? monocropAdjustedBaseMultiplier * passiveEffectMultiplier
-      : monocropAdjustedBaseMultiplier / passiveEffectMultiplier
+      ? monocropAdjustedBaseMultiplier * allPassiveEffectMultiplier
+      : monocropAdjustedBaseMultiplier / allPassiveEffectMultiplier
   const strength = getRootTunnelAdjacencyStrength(adjacencyDistance)
 
   // Turnip's entire ×2-style modifier travels through the tunnel, rather
   // than only its +1 above baseline. At ×0.8 per tile it remains a small buff
   // at distance 3, then becomes a debuff from distance 4 onward.
   return crop === 'turnip'
-    ? fortuneAdjustedBaseMultiplier * strength
-    : 1 + (fortuneAdjustedBaseMultiplier - 1) * strength
+    ? passiveAdjustedBaseMultiplier * strength
+    : 1 + (passiveAdjustedBaseMultiplier - 1) * strength
 }
 
 function getCarrotContractBonus(
@@ -1648,7 +1697,12 @@ export function getAdjacentHarvestModifier(
       (CROP_DEFINITIONS[effectCrop]?.adjacentHarvestModifier ?? 0),
     completedCropPerfections,
     seedAugmentations,
-  ) * passiveEffectMultiplier
+  ) * getGlobalPassiveEffectMultiplier(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
 }
 
 export function getExternalCropBuffMultiplier(
@@ -1673,7 +1727,12 @@ export function getExternalCropBuffMultiplier(
       baseExternalCropBuffMultiplier,
       completedCropPerfections,
       seedAugmentations,
-    ) * passiveEffectMultiplier
+    ) * getGlobalPassiveEffectMultiplier(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    )
 
   const adjacentEffectSourceMultipliers = getAdjacentCropConnections(
     blueprint,
@@ -1716,7 +1775,12 @@ export function getExternalCropBuffMultiplier(
       completedCropPerfections,
       seedAugmentations,
     ) *
-    passiveEffectMultiplier
+    getGlobalPassiveEffectMultiplier(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    )
   const externalEffectSourceMultipliers = [
     ...adjacentEffectSourceMultipliers,
     ...Array(mirrorCornTargetCount).fill(mirrorCornSourceMultiplier),

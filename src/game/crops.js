@@ -212,7 +212,7 @@ export const CROP_DEFINITIONS = {
     globalPassiveEffectDebuff: -0.175,
     infestationThreshold: 11,
     effectDescription:
-      '1 Crop per slot · +20% global Crop passive effects, immune to all boosts · −17.5% global Crop passive effects from insects, which can be nullified by Shoal Grass · planting more than 11 infests the entire field and disables every harvest and Crop passive',
+      '1 Crop per slot · +20% to all Crop passive effects except other passive-effect buffs; this bonus is immune to all boosts · −17.5% global Crop passive effects from insects, which can be nullified by Shoal Grass · planting more than 11 infests the entire field and disables every harvest and Crop passive',
     unlockDescription:
       'Unlock through the Water Lettuce Bed in the Submerged Garden',
   },

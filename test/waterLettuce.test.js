@@ -5,8 +5,10 @@ import {
   getBaseFieldIncome,
   getBlazingCarrotSurveyTimeEffect,
   getBlueprintCropStats,
+  getAdjacentCropEffectModifier,
   getCropHamsterEfficiencyMultiplier,
   getGlobalPassiveEffectMultiplier,
+  getMirrorCornEffectMultiplier,
   getWaterLettucePassiveEffect,
   isWaterLettuceFieldInfested,
 } from '../src/game/gameLogic.js'
@@ -57,6 +59,72 @@ test('Water Lettuce passive boost ignores Crop and Fortune boosts', () => {
   assert.equal(effect.cropPassiveBonus, 0.2)
   assert.ok(effect.insectPenalty < -0.175)
   assert.equal(canBeMirrorCornTarget('waterLettuce'), false)
+})
+
+test('Water Lettuce boosts every ordinary passive like Fortune', () => {
+  const potatoBlueprint = createBlueprint({
+    rows: 3,
+    columns: 3,
+    cells: ['sweetPotato', 'waterLettuce'],
+  })
+  const turnipBlueprint = createBlueprint({
+    rows: 3,
+    columns: 3,
+    cells: ['turnip', 'waterLettuce'],
+  })
+  const mirrorBlueprint = createBlueprint({
+    rows: 3,
+    columns: 3,
+    cells: [
+      'corn',
+      null,
+      null,
+      null,
+      'leek',
+      null,
+      null,
+      null,
+      'waterLettuce',
+    ],
+    mirrorCornTargets: [4],
+  })
+
+  assert.ok(
+    Math.abs(
+      getCropHamsterEfficiencyMultiplier(potatoBlueprint) - 1.25625,
+    ) < 1e-12,
+  )
+  assert.ok(
+    Math.abs(
+      getAdjacentCropEffectModifier(
+        turnipBlueprint,
+        'turnip',
+        'leek',
+      ) - 2.05,
+    ) < 1e-12,
+  )
+  assert.ok(
+    Math.abs(
+      getMirrorCornEffectMultiplier(
+        mirrorBlueprint,
+        4,
+        ['mirrorCorn'],
+      ) - 4.1,
+    ) < 1e-12,
+  )
+})
+
+test('Water Lettuce passive buffs add without amplifying one another', () => {
+  const blueprint = createBlueprint({
+    rows: 3,
+    columns: 3,
+    cells: ['waterLettuce', 'waterLettuce'],
+  })
+  const effect = getWaterLettucePassiveEffect(blueprint)
+
+  assert.ok(Math.abs(effect.cropPassiveBonus - 0.4) < 1e-12)
+  assert.ok(Math.abs(effect.insectPenalty + 0.35) < 1e-12)
+  assert.ok(Math.abs(effect.multiplier - 1.05) < 1e-12)
 })
 
 test('the Monocrop penalty still weakens Water Lettuce despite boost immunity', () => {

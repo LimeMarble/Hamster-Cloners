@@ -9,6 +9,7 @@ export function getCropPassiveStats({
   hamsterEfficiencyBonus,
   monocropMultiplier,
   passiveEffectMultiplier,
+  allPassiveEffectMultiplier,
   completedCropPerfections,
   rabbitContractsCompleted,
   totalRabbitRelationsEarned,
@@ -38,7 +39,7 @@ export function getCropPassiveStats({
       format: 'percentage',
       value:
         adjustForMonocrop(baseRowDuplicatorEffectivenessBonus) *
-        passiveEffectMultiplier *
+        allPassiveEffectMultiplier *
         cropEffects.getAdjacentCropEffectMultiplier(
           blueprint,
           index,
