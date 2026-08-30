@@ -1,6 +1,6 @@
 import { createBlueprint } from './blueprintLogic.js'
-import { isKnownCrop } from './crops.js'
-import { getMuskGrassPlacementLimit } from './cropEffects.js'
+import { isKnownCrop, normalizeCropId } from './crops.js'
+import { getShoalGrassPlacementLimit } from './cropEffects.js'
 
 export const BLUEPRINT_FORMAT_VERSION = 1
 const BLUEPRINT_FORMAT_TYPE = 'hamster-cloners-blueprint'
@@ -156,10 +156,11 @@ export function importBlueprint(
     ...rawBlueprint,
     requireSplitweedFootprints: hasSplitweed,
   })
+  const normalizedRawCells = rawBlueprint.cells.map(normalizeCropId)
 
   if (
     JSON.stringify(normalizedSourceBlueprint.cells) !==
-      JSON.stringify(rawBlueprint.cells) ||
+      JSON.stringify(normalizedRawCells) ||
     JSON.stringify(normalizedSourceBlueprint.mirrorCornTargets) !==
       JSON.stringify(rawBlueprint.mirrorCornTargets)
   ) {
@@ -190,19 +191,19 @@ export function importBlueprint(
     throw new Error('This blueprint contains a crop you have not unlocked.')
   }
 
-  const muskGrassCount = resizedBlueprint.cells.filter(
-    (crop) => crop === 'muskGrass',
+  const shoalGrassCount = resizedBlueprint.cells.filter(
+    (crop) => crop === 'shoalGrass',
   ).length
   if (
-    muskGrassCount >
-    getMuskGrassPlacementLimit(
+    shoalGrassCount >
+    getShoalGrassPlacementLimit(
       resizedBlueprint,
       completedCropPerfections,
       seedAugmentations,
     )
   ) {
     throw new Error(
-      'This blueprint contains more Musk Grass than its placement limit allows.',
+      'This blueprint contains more Shoal Grass than its placement limit allows.',
     )
   }
 

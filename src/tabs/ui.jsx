@@ -170,7 +170,8 @@ export function CropHoverInspector({
           <dt>Harvest</dt>
           <dd>
             {stats.harvestDestroyedByAppleTree ||
-            stats.harvestDestroyedByBlazingCarrot ? (
+            stats.harvestDestroyedByBlazingCarrot ||
+            stats.harvestDestroyedByInfestation ? (
               'Destroyed'
             ) : (
               <>
@@ -254,18 +255,27 @@ export function CropHoverInspector({
               )
             }
 
-            if (effect.type === 'musk-grass-network') {
+            if (effect.type === 'water-lettuce-infestation') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  Connected network: <FormattedNumber value={effect.count} maximumFractionDigits={0} /> Musk Grass
+                  Field-wide Water Lettuce infestation; this Crop's harvest
+                  and all passive effects are disabled.
                 </li>
               )
             }
 
-            if (effect.type === 'musk-grass-debuff-nullification') {
+            if (effect.type === 'shoal-grass-network') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  Debuffs nullified by a complete Musk Grass surround.
+                  Connected network: <FormattedNumber value={effect.count} maximumFractionDigits={0} /> Shoal Grass
+                </li>
+              )
+            }
+
+            if (effect.type === 'shoal-grass-debuff-nullification') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Debuffs nullified by a complete Shoal Grass surround.
                 </li>
               )
             }
@@ -288,7 +298,7 @@ export function CropHoverInspector({
             if (effect.type === 'global-passive-suppression') {
               return (
                 <li key={effect.type + '-' + effectIndex}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Crop passive effects from Splitweed (cannot be boosted)
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Crop passive effects after field-wide modifiers
                 </li>
               )
             }

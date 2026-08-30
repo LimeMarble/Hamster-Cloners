@@ -19,6 +19,38 @@
   text-transform: uppercase;
 }
 
+.editor-plot-water-lettuce-infested {
+  position: relative;
+  border-color: #7b3f28;
+  background: radial-gradient(circle, #302416, #130f0b 72%);
+  box-shadow: inset 0 0 18px rgb(73 38 15 / 75%);
+  filter: grayscale(0.8) brightness(0.62);
+}
+
+.editor-plot-water-lettuce-infested::after {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  padding: 2px 4px;
+  border: 1px solid #b87946;
+  color: #f1d0ad;
+  background: #241308;
+  content: 'Infested';
+  font-size: 0.56rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.water-lettuce-infestation-warning {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #9b5e32;
+  color: #f2cfaa;
+  background: #2a170c;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .manatee-survey-crop-bonus {
   margin: 0;
   padding: 9px 11px;

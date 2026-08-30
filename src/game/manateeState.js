@@ -24,8 +24,17 @@ Object.values(MANATEE_SURVEYS).forEach((survey) => {
 })
 
 const LEGACY_RESOURCE_IDS = Object.freeze({
-  [MANATEE_RESOURCE_IDS.MANGROVE_WOOD]: 'wood',
+  [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: 'twig',
   [MANATEE_RESOURCE_IDS.LIMESTONE]: 'stone',
+  [MANATEE_RESOURCE_IDS.SHOAL_GRASS]: 'muskGrass',
+})
+
+const LEGACY_SURVEY_IDS = Object.freeze({
+  tendMuskGrass: MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS,
+})
+
+const LEGACY_FIND_KINDS = Object.freeze({
+  'musk-grass': 'shoal-grass',
 })
 
 export function createInitialManateeState() {
@@ -53,13 +62,18 @@ function toNonNegativeInteger(value, fallback = 0) {
 
 function getNormalizedResourceId(resourceId) {
   if (Object.hasOwn(MANATEE_RESOURCES, resourceId)) return resourceId
-  if (resourceId === 'wood') return MANATEE_RESOURCE_IDS.MANGROVE_WOOD
+  if (resourceId === 'twig') return MANATEE_RESOURCE_IDS.MANGROVE_TWIG
   if (resourceId === 'stone') return MANATEE_RESOURCE_IDS.LIMESTONE
+  if (resourceId === 'muskGrass') return MANATEE_RESOURCE_IDS.SHOAL_GRASS
   return null
 }
 
+function getNormalizedSurveyId(surveyId) {
+  return LEGACY_SURVEY_IDS[surveyId] ?? surveyId
+}
+
 function normalizeActiveSurvey(rawSurvey) {
-  const survey = MANATEE_SURVEYS[rawSurvey?.id]
+  const survey = MANATEE_SURVEYS[getNormalizedSurveyId(rawSurvey?.id)]
   if (!survey) return null
 
   const allocatedHamsters = toNonNegativeInteger(
@@ -89,15 +103,16 @@ function normalizeFind(
 ) {
   if (!rawFind || typeof rawFind !== 'object') return null
 
-  const kind = typeof rawFind.kind === 'string' ? rawFind.kind : ''
+  const rawKind = typeof rawFind.kind === 'string' ? rawFind.kind : ''
+  const kind = LEGACY_FIND_KINDS[rawKind] ?? rawKind
   const resourceId =
     FIND_RESOURCE_BY_KIND.get(kind) ??
     getNormalizedResourceId(rawFind.resourceId)
   const amount = toNonNegativeInteger(rawFind.amount, 0)
   if (!kind || !resourceId || amount <= 0) return null
 
-  const surveyId = MANATEE_SURVEYS[rawFind.surveyId]?.id ??
-    MANATEE_SURVEYS[legacySurveyId]?.id ??
+  const surveyId = MANATEE_SURVEYS[getNormalizedSurveyId(rawFind.surveyId)]?.id ??
+    MANATEE_SURVEYS[getNormalizedSurveyId(legacySurveyId)]?.id ??
     FIND_SURVEY_BY_KIND.get(kind) ??
     MANATEE_SURVEY_IDS.SEARCH_MARSH
   const lengthId = getManateeSurveyLength(

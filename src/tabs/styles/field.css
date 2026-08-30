@@ -290,10 +290,16 @@
   background: #123a20;
 }
 
-.plot-muskGrass,
-.editor-plot-muskGrass {
+.plot-shoalGrass,
+.editor-plot-shoalGrass {
   border-color: #4fa988;
   background: #12322a;
+}
+
+.plot-waterLettuce,
+.editor-plot-waterLettuce {
+  border-color: #73bfa1;
+  background: #16392f;
 }
 
 .plot-leechingGourd,
@@ -350,9 +356,14 @@
   color: #8ef0a0;
 }
 
-.plot-muskGrass span,
-.editor-plot-muskGrass span {
+.plot-shoalGrass span,
+.editor-plot-shoalGrass span {
   color: #79d8ae;
+}
+
+.plot-waterLettuce span,
+.editor-plot-waterLettuce span {
+  color: #9ce6ba;
 }
 
 .plot-knotweed span,

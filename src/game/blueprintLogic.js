@@ -5,6 +5,7 @@ import {
   hasCropPerfection,
   isCropPerfectionTemporarilyUnavailable,
   isKnownCrop,
+  normalizeCropId,
 } from './crops.js'
 import {
   BLUEPRINT_EXPANSIONS,
@@ -45,8 +46,10 @@ export function createBlueprint({
     normalizeMultiTileCropCells(
       Array.from(
         { length: totalCells },
-        (_, index) =>
-          isKnownCrop(sourceCells[index]) ? sourceCells[index] : null,
+        (_, index) => {
+          const cropId = normalizeCropId(sourceCells[index])
+          return isKnownCrop(cropId) ? cropId : null
+        },
       ),
       safeRows,
       safeColumns,

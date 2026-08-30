@@ -28,12 +28,27 @@ test('the Submerged Garden is built empty before its first growing stage', () =>
     [MANATEE_RESOURCE_IDS.MANGROVE_LEAVES]: 50,
     [MANATEE_RESOURCE_IDS.PETE]: 300,
     [MANATEE_RESOURCE_IDS.WATER_LETTUCE]: 20,
-    [MANATEE_RESOURCE_IDS.MUSK_GRASS]: 15,
+    [MANATEE_RESOURCE_IDS.SHOAL_GRASS]: 15,
   })
   assert.deepEqual(garden.stages[0].cost, {
     [MANATEE_RESOURCE_IDS.PETE]: 550,
-    [MANATEE_RESOURCE_IDS.MUSK_GRASS]: 50,
+    [MANATEE_RESOURCE_IDS.SHOAL_GRASS]: 50,
   })
+  assert.deepEqual(garden.stages[1].cost, {
+    [MANATEE_RESOURCE_IDS.PETE]: 1250,
+    [MANATEE_RESOURCE_IDS.WATER_LETTUCE]: 100,
+  })
+  assert.deepEqual(garden.stages[2].cost, {
+    [MANATEE_RESOURCE_IDS.PETE]: 2000,
+    [MANATEE_RESOURCE_IDS.MANGROVE_ROOTS]: 175,
+    [MANATEE_RESOURCE_IDS.MANGROVE_LEAVES]: 250,
+    [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: 500,
+    [MANATEE_RESOURCE_IDS.MANGROVE_SEEDS]: 25,
+  })
+  assert.equal(garden.stages[1].cropId, 'waterLettuce')
+  assert.equal(garden.stages[2].cropId, 'mangroveSapling')
+  assert.equal(garden.stages[1].implemented, true)
+  assert.equal(garden.stages[2].implemented, false)
 
   const game = {
     ...createInitialGame(),
@@ -47,7 +62,7 @@ test('the Submerged Garden is built empty before its first growing stage', () =>
         [MANATEE_RESOURCE_IDS.MANGROVE_LEAVES]: 50,
         [MANATEE_RESOURCE_IDS.PETE]: 850,
         [MANATEE_RESOURCE_IDS.WATER_LETTUCE]: 20,
-        [MANATEE_RESOURCE_IDS.MUSK_GRASS]: 65,
+        [MANATEE_RESOURCE_IDS.SHOAL_GRASS]: 65,
       },
     },
   }
@@ -76,7 +91,7 @@ test('the Submerged Garden is built empty before its first growing stage', () =>
   assert.equal(
     startManateeSurvey(
       builtGame,
-      MANATEE_SURVEY_IDS.TEND_MUSK_GRASS,
+      MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS,
     ),
     null,
   )
@@ -100,13 +115,13 @@ test('the Submerged Garden is built empty before its first growing stage', () =>
     ),
     1,
   )
-  assert.deepEqual(getUnlockedManateeCropIds(stageOneGame), ['muskGrass'])
+  assert.deepEqual(getUnlockedManateeCropIds(stageOneGame), ['shoalGrass'])
   assert.equal(
     stageOneGame.manatees.resources[MANATEE_RESOURCE_IDS.PETE],
     0,
   )
   assert.equal(
-    stageOneGame.manatees.resources[MANATEE_RESOURCE_IDS.MUSK_GRASS],
+    stageOneGame.manatees.resources[MANATEE_RESOURCE_IDS.SHOAL_GRASS],
     0,
   )
   assert.equal(
@@ -117,10 +132,62 @@ test('the Submerged Garden is built empty before its first growing stage', () =>
     false,
   )
   assert.equal(garden.stages[1].name, 'Water Lettuce Bed')
-  assert.equal(garden.stages[1].implemented, false)
+  const stageTwoReadyGame = {
+    ...stageOneGame,
+    manatees: {
+      ...stageOneGame.manatees,
+      resources: {
+        ...stageOneGame.manatees.resources,
+        [MANATEE_RESOURCE_IDS.PETE]: 1250,
+        [MANATEE_RESOURCE_IDS.WATER_LETTUCE]: 100,
+      },
+    },
+  }
+  assert.equal(
+    canUpgradeManateeBuilding(
+      stageTwoReadyGame,
+      MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+    ),
+    true,
+  )
+  const stageTwoGame = upgradeManateeBuilding(
+    stageTwoReadyGame,
+    MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+  )
+  assert.equal(
+    getManateeBuildingStage(
+      stageTwoGame,
+      MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+    ),
+    2,
+  )
+  assert.deepEqual(
+    getUnlockedManateeCropIds(stageTwoGame),
+    ['shoalGrass', 'waterLettuce'],
+  )
+  assert.equal(
+    canUpgradeManateeBuilding(
+      stageTwoGame,
+      MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+    ),
+    false,
+  )
+  assert.deepEqual(
+    getUnlockedManateeCropIds({
+      ...stageOneGame,
+      manatees: {
+        ...stageOneGame.manatees,
+        buildingStages: {
+          ...stageOneGame.manatees.buildingStages,
+          [MANATEE_BUILDING_IDS.SUBMERGED_GARDEN]: 3,
+        },
+      },
+    }),
+    ['shoalGrass', 'waterLettuce'],
+  )
 })
 
-test('Musk Grass tending always uses 10 hamsters for 600 seconds', () => {
+test('Shoal Grass tending always uses 10 hamsters for 600 seconds', () => {
   const initialGame = {
     ...createInitialGame(),
     hamsters: 100,
@@ -141,7 +208,7 @@ test('Musk Grass tending always uses 10 hamsters for 600 seconds', () => {
     getManateeSurveyDurationSeconds(
       MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
       1e300,
-      MANATEE_SURVEY_IDS.TEND_MUSK_GRASS,
+      MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS,
       MANATEE_SURVEY_LENGTH_IDS.STANDARD,
       0.1,
     ),
@@ -150,14 +217,14 @@ test('Musk Grass tending always uses 10 hamsters for 600 seconds', () => {
   assert.equal(
     startManateeSurvey(
       { ...initialGame, hamsters: 9 },
-      MANATEE_SURVEY_IDS.TEND_MUSK_GRASS,
+      MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS,
     ),
     null,
   )
 
   const startedGame = startManateeSurvey(
     initialGame,
-    MANATEE_SURVEY_IDS.TEND_MUSK_GRASS,
+    MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS,
     MANATEE_SURVEY_LENGTH_IDS.THOROUGH,
     999,
   )
@@ -187,11 +254,57 @@ test('Musk Grass tending always uses 10 hamsters for 600 seconds', () => {
     () => 0,
     100,
   )
-  const muskGrassFinds = completed.pendingFinds.filter(
-    (find) => find.surveyId === MANATEE_SURVEY_IDS.TEND_MUSK_GRASS,
+  const shoalGrassFinds = completed.pendingFinds.filter(
+    (find) => find.surveyId === MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS,
   )
 
   assert.equal(completed.activeSurveys.length, 0)
-  assert.equal(muskGrassFinds.length, 25)
-  assert.ok(muskGrassFinds.every((find) => find.amount === 5))
+  assert.equal(shoalGrassFinds.length, 25)
+  assert.ok(shoalGrassFinds.every((find) => find.amount === 5))
+})
+
+test('Water Lettuce tending unlocks at garden stage two with the fixed garden team', () => {
+  const initialGame = {
+    ...createInitialGame(),
+    hamsters: 100,
+    manatees: {
+      ...createInitialGame().manatees,
+      completedBuildings: [
+        MANATEE_BUILDING_IDS.DIVING_CABIN,
+        MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+      ],
+      buildingStages: {
+        [MANATEE_BUILDING_IDS.DIVING_CABIN]: 0,
+        [MANATEE_BUILDING_IDS.SUBMERGED_GARDEN]: 2,
+      },
+    },
+  }
+  const startedGame = startManateeSurvey(
+    initialGame,
+    MANATEE_SURVEY_IDS.TEND_WATER_LETTUCE,
+    MANATEE_SURVEY_LENGTH_IDS.THOROUGH,
+    999,
+  )
+
+  assert.equal(
+    startedGame.manatees.activeSurveys[0].allocatedHamsters,
+    MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
+  )
+  assert.equal(
+    startedGame.manatees.activeSurveys[0].lengthId,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+  )
+
+  const completed = advanceManateeSurveyState(
+    startedGame.manatees,
+    MANATEE_GARDEN_TENDING_DURATION_SECONDS,
+    1e300,
+    () => 0,
+  )
+  const waterLettuceFinds = completed.pendingFinds.filter(
+    (find) => find.surveyId === MANATEE_SURVEY_IDS.TEND_WATER_LETTUCE,
+  )
+
+  assert.equal(waterLettuceFinds.length, 25)
+  assert.ok(waterLettuceFinds.every((find) => find.amount === 5))
 })

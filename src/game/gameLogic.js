@@ -10,7 +10,7 @@ export * from './capybaraLogic.js'
 export * from './augmentationLogic.js'
 export * from './manateeLogic.js'
 export {
-  canPlaceMuskGrass,
+  canPlaceShoalGrass,
   getAdjacentCropConnections,
   getAdjacentCropEffectModifier,
   getBlueprintMonocropMultiplier,
@@ -24,9 +24,9 @@ export {
   getRabbitRelationsMultiplier,
   getSamplingLentilTradedCropEffect,
   getLeechingGourdTurnipEffect,
-  getMuskGrassNetworkSize,
-  getMuskGrassNetworkSizeByIndex,
-  getMuskGrassPlacementLimit,
+  getShoalGrassNetworkSize,
+  getShoalGrassNetworkSizeByIndex,
+  getShoalGrassPlacementLimit,
   getMirrorCornEffectBlueprint,
   getMirrorCornEffectMultiplier,
   getMirrorCornMaximumReflections,
@@ -35,14 +35,16 @@ export {
   isMirrorCornOverloaded,
   getSplitweedMirrorCornEffectivenessBonus,
   getSplitweedMonocropLimitAugmentationEffect,
+  getWaterLettucePassiveEffect,
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getPlantedCropCount,
   getRootTunnelAdjacencyStrength,
   hasReachedMonocropLimit,
   isBlazingCarrotBurned,
-  isCropDebuffIsolatedByMuskGrass,
-  isCropFullySurroundedByMuskGrass,
+  isCropDebuffIsolatedByShoalGrass,
+  isCropFullySurroundedByShoalGrass,
+  isWaterLettuceFieldInfested,
 } from './cropEffects.js'
 export * from './cropProduction.js'
 export * from './cropStats.js'

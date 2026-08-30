@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
-  canPlaceMuskGrass,
+  canPlaceShoalGrass,
   createBlueprint,
   getBaseFieldIncome,
   getBlueprintCropStats,
@@ -9,10 +9,10 @@ import {
   getGlobalPassiveEffectMultiplier,
   getLeechingGourdTurnipEffect,
   getMonocropCropCount,
-  getMuskGrassNetworkSize,
-  getMuskGrassPlacementLimit,
-  isCropDebuffIsolatedByMuskGrass,
-  isCropFullySurroundedByMuskGrass,
+  getShoalGrassNetworkSize,
+  getShoalGrassPlacementLimit,
+  isCropDebuffIsolatedByShoalGrass,
+  isCropFullySurroundedByShoalGrass,
 } from '../src/game/gameLogic.js'
 import { exportBlueprint, importBlueprint } from '../src/game/blueprintTransfer.js'
 import {
@@ -30,7 +30,7 @@ function createFilledBlueprint(rows, columns, entries) {
   return createBlueprint({ rows, columns, cells })
 }
 
-test('Musk Grass unlocks from the Submerged Garden entitlement and is then visible', () => {
+test('Shoal Grass unlocks from the Submerged Garden entitlement and is then visible', () => {
   const unlockedCropIds = getUnlockedCropIds(
     createBlueprint(),
     false,
@@ -45,42 +45,42 @@ test('Musk Grass unlocks from the Submerged Garden entitlement and is then visib
     false,
     false,
     false,
-    ['muskGrass'],
+    ['shoalGrass'],
   )
 
-  assert.ok(unlockedCropIds.includes('muskGrass'))
-  assert.ok(getVisibleCropIds(unlockedCropIds).includes('muskGrass'))
-  assert.equal(CROP_DEFINITIONS.muskGrass.doesNotHarvest, true)
+  assert.ok(unlockedCropIds.includes('shoalGrass'))
+  assert.ok(getVisibleCropIds(unlockedCropIds).includes('shoalGrass'))
+  assert.equal(CROP_DEFINITIONS.shoalGrass.doesNotHarvest, true)
 })
 
-test('Musk Grass has zero harvest and ordinary monocrop weight', () => {
+test('Shoal Grass has zero harvest and ordinary monocrop weight', () => {
   const blueprint = createFilledBlueprint(4, 4, {
-    0: 'muskGrass',
-    1: 'muskGrass',
+    0: 'shoalGrass',
+    1: 'shoalGrass',
     2: 'leek',
   })
 
   assert.equal(getBaseFieldIncome(blueprint), 1)
-  assert.equal(getMonocropCropCount(blueprint, 'muskGrass'), 2)
+  assert.equal(getMonocropCropCount(blueprint, 'shoalGrass'), 2)
   assert.equal(getBlueprintCropStats(blueprint, 0).harvestYield, 0)
 })
 
-test('Musk Grass placement is capped at one third of the monocrop limit', () => {
+test('Shoal Grass placement is capped at one third of the monocrop limit', () => {
   const blueprint = createBlueprint({ rows: 10, columns: 10 })
-  const placementLimit = getMuskGrassPlacementLimit(blueprint)
+  const placementLimit = getShoalGrassPlacementLimit(blueprint)
   const cells = blueprint.cells.map((crop, index) =>
-    index < placementLimit ? 'muskGrass' : crop,
+    index < placementLimit ? 'shoalGrass' : crop,
   )
   const cappedBlueprint = createBlueprint({ rows: 10, columns: 10, cells })
 
   assert.equal(placementLimit, 10)
-  assert.equal(canPlaceMuskGrass(cappedBlueprint, placementLimit), false)
-  assert.equal(canPlaceMuskGrass(cappedBlueprint, 0), true)
+  assert.equal(canPlaceShoalGrass(cappedBlueprint, placementLimit), false)
+  assert.equal(canPlaceShoalGrass(cappedBlueprint, 0), true)
 })
 
-test('blueprint imports cannot bypass the Musk Grass placement cap', () => {
+test('blueprint imports cannot bypass the Shoal Grass placement cap', () => {
   const cells = Array(100).fill(null)
-  cells.fill('muskGrass', 0, 11)
+  cells.fill('shoalGrass', 0, 11)
   const blueprintCode = exportBlueprint(
     createBlueprint({ rows: 10, columns: 10, cells }),
   )
@@ -90,16 +90,16 @@ test('blueprint imports cannot bypass the Musk Grass placement cap', () => {
       importBlueprint(blueprintCode, {
         rows: 10,
         columns: 10,
-        unlockedCropIds: ['leek', 'muskGrass'],
+        unlockedCropIds: ['leek', 'shoalGrass'],
       }),
-    /more Musk Grass than its placement limit/,
+    /more Shoal Grass than its placement limit/,
   )
 })
 
-test('blueprint imports apply Splitweed augmentation bonuses before checking Musk Grass', () => {
+test('blueprint imports apply Splitweed augmentation bonuses before checking Shoal Grass', () => {
   const cells = Array(100).fill(null)
   ;[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 34].forEach((index) => {
-    cells[index] = 'muskGrass'
+    cells[index] = 'shoalGrass'
   })
   cells[44] = 'knotweed'
   cells[45] = 'splitweedPart'
@@ -116,14 +116,14 @@ test('blueprint imports apply Splitweed augmentation bonuses before checking Mus
   const importOptions = {
     rows: 10,
     columns: 10,
-    unlockedCropIds: ['knotweed', 'muskGrass'],
+    unlockedCropIds: ['knotweed', 'shoalGrass'],
     hasSplitweed: true,
     completedCropPerfections: ['splitweed'],
   }
 
   assert.throws(
     () => importBlueprint(blueprintCode, importOptions),
-    /more Musk Grass than its placement limit/,
+    /more Shoal Grass than its placement limit/,
   )
 
   const imported = importBlueprint(blueprintCode, {
@@ -131,12 +131,12 @@ test('blueprint imports apply Splitweed augmentation bonuses before checking Mus
     seedAugmentations: { splitweedMonocropLimitLevel: 2 },
   })
   assert.equal(
-    imported.cells.filter((crop) => crop === 'muskGrass').length,
+    imported.cells.filter((crop) => crop === 'shoalGrass').length,
     12,
   )
 })
 
-test('each Gourd-adjacent Musk Grass uses its full connected network size', () => {
+test('each Gourd-adjacent Shoal Grass uses its full connected network size', () => {
   const entries = {
     27: 'leechingGourd',
     28: 'leechingGourdPart',
@@ -145,18 +145,18 @@ test('each Gourd-adjacent Musk Grass uses its full connected network size', () =
   }
   ;[9, 10, 11, 18, 19, 20, 21, 26, 29, 34, 37, 42, 43, 44, 45].forEach(
     (index) => {
-      entries[index] = 'muskGrass'
+      entries[index] = 'shoalGrass'
     },
   )
   const blueprint = createFilledBlueprint(8, 8, entries)
   const gourdEffect = getLeechingGourdTurnipEffect(blueprint)
 
-  assert.equal(getMuskGrassNetworkSize(blueprint, 19), 15)
+  assert.equal(getShoalGrassNetworkSize(blueprint, 19), 15)
   assert.equal(gourdEffect.adjacencyEffects.length, 8)
   assert.ok(
     gourdEffect.adjacencyEffects.every(
       (effect) =>
-        effect.crop === 'muskGrass' &&
+        effect.crop === 'shoalGrass' &&
         effect.networkSize === 15 &&
         effect.contribution === 15,
     ),
@@ -170,109 +170,109 @@ test('a complete eight-tile surround nullifies a Crop debuff', () => {
     rows: 3,
     columns: 3,
     cells: [
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
       'corn',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
     ],
   })
   const stats = getBlueprintCropStats(blueprint, 4)
 
-  assert.equal(isCropFullySurroundedByMuskGrass(blueprint, 4), true)
+  assert.equal(isCropFullySurroundedByShoalGrass(blueprint, 4), true)
   assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 1)
   assert.ok(
     stats.receivedEffects.some(
-      (effect) => effect.type === 'musk-grass-debuff-nullification',
+      (effect) => effect.type === 'shoal-grass-debuff-nullification',
     ),
   )
 })
 
-test('one Musk Grass cluster isolates at most one Crop of each type', () => {
+test('one Shoal Grass cluster isolates at most one Crop of each type', () => {
   const blueprint = createBlueprint({
     rows: 3,
     columns: 7,
     cells: [
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
       'corn',
-      'muskGrass',
+      'shoalGrass',
       'corn',
-      'muskGrass',
+      'shoalGrass',
       'pumpkin',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
     ],
   })
 
-  assert.equal(isCropFullySurroundedByMuskGrass(blueprint, 8), true)
-  assert.equal(isCropFullySurroundedByMuskGrass(blueprint, 10), true)
-  assert.equal(isCropDebuffIsolatedByMuskGrass(blueprint, 8), true)
-  assert.equal(isCropDebuffIsolatedByMuskGrass(blueprint, 10), false)
-  assert.equal(isCropDebuffIsolatedByMuskGrass(blueprint, 12), true)
+  assert.equal(isCropFullySurroundedByShoalGrass(blueprint, 8), true)
+  assert.equal(isCropFullySurroundedByShoalGrass(blueprint, 10), true)
+  assert.equal(isCropDebuffIsolatedByShoalGrass(blueprint, 8), true)
+  assert.equal(isCropDebuffIsolatedByShoalGrass(blueprint, 10), false)
+  assert.equal(isCropDebuffIsolatedByShoalGrass(blueprint, 12), true)
   assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 0.9)
 })
 
-test('separate Musk Grass clusters can isolate the same Crop type', () => {
+test('separate Shoal Grass clusters can isolate the same Crop type', () => {
   const blueprint = createBlueprint({
     rows: 3,
     columns: 7,
     cells: [
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
       null,
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
       'corn',
-      'muskGrass',
+      'shoalGrass',
       null,
-      'muskGrass',
+      'shoalGrass',
       'corn',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
       null,
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
     ],
   })
 
-  assert.equal(isCropDebuffIsolatedByMuskGrass(blueprint, 8), true)
-  assert.equal(isCropDebuffIsolatedByMuskGrass(blueprint, 12), true)
+  assert.equal(isCropDebuffIsolatedByShoalGrass(blueprint, 8), true)
+  assert.equal(isCropDebuffIsolatedByShoalGrass(blueprint, 12), true)
   assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 1)
 })
 
-test('field edges never count as a complete Musk Grass surround', () => {
+test('field edges never count as a complete Shoal Grass surround', () => {
   const blueprint = createBlueprint({
     rows: 3,
     columns: 3,
     cells: [
       'corn',
-      'muskGrass',
+      'shoalGrass',
       null,
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
       null,
       null,
       null,
@@ -280,7 +280,7 @@ test('field edges never count as a complete Musk Grass surround', () => {
     ],
   })
 
-  assert.equal(isCropFullySurroundedByMuskGrass(blueprint, 0), false)
+  assert.equal(isCropFullySurroundedByShoalGrass(blueprint, 0), false)
   assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 0.9)
 })
 
@@ -289,26 +289,26 @@ test('a complete surround covers every external tile of a 2x2 Splitweed', () => 
     rows: 4,
     columns: 4,
     cells: [
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
       'knotweed',
       'splitweedPart',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
       'splitweedPart',
       'splitweedPart',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
+      'shoalGrass',
     ],
     requireSplitweedFootprints: true,
   })
 
-  assert.equal(isCropFullySurroundedByMuskGrass(blueprint, 5), true)
+  assert.equal(isCropFullySurroundedByShoalGrass(blueprint, 5), true)
   assert.equal(getGlobalPassiveEffectMultiplier(blueprint, ['splitweed']), 1)
 })

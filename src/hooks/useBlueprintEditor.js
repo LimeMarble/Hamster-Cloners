@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMemo } from 'react'
 import {
-  canPlaceMuskGrass,
+  canPlaceShoalGrass,
   getBlueprintSlots,
   getDiagonalTileIndexes,
   getLeechingGourdFootprint,
@@ -126,8 +126,8 @@ export function useBlueprintEditor({
 
     const currentGame = gameRef.current
     if (
-      crop === 'muskGrass' &&
-      !canPlaceMuskGrass(
+      crop === 'shoalGrass' &&
+      !canPlaceShoalGrass(
         currentGame.blueprint,
         index,
         currentGame.completedCropPerfections,

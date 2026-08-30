@@ -2,7 +2,8 @@ export const MANATEE_SURVEY_IDS = Object.freeze({
   SEARCH_MARSH: 'searchMarsh',
   MANGROVE_ROOTS: 'mangroveRoots',
   SEDIMENT: 'sediment',
-  TEND_MUSK_GRASS: 'tendMuskGrass',
+  TEND_SHOAL_GRASS: 'tendShoalGrass',
+  TEND_WATER_LETTUCE: 'tendWaterLettuce',
 })
 
 export const MANATEE_ZONE_IDS = Object.freeze({
@@ -50,20 +51,21 @@ export const MANATEE_SURVEY_LENGTHS = Object.freeze([
 export const DEFAULT_MANATEE_SURVEY_TIME_LENGTH_SCALE = 15
 
 export const MANATEE_RESOURCE_IDS = Object.freeze({
-  MANGROVE_WOOD: 'mangroveWood',
+  MANGROVE_TWIG: 'mangroveTwig',
   LIMESTONE: 'limestone',
   MANGROVE_ROOTS: 'mangroveRoots',
   MANGROVE_LEAVES: 'mangroveLeaves',
+  MANGROVE_SEEDS: 'mangroveSeeds',
   PETE: 'pete',
   WATER_LETTUCE: 'waterLettuce',
-  MUSK_GRASS: 'muskGrass',
+  SHOAL_GRASS: 'shoalGrass',
 })
 
 export const MANATEE_RESOURCES = Object.freeze({
-  [MANATEE_RESOURCE_IDS.MANGROVE_WOOD]: Object.freeze({
-    id: MANATEE_RESOURCE_IDS.MANGROVE_WOOD,
-    name: 'Mangrove Wood',
-    iconClass: 'mangrove-wood',
+  [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: Object.freeze({
+    id: MANATEE_RESOURCE_IDS.MANGROVE_TWIG,
+    name: 'Mangrove Twig',
+    iconClass: 'mangrove-twig',
   }),
   [MANATEE_RESOURCE_IDS.LIMESTONE]: Object.freeze({
     id: MANATEE_RESOURCE_IDS.LIMESTONE,
@@ -80,6 +82,11 @@ export const MANATEE_RESOURCES = Object.freeze({
     name: 'Mangrove Leaves',
     iconClass: 'mangrove-leaves',
   }),
+  [MANATEE_RESOURCE_IDS.MANGROVE_SEEDS]: Object.freeze({
+    id: MANATEE_RESOURCE_IDS.MANGROVE_SEEDS,
+    name: 'Mangrove Seeds',
+    iconClass: 'mangrove-seeds',
+  }),
   [MANATEE_RESOURCE_IDS.PETE]: Object.freeze({
     id: MANATEE_RESOURCE_IDS.PETE,
     name: 'Pete',
@@ -90,10 +97,10 @@ export const MANATEE_RESOURCES = Object.freeze({
     name: 'Water Lettuce',
     iconClass: 'water-lettuce',
   }),
-  [MANATEE_RESOURCE_IDS.MUSK_GRASS]: Object.freeze({
-    id: MANATEE_RESOURCE_IDS.MUSK_GRASS,
-    name: 'Musk Grass',
-    iconClass: 'musk-grass',
+  [MANATEE_RESOURCE_IDS.SHOAL_GRASS]: Object.freeze({
+    id: MANATEE_RESOURCE_IDS.SHOAL_GRASS,
+    name: 'Shoal Grass',
+    iconClass: 'shoal-grass',
   }),
 })
 
@@ -188,8 +195,9 @@ export const MANATEE_SURVEYS = Object.freeze({
       'Survey the marshland close to the water for construction materials.',
     referenceDurationSeconds: 60,
     rewards: [
-      createReward('branch', MANATEE_RESOURCE_IDS.MANGROVE_WOOD, 5, 7, 20, 30),
+      createReward('branch', MANATEE_RESOURCE_IDS.MANGROVE_TWIG, 5, 7, 20, 30),
       createReward('pebble', MANATEE_RESOURCE_IDS.LIMESTONE, 3, 4, 10, 12),
+      createReward('mangrove-seed', MANATEE_RESOURCE_IDS.MANGROVE_SEEDS, 0, 1, 1, 1),
     ],
   }),
   [MANATEE_SURVEY_IDS.MANGROVE_ROOTS]: createSurvey({
@@ -202,6 +210,7 @@ export const MANATEE_SURVEYS = Object.freeze({
     rewards: [
       createReward('mangrove-root', MANATEE_RESOURCE_IDS.MANGROVE_ROOTS, 4, 5, 1, 2),
       createReward('mangrove-leaf', MANATEE_RESOURCE_IDS.MANGROVE_LEAVES, 8, 10, 1, 1),
+      createReward('mangrove-seed', MANATEE_RESOURCE_IDS.MANGROVE_SEEDS, 2, 3, 1, 1),
       createReward('pete', MANATEE_RESOURCE_IDS.PETE, 0, 2, 8, 10),
     ],
   }),
@@ -215,15 +224,15 @@ export const MANATEE_SURVEYS = Object.freeze({
     rewards: [
       createReward('pete', MANATEE_RESOURCE_IDS.PETE, 10, 12, 8, 10),
       createReward('water-lettuce', MANATEE_RESOURCE_IDS.WATER_LETTUCE, 1, 4, 1, 5),
-      createReward('musk-grass', MANATEE_RESOURCE_IDS.MUSK_GRASS, 1, 3, 3, 6),
+      createReward('shoal-grass', MANATEE_RESOURCE_IDS.SHOAL_GRASS, 1, 3, 3, 6),
       createReward('limestone', MANATEE_RESOURCE_IDS.LIMESTONE, 5, 5, 10, 15),
     ],
   }),
-  [MANATEE_SURVEY_IDS.TEND_MUSK_GRASS]: createSurvey({
-    id: MANATEE_SURVEY_IDS.TEND_MUSK_GRASS,
-    name: 'Tend Musk Grass',
+  [MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS]: createSurvey({
+    id: MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS,
+    name: 'Tend Shoal Grass',
     description:
-      'Send a fixed team of 10 hamsters to cultivate Musk Grass in the Submerged Garden.',
+      'Send a fixed team of 10 hamsters to cultivate Shoal Grass in the Submerged Garden.',
     referenceDurationSeconds: MANATEE_GARDEN_TENDING_DURATION_SECONDS,
     fixedDurationSeconds: MANATEE_GARDEN_TENDING_DURATION_SECONDS,
     fixedHamsterAllocation: MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
@@ -233,8 +242,31 @@ export const MANATEE_SURVEYS = Object.freeze({
     requiredBuildingStage: 1,
     rewards: [
       createReward(
-        'musk-grass',
-        MANATEE_RESOURCE_IDS.MUSK_GRASS,
+        'shoal-grass',
+        MANATEE_RESOURCE_IDS.SHOAL_GRASS,
+        25,
+        25,
+        5,
+        10,
+      ),
+    ],
+  }),
+  [MANATEE_SURVEY_IDS.TEND_WATER_LETTUCE]: createSurvey({
+    id: MANATEE_SURVEY_IDS.TEND_WATER_LETTUCE,
+    name: 'Tend Water Lettuce',
+    description:
+      'Send a fixed team of 10 hamsters to cultivate Water Lettuce in the Submerged Garden.',
+    referenceDurationSeconds: MANATEE_GARDEN_TENDING_DURATION_SECONDS,
+    fixedDurationSeconds: MANATEE_GARDEN_TENDING_DURATION_SECONDS,
+    fixedHamsterAllocation: MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
+    isUnderwater: true,
+    supportsTimeLengths: false,
+    requiredBuildingId: MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+    requiredBuildingStage: 2,
+    rewards: [
+      createReward(
+        'water-lettuce',
+        MANATEE_RESOURCE_IDS.WATER_LETTUCE,
         25,
         25,
         5,
@@ -251,7 +283,7 @@ export const MANATEE_BUILDINGS = Object.freeze({
     description:
       'Stores 50 sets of hamster-sized diving gear graciously provided by Capybaras.',
     cost: Object.freeze({
-      [MANATEE_RESOURCE_IDS.MANGROVE_WOOD]: 100,
+      [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: 100,
       [MANATEE_RESOURCE_IDS.LIMESTONE]: 25,
     }),
     divingHamsterCapacity: 50,
@@ -267,33 +299,50 @@ export const MANATEE_BUILDINGS = Object.freeze({
       [MANATEE_RESOURCE_IDS.MANGROVE_LEAVES]: 50,
       [MANATEE_RESOURCE_IDS.PETE]: 300,
       [MANATEE_RESOURCE_IDS.WATER_LETTUCE]: 20,
-      [MANATEE_RESOURCE_IDS.MUSK_GRASS]: 15,
+      [MANATEE_RESOURCE_IDS.SHOAL_GRASS]: 15,
     }),
     maximumStage: 3,
     stages: Object.freeze([
       Object.freeze({
         stage: 1,
-        name: 'Musk Grass Bed',
+        name: 'Shoal Grass Bed',
         description:
-          'Unlocks Musk Grass crop access and lets 10 hamsters tend it for 600 seconds.',
-        cropId: 'muskGrass',
-        resourceId: MANATEE_RESOURCE_IDS.MUSK_GRASS,
-        surveyId: MANATEE_SURVEY_IDS.TEND_MUSK_GRASS,
+          'Unlocks Shoal Grass crop access and lets 10 hamsters tend it for 600 seconds.',
+        cropId: 'shoalGrass',
+        resourceId: MANATEE_RESOURCE_IDS.SHOAL_GRASS,
+        surveyId: MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS,
         cost: Object.freeze({
           [MANATEE_RESOURCE_IDS.PETE]: 550,
-          [MANATEE_RESOURCE_IDS.MUSK_GRASS]: 50,
+          [MANATEE_RESOURCE_IDS.SHOAL_GRASS]: 50,
         }),
         implemented: true,
       }),
       Object.freeze({
         stage: 2,
         name: 'Water Lettuce Bed',
+        description: 'Unlocks Water Lettuce crop access.',
         cropId: 'waterLettuce',
-        implemented: false,
+        resourceId: MANATEE_RESOURCE_IDS.WATER_LETTUCE,
+        cost: Object.freeze({
+          [MANATEE_RESOURCE_IDS.PETE]: 1250,
+          [MANATEE_RESOURCE_IDS.WATER_LETTUCE]: 100,
+        }),
+        surveyId: MANATEE_SURVEY_IDS.TEND_WATER_LETTUCE,
+        implemented: true,
       }),
       Object.freeze({
         stage: 3,
-        name: 'Undecided Garden Stage',
+        name: 'Mangrove Sapling Bed',
+        description: 'Unlocks Mangrove Sapling crop access.',
+        cropId: 'mangroveSapling',
+        resourceId: MANATEE_RESOURCE_IDS.MANGROVE_SEEDS,
+        cost: Object.freeze({
+          [MANATEE_RESOURCE_IDS.PETE]: 2000,
+          [MANATEE_RESOURCE_IDS.MANGROVE_ROOTS]: 175,
+          [MANATEE_RESOURCE_IDS.MANGROVE_LEAVES]: 250,
+          [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: 500,
+          [MANATEE_RESOURCE_IDS.MANGROVE_SEEDS]: 25,
+        }),
         implemented: false,
       }),
     ]),

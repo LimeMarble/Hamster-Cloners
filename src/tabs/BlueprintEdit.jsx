@@ -7,6 +7,7 @@ import {
 import {
   getMirrorCornMaximumReflections,
   isBlazingCarrotBurned,
+  isWaterLettuceFieldInfested,
 } from '../game/gameLogic.js'
 import {
   CropHoverInspector,
@@ -51,6 +52,7 @@ function BlueprintEditContent({
     game.capybara?.completedDemonstrations?.includes(
       'demonstrationOne',
     ) === true
+  const fieldInfested = isWaterLettuceFieldInfested(game.blueprint)
 
   return (
     <div className="modal-backdrop" role="presentation">
@@ -159,7 +161,7 @@ function BlueprintEditContent({
                 return (
                   <button
                     type="button"
-                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${isBurnedBlazingCarrot ? 'editor-plot-blazing-carrot-burned' : ''}`}
+                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${isBurnedBlazingCarrot ? 'editor-plot-blazing-carrot-burned' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''}`}
                     key={index}
                     onClick={() => onEditorPlotClick(index, crop)}
                     onContextMenu={(event) =>

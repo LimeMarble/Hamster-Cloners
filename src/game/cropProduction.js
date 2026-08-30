@@ -34,6 +34,7 @@ import {
   getSamplingLentilTradedCropEffect,
   isBlazingCarrotBurned,
   isMirrorCornOverloaded,
+  isWaterLettuceFieldInfested,
 } from './cropEffects.js'
 
 const getCachedHamsterEfficiency = createBlueprintCalculationCache()
@@ -332,6 +333,7 @@ export function getCarrotHighHarvestEffect(
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
   const carrotBonus = activeCarrotIndexes.reduce(
     (totalBonus, index) =>
@@ -416,11 +418,16 @@ function calculateBaseFieldProductionSnapshot(
       getMonocropCropCount(effectBlueprint, crop),
     ]),
   )
+  const fieldInfested = isWaterLettuceFieldInfested(blueprint)
 
   const contributions = blueprint.cells.map((crop, index) => {
     const definition = CROP_DEFINITIONS[crop]
 
     if (!definition || doesNotHarvest(crop)) return null
+
+    if (fieldInfested) {
+      return { cropId: crop, amount: 0 }
+    }
 
     if (
       isBlazingCarrotBurned(

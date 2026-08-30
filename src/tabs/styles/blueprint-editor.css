@@ -272,7 +272,7 @@
   background: #14291a;
 }
 
-.editor-plot:not(.editor-plot-leek):not(.editor-plot-corn):not(.editor-plot-sweetPotato):not(.editor-plot-turnip):not(.editor-plot-pumpkin):not(.editor-plot-appleTree):not(.editor-plot-lentil):not(.editor-plot-knotweed):not(.editor-plot-wheat):not(.editor-plot-rootTunnel):not(.editor-plot-sunflower):not(.editor-plot-leechingGourd):not(.editor-plot-leechingGourdPart):not(.editor-plot-splitweedPart):not(.editor-plot-canola):not(.editor-plot-carrot):not(.editor-plot-fourLeafClover):not(.editor-plot-muskGrass) span {
+.editor-plot:not(.editor-plot-leek):not(.editor-plot-corn):not(.editor-plot-sweetPotato):not(.editor-plot-turnip):not(.editor-plot-pumpkin):not(.editor-plot-appleTree):not(.editor-plot-lentil):not(.editor-plot-knotweed):not(.editor-plot-wheat):not(.editor-plot-rootTunnel):not(.editor-plot-sunflower):not(.editor-plot-leechingGourd):not(.editor-plot-leechingGourdPart):not(.editor-plot-splitweedPart):not(.editor-plot-canola):not(.editor-plot-carrot):not(.editor-plot-fourLeafClover):not(.editor-plot-shoalGrass):not(.editor-plot-waterLettuce) span {
   color: var(--text-muted);
   font-size: 0.73rem;
 }

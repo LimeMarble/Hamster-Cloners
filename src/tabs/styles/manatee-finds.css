@@ -6,8 +6,8 @@
   height: 23px;
 }
 
-.manatee-resource-icon-mangrove-wood::before,
-.manatee-resource-icon-mangrove-wood::after,
+.manatee-resource-icon-mangrove-twig::before,
+.manatee-resource-icon-mangrove-twig::after,
 .manatee-resource-icon-mangrove-roots::before,
 .manatee-resource-icon-mangrove-roots::after {
   position: absolute;
@@ -17,7 +17,7 @@
   background: #9c6237;
 }
 
-.manatee-resource-icon-mangrove-wood::before,
+.manatee-resource-icon-mangrove-twig::before,
 .manatee-resource-icon-mangrove-roots::before {
   top: 9px;
   left: 1px;
@@ -26,7 +26,7 @@
   rotate: -24deg;
 }
 
-.manatee-resource-icon-mangrove-wood::after,
+.manatee-resource-icon-mangrove-twig::after,
 .manatee-resource-icon-mangrove-roots::after {
   top: 5px;
   left: 11px;
@@ -65,6 +65,15 @@
   rotate: 0deg;
 }
 
+.manatee-resource-icon-mangrove-seeds {
+  width: 15px;
+  height: 20px;
+  border: 1px solid #684b2d;
+  border-radius: 65% 35% 60% 40%;
+  background: linear-gradient(145deg, #c49a58, #74502d);
+  rotate: 28deg;
+}
+
 .manatee-resource-icon-pete {
   width: 21px;
   height: 17px;
@@ -73,8 +82,8 @@
   background: linear-gradient(145deg, #8b633b, #3f3021);
 }
 
-.manatee-resource-icon-musk-grass::before,
-.manatee-resource-icon-musk-grass::after {
+.manatee-resource-icon-shoal-grass::before,
+.manatee-resource-icon-shoal-grass::after {
   position: absolute;
   bottom: 1px;
   left: 10px;
@@ -87,7 +96,7 @@
   rotate: -24deg;
 }
 
-.manatee-resource-icon-musk-grass::after {
+.manatee-resource-icon-shoal-grass::after {
   rotate: 27deg;
 }
 
@@ -229,6 +238,17 @@
   background: linear-gradient(145deg, #9dc65c, #477a49);
 }
 
+.manatee-find-mangrove-seed .manatee-find-shape {
+  width: 29px;
+  height: 38px;
+  border: 2px solid #5c3d24;
+  border-radius: 65% 35% 60% 40%;
+  background: linear-gradient(145deg, #d0aa64, #76502c 72%);
+  box-shadow:
+    inset 6px 5px 0 rgb(255 255 255 / 12%),
+    0 4px 5px rgb(19 31 26 / 30%);
+}
+
 .manatee-find-pete .manatee-find-shape {
   width: 42px;
   height: 31px;
@@ -245,7 +265,7 @@
   background: radial-gradient(circle, #c2dc72 0 18%, #72ad5d 19% 51%, #376e4c 52%);
 }
 
-.manatee-find-musk-grass .manatee-find-shape {
+.manatee-find-shoal-grass .manatee-find-shape {
   width: 48px;
   height: 45px;
   background: repeating-linear-gradient(77deg, transparent 0 7px, #779d55 8px 11px, transparent 12px 15px);

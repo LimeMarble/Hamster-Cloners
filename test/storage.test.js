@@ -63,6 +63,27 @@ test('current saves retain valid Mirror Corn diagonal tile targets', () => {
   assert.deepEqual(emptyTargetSave.blueprint.mirrorCornTargets, [3, null, null, null])
 })
 
+test('legacy Musk Grass blueprint tiles migrate to Shoal Grass', () => {
+  const migratedGame = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    blueprint: {
+      rows: 1,
+      columns: 2,
+      cells: ['leek', 'muskGrass'],
+    },
+    blueprintSlots: [
+      {
+        rows: 1,
+        columns: 2,
+        cells: ['muskGrass', 'leek'],
+      },
+    ],
+  })
+
+  assert.deepEqual(migratedGame.blueprint.cells, ['shoalGrass', 'leek'])
+  assert.deepEqual(migratedGame.blueprintSlots[0].cells, ['shoalGrass', 'leek'])
+})
+
 test('current saves retain valid Splitweed footprints and clear legacy single tiles', () => {
   const validSave = normalizeGame({
     blueprintExpansionAxesSwapped: true,

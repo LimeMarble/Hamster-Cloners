@@ -191,6 +191,7 @@ export function getCloverBundleChancePerMinute(game) {
     blueprint,
     completedCropPerfections,
     passiveEffectMultiplier,
+    game.seedAugmentations,
   )
   const adjacentEffectMultiplier = getAdjacentCropEffectMultiplier(
     blueprint,

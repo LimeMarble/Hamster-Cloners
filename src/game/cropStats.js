@@ -22,7 +22,7 @@ import {
   getHarvestBonusConnections,
   getGroupedGlobalHarvestEffects,
   getLeechingGourdTurnipEffect,
-  getMuskGrassNetworkSize,
+  getShoalGrassNetworkSize,
   getMirrorCornEffectBlueprint,
   getMirrorCornEffectMultiplier,
   getMirrorCornMaximumReflections,
@@ -32,8 +32,9 @@ import {
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
   isBlazingCarrotBurned,
-  isCropDebuffIsolatedByMuskGrass,
+  isCropDebuffIsolatedByShoalGrass,
   isMirrorCornOverloaded,
+  isWaterLettuceFieldInfested,
 } from './cropEffects.js'
 import { getCropPassiveStats } from './cropPassiveStats.js'
 function normalizeFortuneMultiplier(value) {
@@ -57,6 +58,20 @@ export function getBlueprintCropStats(
 
   if (!definition) {
     return null
+  }
+
+  if (isWaterLettuceFieldInfested(sourceBlueprint)) {
+    return {
+      crop,
+      baseYield: getCropBaseYield(crop, completedCropPerfections),
+      harvestYield: 0,
+      hamsterEfficiencyBonus: 0,
+      passiveStats: [],
+      harvestDestroyedByAppleTree: false,
+      harvestDestroyedByInfestation: true,
+      externalCropBuffMultiplier: null,
+      receivedEffects: [{ type: 'water-lettuce-infestation' }],
+    }
   }
 
   const burnedByBlazingCarrot = isBlazingCarrotBurned(
@@ -143,18 +158,18 @@ export function getBlueprintCropStats(
   const effectDefinition =
     getCropPerfection(crop, completedCropPerfections) ?? definition
 
-  if (crop === 'muskGrass') {
+  if (crop === 'shoalGrass') {
     receivedEffects.push({
-      type: 'musk-grass-network',
-      count: getMuskGrassNetworkSize(blueprint, index),
+      type: 'shoal-grass-network',
+      count: getShoalGrassNetworkSize(blueprint, index),
     })
   }
 
   if (
     effectDefinition.hasDebuff &&
-    isCropDebuffIsolatedByMuskGrass(blueprint, index)
+    isCropDebuffIsolatedByShoalGrass(blueprint, index)
   ) {
-    receivedEffects.push({ type: 'musk-grass-debuff-nullification' })
+    receivedEffects.push({ type: 'shoal-grass-debuff-nullification' })
   }
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCount = getMonocropCropCount(blueprint, crop)
@@ -412,6 +427,8 @@ export function getBlueprintCropStats(
     getGlobalPassiveEffectMultiplier(
       blueprint,
       completedCropPerfections,
+      1,
+      seedAugmentations,
     )
 
   const globalHarvestEffects = getGroupedGlobalHarvestEffects(

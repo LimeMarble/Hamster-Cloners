@@ -39,12 +39,12 @@ export function getCropFootprintIndexes(blueprint, index) {
   return blueprint.cells[index] ? [index] : []
 }
 
-export function getMuskGrassNetworkSizeByIndex(blueprint) {
+export function getShoalGrassNetworkSizeByIndex(blueprint) {
   const networkSizes = new Map()
   const visitedIndexes = new Set()
 
   blueprint.cells.forEach((crop, startingIndex) => {
-    if (crop !== 'muskGrass' || visitedIndexes.has(startingIndex)) return
+    if (crop !== 'shoalGrass' || visitedIndexes.has(startingIndex)) return
 
     const networkIndexes = []
     const pendingIndexes = [startingIndex]
@@ -56,7 +56,7 @@ export function getMuskGrassNetworkSizeByIndex(blueprint) {
 
       getOrthogonalIndexes(blueprint, index).forEach((neighborIndex) => {
         if (
-          blueprint.cells[neighborIndex] === 'muskGrass' &&
+          blueprint.cells[neighborIndex] === 'shoalGrass' &&
           !visitedIndexes.has(neighborIndex)
         ) {
           visitedIndexes.add(neighborIndex)
@@ -71,16 +71,16 @@ export function getMuskGrassNetworkSizeByIndex(blueprint) {
   return networkSizes
 }
 
-export function getMuskGrassNetworkSize(blueprint, index) {
-  return getMuskGrassNetworkSizeByIndex(blueprint).get(index) ?? 0
+export function getShoalGrassNetworkSize(blueprint, index) {
+  return getShoalGrassNetworkSizeByIndex(blueprint).get(index) ?? 0
 }
 
-function getMuskGrassNetworkAnchorByIndex(blueprint) {
+function getShoalGrassNetworkAnchorByIndex(blueprint) {
   const networkAnchors = new Map()
   const visitedIndexes = new Set()
 
   blueprint.cells.forEach((crop, startingIndex) => {
-    if (crop !== 'muskGrass' || visitedIndexes.has(startingIndex)) return
+    if (crop !== 'shoalGrass' || visitedIndexes.has(startingIndex)) return
 
     const pendingIndexes = [startingIndex]
     visitedIndexes.add(startingIndex)
@@ -91,7 +91,7 @@ function getMuskGrassNetworkAnchorByIndex(blueprint) {
 
       getOrthogonalIndexes(blueprint, index).forEach((neighborIndex) => {
         if (
-          blueprint.cells[neighborIndex] === 'muskGrass' &&
+          blueprint.cells[neighborIndex] === 'shoalGrass' &&
           !visitedIndexes.has(neighborIndex)
         ) {
           visitedIndexes.add(neighborIndex)
@@ -104,7 +104,7 @@ function getMuskGrassNetworkAnchorByIndex(blueprint) {
   return networkAnchors
 }
 
-export function isCropFullySurroundedByMuskGrass(blueprint, index) {
+export function isCropFullySurroundedByShoalGrass(blueprint, index) {
   const footprint = getCropFootprintIndexes(blueprint, index)
   if (footprint.length === 0) return false
 
@@ -136,7 +136,7 @@ export function isCropFullySurroundedByMuskGrass(blueprint, index) {
         const neighborIndex = neighborRow * columns + neighborColumn
         if (
           !footprintIndexes.has(neighborIndex) &&
-          blueprint.cells[neighborIndex] !== 'muskGrass'
+          blueprint.cells[neighborIndex] !== 'shoalGrass'
         ) {
           return false
         }
@@ -147,23 +147,23 @@ export function isCropFullySurroundedByMuskGrass(blueprint, index) {
   return true
 }
 
-const muskGrassIsolationCache = new WeakMap()
+const shoalGrassIsolationCache = new WeakMap()
 
-function getMuskGrassIsolationIndexes(blueprint) {
-  const cachedIndexes = muskGrassIsolationCache.get(blueprint)
+function getShoalGrassIsolationIndexes(blueprint) {
+  const cachedIndexes = shoalGrassIsolationCache.get(blueprint)
   if (cachedIndexes) return cachedIndexes
 
   const isolatedIndexes = new Set()
   const claimedCropTypesByNetwork = new Map()
-  const networkAnchors = getMuskGrassNetworkAnchorByIndex(blueprint)
+  const networkAnchors = getShoalGrassNetworkAnchorByIndex(blueprint)
 
   blueprint.cells.forEach((crop, index) => {
-    if (!crop || crop === 'muskGrass') return
+    if (!crop || crop === 'shoalGrass') return
 
     const cropAnchorIndex = getCropAnchorIndex(blueprint, index)
     if (
       cropAnchorIndex !== index ||
-      !isCropFullySurroundedByMuskGrass(blueprint, cropAnchorIndex)
+      !isCropFullySurroundedByShoalGrass(blueprint, cropAnchorIndex)
     ) {
       return
     }
@@ -191,7 +191,7 @@ function getMuskGrassIsolationIndexes(blueprint) {
               neighborColumn >= 0 &&
               neighborColumn < blueprint.columns &&
               !footprintIndexes.has(neighborIndex) &&
-              blueprint.cells[neighborIndex] === 'muskGrass'
+              blueprint.cells[neighborIndex] === 'shoalGrass'
             ) {
               neighborIndexes.push(neighborIndex)
             }
@@ -200,7 +200,7 @@ function getMuskGrassIsolationIndexes(blueprint) {
 
         return neighborIndexes
       })
-      .map((muskGrassIndex) => networkAnchors.get(muskGrassIndex))
+      .map((shoalGrassIndex) => networkAnchors.get(shoalGrassIndex))
       .find((anchor) => anchor !== undefined)
 
     if (networkAnchor === undefined) return
@@ -215,10 +215,10 @@ function getMuskGrassIsolationIndexes(blueprint) {
     footprint.forEach((footprintIndex) => isolatedIndexes.add(footprintIndex))
   })
 
-  muskGrassIsolationCache.set(blueprint, isolatedIndexes)
+  shoalGrassIsolationCache.set(blueprint, isolatedIndexes)
   return isolatedIndexes
 }
 
-export function isCropDebuffIsolatedByMuskGrass(blueprint, index) {
-  return getMuskGrassIsolationIndexes(blueprint).has(index)
+export function isCropDebuffIsolatedByShoalGrass(blueprint, index) {
+  return getShoalGrassIsolationIndexes(blueprint).has(index)
 }

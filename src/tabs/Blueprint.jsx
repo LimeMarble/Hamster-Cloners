@@ -1,5 +1,8 @@
 import { memo } from 'react'
-import { getFieldsPlanted } from '../game/gameLogic.js'
+import {
+  getFieldsPlanted,
+  isWaterLettuceFieldInfested,
+} from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
 import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber, MonocropStatus } from './ui.jsx'
@@ -17,6 +20,7 @@ function BlueprintPanel({
   onOpenEditor,
 }) {
   const plantedCrops = getBlueprintCropSummary(game.blueprint.cells)
+  const fieldInfested = isWaterLettuceFieldInfested(game.blueprint)
   const plantedCropDescription =
     plantedCrops.length > 0
       ? plantedCrops
@@ -118,6 +122,13 @@ function BlueprintPanel({
         </span>
         <span className="edit-hint">Click field to edit blueprint</span>
       </button>
+
+      {fieldInfested ? (
+        <p className="water-lettuce-infestation-warning">
+          Field infested: planting more than 11 Water Lettuces disables every
+          harvest and Crop passive in this blueprint.
+        </p>
+      ) : null}
 
       <dl className="field-stats">
         <div>

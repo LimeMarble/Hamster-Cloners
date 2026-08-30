@@ -188,6 +188,29 @@ export function getCropPassiveStats({
       })
     }
   }
+  if (crop === 'waterLettuce') {
+    const waterLettuceEffect = cropEffects.getWaterLettucePassiveEffect(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    ).effects.find((effect) => effect.index === index)
+
+    if (waterLettuceEffect) {
+      passiveStats.push({
+        id: 'water-lettuce-passive-bonus',
+        label: 'Global Crop passives',
+        format: 'percentage',
+        value: waterLettuceEffect.cropPassiveBonus,
+      })
+      passiveStats.push({
+        id: 'water-lettuce-insect-penalty',
+        label: 'Insect passive loss',
+        format: 'percentage',
+        value: waterLettuceEffect.insectPenalty,
+      })
+    }
+  }
   if (crop === 'leechingGourd') {
     const gourdEffect = cropEffects.getLeechingGourdTurnipEffect(
       blueprint,

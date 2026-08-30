@@ -187,16 +187,34 @@ export const CROP_DEFINITIONS = {
       'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · only one can be planted per blueprint',
     unlockDescription: 'Unlock with 77,777 Rabbit relations',
   },
-  muskGrass: {
-    name: 'Musk Grass',
+  shoalGrass: {
+    name: 'Shoal Grass',
     icon: '🌱',
     baseYield: 0,
     hamsterEfficiencyBonus: 0,
     doesNotHarvest: true,
+    isManateeCrop: true,
     monocropCountWeight: 1,
     effectDescription:
       'Destroys its own harvest · can fill at most one third of the Monocrop limit · each connected network multiplies its Leeching Gourd adjacency contribution · a complete orthogonal and diagonal surround nullifies that Crop\'s debuffs, limited to one Crop of each type per connected network',
-    unlockDescription: 'Unlock through the Musk Grass Bed in the Submerged Garden',
+    unlockDescription: 'Unlock through the Shoal Grass Bed in the Submerged Garden',
+  },
+  waterLettuce: {
+    name: 'Water Lettuce',
+    icon: '🥬',
+    baseYield: 1,
+    hamsterEfficiencyBonus: 0,
+    isManateeCrop: true,
+    hasDebuff: true,
+    passiveProtectionTier: 2,
+    canBeMirrorCornTarget: false,
+    globalPassiveEffectBonus: 0.2,
+    globalPassiveEffectDebuff: -0.175,
+    infestationThreshold: 11,
+    effectDescription:
+      '1 Crop per slot · +20% global Crop passive effects, immune to all boosts · −17.5% global Crop passive effects from insects, which can be nullified by Shoal Grass · planting more than 11 infests the entire field and disables every harvest and Crop passive',
+    unlockDescription:
+      'Unlock through the Water Lettuce Bed in the Submerged Garden',
   },
   leechingGourd: {
     name: 'Leeching Gourd',
@@ -237,6 +255,14 @@ export const CROP_DEFINITIONS = {
 }
 
 const KNOWN_CROP_IDS = Object.keys(CROP_DEFINITIONS)
+const LEGACY_CROP_IDS = Object.freeze({
+  muskGrass: 'shoalGrass',
+})
+
+export function normalizeCropId(cropId) {
+  return LEGACY_CROP_IDS[cropId] ?? cropId
+}
+
 export const CROP_IDS = KNOWN_CROP_IDS.filter(
   (cropId) =>
     CROP_DEFINITIONS[cropId].internalOnly !== true &&
@@ -384,7 +410,7 @@ export function getCropUnlockDescription(cropId) {
 }
 
 export function isKnownCrop(crop) {
-  return KNOWN_CROP_IDS.includes(crop)
+  return KNOWN_CROP_IDS.includes(normalizeCropId(crop))
 }
 
 export function isCropTemporarilyUnavailable(cropId) {
@@ -643,9 +669,11 @@ export function getUnlockedCropIds(
   if (hasUnlockedFourLeafClover) {
     unlockedCrops.push('fourLeafClover')
   }
-  if (unlockedManateeCropIds.includes('muskGrass')) {
-    unlockedCrops.push('muskGrass')
-  }
+  unlockedManateeCropIds.forEach((cropId) => {
+    if (CROP_DEFINITIONS[cropId]?.isManateeCrop && !unlockedCrops.includes(cropId)) {
+      unlockedCrops.push(cropId)
+    }
+  })
 
   return unlockedCrops
 }
@@ -657,7 +685,7 @@ export function getVisibleCropIds(
 ) {
   const visibleCropIds = ['leek']
   const progressionCropIds = CROP_IDS.filter(
-    (cropId) => cropId !== 'muskGrass',
+    (cropId) => CROP_DEFINITIONS[cropId]?.isManateeCrop !== true,
   )
 
   for (let index = 1; index < progressionCropIds.length; index += 1) {
@@ -689,9 +717,13 @@ export function getVisibleCropIds(
     visibleCropIds.push(cropId)
   }
 
-  if (unlockedCropIds.includes('muskGrass')) {
-    visibleCropIds.push('muskGrass')
-  }
+  CROP_IDS.filter(
+    (cropId) => CROP_DEFINITIONS[cropId]?.isManateeCrop === true,
+  ).forEach((cropId) => {
+    if (unlockedCropIds.includes(cropId)) {
+      visibleCropIds.push(cropId)
+    }
+  })
 
   return visibleCropIds
 }

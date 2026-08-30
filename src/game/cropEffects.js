@@ -37,11 +37,11 @@ import {
 } from './augmentationLogic.js'
 import { createBlueprintCalculationCache } from './blueprintCalculationCache.js'
 import {
-  getMuskGrassNetworkSize,
-  getMuskGrassNetworkSizeByIndex,
-  isCropDebuffIsolatedByMuskGrass,
-  isCropFullySurroundedByMuskGrass,
-} from './muskGrassLogic.js'
+  getShoalGrassNetworkSize,
+  getShoalGrassNetworkSizeByIndex,
+  isCropDebuffIsolatedByShoalGrass,
+  isCropFullySurroundedByShoalGrass,
+} from './shoalGrassLogic.js'
 
 const getCachedRabbitRelationsMultiplier = createBlueprintCalculationCache()
 const getCachedBlazingCarrotSurveyTimeEffect =
@@ -58,10 +58,10 @@ export {
 } from './adjacencyLogic.js'
 
 export {
-  getMuskGrassNetworkSize,
-  getMuskGrassNetworkSizeByIndex,
-  isCropDebuffIsolatedByMuskGrass,
-  isCropFullySurroundedByMuskGrass,
+  getShoalGrassNetworkSize,
+  getShoalGrassNetworkSizeByIndex,
+  isCropDebuffIsolatedByShoalGrass,
+  isCropFullySurroundedByShoalGrass,
 }
 
 export function getPlantedCropCount(blueprint, crop = 'leek') {
@@ -85,6 +85,13 @@ export function isBlazingCarrotBurned(
         (neighborIndex) => blueprint.cells[neighborIndex] === 'carrot',
       ),
   )
+}
+
+export function isWaterLettuceFieldInfested(blueprint) {
+  const infestationThreshold =
+    CROP_DEFINITIONS.waterLettuce?.infestationThreshold ?? Infinity
+
+  return getPlantedCropCount(blueprint, 'waterLettuce') > infestationThreshold
 }
 
 function getActiveBlazingCarrotIndexes(
@@ -200,7 +207,7 @@ export function getSplitweedMonocropLimitAugmentationEffect(
   }
 }
 
-export function getMuskGrassPlacementLimit(
+export function getShoalGrassPlacementLimit(
   blueprint,
   completedCropPerfections = [],
   seedAugmentations = {},
@@ -218,17 +225,17 @@ export function getMuskGrassPlacementLimit(
   return Math.max(0, Math.floor(monocropLimit / 3))
 }
 
-export function canPlaceMuskGrass(
+export function canPlaceShoalGrass(
   blueprint,
   index,
   completedCropPerfections = [],
   seedAugmentations = {},
 ) {
-  if (blueprint.cells[index] === 'muskGrass') return true
+  if (blueprint.cells[index] === 'shoalGrass') return true
 
   return (
-    getPlantedCropCount(blueprint, 'muskGrass') <
-    getMuskGrassPlacementLimit(
+    getPlantedCropCount(blueprint, 'shoalGrass') <
+    getShoalGrassPlacementLimit(
       blueprint,
       completedCropPerfections,
       seedAugmentations,
@@ -371,7 +378,7 @@ export function getLeechingGourdTurnipEffect(
   passiveEffectMultiplier = 1,
 ) {
   const nearestConnections = new Map()
-  const muskGrassNetworkSizes = getMuskGrassNetworkSizeByIndex(blueprint)
+  const shoalGrassNetworkSizes = getShoalGrassNetworkSizeByIndex(blueprint)
 
   getLeechingGourdAdjacentCropConnections(blueprint).forEach((connection) => {
     const splitweedAnchorIndex = getSplitweedAnchorIndex(
@@ -399,8 +406,8 @@ export function getLeechingGourdTurnipEffect(
       const perfection = getCropPerfection(crop, completedCropPerfections)
       const effectDefinition = perfection ?? definition
 
-      if (crop === 'muskGrass' && adjacencyDistance === 0) {
-        const networkSize = muskGrassNetworkSizes.get(index) ?? 1
+      if (crop === 'shoalGrass' && adjacencyDistance === 0) {
+        const networkSize = shoalGrassNetworkSizes.get(index) ?? 1
         return [
           {
             index,
@@ -488,7 +495,7 @@ export function getLeechingGourdDebuffMultiplier(blueprint, index) {
 }
 
 export function getCropDebuffMultiplier(blueprint, index) {
-  return isCropDebuffIsolatedByMuskGrass(blueprint, index)
+  return isCropDebuffIsolatedByShoalGrass(blueprint, index)
     ? 0
     : getLeechingGourdDebuffMultiplier(blueprint, index)
 }
@@ -643,6 +650,13 @@ export function getMirrorCornEffectBlueprint(
   completedCropPerfections = [],
   seedAugmentations = {},
 ) {
+  if (isWaterLettuceFieldInfested(blueprint)) {
+    return {
+      ...blueprint,
+      cells: blueprint.cells.map(() => null),
+    }
+  }
+
   if (!completedCropPerfections.includes('mirrorCorn')) return blueprint
 
   const overloadedIndexes = new Set(
@@ -812,32 +826,150 @@ export function getCropHamsterEfficiencyBonus(
   )
 }
 
+export function getWaterLettucePassiveEffect(
+  blueprint,
+  completedCropPerfections = [],
+  passiveEffectMultiplier = 1,
+  seedAugmentations = {},
+) {
+  const definition = CROP_DEFINITIONS.waterLettuce
+  const plantedIndexes = blueprint.cells.flatMap((crop, index) =>
+    crop === 'waterLettuce' ? [index] : [],
+  )
+
+  if (!definition || plantedIndexes.length === 0) {
+    return {
+      count: 0,
+      activeCount: 0,
+      cropPassiveBonus: 0,
+      insectPenalty: 0,
+      multiplier: 1,
+      effects: [],
+      infested: false,
+    }
+  }
+
+  if (isWaterLettuceFieldInfested(blueprint)) {
+    return {
+      count: plantedIndexes.length,
+      activeCount: 0,
+      cropPassiveBonus: 0,
+      insectPenalty: 0,
+      multiplier: 0,
+      effects: [],
+      infested: true,
+    }
+  }
+
+  const fieldSize = blueprint.rows * blueprint.columns
+  const cropCount = getMonocropCropCount(blueprint, 'waterLettuce')
+  const monocropThresholdBonus = getMonocropThresholdBonus(
+    blueprint,
+    completedCropPerfections,
+    seedAugmentations,
+  )
+  const baseCropPassiveBonus = applyMonocropPenaltyToBonus(
+    definition.globalPassiveEffectBonus,
+    cropCount,
+    fieldSize,
+    monocropThresholdBonus,
+  )
+  const baseInsectPenalty = applyMonocropPenaltyToBonus(
+    definition.globalPassiveEffectDebuff,
+    cropCount,
+    fieldSize,
+    monocropThresholdBonus,
+  ) * passiveEffectMultiplier
+  const effects = plantedIndexes.flatMap((index) => {
+    if (
+      isMirrorCornOverloaded(
+        blueprint,
+        index,
+        completedCropPerfections,
+        seedAugmentations,
+      )
+    ) {
+      return []
+    }
+
+    const mirrorCornEffectMultiplier = getMirrorCornEffectMultiplier(
+      blueprint,
+      index,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    )
+    const cropPassiveBonus = baseCropPassiveBonus
+    const insectPenalty =
+      baseInsectPenalty *
+      getAdjacentCropEffectMultiplier(
+        blueprint,
+        index,
+        'waterLettuce',
+        true,
+        completedCropPerfections,
+        passiveEffectMultiplier,
+        seedAugmentations,
+      ) *
+      mirrorCornEffectMultiplier
+
+    return [{ index, cropPassiveBonus, insectPenalty }]
+  })
+  const cropPassiveBonus = effects.reduce(
+    (total, effect) => total + effect.cropPassiveBonus,
+    0,
+  )
+  const insectPenalty = effects.reduce(
+    (total, effect) => total + effect.insectPenalty,
+    0,
+  )
+
+  return {
+    count: plantedIndexes.length,
+    activeCount: effects.length,
+    cropPassiveBonus,
+    insectPenalty,
+    multiplier: Math.max(0, 1 + cropPassiveBonus + insectPenalty),
+    effects,
+    infested: false,
+  }
+}
+
 export function getGlobalPassiveEffectMultiplier(
   blueprint,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
+  if (isWaterLettuceFieldInfested(blueprint)) return 0
+
   const splitweed = getCropPerfection(
     'knotweed',
     completedCropPerfections,
   )
+  const splitweedAdjustedMultiplier =
+    splitweed?.globalPassiveEffectMultiplier === undefined
+      ? passiveEffectMultiplier
+      : blueprint.cells.reduce((multiplier, crop, index) => {
+          if (crop !== 'knotweed') {
+            return multiplier
+          }
 
-  if (splitweed?.globalPassiveEffectMultiplier === undefined) {
-    return passiveEffectMultiplier
-  }
+          return (
+            multiplier *
+            (1 -
+              (1 - splitweed.globalPassiveEffectMultiplier) *
+                getCropDebuffMultiplier(blueprint, index))
+          )
+        }, passiveEffectMultiplier)
+  const waterLettuceEffect = getWaterLettucePassiveEffect(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
 
-  return blueprint.cells.reduce((multiplier, crop, index) => {
-    if (crop !== 'knotweed') {
-      return multiplier
-    }
-
-    return (
-      multiplier *
-      (1 -
-        (1 - splitweed.globalPassiveEffectMultiplier) *
-          getCropDebuffMultiplier(blueprint, index))
-    )
-  }, passiveEffectMultiplier)
+  return splitweedAdjustedMultiplier * waterLettuceEffect.multiplier
 }
 
 export function getGlobalHamsterEfficiencyEffects(
@@ -875,6 +1007,7 @@ export function getGlobalHamsterEfficiencyEffects(
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
 
   return [
@@ -943,6 +1076,7 @@ export function getGlobalRowProductionEffects(
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
 
   return [
@@ -1087,6 +1221,7 @@ export function getSamplingLentilTradedCropEffect(
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
   const adjacentTradedCropCount = blueprint.cells.reduce(
     (total, crop, index) => {
@@ -1131,6 +1266,7 @@ export function getGlobalHarvestEffects(
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
 
   return blueprint.cells.flatMap((crop, index) => {
@@ -1328,6 +1464,7 @@ function calculateBlazingCarrotSurveyTimeEffect(
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
   const uncappedReduction = activeIndexes.reduce(
     (totalReduction, index) =>
@@ -1446,6 +1583,7 @@ export function getRabbitRelationsEffects(
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
   const bonus = activeIndexes.reduce(
     (totalBonus, index) =>

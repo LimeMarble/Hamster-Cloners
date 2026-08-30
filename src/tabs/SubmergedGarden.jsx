@@ -95,11 +95,16 @@ function GardenStages({ game, state, building, currentStage, onUpgrade }) {
                   ) : null}
                 </>
               ) : (
-                <p>
-                  {stage.stage === 2
-                    ? 'Reserved for Water Lettuce. Its requirements and effects are not decided yet.'
-                    : 'This stage has not been designed yet.'}
-                </p>
+                <>
+                  <p>{stage.description}</p>
+                  <ResourceCosts
+                    resources={state.resources}
+                    cost={stage.cost}
+                  />
+                  <span className="manatee-garden-stage-status">
+                    Crop not implemented yet
+                  </span>
+                </>
               )}
             </article>
           )
@@ -109,14 +114,17 @@ function GardenStages({ game, state, building, currentStage, onUpgrade }) {
   )
 }
 
-function MuskGrassTending({
+function GardenCropTending({
   game,
   state,
   coordination,
+  surveyId,
+  cropName,
   onStartSurvey,
   onCollectFind,
 }) {
-  const survey = MANATEE_SURVEYS[MANATEE_SURVEY_IDS.TEND_MUSK_GRASS]
+  const survey = MANATEE_SURVEYS[surveyId]
+  const headingId = `${surveyId}-tending-title`
   const activeSurvey = state.activeSurveys.find(
     (candidate) => candidate.id === survey.id,
   )
@@ -147,11 +155,11 @@ function MuskGrassTending({
     : MANATEE_GARDEN_TENDING_DURATION_SECONDS
 
   return (
-    <section className="manatee-garden-tending" aria-labelledby="musk-grass-tending-title">
+    <section className="manatee-garden-tending" aria-labelledby={headingId}>
       <header className="manatee-card-heading">
         <div>
           <p className="eyebrow">Aquatic crop tending</p>
-          <h4 id="musk-grass-tending-title">Musk Grass</h4>
+          <h4 id={headingId}>{cropName}</h4>
         </div>
         <span className="manatee-survey-status">
           {hasFinds
@@ -167,7 +175,7 @@ function MuskGrassTending({
         Exactly <WholeNumber value={MANATEE_GARDEN_TENDING_HAMSTER_COUNT} />{' '}
         hamsters tend this crop for a fixed{' '}
         <SurveyTime seconds={MANATEE_GARDEN_TENDING_DURATION_SECONDS} />. The
-        harvest produces 25 collectible Musk Grass objects worth 5–10 each.
+        harvest produces 25 collectible {cropName} objects worth 5–10 each.
       </p>
       <p className="manatee-fixed-time-note">
         Tending time is unaffected by Hamster Coordination, Blazing Carrots,
@@ -199,7 +207,7 @@ function MuskGrassTending({
             )
           }
         >
-          Tend Musk Grass
+          Tend {cropName}
         </button>
       )}
     </section>
@@ -266,10 +274,23 @@ export function SubmergedGarden({
               onUpgrade={onUpgradeBuilding}
             />
             {currentStage >= 1 ? (
-              <MuskGrassTending
+              <GardenCropTending
                 game={game}
                 state={state}
                 coordination={coordination}
+                surveyId={MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS}
+                cropName="Shoal Grass"
+                onStartSurvey={onStartSurvey}
+                onCollectFind={onCollectFind}
+              />
+            ) : null}
+            {currentStage >= 2 ? (
+              <GardenCropTending
+                game={game}
+                state={state}
+                coordination={coordination}
+                surveyId={MANATEE_SURVEY_IDS.TEND_WATER_LETTUCE}
+                cropName="Water Lettuce"
                 onStartSurvey={onStartSurvey}
                 onCollectFind={onCollectFind}
               />

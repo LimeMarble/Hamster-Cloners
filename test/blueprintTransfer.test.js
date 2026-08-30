@@ -39,6 +39,25 @@ test('exports and imports a blueprint with persistent Mirror Corn tile links', (
   )
 })
 
+test('imports legacy Musk Grass blueprint tiles as Shoal Grass', () => {
+  const blueprintCode = encodePayload({
+    rows: 3,
+    columns: 3,
+    cells: ['leek', 'muskGrass', null, null, null, null, null, null, null],
+    mirrorCornTargets: Array(9).fill(null),
+  })
+  const importedBlueprint = importBlueprint(blueprintCode, {
+    rows: 3,
+    columns: 3,
+    unlockedCropIds: ['leek', 'shoalGrass'],
+  })
+
+  assert.deepEqual(
+    importedBlueprint.cells,
+    ['leek', 'shoalGrass', null, null, null, null, null, null, null],
+  )
+})
+
 test('exports and imports a valid 2x2 Splitweed footprint', () => {
   const blueprint = createBlueprint({
     rows: 2,

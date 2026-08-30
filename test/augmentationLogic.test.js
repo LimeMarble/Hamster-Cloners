@@ -361,8 +361,8 @@ test('each Sterile Symbiosis level adds one Monocrop limit per adjacent non-harv
     columns: 5,
     cells: [
       null,
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
       null,
       null,
       'rootTunnel',
@@ -376,8 +376,8 @@ test('each Sterile Symbiosis level adds one Monocrop limit per adjacent non-harv
       'leechingGourdPart',
       'leechingGourdPart',
       null,
-      'muskGrass',
-      'muskGrass',
+      'shoalGrass',
+      'shoalGrass',
       null,
       null,
       null,
@@ -433,7 +433,7 @@ test('Sterile Symbiosis threshold is used by the actual monocrop penalty', () =>
   cells[45] = 'splitweedPart'
   cells[54] = 'splitweedPart'
   cells[55] = 'splitweedPart'
-  cells[34] = 'muskGrass'
+  cells[34] = 'shoalGrass'
   const blueprint = createBlueprint({
     rows: 10,
     columns: 10,
