@@ -214,7 +214,7 @@ export const MANATEE_SURVEYS = Object.freeze({
     isUnderwater: true,
     rewards: [
       createReward('pete', MANATEE_RESOURCE_IDS.PETE, 10, 12, 8, 10),
-      createReward('water-lettuce', MANATEE_RESOURCE_IDS.WATER_LETTUCE, 0, 4, 1, 5),
+      createReward('water-lettuce', MANATEE_RESOURCE_IDS.WATER_LETTUCE, 1, 4, 1, 5),
       createReward('musk-grass', MANATEE_RESOURCE_IDS.MUSK_GRASS, 1, 3, 3, 6),
       createReward('limestone', MANATEE_RESOURCE_IDS.LIMESTONE, 5, 5, 10, 15),
     ],
