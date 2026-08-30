@@ -71,7 +71,7 @@ export function BackgroundCatchUpOverlay({
             disabled={!canSkip}
             onClick={onSkip}
           >
-            &ldquo;Skip&rdquo; to{' '}
+            Skip to
             <WholeNumber value={SKIPPED_CATCH_UP_STEPS} /> ticks
           </button>
         </div>
