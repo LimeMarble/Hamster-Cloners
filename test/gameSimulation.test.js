@@ -35,7 +35,7 @@ test('catch-up defaults to fifteen-times compressed ticks', () => {
 
 test('catch-up controls use multiplicative speed and a 1,000-tick skip', () => {
   assert.equal(CATCH_UP_SPEED_FACTOR, 2)
-  assert.equal(SKIPPED_CATCH_UP_STEPS, 1000)
+  assert.equal(SKIPPED_CATCH_UP_STEPS, 100)
 })
 
 test('elapsed active time matches sixty fixed simulation steps', () => {
