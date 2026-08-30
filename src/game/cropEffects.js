@@ -30,7 +30,7 @@ import {
   getAugmentedHarvestConnections,
   getMirrorCornEffectivenessBonus,
   getMirrorCornReflectionLimitBonus,
-  hasSplitweedMonocropLimitAugmentation,
+  getSplitweedMonocropLimitLevel,
   isMirrorCornDebuffRemovalEnabled,
   SEED_AUGMENTATIONS,
   SEED_AUGMENTATION_IDS,
@@ -39,6 +39,7 @@ import { createBlueprintCalculationCache } from './blueprintCalculationCache.js'
 import {
   getMuskGrassNetworkSize,
   getMuskGrassNetworkSizeByIndex,
+  isCropDebuffIsolatedByMuskGrass,
   isCropFullySurroundedByMuskGrass,
 } from './muskGrassLogic.js'
 
@@ -59,6 +60,7 @@ export {
 export {
   getMuskGrassNetworkSize,
   getMuskGrassNetworkSizeByIndex,
+  isCropDebuffIsolatedByMuskGrass,
   isCropFullySurroundedByMuskGrass,
 }
 
@@ -145,10 +147,13 @@ export function getSplitweedMonocropLimitAugmentationEffect(
 ) {
   const augmentation =
     SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT]
+  const augmentationLevel = getSplitweedMonocropLimitLevel(
+    seedAugmentations,
+  )
 
   if (
     !completedCropPerfections.includes('splitweed') ||
-    !hasSplitweedMonocropLimitAugmentation(seedAugmentations)
+    augmentationLevel === 0
   ) {
     return {
       adjacentNonHarvestingCropCount: 0,
@@ -190,7 +195,8 @@ export function getSplitweedMonocropLimitAugmentationEffect(
     adjacentNonHarvestingCropCount,
     bonus:
       adjacentNonHarvestingCropCount *
-      augmentation.monocropLimitBonusPerAdjacentNonHarvestingCrop,
+      augmentation.monocropLimitBonusPerAdjacentNonHarvestingCropPerLevel *
+      augmentationLevel,
   }
 }
 
@@ -482,7 +488,7 @@ export function getLeechingGourdDebuffMultiplier(blueprint, index) {
 }
 
 export function getCropDebuffMultiplier(blueprint, index) {
-  return isCropFullySurroundedByMuskGrass(blueprint, index)
+  return isCropDebuffIsolatedByMuskGrass(blueprint, index)
     ? 0
     : getLeechingGourdDebuffMultiplier(blueprint, index)
 }

@@ -41,6 +41,7 @@ export {
   getRootTunnelAdjacencyStrength,
   hasReachedMonocropLimit,
   isBlazingCarrotBurned,
+  isCropDebuffIsolatedByMuskGrass,
   isCropFullySurroundedByMuskGrass,
 } from './cropEffects.js'
 export * from './cropProduction.js'

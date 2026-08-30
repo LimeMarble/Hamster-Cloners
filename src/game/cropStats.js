@@ -32,7 +32,7 @@ import {
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
   isBlazingCarrotBurned,
-  isCropFullySurroundedByMuskGrass,
+  isCropDebuffIsolatedByMuskGrass,
   isMirrorCornOverloaded,
 } from './cropEffects.js'
 import { getCropPassiveStats } from './cropPassiveStats.js'
@@ -152,7 +152,7 @@ export function getBlueprintCropStats(
 
   if (
     effectDefinition.hasDebuff &&
-    isCropFullySurroundedByMuskGrass(blueprint, index)
+    isCropDebuffIsolatedByMuskGrass(blueprint, index)
   ) {
     receivedEffects.push({ type: 'musk-grass-debuff-nullification' })
   }

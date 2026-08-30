@@ -280,7 +280,7 @@ test('Seed Augmentations require perfected crops and persist with safe limits', 
     mirrorCornDebuffRemovalEnabled: false,
     mirrorCornEffectivenessLevel: 0,
     mirrorCornReflectionLimitUnlocked: false,
-    splitweedMonocropLimitUnlocked: false,
+    splitweedMonocropLimitLevel: 0,
   })
   assert.equal(
     normalizeGame({
@@ -291,8 +291,8 @@ test('Seed Augmentations require perfected crops and persist with safe limits', 
   assert.equal(
     normalizeGame({
       seedAugmentations: { splitweedMonocropLimitUnlocked: true },
-    }).seedAugmentations.splitweedMonocropLimitUnlocked,
-    true,
+    }).seedAugmentations.splitweedMonocropLimitLevel,
+    2,
   )
   assert.deepEqual(
     normalizeGame({
@@ -308,43 +308,54 @@ test('Seed Augmentations require perfected crops and persist with safe limits', 
       mirrorCornDebuffRemovalEnabled: false,
       mirrorCornEffectivenessLevel: 0,
       mirrorCornReflectionLimitUnlocked: false,
-      splitweedMonocropLimitUnlocked: false,
+      splitweedMonocropLimitLevel: 0,
     },
   )
 })
 
-test('Sterile Symbiosis costs 1.5e99 Crops and requires Splitweed', () => {
+test('Sterile Symbiosis has three levels starting at 3e97 with 50x cost growth', () => {
   const augmentationId =
     SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT
   const baseGame = createAugmentationGame()
 
-  assert.equal(SEED_AUGMENTATIONS[augmentationId].cost, 1.5e99)
+  assert.equal(SEED_AUGMENTATIONS[augmentationId].baseCost, 3e97)
+  assert.equal(SEED_AUGMENTATIONS[augmentationId].costGrowth, 50)
+  assert.equal(SEED_AUGMENTATIONS[augmentationId].maximumLevel, 3)
   assert.equal(
     purchaseSeedAugmentation(
-      { ...baseGame, crops: 1.5e99 },
+      { ...baseGame, crops: 3e97 },
       augmentationId,
     ),
     null,
   )
 
-  const purchased = purchaseSeedAugmentation(
-    {
-      ...baseGame,
-      crops: 1.5e99,
-      completedCropPerfections: ['splitweed'],
-    },
-    augmentationId,
-  )
+  let game = {
+    ...baseGame,
+    crops: 3e97,
+    completedCropPerfections: ['splitweed'],
+  }
+  const expectedCosts = [3e97, 1.5e99, 7.5e100]
 
-  assert.equal(purchased.crops, 0)
-  assert.equal(
-    purchased.seedAugmentations.splitweedMonocropLimitUnlocked,
-    true,
-  )
-  assert.equal(getNextSeedAugmentationCost(purchased, augmentationId), null)
+  expectedCosts.forEach((expectedCost, level) => {
+    assert.ok(
+      Math.abs(
+        getNextSeedAugmentationCost(game, augmentationId) / expectedCost - 1,
+      ) < 1e-12,
+    )
+    game = purchaseSeedAugmentation(game, augmentationId)
+    assert.equal(
+      game.seedAugmentations.splitweedMonocropLimitLevel,
+      level + 1,
+    )
+    if (level < expectedCosts.length - 1) {
+      game = { ...game, crops: expectedCosts[level + 1] }
+    }
+  })
+
+  assert.equal(getNextSeedAugmentationCost(game, augmentationId), null)
 })
 
-test('Sterile Symbiosis adds two Monocrop limit per adjacent non-harvesting Crop', () => {
+test('each Sterile Symbiosis level adds one Monocrop limit per adjacent non-harvesting Crop', () => {
   const blueprint = createBlueprint({
     rows: 5,
     columns: 5,
@@ -377,7 +388,7 @@ test('Sterile Symbiosis adds two Monocrop limit per adjacent non-harvesting Crop
     ],
     requireSplitweedFootprints: true,
   })
-  const seedAugmentations = { splitweedMonocropLimitUnlocked: true }
+  const seedAugmentations = { splitweedMonocropLimitLevel: 2 }
   const effect = getSplitweedMonocropLimitAugmentationEffect(
     blueprint,
     ['splitweed'],
@@ -388,6 +399,22 @@ test('Sterile Symbiosis adds two Monocrop limit per adjacent non-harvesting Crop
     adjacentNonHarvestingCropCount: 6,
     bonus: 12,
   })
+  assert.equal(
+    getSplitweedMonocropLimitAugmentationEffect(
+      blueprint,
+      ['splitweed'],
+      { splitweedMonocropLimitLevel: 1 },
+    ).bonus,
+    6,
+  )
+  assert.equal(
+    getSplitweedMonocropLimitAugmentationEffect(
+      blueprint,
+      ['splitweed'],
+      { splitweedMonocropLimitLevel: 3 },
+    ).bonus,
+    18,
+  )
   assert.equal(getMonocropThresholdBonus(blueprint, ['splitweed']), 2)
   assert.equal(
     getMonocropThresholdBonus(
@@ -419,7 +446,7 @@ test('Sterile Symbiosis threshold is used by the actual monocrop penalty', () =>
     getBlueprintMonocropMultiplier(
       blueprint,
       ['splitweed'],
-      { splitweedMonocropLimitUnlocked: true },
+      { splitweedMonocropLimitLevel: 2 },
     ),
     1,
   )

@@ -11,6 +11,7 @@ import {
   getMonocropCropCount,
   getMuskGrassNetworkSize,
   getMuskGrassPlacementLimit,
+  isCropDebuffIsolatedByMuskGrass,
   isCropFullySurroundedByMuskGrass,
 } from '../src/game/gameLogic.js'
 import { exportBlueprint, importBlueprint } from '../src/game/blueprintTransfer.js'
@@ -127,7 +128,7 @@ test('blueprint imports apply Splitweed augmentation bonuses before checking Mus
 
   const imported = importBlueprint(blueprintCode, {
     ...importOptions,
-    seedAugmentations: { splitweedMonocropLimitUnlocked: true },
+    seedAugmentations: { splitweedMonocropLimitLevel: 2 },
   })
   assert.equal(
     imported.cells.filter((crop) => crop === 'muskGrass').length,
@@ -189,6 +190,77 @@ test('a complete eight-tile surround nullifies a Crop debuff', () => {
       (effect) => effect.type === 'musk-grass-debuff-nullification',
     ),
   )
+})
+
+test('one Musk Grass cluster isolates at most one Crop of each type', () => {
+  const blueprint = createBlueprint({
+    rows: 3,
+    columns: 7,
+    cells: [
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'corn',
+      'muskGrass',
+      'corn',
+      'muskGrass',
+      'pumpkin',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+    ],
+  })
+
+  assert.equal(isCropFullySurroundedByMuskGrass(blueprint, 8), true)
+  assert.equal(isCropFullySurroundedByMuskGrass(blueprint, 10), true)
+  assert.equal(isCropDebuffIsolatedByMuskGrass(blueprint, 8), true)
+  assert.equal(isCropDebuffIsolatedByMuskGrass(blueprint, 10), false)
+  assert.equal(isCropDebuffIsolatedByMuskGrass(blueprint, 12), true)
+  assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 0.9)
+})
+
+test('separate Musk Grass clusters can isolate the same Crop type', () => {
+  const blueprint = createBlueprint({
+    rows: 3,
+    columns: 7,
+    cells: [
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      null,
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'corn',
+      'muskGrass',
+      null,
+      'muskGrass',
+      'corn',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+      null,
+      'muskGrass',
+      'muskGrass',
+      'muskGrass',
+    ],
+  })
+
+  assert.equal(isCropDebuffIsolatedByMuskGrass(blueprint, 8), true)
+  assert.equal(isCropDebuffIsolatedByMuskGrass(blueprint, 12), true)
+  assert.equal(getCropHamsterEfficiencyMultiplier(blueprint), 1)
 })
 
 test('field edges never count as a complete Musk Grass surround', () => {

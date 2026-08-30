@@ -40,8 +40,10 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   [SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT,
     name: 'Sterile Symbiosis',
-    cost: 1.5e99,
-    monocropLimitBonusPerAdjacentNonHarvestingCrop: 2,
+    baseCost: 3e97,
+    costGrowth: 50,
+    maximumLevel: 4,
+    monocropLimitBonusPerAdjacentNonHarvestingCropPerLevel: 1,
   }),
 })
 
@@ -53,7 +55,7 @@ export function createInitialSeedAugmentationState() {
     mirrorCornDebuffRemovalEnabled: false,
     mirrorCornEffectivenessLevel: 0,
     mirrorCornReflectionLimitUnlocked: false,
-    splitweedMonocropLimitUnlocked: false,
+    splitweedMonocropLimitLevel: 0,
   }
 }
 
@@ -75,6 +77,17 @@ export function normalizeSeedAugmentationState(rawState) {
         : 0
       : Number(rawMirrorCornEffectivenessLevel) || 0,
   )
+  const splitweedMonocropLimit =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT]
+  const rawSplitweedMonocropLimitLevel =
+    rawState?.splitweedMonocropLimitLevel
+  const parsedSplitweedMonocropLimitLevel = Math.floor(
+    rawSplitweedMonocropLimitLevel === undefined
+      ? rawState?.splitweedMonocropLimitUnlocked === true
+        ? 2
+        : 0
+      : Number(rawSplitweedMonocropLimitLevel) || 0,
+  )
 
   return {
     leekEnrichmentLevel: Math.min(maximumLevel, Math.max(0, parsedLevel)),
@@ -89,8 +102,10 @@ export function normalizeSeedAugmentationState(rawState) {
     ),
     mirrorCornReflectionLimitUnlocked:
       rawState?.mirrorCornReflectionLimitUnlocked === true,
-    splitweedMonocropLimitUnlocked:
-      rawState?.splitweedMonocropLimitUnlocked === true,
+    splitweedMonocropLimitLevel: Math.min(
+      splitweedMonocropLimit.maximumLevel,
+      Math.max(0, parsedSplitweedMonocropLimitLevel),
+    ),
   }
 }
 
@@ -135,8 +150,12 @@ export function getMirrorCornReflectionLimitBonus(seedAugmentations) {
 }
 
 export function hasSplitweedMonocropLimitAugmentation(seedAugmentations) {
+  return getSplitweedMonocropLimitLevel(seedAugmentations) > 0
+}
+
+export function getSplitweedMonocropLimitLevel(seedAugmentations) {
   return normalizeSeedAugmentationState(seedAugmentations)
-    .splitweedMonocropLimitUnlocked
+    .splitweedMonocropLimitLevel
 }
 
 export function getNextSeedAugmentationCost(game, augmentationId) {
@@ -164,14 +183,20 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
           augmentation.costGrowth ** state.mirrorCornEffectivenessLevel
   }
 
+  if (augmentationId === SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT) {
+    const augmentation = SEED_AUGMENTATIONS[augmentationId]
+    return state.splitweedMonocropLimitLevel >= augmentation.maximumLevel
+      ? null
+      : augmentation.baseCost *
+          augmentation.costGrowth ** state.splitweedMonocropLimitLevel
+  }
+
   const oneTimeAugmentationStateKeys = {
     [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]:
       'mirrorCornDebuffRemovalUnlocked',
 
       [SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT]:
       'mirrorCornReflectionLimitUnlocked',
-    [SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT]:
-      'splitweedMonocropLimitUnlocked',
   }
   const stateKey = oneTimeAugmentationStateKeys[augmentationId]
 
@@ -245,7 +270,11 @@ export function purchaseSeedAugmentation(game, augmentationId) {
   } else if (
     augmentationId === SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT
   ) {
-    seedAugmentations = { ...state, splitweedMonocropLimitUnlocked: true }
+    seedAugmentations = {
+      ...state,
+      splitweedMonocropLimitLevel:
+        state.splitweedMonocropLimitLevel + 1,
+    }
   }
 
   return seedAugmentations

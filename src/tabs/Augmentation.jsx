@@ -5,6 +5,7 @@ import {
   getMirrorCornEffectivenessLevel,
   getMirrorCornMaximumReflections,
   getNextSeedAugmentationCost,
+  getSplitweedMonocropLimitLevel,
   getSplitweedMonocropLimitAugmentationEffect,
   hasMirrorCornDebuffRemovalAugmentation,
   isMirrorCornDebuffRemovalEnabled,
@@ -78,6 +79,9 @@ export function Augmentation({
   const splitweedMonocropLimitCost = getNextSeedAugmentationCost(
     game,
     splitweedMonocropLimit.id,
+  )
+  const splitweedMonocropLimitLevel = getSplitweedMonocropLimitLevel(
+    game.seedAugmentations,
   )
   const hasSplitweed = game.completedCropPerfections.includes('splitweed')
   const splitweedMonocropEffect =
@@ -372,10 +376,18 @@ export function Augmentation({
           </div>
           <p>
             Each directly adjacent Crop that inherently produces no harvest
-            adds +2 to the Monocrop limit. Each Crop is counted once per
-            adjacent Splitweed, even when it occupies multiple tiles.
+            adds +1 to the Monocrop limit per level. Each Crop is counted
+            once per adjacent Splitweed, even when it occupies multiple
+            tiles. Each new level costs 50 times the previous one.
           </p>
           <dl className='seed-augmentation-stats'>
+            <div>
+              <dt>Level</dt>
+              <dd>
+                {splitweedMonocropLimitLevel} /{' '}
+                {splitweedMonocropLimit.maximumLevel}
+              </dd>
+            </div>
             <div>
               <dt>Adjacent non-harvesting Crops</dt>
               <dd>
@@ -395,8 +407,14 @@ export function Augmentation({
               </dd>
             </div>
             <div>
-              <dt>Cost</dt>
-              <dd><FormattedNumber value={splitweedMonocropLimit.cost} /> Crops</dd>
+              <dt>Next cost</dt>
+              <dd>
+                {splitweedMonocropLimitCost === null
+                  ? 'Maximum level'
+                  : <>
+                      <FormattedNumber value={splitweedMonocropLimitCost} /> Crops
+                    </>}
+              </dd>
             </div>
           </dl>
           <button
@@ -414,7 +432,7 @@ export function Augmentation({
             {!hasSplitweed
               ? 'Perfect Knotweed first'
               : splitweedMonocropLimitCost === null
-                ? 'Augmentation active'
+                ? 'Maximum level reached'
                 : <>
                     Augment —{' '}
                     <FormattedNumber value={splitweedMonocropLimitCost} /> Crops

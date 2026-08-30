@@ -2,8 +2,8 @@ import {
   getLeekAugmentationYieldBonus,
   getMirrorCornEffectivenessBonus,
   getMirrorCornReflectionLimitBonus,
+  getSplitweedMonocropLimitLevel,
   hasLeekDiagonalAugmentation,
-  hasSplitweedMonocropLimitAugmentation,
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
 import {
@@ -150,7 +150,7 @@ export const CROP_DEFINITIONS = {
   canola: {
     name: 'Canola',
     icon: '🌼',
-    baseYield: 1,
+    baseYield: 0,
     hamsterEfficiencyBonus: 0,
     monocropCountWeight: 5,
     globalRowProductionBonusPerHamster: 0.1,
@@ -195,7 +195,7 @@ export const CROP_DEFINITIONS = {
     doesNotHarvest: true,
     monocropCountWeight: 1,
     effectDescription:
-      'Destroys its own harvest · can fill at most one third of the Monocrop limit · each connected network multiplies its Leeching Gourd adjacency contribution · a complete orthogonal and diagonal surround nullifies that Crop\'s debuffs',
+      'Destroys its own harvest · can fill at most one third of the Monocrop limit · each connected network multiplies its Leeching Gourd adjacency contribution · a complete orthogonal and diagonal surround nullifies that Crop\'s debuffs, limited to one Crop of each type per connected network',
     unlockDescription: 'Unlock through the Musk Grass Bed in the Submerged Garden',
   },
   leechingGourd: {
@@ -489,8 +489,11 @@ function getPerfectionEffectDescription(
   }
 
   if (cropId === 'knotweed' && perfection?.id === 'splitweed') {
-    return hasSplitweedMonocropLimitAugmentation(seedAugmentations)
-      ? `${perfection.effectDescription} · +2 Monocrop limit per directly adjacent Crop that inherently produces no harvest`
+    const augmentationLevel = getSplitweedMonocropLimitLevel(
+      seedAugmentations,
+    )
+    return augmentationLevel > 0
+      ? `${perfection.effectDescription} · +${augmentationLevel} Monocrop limit per directly adjacent Crop that inherently produces no harvest`
       : perfection.effectDescription
   }
 
