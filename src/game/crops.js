@@ -3,6 +3,7 @@ import {
   getMirrorCornEffectivenessBonus,
   getMirrorCornReflectionLimitBonus,
   hasLeekDiagonalAugmentation,
+  hasSplitweedMonocropLimitAugmentation,
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
 import {
@@ -485,6 +486,12 @@ function getPerfectionEffectDescription(
       `${baseDescription} · −${perfection.surveyTimeReductionPerCrop * 100}% survey time per active Blazing Carrot, ` +
       `with contributing Carrots limited by log10(total Rabbit relations earned), capped at −${perfection.maximumSurveyTimeReduction * 100}% at ${getCachedFormattedNumber(perfection.maximumSurveyRelations, 0)} total Rabbit relations`
     )
+  }
+
+  if (cropId === 'knotweed' && perfection?.id === 'splitweed') {
+    return hasSplitweedMonocropLimitAugmentation(seedAugmentations)
+      ? `${perfection.effectDescription} · +2 Monocrop limit per directly adjacent Crop that inherently produces no harvest`
+      : perfection.effectDescription
   }
 
   if (cropId !== 'leek' || perfection?.id !== 'enrichingLeek') {

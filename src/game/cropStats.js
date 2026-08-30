@@ -161,7 +161,11 @@ export function getBlueprintCropStats(
   const monocropMultiplier = getMonocropYieldMultiplier(
     cropCount,
     fieldSize,
-    getMonocropThresholdBonus(blueprint, completedCropPerfections),
+    getMonocropThresholdBonus(
+      blueprint,
+      completedCropPerfections,
+      seedAugmentations,
+    ),
   )
 
   if (!isCropEffectModifier(crop)) {
@@ -182,6 +186,7 @@ export function getBlueprintCropStats(
             false,
             completedCropPerfections,
             passiveEffectMultiplier,
+            seedAugmentations,
           )
 
           if (multiplier === 1) {
@@ -285,6 +290,7 @@ export function getBlueprintCropStats(
           baseCropYieldBonus < 0,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         ) *
         getAugmentedMirrorCornEffectMultiplier(neighborIndex)
 
@@ -331,6 +337,7 @@ export function getBlueprintCropStats(
       index,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
   const harvestDestructionMultiplier =
     getAdjacentHarvestDestructionMultiplier(
@@ -338,6 +345,7 @@ export function getBlueprintCropStats(
       index,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
   const harvestDestroyedByAppleTree =
     harvestDestructionMultiplier === 0 || fortuneHarvestMultiplier === 0
@@ -364,6 +372,7 @@ export function getBlueprintCropStats(
             baseCropYieldBonus < 0,
             completedCropPerfections,
             passiveEffectMultiplier,
+            seedAugmentations,
           ) *
           getAugmentedMirrorCornEffectMultiplier(neighborIndex)
       )
@@ -389,6 +398,7 @@ export function getBlueprintCropStats(
           baseHamsterEfficiencyBonus < 0,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         )
       : 1
   const adjustForMonocrop = (bonus) =>
@@ -410,12 +420,14 @@ export function getBlueprintCropStats(
     rabbitContractsCompleted,
     passiveEffectMultiplier,
     totalRabbitRelationsEarned,
+    seedAugmentations,
   )
   const globalRowProductionEffects = getGlobalRowProductionEffects(
     blueprint,
     activeHamsters,
     completedCropPerfections,
     passiveEffectMultiplier,
+    seedAugmentations,
   )
   const globalHamsterEfficiencyEffects =
     getGlobalHamsterEfficiencyEffects(
@@ -423,6 +435,7 @@ export function getBlueprintCropStats(
       completedCropPerfections,
       rowsProducedPerSecond,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
   const fieldProductionSnapshot = getBaseFieldProductionSnapshot(
     blueprint,

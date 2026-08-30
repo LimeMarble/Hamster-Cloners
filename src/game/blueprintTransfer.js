@@ -125,6 +125,7 @@ export function importBlueprint(
     hasLeechingGourd = false,
     hasSplitweed = false,
     completedCropPerfections = [],
+    seedAugmentations = {},
   },
 ) {
   const rawBlueprint = parseBlueprintCode(blueprintCode)
@@ -197,6 +198,7 @@ export function importBlueprint(
     getMuskGrassPlacementLimit(
       resizedBlueprint,
       completedCropPerfections,
+      seedAugmentations,
     )
   ) {
     throw new Error(

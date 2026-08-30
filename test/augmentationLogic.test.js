@@ -7,12 +7,15 @@ import {
   createBlueprint,
   createInitialGame,
   getBaseFieldIncome,
+  getBlueprintMonocropMultiplier,
   getBlueprintCropStats,
   getCropHamsterEfficiencyMultiplier,
   getLeekAugmentationYieldBonus,
   getMirrorCornEffectMultiplier,
   getMirrorCornMaximumReflections,
   getNextSeedAugmentationCost,
+  getMonocropThresholdBonus,
+  getSplitweedMonocropLimitAugmentationEffect,
   purchaseSeedAugmentation,
   toggleSeedAugmentation,
 } from '../src/game/gameLogic.js'
@@ -277,12 +280,19 @@ test('Seed Augmentations require perfected crops and persist with safe limits', 
     mirrorCornDebuffRemovalEnabled: false,
     mirrorCornEffectivenessLevel: 0,
     mirrorCornReflectionLimitUnlocked: false,
+    splitweedMonocropLimitUnlocked: false,
   })
   assert.equal(
     normalizeGame({
       seedAugmentations: { mirrorCornEffectivenessUnlocked: true },
     }).seedAugmentations.mirrorCornEffectivenessLevel,
     1,
+  )
+  assert.equal(
+    normalizeGame({
+      seedAugmentations: { splitweedMonocropLimitUnlocked: true },
+    }).seedAugmentations.splitweedMonocropLimitUnlocked,
+    true,
   )
   assert.deepEqual(
     normalizeGame({
@@ -298,6 +308,119 @@ test('Seed Augmentations require perfected crops and persist with safe limits', 
       mirrorCornDebuffRemovalEnabled: false,
       mirrorCornEffectivenessLevel: 0,
       mirrorCornReflectionLimitUnlocked: false,
+      splitweedMonocropLimitUnlocked: false,
     },
+  )
+})
+
+test('Sterile Symbiosis costs 1.5e99 Crops and requires Splitweed', () => {
+  const augmentationId =
+    SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT
+  const baseGame = createAugmentationGame()
+
+  assert.equal(SEED_AUGMENTATIONS[augmentationId].cost, 1.5e99)
+  assert.equal(
+    purchaseSeedAugmentation(
+      { ...baseGame, crops: 1.5e99 },
+      augmentationId,
+    ),
+    null,
+  )
+
+  const purchased = purchaseSeedAugmentation(
+    {
+      ...baseGame,
+      crops: 1.5e99,
+      completedCropPerfections: ['splitweed'],
+    },
+    augmentationId,
+  )
+
+  assert.equal(purchased.crops, 0)
+  assert.equal(
+    purchased.seedAugmentations.splitweedMonocropLimitUnlocked,
+    true,
+  )
+  assert.equal(getNextSeedAugmentationCost(purchased, augmentationId), null)
+})
+
+test('Sterile Symbiosis adds two Monocrop limit per adjacent non-harvesting Crop', () => {
+  const blueprint = createBlueprint({
+    rows: 5,
+    columns: 5,
+    cells: [
+      null,
+      'muskGrass',
+      'muskGrass',
+      null,
+      null,
+      'rootTunnel',
+      'knotweed',
+      'splitweedPart',
+      'leechingGourd',
+      'leechingGourdPart',
+      'leek',
+      'splitweedPart',
+      'splitweedPart',
+      'leechingGourdPart',
+      'leechingGourdPart',
+      null,
+      'muskGrass',
+      'muskGrass',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ],
+    requireSplitweedFootprints: true,
+  })
+  const seedAugmentations = { splitweedMonocropLimitUnlocked: true }
+  const effect = getSplitweedMonocropLimitAugmentationEffect(
+    blueprint,
+    ['splitweed'],
+    seedAugmentations,
+  )
+
+  assert.deepEqual(effect, {
+    adjacentNonHarvestingCropCount: 6,
+    bonus: 12,
+  })
+  assert.equal(getMonocropThresholdBonus(blueprint, ['splitweed']), 2)
+  assert.equal(
+    getMonocropThresholdBonus(
+      blueprint,
+      ['splitweed'],
+      seedAugmentations,
+    ),
+    14,
+  )
+})
+
+test('Sterile Symbiosis threshold is used by the actual monocrop penalty', () => {
+  const cells = Array(100).fill(null)
+  cells.fill('leek', 0, 36)
+  cells[44] = 'knotweed'
+  cells[45] = 'splitweedPart'
+  cells[54] = 'splitweedPart'
+  cells[55] = 'splitweedPart'
+  cells[34] = 'muskGrass'
+  const blueprint = createBlueprint({
+    rows: 10,
+    columns: 10,
+    cells,
+    requireSplitweedFootprints: true,
+  })
+
+  assert.ok(getBlueprintMonocropMultiplier(blueprint, ['splitweed']) < 1)
+  assert.equal(
+    getBlueprintMonocropMultiplier(
+      blueprint,
+      ['splitweed'],
+      { splitweedMonocropLimitUnlocked: true },
+    ),
+    1,
   )
 })

@@ -95,6 +95,46 @@ test('blueprint imports cannot bypass the Musk Grass placement cap', () => {
   )
 })
 
+test('blueprint imports apply Splitweed augmentation bonuses before checking Musk Grass', () => {
+  const cells = Array(100).fill(null)
+  ;[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 34].forEach((index) => {
+    cells[index] = 'muskGrass'
+  })
+  cells[44] = 'knotweed'
+  cells[45] = 'splitweedPart'
+  cells[54] = 'splitweedPart'
+  cells[55] = 'splitweedPart'
+  const blueprintCode = exportBlueprint(
+    createBlueprint({
+      rows: 10,
+      columns: 10,
+      cells,
+      requireSplitweedFootprints: true,
+    }),
+  )
+  const importOptions = {
+    rows: 10,
+    columns: 10,
+    unlockedCropIds: ['knotweed', 'muskGrass'],
+    hasSplitweed: true,
+    completedCropPerfections: ['splitweed'],
+  }
+
+  assert.throws(
+    () => importBlueprint(blueprintCode, importOptions),
+    /more Musk Grass than its placement limit/,
+  )
+
+  const imported = importBlueprint(blueprintCode, {
+    ...importOptions,
+    seedAugmentations: { splitweedMonocropLimitUnlocked: true },
+  })
+  assert.equal(
+    imported.cells.filter((crop) => crop === 'muskGrass').length,
+    12,
+  )
+})
+
 test('each Gourd-adjacent Musk Grass uses its full connected network size', () => {
   const entries = {
     27: 'leechingGourd',

@@ -279,6 +279,7 @@ export function getRabbitBulkAverageRelationsPerContract(game) {
     game.blueprint,
     game.completedCropPerfections,
     getFortuneModifiers(game).passiveEffectMultiplier,
+    game.seedAugmentations,
   )
   const totalReward = eligibleCropIds.reduce(
     (sum, cropId) =>
@@ -642,6 +643,7 @@ function claimCompletedRabbitContracts(game, random) {
     game.blueprint,
     game.completedCropPerfections,
     getFortuneModifiers(game).passiveEffectMultiplier,
+    game.seedAugmentations,
   )
   const completedIndexSet = new Set(completedIndexes)
   const gainedRelations = completedIndexes.reduce(
@@ -709,6 +711,7 @@ export function claimRabbitContract(
     game.blueprint,
     game.completedCropPerfections,
     getFortuneModifiers(game).passiveEffectMultiplier,
+    game.seedAugmentations,
   )
   const gainedRelations = Math.floor(
     toNonNegativeNumber(contract.relationsReward) * relationMultiplier,

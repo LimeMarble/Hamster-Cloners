@@ -160,6 +160,9 @@ export function normalizeGame(rawGame) {
         !isCropPerfectionTemporarilyUnavailable(perfectionId),
       )
     : []
+  const seedAugmentations = normalizeSeedAugmentationState(
+    rawGame.seedAugmentations,
+  )
 
   if (completedCropPerfections.includes('splitweed')) {
     blueprint = removeUnavailableCrops(
@@ -219,6 +222,7 @@ export function normalizeGame(rawGame) {
   const hasReachedLimit = hasReachedMonocropLimit(
     activeBlueprint,
     completedCropPerfections,
+    seedAugmentations,
   )
   const rawFarmland =
     rawGame.farmland && typeof rawGame.farmland === 'object'
@@ -303,9 +307,7 @@ export function normalizeGame(rawGame) {
     rowDuplicators: toNonNegativeInteger(rawGame.rowDuplicators, 0),
     fortune: normalizeFortuneState(rawGame.fortune),
     capybara: normalizeCapybaraState(rawGame.capybara),
-    seedAugmentations: normalizeSeedAugmentationState(
-      rawGame.seedAugmentations,
-    ),
+    seedAugmentations,
     manatees: normalizeManateeState(rawGame.manatees),
     trade,
     numberNotation:

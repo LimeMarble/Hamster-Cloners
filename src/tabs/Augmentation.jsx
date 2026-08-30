@@ -5,6 +5,7 @@ import {
   getMirrorCornEffectivenessLevel,
   getMirrorCornMaximumReflections,
   getNextSeedAugmentationCost,
+  getSplitweedMonocropLimitAugmentationEffect,
   hasMirrorCornDebuffRemovalAugmentation,
   isMirrorCornDebuffRemovalEnabled,
   SEED_AUGMENTATIONS,
@@ -72,6 +73,19 @@ export function Augmentation({
   const safeReflectionLimit = getMirrorCornMaximumReflections(
     game.seedAugmentations,
   )
+  const splitweedMonocropLimit =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT]
+  const splitweedMonocropLimitCost = getNextSeedAugmentationCost(
+    game,
+    splitweedMonocropLimit.id,
+  )
+  const hasSplitweed = game.completedCropPerfections.includes('splitweed')
+  const splitweedMonocropEffect =
+    getSplitweedMonocropLimitAugmentationEffect(
+      game.blueprint,
+      game.completedCropPerfections,
+      game.seedAugmentations,
+    )
 
   return (
     <section className='trade-panel' aria-labelledby='augmentation-title'>
@@ -340,6 +354,70 @@ export function Augmentation({
                 : <>
                     Augment —{' '}
                     <FormattedNumber value={cornReflectionLimitCost} /> Crops
+                  </>}
+          </button>
+        </article>
+
+        <article className='seed-augmentation-card'>
+          <div className='seed-augmentation-heading'>
+            <CropVisual
+              cropId='knotweed'
+              completedCropPerfections={game.completedCropPerfections}
+              className='seed-augmentation-crop'
+            />
+            <div>
+              <p className='eyebrow'>Splitweed</p>
+              <h2>{splitweedMonocropLimit.name}</h2>
+            </div>
+          </div>
+          <p>
+            Each directly adjacent Crop that inherently produces no harvest
+            adds +2 to the Monocrop limit. Each Crop is counted once per
+            adjacent Splitweed, even when it occupies multiple tiles.
+          </p>
+          <dl className='seed-augmentation-stats'>
+            <div>
+              <dt>Adjacent non-harvesting Crops</dt>
+              <dd>
+                <FormattedNumber
+                  value={splitweedMonocropEffect.adjacentNonHarvestingCropCount}
+                  maximumFractionDigits={0}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>Current Monocrop limit bonus</dt>
+              <dd>
+                +<FormattedNumber
+                  value={splitweedMonocropEffect.bonus}
+                  maximumFractionDigits={0}
+                />
+              </dd>
+            </div>
+            <div>
+              <dt>Cost</dt>
+              <dd><FormattedNumber value={splitweedMonocropLimit.cost} /> Crops</dd>
+            </div>
+          </dl>
+          <button
+            type='button'
+            className='trade-primary-button'
+            onClick={() =>
+              onPurchaseSeedAugmentation(splitweedMonocropLimit.id)
+            }
+            disabled={
+              !hasSplitweed ||
+              splitweedMonocropLimitCost === null ||
+              game.crops < splitweedMonocropLimitCost
+            }
+          >
+            {!hasSplitweed
+              ? 'Perfect Knotweed first'
+              : splitweedMonocropLimitCost === null
+                ? 'Augmentation active'
+                : <>
+                    Augment —{' '}
+                    <FormattedNumber value={splitweedMonocropLimitCost} /> Crops
                   </>}
           </button>
         </article>

@@ -21,14 +21,19 @@ import {
   getRootTunnelAdjacencyStrength,
 } from './adjacencyLogic.js'
 import {
+  getLeechingGourdFootprint,
   getSplitweedAnchorIndex,
   getSplitweedFootprint,
+  isLeechingGourdCell,
 } from './cropFootprintLogic.js'
 import {
   getAugmentedHarvestConnections,
   getMirrorCornEffectivenessBonus,
   getMirrorCornReflectionLimitBonus,
+  hasSplitweedMonocropLimitAugmentation,
   isMirrorCornDebuffRemovalEnabled,
+  SEED_AUGMENTATIONS,
+  SEED_AUGMENTATION_IDS,
 } from './augmentationLogic.js'
 import { createBlueprintCalculationCache } from './blueprintCalculationCache.js'
 import {
@@ -114,14 +119,94 @@ export function getMonocropCropCount(blueprint, crop) {
   )
 }
 
+function getAdjacentCropIdentity(blueprint, index) {
+  const splitweedAnchorIndex = getSplitweedAnchorIndex(blueprint, index)
+  if (splitweedAnchorIndex !== null) {
+    return `splitweed-${splitweedAnchorIndex}`
+  }
+
+  if (isLeechingGourdCell(blueprint.cells[index])) {
+    const gourdAnchorIndex = blueprint.cells.indexOf('leechingGourd')
+    if (
+      gourdAnchorIndex !== -1 &&
+      getLeechingGourdFootprint(blueprint, gourdAnchorIndex).includes(index)
+    ) {
+      return `leeching-gourd-${gourdAnchorIndex}`
+    }
+  }
+
+  return `crop-${index}`
+}
+
+export function getSplitweedMonocropLimitAugmentationEffect(
+  blueprint,
+  completedCropPerfections = [],
+  seedAugmentations = {},
+) {
+  const augmentation =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT]
+
+  if (
+    !completedCropPerfections.includes('splitweed') ||
+    !hasSplitweedMonocropLimitAugmentation(seedAugmentations)
+  ) {
+    return {
+      adjacentNonHarvestingCropCount: 0,
+      bonus: 0,
+    }
+  }
+
+  const adjacentNonHarvestingCropCount = blueprint.cells.reduce(
+    (total, crop, anchorIndex) => {
+      if (crop !== 'knotweed') return total
+
+      const footprint = getSplitweedFootprint(blueprint, anchorIndex)
+      const footprintIndexes = new Set(footprint)
+      const adjacentCrops = new Set()
+
+      footprint.forEach((footprintIndex) => {
+        getOrthogonalIndexes(blueprint, footprintIndex).forEach(
+          (neighborIndex) => {
+            const neighborCrop = blueprint.cells[neighborIndex]
+            if (
+              !footprintIndexes.has(neighborIndex) &&
+              neighborCrop &&
+              doesNotHarvest(neighborCrop)
+            ) {
+              adjacentCrops.add(
+                getAdjacentCropIdentity(blueprint, neighborIndex),
+              )
+            }
+          },
+        )
+      })
+
+      return total + adjacentCrops.size
+    },
+    0,
+  )
+
+  return {
+    adjacentNonHarvestingCropCount,
+    bonus:
+      adjacentNonHarvestingCropCount *
+      augmentation.monocropLimitBonusPerAdjacentNonHarvestingCrop,
+  }
+}
+
 export function getMuskGrassPlacementLimit(
   blueprint,
   completedCropPerfections = [],
+  seedAugmentations = {},
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const monocropLimit = getMonocropThreshold(
     fieldSize,
-    getMonocropThresholdBonus(blueprint, completedCropPerfections),
+    getMonocropThresholdBonus(
+      blueprint,
+      completedCropPerfections,
+      seedAugmentations,
+    ),
   )
 
   return Math.max(0, Math.floor(monocropLimit / 3))
@@ -131,27 +216,41 @@ export function canPlaceMuskGrass(
   blueprint,
   index,
   completedCropPerfections = [],
+  seedAugmentations = {},
 ) {
   if (blueprint.cells[index] === 'muskGrass') return true
 
   return (
     getPlantedCropCount(blueprint, 'muskGrass') <
-    getMuskGrassPlacementLimit(blueprint, completedCropPerfections)
+    getMuskGrassPlacementLimit(
+      blueprint,
+      completedCropPerfections,
+      seedAugmentations,
+    )
   )
 }
 
 export function getMonocropThresholdBonus(
   blueprint,
   completedCropPerfections = [],
+  seedAugmentations = {},
 ) {
   const splitweed = getCropPerfection(
     'knotweed',
     completedCropPerfections,
   )
 
-  return (
+  const baseBonus =
     getPlantedCropCount(blueprint, 'knotweed') *
     (splitweed?.monocropThresholdBonusPerCrop ?? 0)
+
+  return (
+    baseBonus +
+    getSplitweedMonocropLimitAugmentationEffect(
+      blueprint,
+      completedCropPerfections,
+      seedAugmentations,
+    ).bonus
   )
 }
 
@@ -160,6 +259,7 @@ function getMonocropAdjustedCropBonus(
   crop,
   bonus,
   completedCropPerfections = [],
+  seedAugmentations = {},
 ) {
   if (
     !canCropPassiveBeAffectedBy(
@@ -174,7 +274,11 @@ function getMonocropAdjustedCropBonus(
     bonus,
     getMonocropCropCount(blueprint, crop),
     blueprint.rows * blueprint.columns,
-    getMonocropThresholdBonus(blueprint, completedCropPerfections),
+    getMonocropThresholdBonus(
+      blueprint,
+      completedCropPerfections,
+      seedAugmentations,
+    ),
   )
 }
 
@@ -183,6 +287,7 @@ function getMonocropAdjustedCropEffectMultiplier(
   crop,
   effectMultiplier,
   completedCropPerfections = [],
+  seedAugmentations = {},
 ) {
   if (
     !canCropPassiveBeAffectedBy(
@@ -197,18 +302,24 @@ function getMonocropAdjustedCropEffectMultiplier(
     effectMultiplier,
     getMonocropCropCount(blueprint, crop),
     blueprint.rows * blueprint.columns,
-    getMonocropThresholdBonus(blueprint, completedCropPerfections),
+    getMonocropThresholdBonus(
+      blueprint,
+      completedCropPerfections,
+      seedAugmentations,
+    ),
   )
 }
 
 export function getBlueprintMonocropMultiplier(
   blueprint,
   completedCropPerfections = [],
+  seedAugmentations = {},
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const thresholdBonus = getMonocropThresholdBonus(
     blueprint,
     completedCropPerfections,
+    seedAugmentations,
   )
 
   return Object.keys(CROP_DEFINITIONS)
@@ -230,11 +341,13 @@ export function getBlueprintMonocropMultiplier(
 export function hasReachedMonocropLimit(
   blueprint,
   completedCropPerfections = [],
+  seedAugmentations = {},
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const thresholdBonus = getMonocropThresholdBonus(
     blueprint,
     completedCropPerfections,
+    seedAugmentations,
   )
 
   return Object.keys(CROP_DEFINITIONS)
@@ -381,6 +494,7 @@ export function getAdjacentCropEffectMultiplier(
   isDebuff = false,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const debuffMultiplier = isDebuff
     ? getCropDebuffMultiplier(blueprint, index)
@@ -408,6 +522,7 @@ export function getAdjacentCropEffectMultiplier(
           isDebuff,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         ),
       1,
     )
@@ -427,6 +542,7 @@ export function getAdjacentHarvestDestructionEffects(
   index,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   return getAdjacentCropConnections(blueprint, index).flatMap(
     ({ index: sourceIndex, adjacencyDistance }) => {
@@ -441,6 +557,7 @@ export function getAdjacentHarvestDestructionEffects(
           sourceCrop,
           1 - getRootTunnelAdjacencyStrength(adjacencyDistance),
           completedCropPerfections,
+          seedAugmentations,
         )
       const strength =
         (1 - baseDestructionMultiplier) *
@@ -452,6 +569,7 @@ export function getAdjacentHarvestDestructionEffects(
           true,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         )
       return [
         {
@@ -470,12 +588,14 @@ export function getAdjacentHarvestDestructionMultiplier(
   index,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   return getAdjacentHarvestDestructionEffects(
     blueprint,
     index,
     completedCropPerfections,
     passiveEffectMultiplier,
+    seedAugmentations,
   ).reduce(
     (multiplier, effect) => multiplier * effect.multiplier,
     1,
@@ -596,6 +716,7 @@ export function getMirrorCornTargetCount(
 export function getSplitweedMirrorCornEffectivenessBonus(
   blueprint,
   completedCropPerfections = [],
+  seedAugmentations = {},
 ) {
   const splitweed = getCropPerfection('knotweed', completedCropPerfections)
   const baseBonus =
@@ -607,6 +728,7 @@ export function getSplitweedMirrorCornEffectivenessBonus(
     'knotweed',
     baseBonus,
     completedCropPerfections,
+    seedAugmentations,
   )
 }
 
@@ -642,6 +764,7 @@ export function getMirrorCornEffectMultiplier(
     getSplitweedMirrorCornEffectivenessBonus(
       blueprint,
       completedCropPerfections,
+      seedAugmentations,
     )
 
   return (
@@ -650,6 +773,7 @@ export function getMirrorCornEffectMultiplier(
       'corn',
       mirrorCornEffectiveness,
       completedCropPerfections,
+      seedAugmentations,
     ) * passiveEffectMultiplier
   ) ** mirrorCornTargetCount
 }
@@ -715,6 +839,7 @@ export function getGlobalHamsterEfficiencyEffects(
   completedCropPerfections = [],
   rowsProducedPerSecond = 0,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const sourceCropId = 'wheat'
   const definition = CROP_DEFINITIONS[sourceCropId]
@@ -738,6 +863,7 @@ export function getGlobalHamsterEfficiencyEffects(
       sourceCropId,
       count * Math.log10(safeRowsProducedPerSecond),
       completedCropPerfections,
+      seedAugmentations,
     ) *
     getGlobalPassiveEffectMultiplier(
       blueprint,
@@ -760,6 +886,7 @@ export function getGlobalHamsterEfficiencyMultiplier(
   completedCropPerfections = [],
   rowsProducedPerSecond = 0,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   return (
     1 +
@@ -768,6 +895,7 @@ export function getGlobalHamsterEfficiencyMultiplier(
       completedCropPerfections,
       rowsProducedPerSecond,
       passiveEffectMultiplier,
+      seedAugmentations,
     ).reduce((totalBonus, effect) => totalBonus + effect.bonus, 0)
   )
 }
@@ -777,6 +905,7 @@ export function getGlobalRowProductionEffects(
   activeHamsters = 0,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const sourceCropId = 'canola'
   const definition = CROP_DEFINITIONS[sourceCropId]
@@ -802,6 +931,7 @@ export function getGlobalRowProductionEffects(
         safeActiveHamsters *
         definition.globalRowProductionBonusPerHamster,
       completedCropPerfections,
+      seedAugmentations,
     ) *
     getGlobalPassiveEffectMultiplier(
       blueprint,
@@ -824,12 +954,14 @@ export function getGlobalRowProductionMultiplier(
   activeHamsters = 0,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   return getGlobalRowProductionEffects(
     blueprint,
     activeHamsters,
     completedCropPerfections,
     passiveEffectMultiplier,
+    seedAugmentations,
   ).reduce(
     (multiplier, effect) => multiplier * effect.multiplier,
     1,
@@ -844,6 +976,7 @@ export function getAdjacentCropEffectModifier(
   isDebuff = false,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const cropDefinition = CROP_DEFINITIONS[crop]
   const adjacentCropEffectModifier = cropDefinition?.adjacentCropEffectModifier
@@ -881,6 +1014,7 @@ export function getAdjacentCropEffectModifier(
       crop,
       baseMultiplier,
       completedCropPerfections,
+      seedAugmentations,
     )
   const fortuneAdjustedBaseMultiplier =
     monocropAdjustedBaseMultiplier >= 1
@@ -918,6 +1052,7 @@ export function getSamplingLentilTradedCropEffect(
   blueprint,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const samplingLentil = getCropPerfection(
     'lentil',
@@ -937,7 +1072,11 @@ export function getSamplingLentilTradedCropEffect(
       bonusPerAdjacency,
       lentilCount,
       fieldSize,
-      getMonocropThresholdBonus(blueprint, completedCropPerfections),
+      getMonocropThresholdBonus(
+        blueprint,
+        completedCropPerfections,
+        seedAugmentations,
+      ),
     ) * getGlobalPassiveEffectMultiplier(
       blueprint,
       completedCropPerfections,
@@ -972,6 +1111,7 @@ export function getGlobalHarvestEffects(
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
   totalRabbitRelationsEarned = 0,
+  seedAugmentations = {},
 ) {
   const fieldSize = blueprint.rows * blueprint.columns
   const cropCounts = Object.fromEntries(
@@ -1032,6 +1172,7 @@ export function getGlobalHarvestEffects(
         getMonocropThresholdBonus(
           blueprint,
           completedCropPerfections,
+          seedAugmentations,
         ),
       ) *
       globalPassiveEffectMultiplier *
@@ -1042,6 +1183,7 @@ export function getGlobalHarvestEffects(
         globalHarvestMultiplier < 1,
         completedCropPerfections,
         passiveEffectMultiplier,
+        seedAugmentations,
       )
 
     return [
@@ -1060,6 +1202,7 @@ export function getGlobalHarvestMultiplier(
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
   totalRabbitRelationsEarned = 0,
+  seedAugmentations = {},
 ) {
   const bonusesByCrop = new Map()
 
@@ -1069,6 +1212,7 @@ export function getGlobalHarvestMultiplier(
     rabbitContractsCompleted,
     passiveEffectMultiplier,
     totalRabbitRelationsEarned,
+    seedAugmentations,
   ).forEach(({ sourceCropId, bonus }) => {
     bonusesByCrop.set(
       sourceCropId,
@@ -1088,6 +1232,7 @@ export function getGroupedGlobalHarvestEffects(
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
   totalRabbitRelationsEarned = 0,
+  seedAugmentations = {},
 ) {
   const effectsByCrop = new Map()
 
@@ -1097,6 +1242,7 @@ export function getGroupedGlobalHarvestEffects(
     rabbitContractsCompleted,
     passiveEffectMultiplier,
     totalRabbitRelationsEarned,
+    seedAugmentations,
   ).forEach(({ sourceCropId, bonus }) => {
     const currentEffect = effectsByCrop.get(sourceCropId) ?? {
       count: 0,
@@ -1121,6 +1267,7 @@ function calculateBlazingCarrotSurveyTimeEffect(
   completedCropPerfections = [],
   totalRabbitRelationsEarned = 0,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const perfection = getCropPerfection(
     'carrot',
@@ -1165,7 +1312,11 @@ function calculateBlazingCarrotSurveyTimeEffect(
       perfection.surveyTimeReductionPerCrop,
       getMonocropCropCount(blueprint, 'carrot'),
       blueprint.rows * blueprint.columns,
-      getMonocropThresholdBonus(blueprint, completedCropPerfections),
+      getMonocropThresholdBonus(
+        blueprint,
+        completedCropPerfections,
+        seedAugmentations,
+      ),
     ) *
     getGlobalPassiveEffectMultiplier(
       blueprint,
@@ -1183,6 +1334,7 @@ function calculateBlazingCarrotSurveyTimeEffect(
           false,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         ),
     0,
   )
@@ -1206,6 +1358,7 @@ export function getBlazingCarrotSurveyTimeEffect(
   completedCropPerfections = [],
   totalRabbitRelationsEarned = 0,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   return getCachedBlazingCarrotSurveyTimeEffect(
     blueprint,
@@ -1213,6 +1366,7 @@ export function getBlazingCarrotSurveyTimeEffect(
       completedCropPerfections,
       totalRabbitRelationsEarned,
       passiveEffectMultiplier,
+      seedAugmentations,
     ],
     () =>
       calculateBlazingCarrotSurveyTimeEffect(
@@ -1220,6 +1374,7 @@ export function getBlazingCarrotSurveyTimeEffect(
         completedCropPerfections,
         totalRabbitRelationsEarned,
         passiveEffectMultiplier,
+        seedAugmentations,
       ),
   )
 }
@@ -1228,12 +1383,14 @@ export function getBlazingCarrotSurveyDurationMultiplier(
   completedCropPerfections = [],
   totalRabbitRelationsEarned = 0,
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   return getBlazingCarrotSurveyTimeEffect(
     blueprint,
     completedCropPerfections,
     totalRabbitRelationsEarned,
     passiveEffectMultiplier,
+    seedAugmentations,
   ).multiplier
 }
 
@@ -1241,6 +1398,7 @@ export function getRabbitRelationsEffects(
   blueprint,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   const sourceCropId = 'carrot'
   const definition = CROP_DEFINITIONS[sourceCropId]
@@ -1272,7 +1430,11 @@ export function getRabbitRelationsEffects(
       bonusPerCarrot,
       cropCount,
       fieldSize,
-      getMonocropThresholdBonus(blueprint, completedCropPerfections),
+      getMonocropThresholdBonus(
+        blueprint,
+        completedCropPerfections,
+        seedAugmentations,
+      ),
     ) *
     getGlobalPassiveEffectMultiplier(
       blueprint,
@@ -1290,6 +1452,7 @@ export function getRabbitRelationsEffects(
           false,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         ),
     0,
   )
@@ -1308,14 +1471,16 @@ export function getRabbitRelationsMultiplier(
   blueprint,
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
+  seedAugmentations = {},
 ) {
   return getCachedRabbitRelationsMultiplier(
     blueprint,
-    [completedCropPerfections, passiveEffectMultiplier],
+    [completedCropPerfections, passiveEffectMultiplier, seedAugmentations],
     () => getRabbitRelationsEffects(
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     ).reduce((multiplier, effect) => multiplier * effect.multiplier, 1),
   )
 }
@@ -1338,6 +1503,7 @@ export function getAdjacentHarvestModifier(
     ) +
       (CROP_DEFINITIONS[effectCrop]?.adjacentHarvestModifier ?? 0),
     completedCropPerfections,
+    seedAugmentations,
   ) * passiveEffectMultiplier
 }
 
@@ -1362,6 +1528,7 @@ export function getExternalCropBuffMultiplier(
       crop,
       baseExternalCropBuffMultiplier,
       completedCropPerfections,
+      seedAugmentations,
     ) * passiveEffectMultiplier
 
   const adjacentEffectSourceMultipliers = getAdjacentCropConnections(
@@ -1384,6 +1551,7 @@ export function getExternalCropBuffMultiplier(
               false,
               completedCropPerfections,
               passiveEffectMultiplier,
+              seedAugmentations,
             ),
         ]
   })
@@ -1402,6 +1570,7 @@ export function getExternalCropBuffMultiplier(
       (mirrorCorn?.diagonalTargetEffectMultiplier ?? 1) +
         getMirrorCornEffectivenessBonus(seedAugmentations),
       completedCropPerfections,
+      seedAugmentations,
     ) *
     passiveEffectMultiplier
   const externalEffectSourceMultipliers = [

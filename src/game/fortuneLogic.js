@@ -179,7 +179,11 @@ export function getCloverBundleChancePerMinute(game) {
   const monocropMultiplier = getMonocropYieldMultiplier(
     getMonocropCropCount(blueprint, 'fourLeafClover'),
     fieldSize,
-    getMonocropThresholdBonus(blueprint, completedCropPerfections),
+    getMonocropThresholdBonus(
+      blueprint,
+      completedCropPerfections,
+      game.seedAugmentations,
+    ),
   )
   const passiveEffectMultiplier =
     getFortuneModifiers(game).passiveEffectMultiplier
@@ -195,6 +199,7 @@ export function getCloverBundleChancePerMinute(game) {
     false,
     completedCropPerfections,
     passiveEffectMultiplier,
+    game.seedAugmentations,
   )
   const mirrorCornEffectMultiplier = getMirrorCornEffectMultiplier(
     blueprint,

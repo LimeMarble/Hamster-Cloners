@@ -55,6 +55,7 @@ export function ManateeRelations({
     game.completedCropPerfections,
     game.trade?.totalRabbitRelationsEarned ?? 0,
     getFortuneModifiers(game.fortune).passiveEffectMultiplier,
+    game.seedAugmentations,
   )
 
   return (

@@ -46,6 +46,7 @@ export function getCropPassiveStats({
           baseRowDuplicatorEffectivenessBonus < 0,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         ) *
         cropEffects.getMirrorCornEffectMultiplier(
           blueprint,
@@ -69,6 +70,7 @@ export function getCropPassiveStats({
         false,
         completedCropPerfections,
         passiveEffectMultiplier,
+        seedAugmentations,
       ),
     })
   }
@@ -93,6 +95,7 @@ export function getCropPassiveStats({
           ownBaseAdjacentHarvestBonus < 0,
           completedCropPerfections,
           passiveEffectMultiplier,
+          seedAugmentations,
         ) *
         cropEffects.getMirrorCornEffectMultiplier(
           blueprint,
@@ -109,6 +112,7 @@ export function getCropPassiveStats({
     rabbitContractsCompleted,
     passiveEffectMultiplier,
     totalRabbitRelationsEarned,
+    seedAugmentations,
   ).find((effect) => effect.sourceIndex === index)
   if (ownGlobalHarvestEffect) {
     passiveStats.push({
@@ -145,6 +149,7 @@ export function getCropPassiveStats({
     blueprint,
     completedCropPerfections,
     passiveEffectMultiplier,
+    seedAugmentations,
   ).find((effect) => effect.sourceCropId === crop)
   if (rabbitRelationsEffect) {
     passiveStats.push({
@@ -171,6 +176,7 @@ export function getCropPassiveStats({
       cropEffects.getSplitweedMirrorCornEffectivenessBonus(
         blueprint,
         completedCropPerfections,
+        seedAugmentations,
       )
 
     if (splitweedCount > 0 && mirrorCornEffectivenessBonus > 0) {

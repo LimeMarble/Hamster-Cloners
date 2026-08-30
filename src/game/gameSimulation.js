@@ -104,6 +104,7 @@ export function advanceGameSimulationStep(
       currentGame.completedCropPerfections,
       currentGame.trade?.totalRabbitRelationsEarned ?? 0,
       fortuneModifiers.passiveEffectMultiplier,
+      currentGame.seedAugmentations,
     )
   const productionSnapshotPerSecond = getCropProductionSnapshotPerSecond(
     currentGame.blueprint,

@@ -294,6 +294,7 @@ export function useGameDerivedState(game) {
   const monocropThresholdBonus = getMonocropThresholdBonus(
     game.blueprint,
     game.completedCropPerfections,
+    game.seedAugmentations,
   )
   const monocropLimit = Math.ceil(
     getMonocropThreshold(
@@ -304,12 +305,14 @@ export function useGameDerivedState(game) {
   const monocropPenaltyMultiplier = getBlueprintMonocropMultiplier(
     game.blueprint,
     game.completedCropPerfections,
+    game.seedAugmentations,
   )
   const showMonocropLimit =
     game.hasSeenMonocropLimit ||
     hasReachedMonocropLimit(
       game.blueprint,
       game.completedCropPerfections,
+      game.seedAugmentations,
     )
   const formattedTotalHamstersHired = formatWholeNumber(game.totalHamstersHired)
   const unionStatus =

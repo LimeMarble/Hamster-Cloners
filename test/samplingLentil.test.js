@@ -5,6 +5,7 @@ import {
   createBlueprint,
   createFarmlandMultipliers,
   getBlueprintCropStats,
+  getCarrotHighHarvestEffect,
   getCropProductionPerSecond,
   getSamplingLentilTradedCropEffect,
   unlockCropPerfection,
@@ -72,6 +73,43 @@ test('Sampling Lentil has an 80 percent harvest boost and a separate traded-adja
       adjacentTradedCropCount: 2,
       multiplier: 3,
     },
+  )
+})
+
+test('Sampling Lentil counts toward Blazing Carrot high-harvest qualification', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['lentil', 'carrot'],
+  })
+  const completedCropPerfections = ['samplingLentil', 'blazingCarrot']
+  const samplingEffect = getSamplingLentilTradedCropEffect(
+    blueprint,
+    completedCropPerfections,
+  )
+  const contributions = [{ cropId: 'leek', amount: 6e11 }]
+
+  assert.deepEqual(samplingEffect, {
+    adjacentTradedCropCount: 1,
+    multiplier: 2,
+  })
+  assert.equal(
+    getCarrotHighHarvestEffect(
+      blueprint,
+      contributions,
+      1,
+      completedCropPerfections,
+    ).qualifyingCropTypeCount,
+    0,
+  )
+  assert.equal(
+    getCarrotHighHarvestEffect(
+      blueprint,
+      contributions,
+      samplingEffect.multiplier,
+      completedCropPerfections,
+    ).qualifyingCropTypeCount,
+    1,
   )
 })
 

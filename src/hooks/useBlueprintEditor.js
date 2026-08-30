@@ -70,12 +70,14 @@ export function useBlueprintEditor({
     const hasReachedLimit = hasReachedMonocropLimit(
       nextBlueprint,
       currentGame.completedCropPerfections,
+      currentGame.seedAugmentations,
     )
     const hasJustReachedLimit =
       !currentGame.hasSeenMonocropLimit &&
       !hasReachedMonocropLimit(
         currentGame.blueprint,
         currentGame.completedCropPerfections,
+        currentGame.seedAugmentations,
       ) &&
       hasReachedLimit
 
@@ -129,6 +131,7 @@ export function useBlueprintEditor({
         currentGame.blueprint,
         index,
         currentGame.completedCropPerfections,
+        currentGame.seedAugmentations,
       )
     ) {
       return
@@ -329,6 +332,7 @@ export function useBlueprintEditor({
     hasLeechingGourd,
     hasSplitweed,
     completedCropPerfections: game.completedCropPerfections,
+    seedAugmentations: game.seedAugmentations,
   })
 
   function handleEditorPlotContextMenu(index, crop, event) {

@@ -34,6 +34,7 @@ export {
   getRawMirrorCornTargetCount,
   isMirrorCornOverloaded,
   getSplitweedMirrorCornEffectivenessBonus,
+  getSplitweedMonocropLimitAugmentationEffect,
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getPlantedCropCount,

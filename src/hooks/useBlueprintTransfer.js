@@ -12,6 +12,7 @@ export function useBlueprintTransfer({
   hasLeechingGourd,
   hasSplitweed,
   completedCropPerfections,
+  seedAugmentations,
 }) {
   const [blueprintCode, setBlueprintCode] = useState('')
   const [blueprintTransferStatus, setBlueprintTransferStatus] = useState(null)
@@ -52,6 +53,7 @@ export function useBlueprintTransfer({
         hasLeechingGourd,
         hasSplitweed,
         completedCropPerfections,
+        seedAugmentations,
       })
 
       commitBlueprint(importedBlueprint)
