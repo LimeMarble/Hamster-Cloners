@@ -289,6 +289,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: getCapybaraBlueprintCropYield,
     requiresAction: true,
   },
+  createPerfectionGoal('samplingLentil'),
   createPerfectionGoal('blazingCarrot'),
   {
     id: 'capybara-demonstration-one',
@@ -307,7 +308,6 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: getCapybaraBlueprintCropYield,
     requiresAction: true,
   },
-  createPerfectionGoal('samplingLentil'),
 ]
 
 export function getNextMajorProgressionGoal(game) {

@@ -33,9 +33,9 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'crop-four-leaf-clover',
       'capybara-contact',
       'capybara-demonstration-introduction',
+      'perfection-samplingLentil',
       'perfection-blazingCarrot',
       'capybara-demonstration-one',
-    'perfection-samplingLentil',
     ],
   )
 })

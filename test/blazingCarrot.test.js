@@ -207,7 +207,7 @@ test('Blazing Carrot survey reduction is lifetime-relation-limited and caps at 8
   assert.ok(Math.abs(cappedEffect.multiplier - 0.2) < 1e-12)
 })
 
-test('Blazing Carrot enters major progression after Demonstration 0', () => {
+test('major progression places Sampling Lentil then Blazing Carrot before Demonstration 1', () => {
   const initialGame = createInitialGame()
   const game = {
     ...initialGame,
@@ -238,9 +238,27 @@ test('Blazing Carrot enters major progression after Demonstration 0', () => {
     },
     capybara: { completedDemonstrations: ['introduction'] },
   }
-  const goal = getNextMajorProgressionGoal(game)
+  assert.equal(
+    getNextMajorProgressionGoal(game).id,
+    'perfection-samplingLentil',
+  )
+  const samplingCompleteGame = {
+    ...game,
+    completedCropPerfections: [...game.completedCropPerfections, 'samplingLentil'],
+  }
+  const goal = getNextMajorProgressionGoal(samplingCompleteGame)
 
   assert.equal(goal.id, 'perfection-blazingCarrot')
   assert.equal(goal.unit, 'Rabbit relations')
   assert.equal(goal.isReady, true)
+  assert.equal(
+    getNextMajorProgressionGoal({
+      ...samplingCompleteGame,
+      completedCropPerfections: [
+        ...samplingCompleteGame.completedCropPerfections,
+        BLAZING_CARROT,
+      ],
+    }).id,
+    'capybara-demonstration-one',
+  )
 })
