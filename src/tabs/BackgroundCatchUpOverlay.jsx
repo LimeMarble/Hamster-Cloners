@@ -10,6 +10,7 @@ export function BackgroundCatchUpOverlay({
   totalSeconds,
   compressionMultiplier,
   strategy,
+  isPreparing = false,
   onCompress,
   onSkip,
 }) {
@@ -18,7 +19,7 @@ export function BackgroundCatchUpOverlay({
       ? Math.max(0, Math.min(1, 1 - remainingSeconds / totalSeconds))
       : 1
   const progressPercent = progress * 100
-  const canSkip = ticksRemaining > SKIPPED_CATCH_UP_STEPS
+  const canSkip = !isPreparing && ticksRemaining > SKIPPED_CATCH_UP_STEPS
 
   return (
     <div className="background-catch-up-overlay">
@@ -30,7 +31,9 @@ export function BackgroundCatchUpOverlay({
         aria-describedby="background-catch-up-description"
       >
         <p className="eyebrow">Welcome back</p>
-        <h2 id="background-catch-up-title">Processing background ticks</h2>
+        <h2 id="background-catch-up-title">
+          {isPreparing ? 'Preparing catch-up' : 'Processing background ticks'}
+        </h2>
 
         <div className="background-catch-up-counter" aria-live="polite">
           <strong><WholeNumber value={ticksRemaining} /></strong>
@@ -49,7 +52,9 @@ export function BackgroundCatchUpOverlay({
         </div>
 
         <p className="background-catch-up-compression">
-          {strategy === 'skipped' ? (
+          {isPreparing ? (
+            <>Loading the saved simulation state…</>
+          ) : strategy === 'skipped' ? (
             <>The remaining time is being approximated in <WholeNumber value={SKIPPED_CATCH_UP_STEPS} /> ticks.</>
           ) : (
             <>Current catch-up compression: ×<FormattedNumber value={compressionMultiplier} maximumFractionDigits={0} /></>
@@ -62,7 +67,12 @@ export function BackgroundCatchUpOverlay({
         </p>
 
         <div className="background-catch-up-actions">
-          <button type="button" className="secondary-button" onClick={onCompress}>
+          <button
+            type="button"
+            className="secondary-button"
+            disabled={isPreparing}
+            onClick={onCompress}
+          >
             Speed up ×{CATCH_UP_SPEED_FACTOR}
           </button>
           <button

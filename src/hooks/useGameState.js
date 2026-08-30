@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ACTIVE_SIMULATION_STEP_SECONDS,
   advanceGameByElapsedTime,
+  CATCH_UP_COMPRESSION_FACTOR,
+  getSimulationStepCount,
 } from '../game/gameSimulation.js'
 import {
   AUTOSAVE_INTERVAL_MS,
@@ -20,6 +22,24 @@ function getAdvanceMode(elapsedSeconds) {
     : 'catch-up'
 }
 
+function createPendingCatchUp(savedAt, now = Date.now()) {
+  const elapsedSeconds = Math.max(0, (now - savedAt) / 1000)
+  const estimatedTicks = Math.max(
+    1,
+    getSimulationStepCount(elapsedSeconds, 'catch-up'),
+  )
+
+  return {
+    ticksRemaining: estimatedTicks,
+    initialTicks: estimatedTicks,
+    remainingSeconds: elapsedSeconds,
+    totalSeconds: elapsedSeconds,
+    compressionMultiplier: CATCH_UP_COMPRESSION_FACTOR,
+    strategy: 'compressed',
+    isPreparing: true,
+  }
+}
+
 export function useGameState(isEditingBlueprintRef) {
   const [initialSnapshot] = useState(() => {
     const snapshot = loadGameSnapshot()
@@ -33,7 +53,10 @@ export function useGameState(isEditingBlueprintRef) {
   const [lastSavedAt, setLastSavedAt] = useState(
     initialSnapshot.lastSavedAt,
   )
-  const [backgroundCatchUp, setBackgroundCatchUp] = useState(null)
+  const [backgroundCatchUp, setBackgroundCatchUp] = useState(() =>
+    createPendingCatchUp(initialSnapshot.savedAt),
+  )
+  const [isGameReady, setIsGameReady] = useState(false)
   const gameRef = useRef(initialSnapshot.game)
   const workerRef = useRef(null)
   const revisionRef = useRef(0)
@@ -80,6 +103,7 @@ export function useGameState(isEditingBlueprintRef) {
     )
     setRenderedGame(nextGame)
     setBackgroundCatchUp(null)
+    setIsGameReady(true)
     workerRef.current?.postMessage({
       type: 'replace-state',
       game: nextGame,
@@ -171,6 +195,7 @@ export function useGameState(isEditingBlueprintRef) {
       if (!message || message.revision !== revisionRef.current) return
 
       if (message.type === 'catch-up-progress') {
+        setIsGameReady(false)
         setBackgroundCatchUp({
           ticksRemaining: Math.max(
             0,
@@ -196,6 +221,7 @@ export function useGameState(isEditingBlueprintRef) {
 
       if (message.type === 'catch-up-complete') {
         setBackgroundCatchUp(null)
+        setIsGameReady(true)
         return
       }
 
@@ -253,6 +279,9 @@ export function useGameState(isEditingBlueprintRef) {
         setRenderedGame(gameRef.current)
       }
 
+      setBackgroundCatchUp(null)
+      setIsGameReady(true)
+
       fallbackTimeoutId = window.setTimeout(
         runFallbackTick,
         SIMULATION_TICK_INTERVAL_MS,
@@ -274,7 +303,6 @@ export function useGameState(isEditingBlueprintRef) {
       event.preventDefault()
       worker?.terminate()
       worker = null
-      setBackgroundCatchUp(null)
       startFallback()
     }
 
@@ -341,6 +369,10 @@ export function useGameState(isEditingBlueprintRef) {
         now,
         visible: true,
       })
+      setIsGameReady(false)
+      setBackgroundCatchUp(
+        createPendingCatchUp(simulatedAtRef.current, now),
+      )
     }
 
     document.addEventListener(
@@ -372,6 +404,7 @@ export function useGameState(isEditingBlueprintRef) {
     lastSavedAt,
     setSimulationPaused,
     backgroundCatchUp,
+    isGameReady,
     compressBackgroundCatchUp,
     skipBackgroundCatchUp,
     activeSimulationStepSeconds: ACTIVE_SIMULATION_STEP_SECONDS,

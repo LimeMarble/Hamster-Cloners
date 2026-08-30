@@ -180,8 +180,8 @@ function startCatchUp(targetTimestamp) {
   const defaultTickCount = getSimulationStepCount(elapsedSeconds, 'catch-up')
 
   if (defaultTickCount === 0) {
-    postCatchUpComplete()
     postSnapshot(true)
+    postCatchUpComplete()
     scheduleSimulationTick()
     return
   }
@@ -192,8 +192,8 @@ function startCatchUp(targetTimestamp) {
       isEditingBlueprint,
     })
     simulatedAt = target
-    postCatchUpComplete()
     postSnapshot(true)
+    postCatchUpComplete()
     scheduleSimulationTick()
     return
   }

@@ -20,6 +20,7 @@ export function useGameController() {
     lastSavedAt,
     setSimulationPaused,
     backgroundCatchUp,
+    isGameReady,
     compressBackgroundCatchUp,
     skipBackgroundCatchUp,
   } = useGameState(isEditingBlueprintRef)
@@ -59,6 +60,7 @@ export function useGameController() {
   })
 
   return {
+    isGameReady,
     progression: {
       goal: derived.majorProgressionGoal,
       numberNotation: game.numberNotation,
