@@ -280,6 +280,25 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'mangrove-nursery') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Nursery Crop types:{' '}
+                  {effect.cropTypes.map((cropType, cropTypeIndex) => (
+                    <span key={cropType.key}>
+                      {cropTypeIndex > 0 ? ', ' : ''}
+                      {getCropName(
+                        cropType.cropId,
+                        completedCropPerfections,
+                      )}{' '}
+                      (×<FormattedNumber value={cropType.weight} maximumFractionDigits={0} />)
+                    </span>
+                  ))}
+                  . Current bonus: +<FormattedNumber value={effect.bonus * 100} maximumFractionDigits={2} />%; cap: +<FormattedNumber value={effect.cap * 100} maximumFractionDigits={0} />%.
+                </li>
+              )
+            }
+
             if (effect.type === 'harvest-destruction') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>

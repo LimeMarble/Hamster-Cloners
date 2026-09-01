@@ -5,8 +5,11 @@ import {
   MANATEE_SURVEY_IDS,
   MANATEE_SURVEY_LENGTH_IDS,
   MANATEE_SURVEYS,
+  canUpgradeManateeBuilding,
   canConstructManateeBuilding,
+  getManateeBuildingStage,
   getManateeDivingHamsterCapacity,
+  getNextManateeBuildingStage,
   getManateeRemainingHamsterCount,
   getManateeSurveyAllocatedHamsterCount,
   getMarshSurveyDurationSeconds,
@@ -123,56 +126,102 @@ function MarshSurvey({
   )
 }
 
-function DivingCabinSite({ game, state, onConstructBuilding }) {
+function BuildingCosts({ resources, cost }) {
+  return (
+    <dl className="manatee-building-costs">
+      {Object.entries(cost).map(([resourceId, amount]) => (
+        <div key={resourceId}>
+          <dt>{MANATEE_RESOURCES[resourceId].name}</dt>
+          <dd>
+            <FormattedNumber
+              value={resources[resourceId]}
+              maximumFractionDigits={0}
+            />{' '}
+            / <FormattedNumber value={amount} maximumFractionDigits={0} />
+          </dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+function DivingCabinSite({
+  game,
+  state,
+  onConstructBuilding,
+  onUpgradeBuilding,
+}) {
   const building = MANATEE_BUILDINGS[MANATEE_BUILDING_IDS.DIVING_CABIN]
   const isComplete = state.completedBuildings.includes(building.id)
   const canBuild = canConstructManateeBuilding(game, building.id)
+  const currentStage = getManateeBuildingStage(game, building.id)
+  const completedStage = building.stages?.find(
+    (stage) => stage.stage === currentStage,
+  )
+  const nextStage = getNextManateeBuildingStage(game, building.id)
+  const canUpgrade = canUpgradeManateeBuilding(game, building.id)
   const divingCapacity = getManateeDivingHamsterCapacity(game)
 
   return (
     <article
       className={`manatee-building-site ${isComplete ? 'manatee-building-site-complete' : ''}`}
     >
-      <div className="manatee-cabin-visual" aria-hidden="true">
+      <div
+        className={`manatee-cabin-visual ${currentStage >= 1 ? 'manatee-diving-hub-visual' : ''}`}
+        aria-hidden="true"
+      >
         <span className="manatee-cabin-roof" />
         <span className="manatee-cabin-body" />
         <span className="manatee-cabin-door" />
+        {currentStage >= 1 ? <span className="manatee-cabin-flippers" /> : null}
         {!isComplete ? <span className="manatee-scaffold" /> : null}
       </div>
       <div className="manatee-building-copy">
         <p className="eyebrow">
           {isComplete ? 'Structure complete' : 'Construction site'}
         </p>
-        <h3>{building.name}</h3>
-        <p className="trade-copy">{building.description}</p>
-        <dl className="manatee-building-costs">
-          {Object.entries(building.cost).map(([resourceId, amount]) => (
-            <div key={resourceId}>
-              <dt>{MANATEE_RESOURCES[resourceId].name}</dt>
-              <dd>
-                <FormattedNumber
-                  value={state.resources[resourceId]}
-                  maximumFractionDigits={0}
-                />{' '}
-                / <FormattedNumber value={amount} maximumFractionDigits={0} />
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <h3>{completedStage?.name ?? building.name}</h3>
+        <p className="trade-copy">
+          {completedStage?.description ?? building.description}
+        </p>
         {isComplete ? (
-          <p className="manatee-capacity-note">
-            Diving hamster capacity:{' '}
-            <strong><WholeNumber value={divingCapacity} /></strong>
-          </p>
+          <>
+            <p className="manatee-capacity-note">
+              Diving hamster capacity:{' '}
+              <strong><WholeNumber value={divingCapacity} /></strong>
+            </p>
+            {nextStage ? (
+              <section className="manatee-building-upgrade">
+                <p className="eyebrow">Next structure upgrade</p>
+                <h4>{nextStage.name}</h4>
+                <p className="trade-copy">{nextStage.description}</p>
+                <BuildingCosts
+                  resources={state.resources}
+                  cost={nextStage.cost}
+                />
+                <button
+                  type="button"
+                  className="trade-primary-button"
+                  disabled={!canUpgrade}
+                  onClick={() => onUpgradeBuilding(building.id)}
+                >
+                  Upgrade to {nextStage.name}
+                </button>
+              </section>
+            ) : null}
+          </>
         ) : (
-          <button
-            type="button"
-            className="trade-primary-button"
-            disabled={!canBuild}
-            onClick={() => onConstructBuilding(building.id)}
-          >
-            Build the Diving Cabin
-          </button>
+          <>
+            <BuildingCosts resources={state.resources} cost={building.cost} />
+            <button
+              type="button"
+              className="trade-primary-button"
+              disabled={!canBuild}
+              onClick={() => onConstructBuilding(building.id)}
+            >
+              Build the Diving Cabin
+            </button>
+          </>
         )}
       </div>
     </article>
@@ -187,6 +236,7 @@ export function MarshZone({
   onStartSurvey,
   onCollectFind,
   onConstructBuilding,
+  onUpgradeBuilding,
 }) {
   return (
     <section className="manatee-zone" aria-labelledby="manatee-marsh-title">
@@ -214,6 +264,7 @@ export function MarshZone({
             game={game}
             state={state}
             onConstructBuilding={onConstructBuilding}
+            onUpgradeBuilding={onUpgradeBuilding}
           />
         </section>
       </div>

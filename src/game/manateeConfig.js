@@ -4,6 +4,7 @@ export const MANATEE_SURVEY_IDS = Object.freeze({
   SEDIMENT: 'sediment',
   TEND_SHOAL_GRASS: 'tendShoalGrass',
   TEND_WATER_LETTUCE: 'tendWaterLettuce',
+  TEND_MANGROVE_SAPLING: 'tendMangroveSapling',
 })
 
 export const MANATEE_ZONE_IDS = Object.freeze({
@@ -52,6 +53,7 @@ export const DEFAULT_MANATEE_SURVEY_TIME_LENGTH_SCALE = 15
 
 export const MANATEE_RESOURCE_IDS = Object.freeze({
   MANGROVE_TWIG: 'mangroveTwig',
+  MANGROVE_WOOD: 'mangroveWood',
   LIMESTONE: 'limestone',
   MANGROVE_ROOTS: 'mangroveRoots',
   MANGROVE_LEAVES: 'mangroveLeaves',
@@ -66,6 +68,11 @@ export const MANATEE_RESOURCES = Object.freeze({
     id: MANATEE_RESOURCE_IDS.MANGROVE_TWIG,
     name: 'Mangrove Twig',
     iconClass: 'mangrove-twig',
+  }),
+  [MANATEE_RESOURCE_IDS.MANGROVE_WOOD]: Object.freeze({
+    id: MANATEE_RESOURCE_IDS.MANGROVE_WOOD,
+    name: 'Mangrove Wood',
+    iconClass: 'mangrove-wood',
   }),
   [MANATEE_RESOURCE_IDS.LIMESTONE]: Object.freeze({
     id: MANATEE_RESOURCE_IDS.LIMESTONE,
@@ -110,6 +117,7 @@ export const MANATEE_BUILDING_IDS = Object.freeze({
 })
 
 export const MANATEE_GARDEN_TENDING_HAMSTER_COUNT = 10
+export const MANATEE_MANGROVE_TENDING_HAMSTER_COUNT = 30
 export const MANATEE_GARDEN_TENDING_DURATION_SECONDS = 600
 
 const MARSH_REFERENCE_HAMSTERS = 1875
@@ -274,6 +282,53 @@ export const MANATEE_SURVEYS = Object.freeze({
       ),
     ],
   }),
+  [MANATEE_SURVEY_IDS.TEND_MANGROVE_SAPLING]: createSurvey({
+    id: MANATEE_SURVEY_IDS.TEND_MANGROVE_SAPLING,
+    name: 'Tend Mangrove Saplings',
+    description:
+      'Send a fixed team of 30 hamsters to tend Mangrove Saplings in the Submerged Garden.',
+    referenceDurationSeconds: MANATEE_GARDEN_TENDING_DURATION_SECONDS,
+    fixedDurationSeconds: MANATEE_GARDEN_TENDING_DURATION_SECONDS,
+    fixedHamsterAllocation: MANATEE_MANGROVE_TENDING_HAMSTER_COUNT,
+    isUnderwater: true,
+    supportsTimeLengths: false,
+    requiredBuildingId: MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+    requiredBuildingStage: 3,
+    rewards: [
+      createReward(
+        'mangrove-leaf',
+        MANATEE_RESOURCE_IDS.MANGROVE_LEAVES,
+        15,
+        20,
+        10,
+        20,
+      ),
+      createReward(
+        'mangrove-wood',
+        MANATEE_RESOURCE_IDS.MANGROVE_WOOD,
+        8,
+        10,
+        8,
+        10,
+      ),
+      createReward(
+        'mangrove-root',
+        MANATEE_RESOURCE_IDS.MANGROVE_ROOTS,
+        10,
+        12,
+        2,
+        4,
+      ),
+      createReward(
+        'mangrove-seed',
+        MANATEE_RESOURCE_IDS.MANGROVE_SEEDS,
+        8,
+        10,
+        3,
+        4,
+      ),
+    ],
+  }),
 })
 
 export const MANATEE_BUILDINGS = Object.freeze({
@@ -287,6 +342,22 @@ export const MANATEE_BUILDINGS = Object.freeze({
       [MANATEE_RESOURCE_IDS.LIMESTONE]: 25,
     }),
     divingHamsterCapacity: 50,
+    maximumStage: 1,
+    stages: Object.freeze([
+      Object.freeze({
+        stage: 1,
+        name: 'Diving Hub',
+        description:
+          'Stores 200 sets of hamster-sized diving gear, now upgraded with flippers.',
+        cost: Object.freeze({
+          [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: 500,
+          [MANATEE_RESOURCE_IDS.LIMESTONE]: 1000,
+          [MANATEE_RESOURCE_IDS.MANGROVE_WOOD]: 200,
+        }),
+        divingHamsterCapacity: 200,
+        implemented: true,
+      }),
+    ]),
   }),
   [MANATEE_BUILDING_IDS.SUBMERGED_GARDEN]: Object.freeze({
     id: MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
@@ -333,9 +404,11 @@ export const MANATEE_BUILDINGS = Object.freeze({
       Object.freeze({
         stage: 3,
         name: 'Mangrove Sapling Bed',
-        description: 'Unlocks Mangrove Sapling crop access.',
+        description:
+          'Unlocks Mangrove Sapling crop access and lets 30 hamsters tend the larger saplings for 600 seconds.',
         cropId: 'mangroveSapling',
         resourceId: MANATEE_RESOURCE_IDS.MANGROVE_SEEDS,
+        surveyId: MANATEE_SURVEY_IDS.TEND_MANGROVE_SAPLING,
         cost: Object.freeze({
           [MANATEE_RESOURCE_IDS.PETE]: 2000,
           [MANATEE_RESOURCE_IDS.MANGROVE_ROOTS]: 175,
@@ -343,7 +416,7 @@ export const MANATEE_BUILDINGS = Object.freeze({
           [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: 500,
           [MANATEE_RESOURCE_IDS.MANGROVE_SEEDS]: 25,
         }),
-        implemented: false,
+        implemented: true,
       }),
     ]),
   }),

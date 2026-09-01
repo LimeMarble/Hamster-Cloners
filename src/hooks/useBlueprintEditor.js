@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMemo } from 'react'
 import {
+  canPlaceMangroveSapling,
   canPlaceShoalGrass,
   getBlueprintSlots,
   getDiagonalTileIndexes,
@@ -133,6 +134,13 @@ export function useBlueprintEditor({
         currentGame.completedCropPerfections,
         currentGame.seedAugmentations,
       )
+    ) {
+      return
+    }
+
+    if (
+      crop === 'mangroveSapling' &&
+      !canPlaceMangroveSapling(currentGame.blueprint, index)
     ) {
       return
     }

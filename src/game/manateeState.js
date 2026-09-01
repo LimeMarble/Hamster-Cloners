@@ -291,8 +291,19 @@ export function getManateeDivingHamsterCapacity(game) {
   const state = normalizeManateeState(game?.manatees)
 
   return state.completedBuildings.reduce(
-    (total, buildingId) =>
-      total + (MANATEE_BUILDINGS[buildingId]?.divingHamsterCapacity ?? 0),
+    (total, buildingId) => {
+      const building = MANATEE_BUILDINGS[buildingId]
+      const completedStage = state.buildingStages[buildingId] ?? 0
+      const stageCapacity = [...(building?.stages ?? [])]
+        .reverse()
+        .find(
+          (stage) =>
+            stage.stage <= completedStage &&
+            Number.isFinite(stage.divingHamsterCapacity),
+        )?.divingHamsterCapacity
+
+      return total + (stageCapacity ?? building?.divingHamsterCapacity ?? 0)
+    },
     0,
   )
 }

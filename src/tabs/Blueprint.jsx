@@ -21,6 +21,15 @@ function BlueprintPanel({
 }) {
   const plantedCrops = getBlueprintCropSummary(game.blueprint.cells)
   const fieldInfested = isWaterLettuceFieldInfested(game.blueprint)
+  const hasUnlockedManatees =
+    game.capybara?.completedDemonstrations?.includes(
+      'demonstrationOne',
+    ) === true
+  const visibleBlueprintSlotIndexes = hasUnlockedManatees
+    ? [0, 1, 2, 3]
+    : game.hasUnlockedKnotweed
+      ? [0, 1, 2]
+      : [0, 1]
   const plantedCropDescription =
     plantedCrops.length > 0
       ? plantedCrops
@@ -51,13 +60,16 @@ function BlueprintPanel({
       </div>
 
       <nav className="blueprint-slots" aria-label="Blueprint slots">
-        {(game.hasUnlockedKnotweed ? [0, 1, 2] : [0, 1]).map((slotIndex) => {
+        {visibleBlueprintSlotIndexes.map((slotIndex) => {
           const unlocked =
             slotIndex < unlockedBlueprintSlotCount &&
             Boolean(blueprintSlots[slotIndex])
           const active = game.activeBlueprintSlot === slotIndex
-          const unlockHint =
-            slotIndex === 1 ? 'Unlocks with Potato' : 'Unlocks with Sunflower'
+          const unlockHint = slotIndex === 1
+            ? 'Unlocks with Potato'
+            : slotIndex === 2
+              ? 'Unlocks with Sunflower'
+              : 'Unlocks with Mangrove Sapling'
 
           return (
             <button
@@ -192,6 +204,12 @@ function areBlueprintPropsEqual(previous, next) {
       nextGame.suffixScientificExponent &&
     previousGame.activeBlueprintSlot === nextGame.activeBlueprintSlot &&
     previousGame.hasUnlockedKnotweed === nextGame.hasUnlockedKnotweed &&
+    previousGame.capybara?.completedDemonstrations?.includes(
+      'demonstrationOne',
+    ) ===
+      nextGame.capybara?.completedDemonstrations?.includes(
+        'demonstrationOne',
+      ) &&
     previousGame.hasUnlockedRowDuplicators ===
       nextGame.hasUnlockedRowDuplicators &&
     ['rows', 'columns', 'floors', 'farms'].every(

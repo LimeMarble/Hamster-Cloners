@@ -107,6 +107,23 @@
   line-height: 1.45;
 }
 
+.manatee-garden-reward-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  margin: 0;
+  padding: 10px 12px 10px 28px;
+  border: 1px solid #315b55;
+  color: var(--text-muted);
+  background: #0a1917;
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.manatee-garden-reward-list strong {
+  color: #c9f3e3;
+}
+
 .manatee-garden-stage header strong {
   color: #d7f4e8;
   font-size: 0.74rem;
@@ -138,6 +155,10 @@
 @media (max-width: 900px) {
   .manatee-submerged-garden,
   .manatee-garden-stage-list {
+    grid-template-columns: 1fr;
+  }
+
+  .manatee-garden-reward-list {
     grid-template-columns: 1fr;
   }
 }

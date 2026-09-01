@@ -307,9 +307,28 @@
 .manatee-cabin-body,
 .manatee-cabin-roof,
 .manatee-cabin-door,
+.manatee-cabin-flippers,
 .manatee-scaffold {
   position: absolute;
   display: block;
+}
+
+.manatee-diving-hub-visual .manatee-cabin-body {
+  width: 67%;
+  background: repeating-linear-gradient(90deg, #87603f 0 17px, #6d4b31 17px 20px);
+}
+
+.manatee-cabin-flippers {
+  right: 18%;
+  bottom: 25%;
+  z-index: 2;
+  width: 31px;
+  height: 12px;
+  border: 2px solid #173f4c;
+  border-radius: 999px 3px 3px 999px;
+  background: #3c8ca0;
+  box-shadow: 0 16px 0 #3c8ca0, 0 16px 0 2px #173f4c;
+  rotate: -8deg;
 }
 
 .manatee-cabin-body {
@@ -377,6 +396,20 @@
 
 .manatee-building-copy .trade-primary-button {
   justify-self: start;
+}
+
+.manatee-building-upgrade {
+  display: grid;
+  gap: 9px;
+  margin-top: 2px;
+  padding: 12px;
+  border: 1px solid #5f754d;
+  background: #141d12;
+}
+
+.manatee-building-upgrade h4 {
+  margin: 0;
+  color: #d8edc6;
 }
 
 .manatee-capacity-note strong {

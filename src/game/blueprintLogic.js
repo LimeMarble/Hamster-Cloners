@@ -16,7 +16,10 @@ import {
 } from './gameConfig.js'
 import { createInitialFortuneState } from './fortuneLogic.js'
 import { createInitialSeedAugmentationState } from './augmentationLogic.js'
-import { createInitialManateeState } from './manateeLogic.js'
+import {
+  createInitialManateeState,
+  MANATEE_BUILDING_IDS,
+} from './manateeLogic.js'
 import { normalizeMultiTileCropCells } from './cropFootprintLogic.js'
 
 function normalizeUniqueCloverCells(cells) {
@@ -147,6 +150,25 @@ export function createInitialGame() {
 }
 
 export function getUnlockedBlueprintSlotCount(game) {
+  const submergedGardenStage = Math.max(
+    0,
+    Math.floor(
+      Number(
+        game.manatees?.buildingStages?.[
+          MANATEE_BUILDING_IDS.SUBMERGED_GARDEN
+        ],
+      ) || 0,
+    ),
+  )
+  if (
+    game.manatees?.completedBuildings?.includes(
+      MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+    ) === true &&
+    submergedGardenStage >= 3
+  ) {
+    return 4
+  }
+
   if (game.hasUnlockedSunflower === true) {
     return 3
   }
@@ -164,7 +186,7 @@ export function getBlueprintSlots(game) {
     ? game.blueprintSlots
     : []
   const slots = storedSlots
-    .slice(0, 3)
+    .slice(0, 4)
     .filter((slot) => slot && typeof slot === 'object')
     .map((slot) => createBlueprint(slot))
 

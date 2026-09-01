@@ -108,6 +108,7 @@ export function ManateeRelations({
           onStartSurvey={onStartManateeSurvey}
           onCollectFind={onCollectManateeFind}
           onConstructBuilding={onConstructManateeBuilding}
+          onUpgradeBuilding={onUpgradeManateeBuilding}
         />
       )}
     </section>

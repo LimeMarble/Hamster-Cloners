@@ -216,6 +216,23 @@ export const CROP_DEFINITIONS = {
     unlockDescription:
       'Unlock through the Water Lettuce Bed in the Submerged Garden',
   },
+  mangroveSapling: {
+    name: 'Mangrove Sapling',
+    icon: '🌳',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    isManateeCrop: true,
+    passiveProtectionTier: 2,
+    canBeMirrorCornTarget: false,
+    maximumPlacementsPerBlueprint: 4,
+    nurseryBonusPerCropType: 0.04,
+    nurseryBonusCap: 3,
+    effectDescription:
+      'Destroys its own harvest · up to four per blueprint · unique Crop types in all surrounding nurseries increase Manatee survey and garden-find value by +4%; perfected types count ×2 and Manatee types count ×3 · field-wide passive modifiers apply, but tile-effect modifiers do not · bonus caps at +300%',
+    unlockDescription:
+      'Unlock through the Mangrove Sapling Bed in the Submerged Garden',
+  },
   leechingGourd: {
     name: 'Leeching Gourd',
     icon: '🎃',

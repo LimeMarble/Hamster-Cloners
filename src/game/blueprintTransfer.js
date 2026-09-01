@@ -1,6 +1,7 @@
 import { createBlueprint } from './blueprintLogic.js'
 import { isKnownCrop, normalizeCropId } from './crops.js'
 import { getShoalGrassPlacementLimit } from './cropEffects.js'
+import { MANGROVE_SAPLING_PLACEMENT_LIMIT } from './mangroveSaplingLogic.js'
 
 export const BLUEPRINT_FORMAT_VERSION = 1
 const BLUEPRINT_FORMAT_TYPE = 'hamster-cloners-blueprint'
@@ -204,6 +205,15 @@ export function importBlueprint(
   ) {
     throw new Error(
       'This blueprint contains more Shoal Grass than its placement limit allows.',
+    )
+  }
+
+  const mangroveSaplingCount = resizedBlueprint.cells.filter(
+    (crop) => crop === 'mangroveSapling',
+  ).length
+  if (mangroveSaplingCount > MANGROVE_SAPLING_PLACEMENT_LIMIT) {
+    throw new Error(
+      `This blueprint contains more than ${MANGROVE_SAPLING_PLACEMENT_LIMIT} Mangrove Saplings.`,
     )
   }
 

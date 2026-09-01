@@ -22,6 +22,7 @@ import {
   getHarvestBonusConnections,
   getGroupedGlobalHarvestEffects,
   getLeechingGourdTurnipEffect,
+  getMangroveNurseryEffect,
   getShoalGrassNetworkSize,
   getMirrorCornEffectBlueprint,
   getMirrorCornEffectMultiplier,
@@ -60,17 +61,38 @@ export function getBlueprintCropStats(
     return null
   }
 
+  const mangroveNurseryEffect = crop === 'mangroveSapling'
+    ? getMangroveNurseryEffect(
+        sourceBlueprint,
+        completedCropPerfections,
+        normalizeFortuneMultiplier(fortuneModifiers.passiveEffectMultiplier),
+        seedAugmentations,
+      )
+    : null
+
   if (isWaterLettuceFieldInfested(sourceBlueprint)) {
     return {
       crop,
       baseYield: getCropBaseYield(crop, completedCropPerfections),
       harvestYield: 0,
       hamsterEfficiencyBonus: 0,
-      passiveStats: [],
+      passiveStats: mangroveNurseryEffect
+        ? [{
+            id: 'mangrove-nursery-value',
+            label: 'Manatee find value',
+            format: 'percentage',
+            value: mangroveNurseryEffect.bonus,
+          }]
+        : [],
       harvestDestroyedByAppleTree: false,
       harvestDestroyedByInfestation: true,
       externalCropBuffMultiplier: null,
-      receivedEffects: [{ type: 'water-lettuce-infestation' }],
+      receivedEffects: [
+        { type: 'water-lettuce-infestation' },
+        ...(mangroveNurseryEffect
+          ? [{ type: 'mangrove-nursery', ...mangroveNurseryEffect }]
+          : []),
+      ],
     }
   }
 
@@ -168,6 +190,13 @@ export function getBlueprintCropStats(
     receivedEffects.push({
       type: 'shoal-grass-network',
       count: getShoalGrassNetworkSize(blueprint, index),
+    })
+  }
+
+  if (mangroveNurseryEffect) {
+    receivedEffects.push({
+      type: 'mangrove-nursery',
+      ...mangroveNurseryEffect,
     })
   }
 
@@ -569,6 +598,15 @@ export function getBlueprintCropStats(
     baseGlobalPassiveEffectMultiplier,
     seedAugmentations,
   })
+
+  if (mangroveNurseryEffect) {
+    passiveStats.push({
+      id: 'mangrove-nursery-value',
+      label: 'Manatee find value',
+      format: 'percentage',
+      value: mangroveNurseryEffect.bonus,
+    })
+  }
 
   return {
     crop,

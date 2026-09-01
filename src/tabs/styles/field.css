@@ -302,6 +302,12 @@
   background: #16392f;
 }
 
+.plot-mangroveSapling,
+.editor-plot-mangroveSapling {
+  border-color: #a56f45;
+  background: #2f2519;
+}
+
 .plot-leechingGourd,
 .plot-leechingGourdPart,
 .editor-plot-leechingGourd,
@@ -364,6 +370,11 @@
 .plot-waterLettuce span,
 .editor-plot-waterLettuce span {
   color: #9ce6ba;
+}
+
+.plot-mangroveSapling span,
+.editor-plot-mangroveSapling span {
+  color: #d4a66f;
 }
 
 .plot-knotweed span,

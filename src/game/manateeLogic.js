@@ -4,6 +4,7 @@ import {
   MANATEE_BUILDINGS,
   MANATEE_GARDEN_TENDING_DURATION_SECONDS,
   MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
+  MANATEE_MANGROVE_TENDING_HAMSTER_COUNT,
   MANATEE_RESOURCE_IDS,
   MANATEE_RESOURCES,
   MANATEE_SURVEY_IDS,
@@ -36,6 +37,7 @@ export {
   MANATEE_BUILDINGS,
   MANATEE_GARDEN_TENDING_DURATION_SECONDS,
   MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
+  MANATEE_MANGROVE_TENDING_HAMSTER_COUNT,
   MANATEE_RESOURCE_IDS,
   MANATEE_RESOURCES,
   MANATEE_SURVEY_IDS,
@@ -253,10 +255,20 @@ function createFind(
   }
 }
 
-function createSurveyFinds(nextFindId, survey, lengthId, random) {
+function createSurveyFinds(
+  nextFindId,
+  survey,
+  lengthId,
+  random,
+  findValueMultiplier,
+) {
   const rewardMultipliers = getManateeSurveyRewardMultipliers(
     survey.id,
     lengthId,
+  )
+  const safeFindValueMultiplier = Math.max(
+    1,
+    Number(findValueMultiplier) || 1,
   )
   const rewardsWithCounts = survey.rewards.map((reward) => ({
     reward,
@@ -275,10 +287,15 @@ function createSurveyFinds(nextFindId, survey, lengthId, random) {
 
   rewardsWithCounts.forEach(({ reward, count }) => {
     for (let index = 0; index < count; index += 1) {
-      const amount = getRandomInteger(
-        random,
-        reward.minimumAmount * rewardMultipliers.objectValue,
-        reward.maximumAmount * rewardMultipliers.objectValue,
+      const amount = Math.max(
+        1,
+        Math.floor(
+          getRandomInteger(
+            random,
+            reward.minimumAmount * rewardMultipliers.objectValue,
+            reward.maximumAmount * rewardMultipliers.objectValue,
+          ) * safeFindValueMultiplier,
+        ),
       )
       finds.push(
         createFind(
@@ -305,6 +322,7 @@ export function advanceManateeSurveyState(
   hamsterCoordination,
   random = Math.random,
   surveyDurationMultiplier = 1,
+  findValueMultiplier = 1,
 ) {
   const state = normalizeManateeState(rawState)
   if (state.activeSurveys.length === 0) return rawState ?? state
@@ -346,6 +364,7 @@ export function advanceManateeSurveyState(
       survey,
       activeSurvey.lengthId,
       random,
+      findValueMultiplier,
     )
     completedFinds.push(...results.finds)
     nextFindId = results.nextFindId

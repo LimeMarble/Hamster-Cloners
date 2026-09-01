@@ -42,12 +42,17 @@ import {
   isCropDebuffIsolatedByShoalGrass,
   isCropFullySurroundedByShoalGrass,
 } from './shoalGrassLogic.js'
+import {
+  canPlaceMangroveSapling,
+  getMangroveNurseryBaseEffect,
+} from './mangroveSaplingLogic.js'
 
 const getCachedRabbitRelationsMultiplier = createBlueprintCalculationCache()
 const getCachedBlazingCarrotSurveyTimeEffect =
   createBlueprintCalculationCache()
 const getCachedGlobalPassiveEffectMultiplier =
   createBlueprintCalculationCache()
+const getCachedMangroveNurseryEffect = createBlueprintCalculationCache()
 
 export {
   getAdjacentCropConnections,
@@ -65,6 +70,8 @@ export {
   isCropDebuffIsolatedByShoalGrass,
   isCropFullySurroundedByShoalGrass,
 }
+
+export { canPlaceMangroveSapling }
 
 export function getPlantedCropCount(blueprint, crop = 'leek') {
   return blueprint.cells.filter((cell) => cell === crop).length
@@ -974,6 +981,66 @@ export function getGlobalPassiveEffectMultiplier(
       passiveEffectMultiplier,
       seedAugmentations,
     ),
+  )
+}
+
+export function getMangroveNurseryEffect(
+  blueprint,
+  completedCropPerfections = [],
+  passiveEffectMultiplier = 1,
+  seedAugmentations = {},
+) {
+  return getCachedMangroveNurseryEffect(
+    blueprint,
+    [completedCropPerfections, passiveEffectMultiplier, seedAugmentations],
+    () => {
+      const baseEffect = getMangroveNurseryBaseEffect(
+        blueprint,
+        completedCropPerfections,
+      )
+      const cap = CROP_DEFINITIONS.mangroveSapling.nurseryBonusCap
+
+      if (baseEffect.saplingCount === 0) {
+        return {
+          ...baseEffect,
+          monocropAdjustedBonus: 0,
+          passiveEffectMultiplier: 1,
+          bonus: 0,
+          multiplier: 1,
+          cap,
+        }
+      }
+
+      const monocropAdjustedBonus = applyMonocropPenaltyToBonus(
+        baseEffect.baseBonus,
+        getMonocropCropCount(blueprint, 'mangroveSapling'),
+        blueprint.rows * blueprint.columns,
+        getMonocropThresholdBonus(
+          blueprint,
+          completedCropPerfections,
+          seedAugmentations,
+        ),
+      )
+      const allPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
+        blueprint,
+        completedCropPerfections,
+        passiveEffectMultiplier,
+        seedAugmentations,
+      )
+      const bonus = Math.min(
+        cap,
+        Math.max(0, monocropAdjustedBonus * allPassiveEffectMultiplier),
+      )
+
+      return {
+        ...baseEffect,
+        monocropAdjustedBonus,
+        passiveEffectMultiplier: allPassiveEffectMultiplier,
+        bonus,
+        multiplier: 1 + bonus,
+        cap,
+      }
+    },
   )
 }
 

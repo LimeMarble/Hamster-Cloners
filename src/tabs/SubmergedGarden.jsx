@@ -1,8 +1,6 @@
 import {
   MANATEE_BUILDING_IDS,
   MANATEE_BUILDINGS,
-  MANATEE_GARDEN_TENDING_DURATION_SECONDS,
-  MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
   MANATEE_RESOURCES,
   MANATEE_SURVEY_IDS,
   MANATEE_SURVEY_LENGTH_IDS,
@@ -124,6 +122,8 @@ function GardenCropTending({
   onCollectFind,
 }) {
   const survey = MANATEE_SURVEYS[surveyId]
+  const fixedHamsterAllocation = survey.fixedHamsterAllocation
+  const fixedDurationSeconds = survey.fixedDurationSeconds
   const headingId = `${surveyId}-tending-title`
   const activeSurvey = state.activeSurveys.find(
     (candidate) => candidate.id === survey.id,
@@ -138,8 +138,8 @@ function GardenCropTending({
   )
   const allocatedHamsters = activeSurvey
     ? getManateeSurveyAllocatedHamsterCount(game, survey.id)
-    : availableHamsters >= MANATEE_GARDEN_TENDING_HAMSTER_COUNT
-      ? MANATEE_GARDEN_TENDING_HAMSTER_COUNT
+    : availableHamsters >= fixedHamsterAllocation
+      ? fixedHamsterAllocation
       : 0
   const workPerSecond = getManateeSurveyWorkPerSecond(
     allocatedHamsters,
@@ -152,7 +152,7 @@ function GardenCropTending({
     : 0
   const remainingSeconds = activeSurvey
     ? (requiredWork - activeSurvey.workCompleted) / workPerSecond
-    : MANATEE_GARDEN_TENDING_DURATION_SECONDS
+    : fixedDurationSeconds
 
   return (
     <section className="manatee-garden-tending" aria-labelledby={headingId}>
@@ -166,17 +166,36 @@ function GardenCropTending({
             ? 'Results ready'
             : activeSurvey
               ? 'In progress'
-              : availableHamsters < MANATEE_GARDEN_TENDING_HAMSTER_COUNT
-                ? '10 hamsters needed'
+              : availableHamsters < fixedHamsterAllocation
+                ? `${fixedHamsterAllocation} hamsters needed`
                 : 'Available'}
         </span>
       </header>
       <p className="trade-copy">
-        Exactly <WholeNumber value={MANATEE_GARDEN_TENDING_HAMSTER_COUNT} />{' '}
+        Exactly <WholeNumber value={fixedHamsterAllocation} />{' '}
         hamsters tend this crop for a fixed{' '}
-        <SurveyTime seconds={MANATEE_GARDEN_TENDING_DURATION_SECONDS} />. The
-        harvest produces 25 collectible {cropName} objects worth 5–10 each.
+        <SurveyTime seconds={fixedDurationSeconds} />. At base, the garden
+        yields:
       </p>
+      <ul className="manatee-garden-reward-list">
+        {survey.rewards.map((reward) => (
+          <li key={`${reward.kind}-${reward.resourceId}`}>
+            <strong>
+              <FormattedNumber value={reward.minimumCount} maximumFractionDigits={0} />
+              {reward.maximumCount === reward.minimumCount ? '' : (
+                <>–<FormattedNumber value={reward.maximumCount} maximumFractionDigits={0} /></>
+              )}{' '}
+              {MANATEE_RESOURCES[reward.resourceId].name}
+            </strong>{' '}
+            objects worth{' '}
+            <FormattedNumber value={reward.minimumAmount} maximumFractionDigits={0} />
+            {reward.maximumAmount === reward.minimumAmount ? '' : (
+              <>–<FormattedNumber value={reward.maximumAmount} maximumFractionDigits={0} /></>
+            )}{' '}
+            each
+          </li>
+        ))}
+      </ul>
       <p className="manatee-fixed-time-note">
         Tending time is unaffected by Hamster Coordination, Blazing Carrots,
         or other survey-speed modifiers.
@@ -198,12 +217,12 @@ function GardenCropTending({
         <button
           type="button"
           className="trade-primary-button"
-          disabled={allocatedHamsters < MANATEE_GARDEN_TENDING_HAMSTER_COUNT}
+          disabled={allocatedHamsters < fixedHamsterAllocation}
           onClick={() =>
             onStartSurvey(
               survey.id,
               MANATEE_SURVEY_LENGTH_IDS.STANDARD,
-              MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
+              fixedHamsterAllocation,
             )
           }
         >
@@ -291,6 +310,17 @@ export function SubmergedGarden({
                 coordination={coordination}
                 surveyId={MANATEE_SURVEY_IDS.TEND_WATER_LETTUCE}
                 cropName="Water Lettuce"
+                onStartSurvey={onStartSurvey}
+                onCollectFind={onCollectFind}
+              />
+            ) : null}
+            {currentStage >= 3 ? (
+              <GardenCropTending
+                game={game}
+                state={state}
+                coordination={coordination}
+                surveyId={MANATEE_SURVEY_IDS.TEND_MANGROVE_SAPLING}
+                cropName="Mangrove Saplings"
                 onStartSurvey={onStartSurvey}
                 onCollectFind={onCollectFind}
               />

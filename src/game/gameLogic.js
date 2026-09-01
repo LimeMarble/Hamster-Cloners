@@ -10,6 +10,7 @@ export * from './capybaraLogic.js'
 export * from './augmentationLogic.js'
 export * from './manateeLogic.js'
 export {
+  canPlaceMangroveSapling,
   canPlaceShoalGrass,
   getAdjacentCropConnections,
   getAdjacentCropEffectModifier,
@@ -24,6 +25,7 @@ export {
   getRabbitRelationsMultiplier,
   getSamplingLentilTradedCropEffect,
   getLeechingGourdTurnipEffect,
+  getMangroveNurseryEffect,
   getShoalGrassNetworkSize,
   getShoalGrassNetworkSizeByIndex,
   getShoalGrassPlacementLimit,

@@ -3,6 +3,7 @@ import { normalizeFortuneState } from './fortuneLogic.js'
 import { normalizeCapybaraState } from './capybaraLogic.js'
 import { normalizeSeedAugmentationState } from './augmentationLogic.js'
 import { normalizeManateeState } from './manateeLogic.js'
+import { normalizeMangroveSaplingCells } from './mangroveSaplingLogic.js'
 import {
   BLUEPRINT_EXPANSIONS,
   BLUEPRINT_EXPANSION_TRACKS,
@@ -74,11 +75,13 @@ function toNonNegativeInteger(value, fallback) {
 function removeUnavailableCrops(blueprint, hasUnlockedSunflower) {
   return createBlueprint({
     ...blueprint,
-    cells: blueprint.cells.map((cropId) =>
-      isCropTemporarilyUnavailable(cropId) ||
-      (cropId === 'sunflower' && !hasUnlockedSunflower)
-        ? null
-        : cropId,
+    cells: normalizeMangroveSaplingCells(
+      blueprint.cells.map((cropId) =>
+        isCropTemporarilyUnavailable(cropId) ||
+        (cropId === 'sunflower' && !hasUnlockedSunflower)
+          ? null
+          : cropId,
+      ),
     ),
   })
 }
@@ -163,6 +166,7 @@ export function normalizeGame(rawGame) {
   const seedAugmentations = normalizeSeedAugmentationState(
     rawGame.seedAugmentations,
   )
+  const manatees = normalizeManateeState(rawGame.manatees)
 
   if (completedCropPerfections.includes('splitweed')) {
     blueprint = removeUnavailableCrops(
@@ -189,10 +193,11 @@ export function normalizeGame(rawGame) {
     unionized: rawGame.unionized === true,
     hamsters: toNonNegativeInteger(rawGame.hamsters, initialGame.hamsters),
     hasUnlockedSunflower,
+    manatees,
   })
   const blueprintSlotCount = Math.max(
     unlockedBlueprintSlotCount,
-    Math.min(3, rawBlueprintSlots.length),
+    Math.min(4, rawBlueprintSlots.length),
   )
   const blueprintSlots = Array.from(
     { length: blueprintSlotCount },
@@ -308,7 +313,7 @@ export function normalizeGame(rawGame) {
     fortune: normalizeFortuneState(rawGame.fortune),
     capybara: normalizeCapybaraState(rawGame.capybara),
     seedAugmentations,
-    manatees: normalizeManateeState(rawGame.manatees),
+    manatees,
     trade,
     numberNotation:
       rawGame.numberNotation === 'scientific' ? 'scientific' : 'suffix',

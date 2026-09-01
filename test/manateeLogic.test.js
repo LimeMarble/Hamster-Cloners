@@ -9,6 +9,7 @@ import {
   MANATEE_SURVEYS,
   advanceGameSimulationStep,
   advanceManateeSurveyState,
+  canUpgradeManateeBuilding,
   collectManateeFind,
   constructManateeBuilding,
   createInitialGame,
@@ -22,6 +23,7 @@ import {
   getManateeSurveyingHamsterCount,
   getMarshSurveyDurationSeconds,
   startManateeSurvey,
+  upgradeManateeBuilding,
 } from '../src/game/gameLogic.js'
 import { normalizeGame } from '../src/game/storage.js'
 
@@ -449,7 +451,7 @@ test('a completed marsh survey creates individually collectible branches and peb
   assert.equal(fullyCollected.manatees.pendingFinds.length, 0)
 })
 
-test('the Diving Cabin is one-and-done and grants an extensible 50-hamster capacity', () => {
+test('the Diving Cabin upgrades into a 200-capacity Diving Hub', () => {
   const game = {
     ...createInitialGame(),
     manatees: {
@@ -485,6 +487,44 @@ test('the Diving Cabin is one-and-done and grants an extensible 50-hamster capac
       MANATEE_BUILDING_IDS.DIVING_CABIN,
     ),
     null,
+  )
+
+  const hubReadyGame = {
+    ...builtGame,
+    manatees: {
+      ...builtGame.manatees,
+      resources: {
+        ...builtGame.manatees.resources,
+        [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: 500,
+        [MANATEE_RESOURCE_IDS.LIMESTONE]: 1000,
+        [MANATEE_RESOURCE_IDS.MANGROVE_WOOD]: 200,
+      },
+    },
+  }
+  assert.equal(
+    canUpgradeManateeBuilding(
+      hubReadyGame,
+      MANATEE_BUILDING_IDS.DIVING_CABIN,
+    ),
+    true,
+  )
+  const upgradedGame = upgradeManateeBuilding(
+    hubReadyGame,
+    MANATEE_BUILDING_IDS.DIVING_CABIN,
+  )
+
+  assert.equal(getManateeDivingHamsterCapacity(upgradedGame), 200)
+  assert.equal(
+    upgradedGame.manatees.resources[MANATEE_RESOURCE_IDS.MANGROVE_TWIG],
+    0,
+  )
+  assert.equal(
+    upgradedGame.manatees.resources[MANATEE_RESOURCE_IDS.LIMESTONE],
+    0,
+  )
+  assert.equal(
+    upgradedGame.manatees.resources[MANATEE_RESOURCE_IDS.MANGROVE_WOOD],
+    0,
   )
 })
 
@@ -528,7 +568,7 @@ test('Manatee resources, survey progress, finds, and buildings survive save norm
   const normalized = normalizeGame({
     ...createInitialGame(),
     manatees: {
-      resources: { twig: 123, stone: 45 },
+      resources: { twig: 123, stone: 45, mangroveWood: 67 },
       activeSurvey: {
         id: MANATEE_SURVEY_IDS.SEARCH_MARSH,
         allocatedHamsters: 1875,
@@ -556,6 +596,10 @@ test('Manatee resources, survey progress, finds, and buildings survive save norm
   assert.equal(
     normalized.manatees.resources[MANATEE_RESOURCE_IDS.LIMESTONE],
     45,
+  )
+  assert.equal(
+    normalized.manatees.resources[MANATEE_RESOURCE_IDS.MANGROVE_WOOD],
+    67,
   )
   assert.equal(
     normalized.manatees.activeSurveys[0].workCompleted,

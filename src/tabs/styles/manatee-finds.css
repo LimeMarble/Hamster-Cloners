@@ -40,6 +40,15 @@
   rotate: 26deg;
 }
 
+.manatee-resource-icon-mangrove-wood {
+  width: 22px;
+  height: 16px;
+  border: 2px solid #5b351f;
+  border-radius: 4px 45% 45% 4px;
+  background: repeating-linear-gradient(90deg, #a66c3d 0 5px, #7c4b2a 6px 8px);
+  box-shadow: inset -4px 0 0 #c18a55;
+}
+
 .manatee-resource-icon-limestone {
   width: 20px;
   height: 15px;
@@ -228,6 +237,17 @@
   border: 2px solid #533823;
   border-radius: 60% 35% 60% 35%;
   background: linear-gradient(#8c6842, #5f4027);
+}
+
+.manatee-find-mangrove-wood .manatee-find-shape {
+  width: 52px;
+  height: 25px;
+  border: 2px solid #55321e;
+  border-radius: 5px 45% 45% 5px;
+  background: repeating-linear-gradient(90deg, #aa6d3c 0 11px, #784525 12px 15px);
+  box-shadow:
+    inset -8px 0 0 #c08a57,
+    0 5px 5px rgb(19 31 26 / 35%);
 }
 
 .manatee-find-mangrove-leaf .manatee-find-shape {
