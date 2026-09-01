@@ -82,6 +82,9 @@ export function getMangroveNurseryCropTypes(
 
   if (mangroveIndexes.length === 0) return []
 
+  // This map is shared by every Mangrove Sapling in the blueprint. A Crop
+  // species contributes once globally, regardless of how many nursery tiles
+  // or separate Mangroves contain it.
   const cropTypes = new Map()
   const addCropType = (crop) => {
     const cropType = getNurseryCropType(crop, completedCropPerfections)

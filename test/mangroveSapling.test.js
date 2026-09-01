@@ -89,6 +89,32 @@ test('Mangrove nurseries count each crop type once with perfection and Manatee w
   assert.ok(Math.abs(effect.baseBonus - 1.12) < 1e-12)
 })
 
+test('repeated species across Mangrove nurseries contribute only once globally', () => {
+  const rows = 8
+  const columns = 8
+  const cells = Array(rows * columns).fill(null)
+  const mangroveIndexes = [9, 13, 41, 45]
+
+  mangroveIndexes.forEach((mangroveIndex) => {
+    cells[mangroveIndex] = 'mangroveSapling'
+    cells[mangroveIndex - columns] = 'shoalGrass'
+    cells[mangroveIndex + columns] = 'waterLettuce'
+  })
+
+  const effect = getMangroveNurseryBaseEffect({
+    rows,
+    columns,
+    cells,
+    mirrorCornTargets: cells.map(() => null),
+  })
+
+  assert.deepEqual(
+    effect.cropTypes.map(({ cropId }) => cropId),
+    ['mangroveSapling', 'shoalGrass', 'waterLettuce'],
+  )
+  assert.ok(Math.abs(effect.baseBonus - 0.36) < 1e-12)
+})
+
 test('Mangrove nursery bonuses use passive modifiers and cap at +300%', () => {
   const blueprint = {
     rows: 3,
