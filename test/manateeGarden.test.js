@@ -219,7 +219,7 @@ test('the Submerged Garden is built empty before its first growing stage', () =>
   assert.equal(getUnlockedBlueprintSlotCount(stageThreeGame), 4)
 })
 
-test('Shoal Grass tending always uses 10 hamsters for 600 seconds', () => {
+test('Shoal Grass tending always uses 10 hamsters for 300 seconds', () => {
   const initialGame = {
     ...createInitialGame(),
     hamsters: 100,
@@ -374,7 +374,7 @@ test('Manatee nursery value multiplies survey and garden find amounts', () => {
   assert.ok(completed.pendingFinds.every((find) => find.amount === 10))
 })
 
-test('Mangrove Sapling tending uses 30 hamsters for 600 seconds and yields four resources', () => {
+test('Mangrove Sapling tending uses 30 hamsters for 300 seconds and yields four resources', () => {
   const initialGame = {
     ...createInitialGame(),
     hamsters: MANATEE_MANGROVE_TENDING_HAMSTER_COUNT,

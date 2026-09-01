@@ -378,7 +378,7 @@ export const MANATEE_BUILDINGS = Object.freeze({
         stage: 1,
         name: 'Shoal Grass Bed',
         description:
-          'Unlocks Shoal Grass crop access and lets 10 hamsters tend it for 600 seconds.',
+          'Unlocks Shoal Grass crop access and lets 10 hamsters tend it for 300 seconds.',
         cropId: 'shoalGrass',
         resourceId: MANATEE_RESOURCE_IDS.SHOAL_GRASS,
         surveyId: MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS,
@@ -405,7 +405,7 @@ export const MANATEE_BUILDINGS = Object.freeze({
         stage: 3,
         name: 'Mangrove Sapling Bed',
         description:
-          'Unlocks Mangrove Sapling crop access and lets 30 hamsters tend the larger saplings for 600 seconds.',
+          'Unlocks Mangrove Sapling crop access and lets 30 hamsters tend the larger saplings for 300 seconds.',
         cropId: 'mangroveSapling',
         resourceId: MANATEE_RESOURCE_IDS.MANGROVE_SEEDS,
         surveyId: MANATEE_SURVEY_IDS.TEND_MANGROVE_SAPLING,
