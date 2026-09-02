@@ -10,20 +10,21 @@ function CloverFortuneContent({ fortune, onCollect }) {
 
   return (
     <>
-      {state.bundle ? (
+      {state.bundles.map((bundle, bundleIndex) => (
         <button
           type="button"
           className="clover-bundle"
-          style={{ left: `${state.bundle.x}%`, top: `${state.bundle.y}%` }}
-          onClick={onCollect}
+          style={{ left: `${bundle.x}%`, top: `${bundle.y}%` }}
+          onClick={() => onCollect(bundleIndex)}
           aria-label="Collect Clover Bundle"
+          key={`${bundle.x}-${bundle.y}-${bundleIndex}`}
         >
           <span aria-hidden="true">🍀</span>
           <span aria-hidden="true">🍀</span>
           <span aria-hidden="true">🍀</span>
           <strong>Collect</strong>
         </button>
-      ) : null}
+      ))}
 
       {state.activeEffects.length > 0 ? (
         <aside

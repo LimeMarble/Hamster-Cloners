@@ -86,10 +86,31 @@ test('a Clover Bundle rolls once per minute and persists at its screen position'
     () => randomValues.shift(),
   )
 
-  assert.equal(waitingGame.fortune.bundle, null)
+  assert.deepEqual(waitingGame.fortune.bundles, [])
   assert.equal(waitingGame.fortune.secondsTowardBundleRoll, 59)
-  assert.deepEqual(spawnedGame.fortune.bundle, { x: 30, y: 46 })
+  assert.deepEqual(spawnedGame.fortune.bundles, [{ x: 30, y: 46 }])
   assert.equal(spawnedGame.fortune.secondsTowardBundleRoll, 0)
+})
+
+test('the automatic Clover timer pauses while any bundle is waiting', () => {
+  const game = {
+    ...createCloverGame(),
+    fortune: {
+      bundles: [
+        { x: 20, y: 30 },
+        { x: 70, y: 60 },
+      ],
+      secondsTowardBundleRoll: 23,
+      activeEffects: [],
+      notice: null,
+    },
+  }
+  const advanced = advanceFortuneState(game, 600, () => {
+    throw new Error('A paused Clover timer must not roll')
+  })
+
+  assert.deepEqual(advanced.fortune.bundles, game.fortune.bundles)
+  assert.equal(advanced.fortune.secondsTowardBundleRoll, 23)
 })
 
 test('Clover Bundle outcome weights and durations match the configured Breezes', () => {
@@ -106,7 +127,7 @@ test('Clover Bundle outcome weights and durations match the configured Breezes',
         durationSeconds: 37,
       },
       { id: FORTUNE_EFFECT_IDS.BOUNTY, weight: 0.52, durationSeconds: 117 },
-      { id: FORTUNE_EFFECT_IDS.MIRAGE, weight: 0.2, durationSeconds: 0 },
+      { id: FORTUNE_EFFECT_IDS.SPLIT, weight: 0.2, durationSeconds: 0 },
       { id: FORTUNE_EFFECT_IDS.OPUS, weight: 0.11, durationSeconds: 27 },
     ],
   )
@@ -115,14 +136,14 @@ test('Clover Bundle outcome weights and durations match the configured Breezes',
     ...createInitialGame(),
     fortune: {
       ...createInitialGame().fortune,
-      bundle: { x: 50, y: 50 },
+      bundles: [{ x: 50, y: 50 }],
     },
   }
   const rolls = [0, 0.2, 0.7, 0.9]
   const expectedIds = [
     FORTUNE_EFFECT_IDS.DEMONSTRATION,
     FORTUNE_EFFECT_IDS.BOUNTY,
-    FORTUNE_EFFECT_IDS.MIRAGE,
+    FORTUNE_EFFECT_IDS.SPLIT,
     FORTUNE_EFFECT_IDS.OPUS,
   ]
 
@@ -130,6 +151,55 @@ test('Clover Bundle outcome weights and durations match the configured Breezes',
     const result = collectCloverBundle(bundledGame, () => roll)
     assert.equal(result.fortune.notice.effectId, expectedIds[index])
   })
+})
+
+test("Fortune's Split replaces the collected bundle with two collectable bundles", () => {
+  const game = {
+    ...createCloverGame(),
+    fortune: {
+      bundles: [{ x: 50, y: 50 }],
+      secondsTowardBundleRoll: 17,
+      activeEffects: [],
+      notice: null,
+    },
+  }
+  const randomValues = [0.7, 0.1, 0.2, 0.3, 0.4]
+  const split = collectCloverBundle(game, 0, () => randomValues.shift())
+
+  assert.deepEqual(split.fortune.bundles, [
+    { x: 18, y: 25.6 },
+    { x: 34, y: 39.2 },
+  ])
+  assert.deepEqual(split.fortune.activeEffects, [])
+  assert.deepEqual(split.fortune.notice, {
+    effectId: FORTUNE_EFFECT_IDS.SPLIT,
+    remainingSeconds: 6,
+  })
+  assert.equal(split.fortune.secondsTowardBundleRoll, 17)
+})
+
+test('collecting one of several Clover Bundles leaves the others on screen', () => {
+  const game = {
+    ...createCloverGame(),
+    fortune: {
+      bundles: [
+        { x: 20, y: 30 },
+        { x: 70, y: 60 },
+      ],
+      secondsTowardBundleRoll: 0,
+      activeEffects: [],
+      notice: null,
+    },
+  }
+  const collected = collectCloverBundle(game, 1, () => 0)
+
+  assert.deepEqual(collected.fortune.bundles, [{ x: 20, y: 30 }])
+  assert.deepEqual(collected.fortune.activeEffects, [
+    {
+      id: FORTUNE_EFFECT_IDS.DEMONSTRATION,
+      remainingSeconds: 37,
+    },
+  ])
 })
 
 test('legacy negative Breezes are removed while old Opus becomes Demonstration', () => {
@@ -149,7 +219,7 @@ test('collecting the same timed Breeze adds its duration to the remaining timer'
   const game = {
     ...createCloverGame(),
     fortune: {
-      bundle: { x: 50, y: 50 },
+      bundles: [{ x: 50, y: 50 }],
       secondsTowardBundleRoll: 0,
       activeEffects: [
         { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: 12 },
@@ -172,7 +242,7 @@ test('the Clover-effect cheat simulates collecting a bundle and stacks timers', 
     (effect) => effect.id === FORTUNE_EFFECT_IDS.DEMONSTRATION,
   ).durationSeconds
 
-  assert.equal(firstEffect.fortune.bundle, null)
+  assert.deepEqual(firstEffect.fortune.bundles, [])
   assert.deepEqual(firstEffect.fortune.activeEffects, [
     { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: duration },
   ])
@@ -190,7 +260,7 @@ test('testing helpers spawn a bundle and wipe only active Clover effects', () =>
   const game = {
     ...createCloverGame(),
     fortune: {
-      bundle: null,
+      bundles: [],
       secondsTowardBundleRoll: 23,
       activeEffects: [
         { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 40 },
@@ -202,9 +272,9 @@ test('testing helpers spawn a bundle and wipe only active Clover effects', () =>
   const spawned = spawnCloverBundle(game, () => randomValues.shift())
   const wiped = wipeActiveFortuneEffects(spawned)
 
-  assert.deepEqual(spawned.fortune.bundle, { x: 30, y: 63 })
+  assert.deepEqual(spawned.fortune.bundles, [{ x: 30, y: 63 }])
   assert.deepEqual(wiped.fortune.activeEffects, [])
-  assert.deepEqual(wiped.fortune.bundle, { x: 30, y: 63 })
+  assert.deepEqual(wiped.fortune.bundles, [{ x: 30, y: 63 }])
   assert.deepEqual(wiped.fortune.notice, game.fortune.notice)
 })
 test('crop hover stats include the updated Breeze yield and passive modifiers', () => {

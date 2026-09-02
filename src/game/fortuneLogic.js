@@ -14,7 +14,7 @@ export const CLOVER_BUNDLE_MAX_CHANCE = 0.77
 export const FORTUNE_EFFECT_IDS = Object.freeze({
   DEMONSTRATION: 'opus',
   BOUNTY: 'bounty',
-  MIRAGE: 'mirage',
+  SPLIT: 'mirage',
   OPUS: 'fortuneOpus',
 })
 
@@ -38,12 +38,13 @@ export const FORTUNE_EFFECTS = Object.freeze([
     cropYieldMultiplier: 17.77,
   },
   {
-    id: FORTUNE_EFFECT_IDS.MIRAGE,
-    name: "Fortune's Mirage",
+    id: FORTUNE_EFFECT_IDS.SPLIT,
+    name: "Fortune's Split",
     icon: '◇',
     weight: 0.2,
     durationSeconds: 0,
-    description: 'Nothing happens',
+    description: 'Spawns 2 Clover Bundles',
+    bundleSpawnCount: 2,
   },
   {
     id: FORTUNE_EFFECT_IDS.OPUS,
@@ -79,7 +80,7 @@ function getFortuneFieldsPlanted(farmland) {
 
 export function createInitialFortuneState() {
   return {
-    bundle: null,
+    bundles: [],
     secondsTowardBundleRoll: 0,
     activeEffects: [],
     notice: null,
@@ -97,12 +98,19 @@ export function normalizeFortuneState(rawFortune) {
     return initial
   }
 
-  const bundle = rawFortune.bundle && typeof rawFortune.bundle === 'object'
-    ? {
-        x: Math.min(90, Math.max(10, Number(rawFortune.bundle.x) || 50)),
-        y: Math.min(80, Math.max(12, Number(rawFortune.bundle.y) || 45)),
-      }
-    : null
+  const rawBundles = Array.isArray(rawFortune.bundles)
+    ? rawFortune.bundles
+    : rawFortune.bundle && typeof rawFortune.bundle === 'object'
+      ? [rawFortune.bundle]
+      : []
+  const bundles = rawBundles.flatMap((bundle) =>
+    bundle && typeof bundle === 'object'
+      ? [{
+          x: Math.min(90, Math.max(10, Number(bundle.x) || 50)),
+          y: Math.min(80, Math.max(12, Number(bundle.y) || 45)),
+        }]
+      : [],
+  )
   const activeEffects = Array.isArray(rawFortune.activeEffects)
     ? rawFortune.activeEffects.flatMap((activeEffect) => {
         const effect = getFortuneEffect(activeEffect?.id)
@@ -121,7 +129,7 @@ export function normalizeFortuneState(rawFortune) {
   )
 
   return {
-    bundle,
+    bundles,
     secondsTowardBundleRoll: Math.min(
       CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS,
       toNonNegativeNumber(rawFortune.secondsTowardBundleRoll),
@@ -230,6 +238,13 @@ function chooseFortuneEffect(randomValue) {
   }) ?? FORTUNE_EFFECTS.at(-1)
 }
 
+function createCloverBundle(random) {
+  return {
+    x: 10 + clampRandomValue(random()) * 80,
+    y: 12 + clampRandomValue(random()) * 68,
+  }
+}
+
 export function advanceFortuneState(
   game,
   elapsedSeconds,
@@ -249,25 +264,22 @@ export function advanceFortuneState(
     ? { ...fortune.notice, remainingSeconds: noticeRemainingSeconds }
     : null
   const hasClover = game.blueprint?.cells?.includes('fourLeafClover') === true
-  let bundle = fortune.bundle
+  let bundles = fortune.bundles
   let secondsTowardBundleRoll = hasClover
     ? fortune.secondsTowardBundleRoll
     : 0
 
-  if (hasClover && !bundle) {
+  if (hasClover && bundles.length === 0) {
     secondsTowardBundleRoll += safeElapsedSeconds
 
     while (
-      !bundle &&
+      bundles.length === 0 &&
       secondsTowardBundleRoll >= CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS
     ) {
       secondsTowardBundleRoll -= CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS
 
       if (clampRandomValue(random()) < getCloverBundleChancePerMinute(game)) {
-        bundle = {
-          x: 10 + clampRandomValue(random()) * 80,
-          y: 12 + clampRandomValue(random()) * 68,
-        }
+        bundles = [createCloverBundle(random)]
       }
     }
   }
@@ -275,7 +287,7 @@ export function advanceFortuneState(
   return {
     ...game,
     fortune: {
-      bundle,
+      bundles,
       secondsTowardBundleRoll,
       activeEffects,
       notice,
@@ -305,22 +317,48 @@ export function addRandomFortuneEffect(game, random = Math.random) {
           ...fortune.activeEffects,
           { id: effect.id, remainingSeconds: effect.durationSeconds },
         ]
+  const spawnedBundles = Array.from(
+    { length: effect.bundleSpawnCount ?? 0 },
+    () => createCloverBundle(random),
+  )
 
   return {
     ...game,
     fortune: {
       ...fortune,
-      bundle: null,
+      bundles: [...fortune.bundles, ...spawnedBundles],
       activeEffects,
       notice: { effectId: effect.id, remainingSeconds: 6 },
     },
   }
 }
 
-export function collectCloverBundle(game, random = Math.random) {
+export function collectCloverBundle(
+  game,
+  bundleIndexOrRandom = 0,
+  suppliedRandom = Math.random,
+) {
   const fortune = normalizeFortuneState(game.fortune)
+  const bundleIndex = typeof bundleIndexOrRandom === 'function'
+    ? 0
+    : Number(bundleIndexOrRandom)
+  const random = typeof bundleIndexOrRandom === 'function'
+    ? bundleIndexOrRandom
+    : suppliedRandom
 
-  return fortune.bundle ? addRandomFortuneEffect(game, random) : game
+  if (!Number.isInteger(bundleIndex) || !fortune.bundles[bundleIndex]) {
+    return game
+  }
+
+  const gameAfterCollection = {
+    ...game,
+    fortune: {
+      ...fortune,
+      bundles: fortune.bundles.filter((_, index) => index !== bundleIndex),
+    },
+  }
+
+  return addRandomFortuneEffect(gameAfterCollection, random)
 }
 export function spawnCloverBundle(game, random = Math.random) {
   const fortune = normalizeFortuneState(game.fortune)
@@ -329,10 +367,7 @@ export function spawnCloverBundle(game, random = Math.random) {
     ...game,
     fortune: {
       ...fortune,
-      bundle: {
-        x: 10 + clampRandomValue(random()) * 80,
-        y: 12 + clampRandomValue(random()) * 68,
-      },
+      bundles: [...fortune.bundles, createCloverBundle(random)],
     },
   }
 }

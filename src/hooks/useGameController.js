@@ -202,8 +202,10 @@ export function useGameController() {
         fortune: game.fortune,
         numberNotation: game.numberNotation,
         suffixScientificExponent: game.suffixScientificExponent,
-        onCollect: () =>
-          updateGame((currentGame) => collectCloverBundle(currentGame)),
+        onCollect: (bundleIndex) =>
+          updateGame((currentGame) =>
+            collectCloverBundle(currentGame, bundleIndex),
+          ),
       },
     },
   }

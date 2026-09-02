@@ -389,7 +389,7 @@ test('Clover bundles and active Breezes of Fortune persist with safe defaults', 
   const olderSave = normalizeGame({})
 
   assert.deepEqual(cloverSave.fortune, {
-    bundle: { x: 25, y: 75 },
+    bundles: [{ x: 25, y: 75 }],
     secondsTowardBundleRoll: 42,
     activeEffects: [
       { id: 'bounty', remainingSeconds: 31 },
@@ -397,7 +397,7 @@ test('Clover bundles and active Breezes of Fortune persist with safe defaults', 
     notice: { effectId: 'bounty', remainingSeconds: 4 },
   })
   assert.deepEqual(olderSave.fortune, {
-    bundle: null,
+    bundles: [],
     secondsTowardBundleRoll: 0,
     activeEffects: [],
     notice: null,
