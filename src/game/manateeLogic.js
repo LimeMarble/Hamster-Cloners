@@ -2,6 +2,9 @@ import {
   DEFAULT_MANATEE_SURVEY_TIME_LENGTH_SCALE,
   MANATEE_BUILDING_IDS,
   MANATEE_BUILDINGS,
+  MANATEE_DEVELOPMENT_GOAL_IDS,
+  MANATEE_DEVELOPMENT_GOAL_TARGET,
+  MANATEE_DEVELOPMENT_GOALS,
   MANATEE_GARDEN_TENDING_DURATION_SECONDS,
   MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
   MANATEE_MANGROVE_TENDING_HAMSTER_COUNT,
@@ -15,19 +18,23 @@ import {
   MANATEE_ZONES,
   getManateeSurveyDurationMultiplier,
   getManateeSurveyLength,
+  getManateeSurveyLengths,
   getManateeSurveyRequiredWork,
   getManateeSurveyRewardMultipliers,
   getManateeSurveyTimeLengthScale,
 } from './manateeConfig.js'
 import {
   createInitialManateeState,
+  getCompletedManateeDevelopmentGoalCount,
   getManateeBuildingStage,
+  getManateeDevelopmentGoalProgress,
   getManateeDivingHamsterCapacity,
   getManateeRemainingDivingHamsterCapacity,
   getManateeRemainingHamsterCount,
   getManateeSurveyAllocatedHamsterCount,
   getManateeSurveyingHamsterCount,
   getUnlockedManateeCropIds,
+  hasCompletedManateeDevelopmentGoal,
   normalizeManateeState,
 } from './manateeState.js'
 
@@ -35,6 +42,9 @@ export {
   DEFAULT_MANATEE_SURVEY_TIME_LENGTH_SCALE,
   MANATEE_BUILDING_IDS,
   MANATEE_BUILDINGS,
+  MANATEE_DEVELOPMENT_GOAL_IDS,
+  MANATEE_DEVELOPMENT_GOAL_TARGET,
+  MANATEE_DEVELOPMENT_GOALS,
   MANATEE_GARDEN_TENDING_DURATION_SECONDS,
   MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
   MANATEE_MANGROVE_TENDING_HAMSTER_COUNT,
@@ -48,6 +58,7 @@ export {
   MANATEE_ZONES,
   getManateeSurveyDurationMultiplier,
   getManateeSurveyLength,
+  getManateeSurveyLengths,
   getManateeSurveyRequiredWork,
   getManateeSurveyRewardMultipliers,
   getManateeSurveyTimeLengthScale,
@@ -55,14 +66,31 @@ export {
 
 export {
   createInitialManateeState,
+  getCompletedManateeDevelopmentGoalCount,
   getManateeBuildingStage,
+  getManateeDevelopmentGoalProgress,
   getManateeDivingHamsterCapacity,
   getManateeRemainingDivingHamsterCapacity,
   getManateeRemainingHamsterCount,
   getManateeSurveyAllocatedHamsterCount,
   getManateeSurveyingHamsterCount,
   getUnlockedManateeCropIds,
+  hasCompletedManateeDevelopmentGoal,
   normalizeManateeState,
+}
+
+export function isManateeZoneUnlocked(game, zoneId) {
+  const zone = MANATEE_ZONES.find((candidate) => candidate.id === zoneId)
+  if (!zone) return false
+  if (!zone.requiredBuildingId) return true
+
+  return (
+    normalizeManateeState(game?.manatees).completedBuildings.includes(
+      zone.requiredBuildingId,
+    ) &&
+    getManateeBuildingStage(game, zone.requiredBuildingId) >=
+      (zone.requiredBuildingStage ?? 0)
+  )
 }
 
 export function getMarshSurveyWorkPerSecond(
@@ -160,6 +188,12 @@ export function startManateeSurvey(
     return null
   }
   if (
+    survey.developmentGoalId &&
+    hasCompletedManateeDevelopmentGoal(game, survey.developmentGoalId)
+  ) {
+    return null
+  }
+  if (
     survey.requiredBuildingId &&
     (!state.completedBuildings.includes(survey.requiredBuildingId) ||
       getManateeBuildingStage(game, survey.requiredBuildingId) <
@@ -212,6 +246,24 @@ export function startManateeSurvey(
   }
 }
 
+export function cancelManateeSurvey(game, surveyId) {
+  const state = normalizeManateeState(game?.manatees)
+  const hasActiveSurvey = state.activeSurveys.some(
+    (survey) => survey.id === surveyId,
+  )
+  if (!game || !MANATEE_SURVEYS[surveyId] || !hasActiveSurvey) return null
+
+  return {
+    ...game,
+    manatees: {
+      ...state,
+      activeSurveys: state.activeSurveys.filter(
+        (survey) => survey.id !== surveyId,
+      ),
+    },
+  }
+}
+
 function getRandomUnit(random) {
   const value = Number(random())
   if (!Number.isFinite(value)) return 0
@@ -246,6 +298,7 @@ function createFind(
     id: `manatee-find-${idNumber}`,
     kind: reward.kind,
     resourceId: reward.resourceId,
+    developmentGoalId: reward.developmentGoalId,
     amount,
     surveyId,
     surveyLengthId,
@@ -387,6 +440,35 @@ export function collectManateeFind(game, findId) {
     (candidate) => candidate.id !== findId,
   )
 
+  if (find.developmentGoalId) {
+    const goal = MANATEE_DEVELOPMENT_GOALS[find.developmentGoalId]
+    if (!goal) return null
+
+    const target = Math.max(0, Number(goal.target) || 0)
+    const nextProgress = Math.min(
+      target,
+      (state.developmentGoalProgress[goal.id] ?? 0) + find.amount,
+    )
+    const completedDevelopmentGoals =
+      nextProgress >= target &&
+      !state.completedDevelopmentGoals.includes(goal.id)
+        ? [...state.completedDevelopmentGoals, goal.id]
+        : state.completedDevelopmentGoals
+
+    return {
+      ...game,
+      manatees: {
+        ...state,
+        developmentGoalProgress: {
+          ...state.developmentGoalProgress,
+          [goal.id]: nextProgress,
+        },
+        completedDevelopmentGoals,
+        pendingFinds,
+      },
+    }
+  }
+
   return {
     ...game,
     manatees: {
@@ -396,6 +478,43 @@ export function collectManateeFind(game, findId) {
         [find.resourceId]: state.resources[find.resourceId] + find.amount,
       },
       pendingFinds,
+    },
+  }
+}
+
+export function canCompleteManateeDevelopmentGoal(game, goalId) {
+  const state = normalizeManateeState(game?.manatees)
+  const goal = MANATEE_DEVELOPMENT_GOALS[goalId]
+
+  return Boolean(
+    goal?.type === 'construction' &&
+      !state.completedDevelopmentGoals.includes(goalId) &&
+      Object.entries(goal.cost ?? {}).every(
+        ([resourceId, amount]) => state.resources[resourceId] >= amount,
+      ),
+  )
+}
+
+export function completeManateeDevelopmentGoal(game, goalId) {
+  if (!canCompleteManateeDevelopmentGoal(game, goalId)) return null
+
+  const state = normalizeManateeState(game?.manatees)
+  const goal = MANATEE_DEVELOPMENT_GOALS[goalId]
+  const resources = { ...state.resources }
+
+  Object.entries(goal.cost).forEach(([resourceId, amount]) => {
+    resources[resourceId] -= amount
+  })
+
+  return {
+    ...game,
+    manatees: {
+      ...state,
+      resources,
+      completedDevelopmentGoals: [
+        ...state.completedDevelopmentGoals,
+        goalId,
+      ],
     },
   }
 }

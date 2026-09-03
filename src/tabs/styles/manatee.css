@@ -28,6 +28,13 @@
   background: #19352e;
 }
 
+.manatee-zone-tab:disabled {
+  border-color: #3b4541;
+  color: #747d79;
+  background: #101512;
+  cursor: not-allowed;
+}
+
 .manatee-zone,
 .manatee-zone-group {
   display: grid;
@@ -88,6 +95,53 @@
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
   gap: 14px;
   align-items: stretch;
+}
+
+.manatee-development-total {
+  color: #bdebd9;
+  font-size: 0.78rem;
+}
+
+.manatee-development-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.manatee-development-card,
+.manatee-development-survey-goal {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.manatee-development-card {
+  padding: 17px;
+  border: 1px solid #52796f;
+  background: #0d1815;
+}
+
+.manatee-development-card-complete {
+  border-color: #73a674;
+  background: #13251a;
+}
+
+.manatee-development-card h3 {
+  margin: 3px 0 0;
+  color: #d7f4e8;
+}
+
+.manatee-development-card .trade-primary-button {
+  justify-self: start;
+}
+
+.manatee-development-progress-copy,
+.manatee-development-complete-copy {
+  margin: 0;
+  color: #bdebd9;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .manatee-underwater-section {
@@ -283,6 +337,12 @@
   transition: width 100ms linear;
 }
 
+.manatee-cancel-survey {
+  justify-self: start;
+  padding: 8px 12px;
+  font-size: 0.7rem;
+}
+
 .manatee-building-site {
   grid-template-rows: minmax(190px, auto) auto;
   border-color: #675f48;
@@ -427,6 +487,10 @@
   }
 
   .manatee-expedition-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .manatee-development-grid {
     grid-template-columns: 1fr;
   }
 

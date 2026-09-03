@@ -228,6 +228,11 @@ function CapybaraDemonstrations({
             { blueprintCropYield },
           )
           const hasSecondaryObjective = Boolean(status.secondaryObjective)
+          const usesDevelopmentGoals =
+            demonstration.metric === 'manateeDevelopmentGoals'
+          const progressLabel = usesDevelopmentGoals
+            ? 'Development Goals completed'
+            : 'Blueprint Crop yield'
           const statusLabel = status.secondaryCompleted
             ? 'Mastered'
             : status.completed
@@ -250,7 +255,7 @@ function CapybaraDemonstrations({
                     : 'Goal not reached'
               : 'Demonstration passed'
             : !status.hasPrerequisite
-              ? 'Complete Demonstration 0 first'
+              ? `Complete Demonstration ${demonstration.number - 1} first`
               : !status.restrictionsMet
                 ? 'Restrictions not met'
                 : status.canComplete
@@ -274,8 +279,14 @@ function CapybaraDemonstrations({
               </div>
 
               <p className='trade-copy'>
-                Have a field blueprint with a Crop yield of at least{' '}
-                <FormattedNumber value={demonstration.target} /> Crops.
+                {usesDevelopmentGoals ? (
+                  demonstration.goal
+                ) : (
+                  <>
+                    Have a field blueprint with a Crop yield of at least{' '}
+                    <FormattedNumber value={demonstration.target} /> Crops.
+                  </>
+                )}
               </p>
               <div
                 className='rabbit-contract-track'
@@ -292,10 +303,11 @@ function CapybaraDemonstrations({
                 />
               </div>
               <div className='capybara-demonstration-value'>
-                <span>Blueprint Crop yield</span>
+                <span>{progressLabel}</span>
                 <strong>
                   <FormattedNumber value={status.current} /> /{' '}
-                  <FormattedNumber value={demonstration.target} /> Crops
+                  <FormattedNumber value={demonstration.target} />{' '}
+                  {usesDevelopmentGoals ? 'Goals' : 'Crops'}
                 </strong>
               </div>
 
@@ -379,9 +391,11 @@ export function Trade({
   onUnlockBlazingCarrot,
   onCompleteCapybaraDemonstration,
   onStartManateeSurvey,
+  onCancelManateeSurvey,
   onCollectManateeFind,
   onConstructManateeBuilding,
   onUpgradeManateeBuilding,
+  onCompleteManateeDevelopmentGoal,
 }) {
   const hasCapybaraContact = hasRabbitUnlock(
     game,
@@ -549,11 +563,15 @@ export function Trade({
               activeZone={activeManateeZone}
               onActiveZoneChange={onActiveManateeZoneChange}
               onStartManateeSurvey={onStartManateeSurvey}
+              onCancelManateeSurvey={onCancelManateeSurvey}
               onCollectManateeFind={onCollectManateeFind}
               onConstructManateeBuilding={
                 onConstructManateeBuilding
               }
               onUpgradeManateeBuilding={onUpgradeManateeBuilding}
+              onCompleteManateeDevelopmentGoal={
+                onCompleteManateeDevelopmentGoal
+              }
             />
           ) : null}
         </>

@@ -1,5 +1,6 @@
 import {
   MANATEE_BUILDINGS,
+  MANATEE_DEVELOPMENT_GOALS,
   MANATEE_RESOURCES,
   MANATEE_RESOURCE_IDS,
   MANATEE_SURVEYS,
@@ -8,9 +9,9 @@ import {
   getManateeSurveyRequiredWork,
 } from './manateeConfig.js'
 
-const FIND_RESOURCE_BY_KIND = new Map(
+const FIND_REWARD_BY_KIND = new Map(
   Object.values(MANATEE_SURVEYS).flatMap((survey) =>
-    survey.rewards.map((reward) => [reward.kind, reward.resourceId]),
+    survey.rewards.map((reward) => [reward.kind, reward]),
   ),
 )
 const FIND_SURVEY_BY_KIND = new Map()
@@ -46,6 +47,10 @@ export function createInitialManateeState() {
     pendingFinds: [],
     completedBuildings: [],
     buildingStages: {},
+    completedDevelopmentGoals: [],
+    developmentGoalProgress: Object.fromEntries(
+      Object.keys(MANATEE_DEVELOPMENT_GOALS).map((goalId) => [goalId, 0]),
+    ),
     nextFindId: 1,
   }
 }
@@ -105,11 +110,20 @@ function normalizeFind(
 
   const rawKind = typeof rawFind.kind === 'string' ? rawFind.kind : ''
   const kind = LEGACY_FIND_KINDS[rawKind] ?? rawKind
+  const configuredReward = FIND_REWARD_BY_KIND.get(kind)
   const resourceId =
-    FIND_RESOURCE_BY_KIND.get(kind) ??
+    configuredReward?.resourceId ??
     getNormalizedResourceId(rawFind.resourceId)
+  const developmentGoalId = Object.hasOwn(
+    MANATEE_DEVELOPMENT_GOALS,
+    configuredReward?.developmentGoalId,
+  )
+    ? configuredReward.developmentGoalId
+    : Object.hasOwn(MANATEE_DEVELOPMENT_GOALS, rawFind.developmentGoalId)
+      ? rawFind.developmentGoalId
+      : null
   const amount = toNonNegativeInteger(rawFind.amount, 0)
-  if (!kind || !resourceId || amount <= 0) return null
+  if (!kind || (!resourceId && !developmentGoalId) || amount <= 0) return null
 
   const surveyId = MANATEE_SURVEYS[getNormalizedSurveyId(rawFind.surveyId)]?.id ??
     MANATEE_SURVEYS[getNormalizedSurveyId(legacySurveyId)]?.id ??
@@ -127,6 +141,7 @@ function normalizeFind(
         : `recovered-find-${index + 1}`,
     kind,
     resourceId,
+    developmentGoalId,
     amount,
     surveyId,
     surveyLengthId: lengthId,
@@ -194,6 +209,27 @@ export function normalizeManateeState(rawState) {
       ]
     }),
   )
+  const completedDevelopmentGoals = Array.isArray(
+    rawState.completedDevelopmentGoals,
+  )
+    ? [...new Set(rawState.completedDevelopmentGoals)].filter((goalId) =>
+        Object.hasOwn(MANATEE_DEVELOPMENT_GOALS, goalId),
+      )
+    : []
+  const developmentGoalProgress = Object.fromEntries(
+    Object.entries(MANATEE_DEVELOPMENT_GOALS).map(([goalId, goal]) => {
+      const target = Math.max(0, Number(goal.target) || 0)
+      const savedProgress = toNonNegativeInteger(
+        rawState.developmentGoalProgress?.[goalId],
+        0,
+      )
+
+      return [
+        goalId,
+        target > 0 ? Math.min(target, savedProgress) : 0,
+      ]
+    }),
+  )
 
   return {
     resources: Object.fromEntries(
@@ -214,11 +250,35 @@ export function normalizeManateeState(rawState) {
     pendingFinds,
     completedBuildings,
     buildingStages,
+    completedDevelopmentGoals,
+    developmentGoalProgress,
     nextFindId: Math.max(
       pendingFinds.length + 1,
       toNonNegativeInteger(rawState.nextFindId, initialState.nextFindId),
     ),
   }
+}
+
+export function hasCompletedManateeDevelopmentGoal(game, goalId) {
+  return normalizeManateeState(game?.manatees).completedDevelopmentGoals.includes(
+    goalId,
+  )
+}
+
+export function getCompletedManateeDevelopmentGoalCount(game) {
+  return normalizeManateeState(game?.manatees).completedDevelopmentGoals.length
+}
+
+export function getManateeDevelopmentGoalProgress(game, goalId) {
+  const state = normalizeManateeState(game?.manatees)
+  const goal = MANATEE_DEVELOPMENT_GOALS[goalId]
+
+  if (!goal) return 0
+  if (state.completedDevelopmentGoals.includes(goalId)) {
+    return Math.max(1, Number(goal.target) || 1)
+  }
+
+  return state.developmentGoalProgress[goalId] ?? 0
 }
 
 export function getManateeBuildingStage(game, buildingId) {

@@ -2,14 +2,21 @@ export const MANATEE_SURVEY_IDS = Object.freeze({
   SEARCH_MARSH: 'searchMarsh',
   MANGROVE_ROOTS: 'mangroveRoots',
   SEDIMENT: 'sediment',
+  CLEAN_HUMAN_WASTE: 'cleanHumanWaste',
   TEND_SHOAL_GRASS: 'tendShoalGrass',
   TEND_WATER_LETTUCE: 'tendWaterLettuce',
   TEND_MANGROVE_SAPLING: 'tendMangroveSapling',
 })
 
+export const MANATEE_BUILDING_IDS = Object.freeze({
+  DIVING_CABIN: 'divingCabin',
+  SUBMERGED_GARDEN: 'submergedGarden',
+})
+
 export const MANATEE_ZONE_IDS = Object.freeze({
   MARSH: 'marsh',
   UNDERWATER_MARSH: 'underwaterMarsh',
+  ESTUARY: 'estuary',
 })
 
 export const MANATEE_ZONES = Object.freeze([
@@ -22,6 +29,14 @@ export const MANATEE_ZONES = Object.freeze([
     id: MANATEE_ZONE_IDS.UNDERWATER_MARSH,
     name: 'Underwater Marsh',
     description: 'Send equipped hamsters beneath the marsh water.',
+  }),
+  Object.freeze({
+    id: MANATEE_ZONE_IDS.ESTUARY,
+    name: 'Estuary',
+    description:
+      'Help restore the estuary after the Diving Hub unlocks flippers.',
+    requiredBuildingId: MANATEE_BUILDING_IDS.DIVING_CABIN,
+    requiredBuildingStage: 1,
   }),
 ])
 
@@ -48,6 +63,14 @@ export const MANATEE_SURVEY_LENGTHS = Object.freeze([
     tier: 2,
   }),
 ])
+
+const MANATEE_SURVEY_LENGTHS_BY_MAXIMUM_TIER = Object.freeze(
+  MANATEE_SURVEY_LENGTHS.map((_, maximumTier) =>
+    Object.freeze(
+      MANATEE_SURVEY_LENGTHS.filter((length) => length.tier <= maximumTier),
+    ),
+  ),
+)
 
 export const DEFAULT_MANATEE_SURVEY_TIME_LENGTH_SCALE = 15
 
@@ -111,9 +134,38 @@ export const MANATEE_RESOURCES = Object.freeze({
   }),
 })
 
-export const MANATEE_BUILDING_IDS = Object.freeze({
-  DIVING_CABIN: 'divingCabin',
-  SUBMERGED_GARDEN: 'submergedGarden',
+export const MANATEE_DEVELOPMENT_GOAL_IDS = Object.freeze({
+  RESTORE_FEEDING_GROUNDS: 'restoreFeedingGrounds',
+  CLEAN_HUMAN_WASTE: 'cleanHumanWaste',
+})
+
+export const MANATEE_DEVELOPMENT_GOAL_TARGET = 3
+
+export const MANATEE_DEVELOPMENT_GOALS = Object.freeze({
+  [MANATEE_DEVELOPMENT_GOAL_IDS.RESTORE_FEEDING_GROUNDS]: Object.freeze({
+    id: MANATEE_DEVELOPMENT_GOAL_IDS.RESTORE_FEEDING_GROUNDS,
+    name: 'Restore the Feeding Grounds',
+    type: 'construction',
+    description:
+      'Rebuild a safe and plentiful feeding ground using materials gathered throughout Manatee territory.',
+    cost: Object.freeze({
+      [MANATEE_RESOURCE_IDS.MANGROVE_LEAVES]: 1200,
+      [MANATEE_RESOURCE_IDS.SHOAL_GRASS]: 1000,
+      [MANATEE_RESOURCE_IDS.WATER_LETTUCE]: 1000,
+      [MANATEE_RESOURCE_IDS.MANGROVE_ROOTS]: 200,
+      [MANATEE_RESOURCE_IDS.MANGROVE_SEEDS]: 150,
+    }),
+  }),
+  [MANATEE_DEVELOPMENT_GOAL_IDS.CLEAN_HUMAN_WASTE]: Object.freeze({
+    id: MANATEE_DEVELOPMENT_GOAL_IDS.CLEAN_HUMAN_WASTE,
+    name: 'Clean out Human Waste',
+    type: 'survey',
+    description:
+      'Search the estuary for discarded human waste and remove every object you find.',
+    target: 125000,
+    progressUnit: 'Waste cleared',
+    surveyId: MANATEE_SURVEY_IDS.CLEAN_HUMAN_WASTE,
+  }),
 })
 
 export const MANATEE_GARDEN_TENDING_HAMSTER_COUNT = 10
@@ -152,6 +204,24 @@ function createReward(
   })
 }
 
+function createDevelopmentReward(
+  kind,
+  developmentGoalId,
+  minimumCount,
+  maximumCount = minimumCount,
+  minimumAmount = 1,
+  maximumAmount = minimumAmount,
+) {
+  return Object.freeze({
+    kind,
+    developmentGoalId,
+    minimumCount,
+    maximumCount,
+    minimumAmount,
+    maximumAmount,
+  })
+}
+
 function createSurvey({
   id,
   name,
@@ -160,13 +230,24 @@ function createSurvey({
   rewards,
   isUnderwater = false,
   supportsTimeLengths = isUnderwater,
+  maximumLengthTier = MANATEE_SURVEY_LENGTHS.length - 1,
   timeLengthScale,
   fixedDurationSeconds,
   fixedHamsterAllocation,
   requiredBuildingId,
   requiredBuildingStage,
+  developmentGoalId,
 }) {
   const hasFixedDuration = Number(fixedDurationSeconds) > 0
+  const normalizedMaximumLengthTier = supportsTimeLengths
+    ? Math.max(
+        0,
+        Math.min(
+          MANATEE_SURVEY_LENGTHS.length - 1,
+          Math.floor(Number(maximumLengthTier) || 0),
+        ),
+      )
+    : 0
 
   return Object.freeze({
     id,
@@ -181,6 +262,7 @@ function createSurvey({
     rewards: Object.freeze(rewards),
     isUnderwater,
     supportsTimeLengths,
+    maximumLengthTier: normalizedMaximumLengthTier,
     ...(hasFixedDuration
       ? { fixedDurationSeconds: Number(fixedDurationSeconds) }
       : {}),
@@ -191,6 +273,7 @@ function createSurvey({
     ...(Number(requiredBuildingStage) > 0
       ? { requiredBuildingStage: Math.floor(requiredBuildingStage) }
       : {}),
+    ...(developmentGoalId ? { developmentGoalId } : {}),
     ...(timeLengthScale === undefined ? {} : { timeLengthScale }),
   })
 }
@@ -234,6 +317,53 @@ export const MANATEE_SURVEYS = Object.freeze({
       createReward('water-lettuce', MANATEE_RESOURCE_IDS.WATER_LETTUCE, 1, 4, 1, 5),
       createReward('shoal-grass', MANATEE_RESOURCE_IDS.SHOAL_GRASS, 1, 3, 3, 6),
       createReward('limestone', MANATEE_RESOURCE_IDS.LIMESTONE, 5, 5, 10, 15),
+    ],
+  }),
+  [MANATEE_SURVEY_IDS.CLEAN_HUMAN_WASTE]: createSurvey({
+    id: MANATEE_SURVEY_IDS.CLEAN_HUMAN_WASTE,
+    name: 'Clean out Human Waste',
+    description:
+      'Search the estuary and manually clear the waste objects brought in by human activity.',
+    referenceDurationSeconds: 10,
+    isUnderwater: true,
+    supportsTimeLengths: true,
+    maximumLengthTier: 1,
+    requiredBuildingId: MANATEE_BUILDING_IDS.DIVING_CABIN,
+    requiredBuildingStage: 1,
+    developmentGoalId: MANATEE_DEVELOPMENT_GOAL_IDS.CLEAN_HUMAN_WASTE,
+    rewards: [
+      createDevelopmentReward(
+        'discarded-bottle',
+        MANATEE_DEVELOPMENT_GOAL_IDS.CLEAN_HUMAN_WASTE,
+        6,
+        8,
+        15,
+        50,
+      ),
+      createDevelopmentReward(
+        'tangled-plastic',
+        MANATEE_DEVELOPMENT_GOAL_IDS.CLEAN_HUMAN_WASTE,
+        6,
+        8,
+        15,
+        50,
+      ),
+      createDevelopmentReward(
+        'rusted-can',
+        MANATEE_DEVELOPMENT_GOAL_IDS.CLEAN_HUMAN_WASTE,
+        6,
+        7,
+        15,
+        50,
+      ),
+      createDevelopmentReward(
+        'food-wrapper',
+        MANATEE_DEVELOPMENT_GOAL_IDS.CLEAN_HUMAN_WASTE,
+        7,
+        7,
+        15,
+        50,
+      ),
     ],
   }),
   [MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS]: createSurvey({
@@ -410,7 +540,7 @@ export const MANATEE_BUILDINGS = Object.freeze({
         resourceId: MANATEE_RESOURCE_IDS.MANGROVE_SEEDS,
         surveyId: MANATEE_SURVEY_IDS.TEND_MANGROVE_SAPLING,
         cost: Object.freeze({
-          [MANATEE_RESOURCE_IDS.PETE]: 2000,
+          [MANATEE_RESOURCE_IDS.PETE]: 450,
           [MANATEE_RESOURCE_IDS.MANGROVE_ROOTS]: 175,
           [MANATEE_RESOURCE_IDS.MANGROVE_LEAVES]: 250,
           [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: 500,
@@ -426,6 +556,12 @@ const MANATEE_SURVEY_LENGTH_BY_ID = new Map(
   MANATEE_SURVEY_LENGTHS.map((length) => [length.id, length]),
 )
 
+export function getManateeSurveyLengths(surveyId) {
+  const maximumLengthTier =
+    MANATEE_SURVEYS[surveyId]?.maximumLengthTier ?? 0
+  return MANATEE_SURVEY_LENGTHS_BY_MAXIMUM_TIER[maximumLengthTier]
+}
+
 export function getManateeSurveyLength(surveyId, lengthId) {
   const survey = MANATEE_SURVEYS[surveyId]
   if (!survey?.supportsTimeLengths) {
@@ -434,10 +570,10 @@ export function getManateeSurveyLength(surveyId, lengthId) {
     )
   }
 
-  return (
-    MANATEE_SURVEY_LENGTH_BY_ID.get(lengthId) ??
-    MANATEE_SURVEY_LENGTH_BY_ID.get(MANATEE_SURVEY_LENGTH_IDS.STANDARD)
-  )
+  const requestedLength = MANATEE_SURVEY_LENGTH_BY_ID.get(lengthId)
+  return requestedLength?.tier <= survey.maximumLengthTier
+    ? requestedLength
+    : MANATEE_SURVEY_LENGTH_BY_ID.get(MANATEE_SURVEY_LENGTH_IDS.STANDARD)
 }
 
 export function getManateeSurveyTimeLengthScale(surveyId) {

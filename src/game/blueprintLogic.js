@@ -193,25 +193,46 @@ export function getBlueprintSlots(game) {
   return slots.length > 0 ? slots : [fallbackBlueprint]
 }
 
-export function createFarmlandMultipliers({
-  rows = 1,
-  columns = 1,
-  floors = 1,
-  farms = 1,
-  otherMultiplier = 1,
-} = {}) {
+const FARMLAND_UNIT_DEFAULT_VALUES = Object.freeze({
+  rows: 1,
+  columns: 1,
+  floors: 1,
+  farms: 1,
+})
+
+const FIELD_RESET_UNIT_OVERRIDES = Object.freeze({
+  columns: 0,
+})
+
+export function createFarmlandMultipliers(values = {}) {
   const toNonNegativeValue = (value, fallback) => {
     const parsed = Number(value)
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
   }
+  const fieldUnits = Object.fromEntries(
+    Object.entries(FARMLAND_UNIT_DEFAULT_VALUES).map(([unit, defaultValue]) => [
+      unit,
+      toNonNegativeValue(values[unit], defaultValue),
+    ]),
+  )
 
   return {
-    rows: toNonNegativeValue(rows, 0),
-    columns: toNonNegativeValue(columns, 1),
-    floors: toNonNegativeValue(floors, 1),
-    farms: toNonNegativeValue(farms, 1),
-    otherMultiplier: toNonNegativeValue(otherMultiplier, 1),
+    ...fieldUnits,
+    otherMultiplier: toNonNegativeValue(values.otherMultiplier, 1),
   }
+}
+
+// Keep every field reset routed through this helper. A future unit added to the
+// shared field-unit schema automatically resets to its default unless it needs
+// a special reset value like Columns.
+export function resetFarmlandUnits(farmland) {
+  const currentFarmland = createFarmlandMultipliers(farmland)
+
+  return createFarmlandMultipliers({
+    ...FARMLAND_UNIT_DEFAULT_VALUES,
+    ...FIELD_RESET_UNIT_OVERRIDES,
+    otherMultiplier: currentFarmland.otherMultiplier,
+  })
 }
 
 
@@ -353,11 +374,7 @@ export function resetForRowDuplicators(game) {
     ...game,
     crops: 0,
     hasUnlockedRowDuplicators: true,
-    farmland: {
-      ...createFarmlandMultipliers(game.farmland),
-      rows: 1,
-      columns: 0,
-    },
+    farmland: resetFarmlandUnits(game.farmland),
   }
 }
 
@@ -642,9 +659,6 @@ export function resetForBlueprintExpansion(game, expansionId) {
     ...game,
     ...applyBlueprintExpansion(game, expansion),
     crops: 0,
-    farmland: {
-      ...createFarmlandMultipliers(game.farmland),
-      columns: 0,
-    },
+    farmland: resetFarmlandUnits(game.farmland),
   }
 }

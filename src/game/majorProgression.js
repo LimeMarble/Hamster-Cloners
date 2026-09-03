@@ -28,6 +28,7 @@ import {
   getCapybaraDemonstrationStatus,
   hasCompletedCapybaraDemonstration,
 } from './capybaraLogic.js'
+import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
 
 const FIRST_COLUMN_EXPANSION_COST =
   BLUEPRINT_EXPANSIONS.find((expansion) => expansion.id === 'firstColumn')
@@ -250,7 +251,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'crop-four-leaf-clover',
     category: 'Crop unlock',
     title: 'Unlock 4-Leaf Clover',
-    target: 77777,
+    target: 27777,
     unit: 'Rabbit relations',
     description:
       'Spend Rabbit relations in Trade to unlock 4-Leaf Clover.',
@@ -263,7 +264,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'capybara-contact',
     category: 'Milestone',
     title: 'Establish contact with Capybaras',
-    target: 125000,
+    target: 40000,
     unit: 'Rabbit relations',
     description:
       'Spend Rabbit relations in Trade to establish contact with Capybaras.',
@@ -306,6 +307,23 @@ export const MAJOR_PROGRESSION_GOALS = [
         CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
       ),
     getCurrent: getCapybaraBlueprintCropYield,
+    requiresAction: true,
+  },
+  {
+    id: 'capybara-demonstration-two',
+    category: 'Demonstration',
+    title: 'Capybara Demonstration 2: Estuary Development',
+    demonstrationId: CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+    target: CAPYBARA_DEMONSTRATIONS[2].target,
+    unit: 'Manatee Development Goals',
+    description:
+      'Complete three Manatee Development Goals, then report back to the Capybaras.',
+    isComplete: (game) =>
+      hasCompletedCapybaraDemonstration(
+        game,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+      ),
+    getCurrent: getCompletedManateeDevelopmentGoalCount,
     requiresAction: true,
   },
 ]

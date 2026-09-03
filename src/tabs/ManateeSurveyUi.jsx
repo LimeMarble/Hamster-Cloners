@@ -1,4 +1,7 @@
-import { MANATEE_RESOURCES } from '../game/gameLogic.js'
+import {
+  MANATEE_DEVELOPMENT_GOALS,
+  MANATEE_RESOURCES,
+} from '../game/gameLogic.js'
 import { FormattedNumber, WholeNumber } from './ui.jsx'
 
 export function SurveyTime({ seconds }) {
@@ -18,7 +21,11 @@ export function SurveyTime({ seconds }) {
 }
 
 function MarshFind({ find, onCollect }) {
-  const resourceName = MANATEE_RESOURCES[find.resourceId]?.name ?? 'Resource'
+  const resourceName =
+    MANATEE_RESOURCES[find.resourceId]?.name ??
+    MANATEE_DEVELOPMENT_GOALS[find.developmentGoalId]?.progressUnit ??
+    'Progress'
+  const findName = find.kind.replaceAll('-', ' ')
 
   return (
     <button
@@ -30,7 +37,7 @@ function MarshFind({ find, onCollect }) {
         '--find-rotation': `${find.rotation}deg`,
       }}
       onClick={() => onCollect(find.id)}
-      aria-label={`Collect ${find.kind} worth ${find.amount} ${resourceName}`}
+      aria-label={`Clear ${findName} worth ${find.amount} ${resourceName}`}
     >
       <span className="manatee-find-shape" aria-hidden="true" />
       <span className="manatee-find-value">
@@ -105,6 +112,8 @@ export function SurveyProgress({
   allocatedHamsters,
   progress,
   remainingSeconds,
+  surveyName,
+  onCancel,
 }) {
   return (
     <div className="manatee-survey-progress">
@@ -129,6 +138,14 @@ export function SurveyProgress({
         Surveying hamsters still contribute their full Hamster Coordination,
         but each one is temporarily removed from Columns/sec.
       </p>
+      <button
+        type="button"
+        className="secondary-button manatee-cancel-survey"
+        onClick={onCancel}
+        aria-label={`Cancel ${surveyName}`}
+      >
+        Cancel survey
+      </button>
     </div>
   )
 }

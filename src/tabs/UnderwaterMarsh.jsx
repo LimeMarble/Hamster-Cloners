@@ -2,13 +2,13 @@ import { useState } from 'react'
 import {
   MANATEE_SURVEY_IDS,
   MANATEE_SURVEY_LENGTH_IDS,
-  MANATEE_SURVEY_LENGTHS,
   MANATEE_SURVEYS,
   getManateeDivingHamsterCapacity,
   getManateeRemainingDivingHamsterCapacity,
   getManateeRemainingHamsterCount,
   getManateeSurveyDurationMultiplier,
   getManateeSurveyDurationSeconds,
+  getManateeSurveyLengths,
   getManateeSurveyRequiredWork,
   getManateeSurveyRewardMultipliers,
   getManateeSurveyAllocatedHamsterCount,
@@ -36,7 +36,7 @@ function SurveyLengthSelector({
 }) {
   return (
     <div className="manatee-survey-lengths" aria-label={`${survey.name} duration`}>
-      {MANATEE_SURVEY_LENGTHS.map((length) => {
+      {getManateeSurveyLengths(survey.id).map((length) => {
         const durationMultiplier = getManateeSurveyDurationMultiplier(
           survey.id,
           length.id,
@@ -72,7 +72,7 @@ function SurveyLengthSelector({
   )
 }
 
-function UnderwaterSurvey({
+export function AllocatedManateeSurvey({
   game,
   state,
   surveyId,
@@ -80,6 +80,7 @@ function UnderwaterSurvey({
   surveyTimeEffect,
   divingCapacity,
   onStartSurvey,
+  onCancelSurvey,
   onCollectFind,
 }) {
   const [selectedLengthId, setSelectedLengthId] = useState(
@@ -156,15 +157,19 @@ function UnderwaterSurvey({
           allocatedHamsters={allocatedHamsters}
           progress={progress}
           remainingSeconds={remainingSeconds}
+          surveyName={survey.name}
+          onCancel={() => onCancelSurvey(survey.id)}
         />
       ) : (
         <div className="manatee-survey-start">
-          <SurveyLengthSelector
-            survey={survey}
-            selectedLengthId={selectedLengthId}
-            disabled={availableHamsters <= 0}
-            onSelect={setSelectedLengthId}
-          />
+          {survey.supportsTimeLengths ? (
+            <SurveyLengthSelector
+              survey={survey}
+              selectedLengthId={selectedLengthId}
+              disabled={availableHamsters <= 0}
+              onSelect={setSelectedLengthId}
+            />
+          ) : null}
           <label className="manatee-hamster-allocation">
             <span>
               Hamsters allocated:{' '}
@@ -221,6 +226,7 @@ export function UnderwaterMarsh({
   coordination,
   surveyTimeEffect,
   onStartSurvey,
+  onCancelSurvey,
   onCollectFind,
   onConstructBuilding,
   onUpgradeBuilding,
@@ -255,7 +261,7 @@ export function UnderwaterMarsh({
             </p>
             <div className="manatee-expedition-grid">
               {UNDERWATER_SURVEY_IDS.map((surveyId) => (
-                <UnderwaterSurvey
+                <AllocatedManateeSurvey
                   key={surveyId}
                   game={game}
                   state={state}
@@ -264,6 +270,7 @@ export function UnderwaterMarsh({
                   surveyTimeEffect={surveyTimeEffect}
                   divingCapacity={divingCapacity}
                   onStartSurvey={onStartSurvey}
+                  onCancelSurvey={onCancelSurvey}
                   onCollectFind={onCollectFind}
                 />
               ))}
@@ -283,6 +290,7 @@ export function UnderwaterMarsh({
           onConstructBuilding={onConstructBuilding}
           onUpgradeBuilding={onUpgradeBuilding}
           onStartSurvey={onStartSurvey}
+          onCancelSurvey={onCancelSurvey}
           onCollectFind={onCollectFind}
         />
       </section>

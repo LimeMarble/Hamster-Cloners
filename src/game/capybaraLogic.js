@@ -1,10 +1,12 @@
 import { getBaseFieldProductionSnapshot } from './cropProduction.js'
 import { getFortuneModifiers } from './fortuneLogic.js'
 import { RABBIT_UNLOCK_IDS, hasRabbitUnlock } from './tradeLogic.js'
+import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
 
 export const CAPYBARA_DEMONSTRATION_IDS = Object.freeze({
   INTRODUCTION: 'introduction',
   DEMONSTRATION_ONE: 'demonstrationOne',
+  DEMONSTRATION_TWO: 'demonstrationTwo',
 })
 
 export const CAPYBARA_SECONDARY_OBJECTIVE_IDS = Object.freeze({
@@ -51,6 +53,22 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     hint: 'Augmentations are your best friend here.',
     prerequisiteDemonstrationId: CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
     requiresNoClover: true,
+  },
+  {
+    id: CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+    number: 2,
+    name: 'Estuary Development',
+    goal: 'Complete 3 Manatee Development Goals.',
+    target: 3,
+    unit: 'Manatee Development Goals',
+    metric: 'manateeDevelopmentGoals',
+    restrictions: [],
+    rewardName: 'Root Tunnel',
+    rewardDescription:
+      'Unlocks Root Tunnel as a plantable Crop for transferring adjacency effects.',
+    hint: 'The Diving Hub and its flippers open the way to the Estuary.',
+    prerequisiteDemonstrationId:
+      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
   },
 ])
 
@@ -177,7 +195,10 @@ export function getCapybaraDemonstrationStatus(
   if (!demonstration) return null
 
   const current = toNonNegativeNumber(
-    metrics.blueprintCropYield ?? getCapybaraBlueprintCropYield(game),
+    demonstration.metric === 'manateeDevelopmentGoals'
+      ? metrics.manateeDevelopmentGoalsCompleted ??
+          getCompletedManateeDevelopmentGoalCount(game)
+      : metrics.blueprintCropYield ?? getCapybaraBlueprintCropYield(game),
   )
   const completed = hasCompletedCapybaraDemonstration(game, demonstrationId)
   const secondaryObjective = demonstration.secondaryObjective
@@ -242,6 +263,9 @@ export function completeCapybaraDemonstration(
 
   return {
     ...game,
+    ...(demonstrationId === CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO
+      ? { hasUnlockedRootTunnel: true }
+      : {}),
     capybara: {
       ...capybara,
       completedDemonstrations: isFirstCompletion

@@ -1602,7 +1602,13 @@ test('Row Duplicators reset the field before becoming the only Row source', () =
   const game = {
     crops: ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
     hasUnlockedRowDuplicators: false,
-    farmland: createFarmlandMultipliers({ rows: 7, columns: 12 }),
+    farmland: createFarmlandMultipliers({
+      rows: 7,
+      columns: 12,
+      floors: 3,
+      farms: 4,
+      otherMultiplier: 2,
+    }),
   }
 
   assert.equal(canUnlockRowDuplicators(game), true)
@@ -1610,7 +1616,13 @@ test('Row Duplicators reset the field before becoming the only Row source', () =
     ...game,
     crops: 0,
     hasUnlockedRowDuplicators: true,
-    farmland: createFarmlandMultipliers({ rows: 1, columns: 0 }),
+    farmland: createFarmlandMultipliers({
+      rows: 1,
+      columns: 0,
+      floors: 1,
+      farms: 1,
+      otherMultiplier: 2,
+    }),
   })
 })
 
@@ -1849,7 +1861,13 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     unionized: false,
     postUnionHamstersHired: 0,
     completedBlueprintExpansions: [],
-    farmland: createFarmlandMultipliers({ rows: 1, columns: 17 }),
+    farmland: createFarmlandMultipliers({
+      rows: 7,
+      columns: 17,
+      floors: 3,
+      farms: 4,
+      otherMultiplier: 1.5,
+    }),
     blueprint: createBlueprint({ cells: ['leek'] }),
   }
   assert.equal(getBlueprintExpansionCost(firstColumnGame, 'firstColumn'), 1e4)
@@ -1860,8 +1878,16 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     'firstColumn',
   )
   assert.equal(firstColumnResult.crops, 0)
-  assert.equal(firstColumnResult.farmland.rows, 1)
-  assert.equal(firstColumnResult.farmland.columns, 0)
+  assert.deepEqual(
+    firstColumnResult.farmland,
+    createFarmlandMultipliers({
+      rows: 1,
+      columns: 0,
+      floors: 1,
+      farms: 1,
+      otherMultiplier: 1.5,
+    }),
+  )
   assert.equal(firstColumnResult.blueprint.columns, 2)
   assert.deepEqual(firstColumnResult.completedBlueprintExpansions, ['firstColumn'])
 
@@ -1869,7 +1895,13 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     {
       ...firstColumnResult,
       crops: 1e7,
-      farmland: createFarmlandMultipliers({ rows: 1, columns: 17 }),
+      farmland: createFarmlandMultipliers({
+        rows: 9,
+        columns: 17,
+        floors: 5,
+        farms: 6,
+        otherMultiplier: 1.5,
+      }),
       blueprint: createBlueprint({
         rows: 1,
         columns: 2,
@@ -1879,6 +1911,16 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     'firstRow',
   )
   assert.equal(firstRowResult.blueprint.rows, 2)
+  assert.deepEqual(
+    firstRowResult.farmland,
+    createFarmlandMultipliers({
+      rows: 1,
+      columns: 0,
+      floors: 1,
+      farms: 1,
+      otherMultiplier: 1.5,
+    }),
+  )
   assert.deepEqual(firstRowResult.blueprint.cells, ['leek', 'corn', null, null])
   assert.deepEqual(firstRowResult.completedBlueprintExpansions, ['firstColumn', 'firstRow'])
 
@@ -1886,7 +1928,13 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     {
       ...firstRowResult,
       crops: 1e8,
-      farmland: createFarmlandMultipliers({ rows: 1, columns: 17 }),
+      farmland: createFarmlandMultipliers({
+        rows: 11,
+        columns: 17,
+        floors: 7,
+        farms: 8,
+        otherMultiplier: 1.5,
+      }),
       blueprint: createBlueprint({
         rows: 2,
         columns: 2,
@@ -1896,8 +1944,16 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     'secondColumn',
   )
   assert.equal(secondColumnResult.crops, 0)
-  assert.equal(secondColumnResult.farmland.rows, 1)
-  assert.equal(secondColumnResult.farmland.columns, 0)
+  assert.deepEqual(
+    secondColumnResult.farmland,
+    createFarmlandMultipliers({
+      rows: 1,
+      columns: 0,
+      floors: 1,
+      farms: 1,
+      otherMultiplier: 1.5,
+    }),
+  )
   assert.equal(secondColumnResult.blueprint.columns, 3)
   assert.deepEqual(secondColumnResult.blueprint.cells, [
     'leek',

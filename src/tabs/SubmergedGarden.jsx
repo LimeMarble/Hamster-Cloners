@@ -119,6 +119,7 @@ function GardenCropTending({
   surveyId,
   cropName,
   onStartSurvey,
+  onCancelSurvey,
   onCollectFind,
 }) {
   const survey = MANATEE_SURVEYS[surveyId]
@@ -212,6 +213,8 @@ function GardenCropTending({
           allocatedHamsters={allocatedHamsters}
           progress={progress}
           remainingSeconds={remainingSeconds}
+          surveyName={survey.name}
+          onCancel={() => onCancelSurvey(survey.id)}
         />
       ) : (
         <button
@@ -240,6 +243,7 @@ export function SubmergedGarden({
   onConstructBuilding,
   onUpgradeBuilding,
   onStartSurvey,
+  onCancelSurvey,
   onCollectFind,
 }) {
   const building = MANATEE_BUILDINGS[MANATEE_BUILDING_IDS.SUBMERGED_GARDEN]
@@ -300,6 +304,7 @@ export function SubmergedGarden({
                 surveyId={MANATEE_SURVEY_IDS.TEND_SHOAL_GRASS}
                 cropName="Shoal Grass"
                 onStartSurvey={onStartSurvey}
+                onCancelSurvey={onCancelSurvey}
                 onCollectFind={onCollectFind}
               />
             ) : null}
@@ -311,6 +316,7 @@ export function SubmergedGarden({
                 surveyId={MANATEE_SURVEY_IDS.TEND_WATER_LETTUCE}
                 cropName="Water Lettuce"
                 onStartSurvey={onStartSurvey}
+                onCancelSurvey={onCancelSurvey}
                 onCollectFind={onCollectFind}
               />
             ) : null}
@@ -322,6 +328,7 @@ export function SubmergedGarden({
                 surveyId={MANATEE_SURVEY_IDS.TEND_MANGROVE_SAPLING}
                 cropName="Mangrove Saplings"
                 onStartSurvey={onStartSurvey}
+                onCancelSurvey={onCancelSurvey}
                 onCollectFind={onCollectFind}
               />
             ) : null}

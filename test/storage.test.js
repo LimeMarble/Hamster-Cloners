@@ -160,7 +160,7 @@ test('current saves retain independent unlocked blueprint slots', () => {
   assert.deepEqual(migratedGame.blueprintSlots[0].cells, ['leek', 'corn'])
 })
 
-test('current saves remove temporarily unavailable crops from every blueprint slot', () => {
+test('current saves retain Root Tunnel after its Demonstration reward unlock', () => {
   const migratedGame = normalizeGame({
     blueprintExpansionAxesSwapped: true,
     hasUnlockedRootTunnel: true,
@@ -183,12 +183,16 @@ test('current saves remove temporarily unavailable crops from every blueprint sl
   assert.deepEqual(
     migratedGame.blueprintSlots.map((blueprint) => blueprint.cells),
     [
-      [null, 'corn', 'leek'],
-      ['leek', null, 'corn'],
-      ['corn', 'leek', null],
+      ['rootTunnel', 'corn', 'leek'],
+      ['leek', 'rootTunnel', 'corn'],
+      ['corn', 'leek', 'rootTunnel'],
     ],
   )
-  assert.deepEqual(migratedGame.blueprint.cells, ['leek', null, 'corn'])
+  assert.deepEqual(migratedGame.blueprint.cells, [
+    'leek',
+    'rootTunnel',
+    'corn',
+  ])
 })
 
 test('Sunflower unlock migration ignores Row Duplicators and uses its Crop milestone', () => {

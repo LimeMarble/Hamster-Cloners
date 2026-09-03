@@ -9,6 +9,7 @@ import {
   MANATEE_SURVEYS,
   advanceGameSimulationStep,
   advanceManateeSurveyState,
+  cancelManateeSurvey,
   canUpgradeManateeBuilding,
   collectManateeFind,
   constructManateeBuilding,
@@ -234,6 +235,45 @@ test('different surveys run together without exceeding shared hamster or diving 
       marshGame,
       MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
     ),
+    null,
+  )
+})
+
+test('cancelling a survey returns its hamsters without affecting other surveys', () => {
+  const initialGame = {
+    ...createInitialGame(),
+    hamsters: 100,
+    manatees: {
+      ...createInitialGame().manatees,
+      completedBuildings: [MANATEE_BUILDING_IDS.DIVING_CABIN],
+    },
+  }
+  const mangroveGame = startManateeSurvey(
+    initialGame,
+    MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    30,
+  )
+  const concurrentGame = startManateeSurvey(
+    mangroveGame,
+    MANATEE_SURVEY_IDS.SEDIMENT,
+    MANATEE_SURVEY_LENGTH_IDS.STANDARD,
+    20,
+  )
+  const cancelledGame = cancelManateeSurvey(
+    concurrentGame,
+    MANATEE_SURVEY_IDS.MANGROVE_ROOTS,
+  )
+
+  assert.deepEqual(
+    cancelledGame.manatees.activeSurveys.map((survey) => survey.id),
+    [MANATEE_SURVEY_IDS.SEDIMENT],
+  )
+  assert.equal(getManateeRemainingHamsterCount(cancelledGame), 80)
+  assert.equal(getManateeRemainingDivingHamsterCapacity(cancelledGame), 30)
+  assert.deepEqual(cancelledGame.manatees.pendingFinds, [])
+  assert.equal(
+    cancelManateeSurvey(cancelledGame, MANATEE_SURVEY_IDS.MANGROVE_ROOTS),
     null,
   )
 })

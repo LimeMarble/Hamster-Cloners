@@ -29,6 +29,7 @@ function MarshSurvey({
   coordination,
   surveyTimeEffect,
   onStartSurvey,
+  onCancelSurvey,
   onCollectFind,
 }) {
   const survey = MANATEE_SURVEYS[MANATEE_SURVEY_IDS.SEARCH_MARSH]
@@ -89,6 +90,8 @@ function MarshSurvey({
           allocatedHamsters={surveyingHamsters}
           progress={progress}
           remainingSeconds={remainingSeconds}
+          surveyName={survey.name}
+          onCancel={() => onCancelSurvey(survey.id)}
         />
       ) : (
         <div className="manatee-survey-start">
@@ -234,6 +237,7 @@ export function MarshZone({
   coordination,
   surveyTimeEffect,
   onStartSurvey,
+  onCancelSurvey,
   onCollectFind,
   onConstructBuilding,
   onUpgradeBuilding,
@@ -255,6 +259,7 @@ export function MarshZone({
             coordination={coordination}
             surveyTimeEffect={surveyTimeEffect}
             onStartSurvey={onStartSurvey}
+            onCancelSurvey={onCancelSurvey}
             onCollectFind={onCollectFind}
           />
         </section>

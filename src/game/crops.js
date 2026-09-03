@@ -132,7 +132,7 @@ export const CROP_DEFINITIONS = {
     doesNotHarvest: true,
     transfersAdjacencies: true,
     canBeMirrorCornTarget: false,
-    temporarilyUnavailable: true,
+    isRewardCrop: true,
     effectDescription:
       'Transfers crop adjacencies at ×0.8 strength per tunnel tile; carries all effects except Mirror Corn.',
     unlockDescription: 'Reward for Capybara Demonstration 2',
@@ -702,7 +702,9 @@ export function getVisibleCropIds(
 ) {
   const visibleCropIds = ['leek']
   const progressionCropIds = CROP_IDS.filter(
-    (cropId) => CROP_DEFINITIONS[cropId]?.isManateeCrop !== true,
+    (cropId) =>
+      CROP_DEFINITIONS[cropId]?.isManateeCrop !== true &&
+      CROP_DEFINITIONS[cropId]?.isRewardCrop !== true,
   )
 
   for (let index = 1; index < progressionCropIds.length; index += 1) {
@@ -733,6 +735,14 @@ export function getVisibleCropIds(
 
     visibleCropIds.push(cropId)
   }
+
+  CROP_IDS.filter(
+    (cropId) => CROP_DEFINITIONS[cropId]?.isRewardCrop === true,
+  ).forEach((cropId) => {
+    if (unlockedCropIds.includes(cropId)) {
+      visibleCropIds.push(cropId)
+    }
+  })
 
   CROP_IDS.filter(
     (cropId) => CROP_DEFINITIONS[cropId]?.isManateeCrop === true,

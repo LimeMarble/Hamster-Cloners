@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import {
+  cancelManateeSurvey,
   claimRabbitContract,
   collectManateeFind,
+  completeManateeDevelopmentGoal,
   constructManateeBuilding,
   completeCapybaraDemonstration,
   createInitialGame,
@@ -301,6 +303,12 @@ export function useGameActions({
     )
   }
 
+  function cancelMarshSurvey(surveyId) {
+    updateGame((currentGame) =>
+      cancelManateeSurvey(currentGame, surveyId) ?? currentGame,
+    )
+  }
+
   function buildManateeBuilding(buildingId) {
     updateGame((currentGame) =>
       constructManateeBuilding(currentGame, buildingId) ?? currentGame,
@@ -310,6 +318,12 @@ export function useGameActions({
   function improveManateeBuilding(buildingId) {
     updateGame((currentGame) =>
       upgradeManateeBuilding(currentGame, buildingId) ?? currentGame,
+    )
+  }
+
+  function completeManateeGoal(goalId) {
+    updateGame((currentGame) =>
+      completeManateeDevelopmentGoal(currentGame, goalId) ?? currentGame,
     )
   }
 
@@ -376,9 +390,11 @@ export function useGameActions({
       onUnlockBlazingCarrot: () => unlockPerfection('blazingCarrot'),
       onCompleteCapybaraDemonstration: completeCapybaraDemo,
       onStartManateeSurvey: startMarshSurvey,
+      onCancelManateeSurvey: cancelMarshSurvey,
       onCollectManateeFind: collectMarshFind,
       onConstructManateeBuilding: buildManateeBuilding,
       onUpgradeManateeBuilding: improveManateeBuilding,
+      onCompleteManateeDevelopmentGoal: completeManateeGoal,
     },
     augmentationActions: {
       onPurchaseSeedAugmentation: buySeedAugmentation,
