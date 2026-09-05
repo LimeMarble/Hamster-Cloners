@@ -39,6 +39,30 @@ test('exports and imports a blueprint with persistent Mirror Corn tile links', (
   )
 })
 
+test('exports, imports, and resizes configured Root Tunnel connections', () => {
+  const blueprint = createBlueprint({
+    rows: 3,
+    columns: 4,
+    cells: [
+      'turnip', null, null, null,
+      null, 'rootTunnel', null, null,
+      null, null, 'leek', null,
+    ],
+    rootTunnelConnections: [
+      { tunnelIndex: 5, senderIndex: 0, recipientIndex: 10 },
+    ],
+  })
+  const importedBlueprint = importBlueprint(exportBlueprint(blueprint), {
+    rows: 3,
+    columns: 3,
+    unlockedCropIds: ['leek', 'turnip', 'rootTunnel'],
+  })
+
+  assert.deepEqual(importedBlueprint.rootTunnelConnections, [
+    { tunnelIndex: 4, senderIndex: 0, recipientIndex: 8 },
+  ])
+})
+
 test('imports legacy Musk Grass blueprint tiles as Shoal Grass', () => {
   const blueprintCode = encodePayload({
     rows: 3,

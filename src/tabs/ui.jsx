@@ -102,18 +102,22 @@ export function MirrorCornConnectionLines({ blueprint, links, pending = false })
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      {links.map(({ sourceIndex, targetIndex }) => {
+      {links.map(({ sourceIndex, targetIndex, tunnelIndex }) => {
         const source = getCellCenter(sourceIndex)
         const target = getCellCenter(targetIndex)
+        const tunnel = Number.isInteger(tunnelIndex)
+          ? getCellCenter(tunnelIndex)
+          : null
 
         return (
-          <line
+          <polyline
             className={pending ? 'mirror-corn-line-pending' : 'mirror-corn-line'}
             key={`${sourceIndex}-${targetIndex}`}
-            x1={source.x}
-            y1={source.y}
-            x2={target.x}
-            y2={target.y}
+            points={
+              tunnel
+                ? `${source.x},${source.y} ${tunnel.x},${tunnel.y} ${target.x},${target.y}`
+                : `${source.x},${source.y} ${target.x},${target.y}`
+            }
           />
         )
       })}

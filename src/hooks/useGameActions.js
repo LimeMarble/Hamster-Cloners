@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   cancelManateeSurvey,
   claimRabbitContract,
+  clearWetlandsConnectionObstructions,
   collectManateeFind,
   completeManateeDevelopmentGoal,
   constructManateeBuilding,
@@ -21,6 +22,7 @@ import {
   purchaseRabbitUnlock,
   purchaseSeedAugmentation,
   toggleSeedAugmentation,
+  toggleWetlandsConnectionObstruction,
   UNIONIZATION_HAMSTER_COUNT,
   unlockCropPerfection,
   upgradeManateeBuilding,
@@ -327,6 +329,18 @@ export function useGameActions({
     )
   }
 
+  function toggleWetlandsObstruction(tileId) {
+    updateGame((currentGame) =>
+      toggleWetlandsConnectionObstruction(currentGame, tileId) ?? currentGame,
+    )
+  }
+
+  function clearWetlandsObstructions() {
+    updateGame((currentGame) =>
+      clearWetlandsConnectionObstructions(currentGame) ?? currentGame,
+    )
+  }
+
   function buySeedAugmentation(augmentationId) {
     updateGame((currentGame) =>
       purchaseSeedAugmentation(currentGame, augmentationId) ?? currentGame,
@@ -395,6 +409,8 @@ export function useGameActions({
       onConstructManateeBuilding: buildManateeBuilding,
       onUpgradeManateeBuilding: improveManateeBuilding,
       onCompleteManateeDevelopmentGoal: completeManateeGoal,
+      onToggleWetlandsObstruction: toggleWetlandsObstruction,
+      onClearWetlandsObstructions: clearWetlandsObstructions,
     },
     augmentationActions: {
       onPurchaseSeedAugmentation: buySeedAugmentation,

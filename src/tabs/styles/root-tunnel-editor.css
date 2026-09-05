@@ -1,0 +1,148 @@
+.root-tunnel-editor {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 16px;
+  border: 1px solid #3f9f83;
+  border-radius: 8px;
+  background: #102b27;
+}
+
+.root-tunnel-editor-heading,
+.root-tunnel-editor-actions,
+.root-tunnel-connection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.root-tunnel-editor h3,
+.root-tunnel-editor p {
+  margin: 0;
+}
+
+.root-tunnel-capacity {
+  display: grid;
+  justify-items: end;
+  color: #c6f7e8;
+}
+
+.root-tunnel-capacity strong {
+  font-size: 1.25rem;
+}
+
+.root-tunnel-capacity small {
+  color: #f8df67;
+}
+
+.root-tunnel-connection-list {
+  display: grid;
+  gap: 8px;
+}
+
+.root-tunnel-connection {
+  padding: 8px 10px;
+  border: 1px solid rgba(117, 213, 183, 0.28);
+  border-radius: 6px;
+  background: rgba(6, 20, 17, 0.55);
+}
+
+.root-tunnel-connection > span {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.root-tunnel-connection small {
+  color: #f8df67;
+}
+
+.root-tunnel-crop-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.root-tunnel-editor-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.root-tunnel-editor-actions button,
+.root-tunnel-connection button {
+  width: auto;
+}
+
+.root-tunnel-remove-button {
+  padding: 10px 14px;
+  border: 1px solid #a65353;
+  border-radius: 5px;
+  color: #ffd1d1;
+  background: #3a1d1d;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.root-tunnel-remove-button:hover {
+  border-color: #e27b7b;
+  background: #522424;
+}
+
+.root-tunnel-lines {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.root-tunnel-line {
+  fill: none;
+  stroke: #5de0bd;
+  stroke-width: 5;
+  opacity: 0.68;
+  vector-effect: non-scaling-stroke;
+}
+
+.root-tunnel-lines marker path {
+  fill: #5de0bd;
+}
+
+.editor-plot-root-selected {
+  border-color: #5de0bd !important;
+  box-shadow: inset 0 0 0 2px rgba(93, 224, 189, 0.75);
+}
+
+.editor-plot-root-sender-option,
+.editor-plot-root-recipient-option,
+.editor-plot-root-sender-selected {
+  position: relative;
+  border-color: #65d9bb !important;
+  box-shadow: inset 0 0 0 2px rgba(101, 217, 187, 0.65);
+}
+
+.editor-plot-root-recipient-option {
+  border-color: #9cf07f !important;
+  box-shadow: inset 0 0 0 2px rgba(156, 240, 127, 0.7);
+}
+
+.editor-plot-root-sender-selected {
+  border-color: #f8df67 !important;
+  box-shadow: inset 0 0 0 3px rgba(248, 223, 103, 0.75);
+}
+
+@media (max-width: 640px) {
+  .root-tunnel-editor-heading,
+  .root-tunnel-connection {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .root-tunnel-capacity {
+    justify-items: start;
+  }
+}

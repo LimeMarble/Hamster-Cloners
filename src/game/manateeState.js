@@ -1,6 +1,7 @@
 import {
   MANATEE_BUILDINGS,
   MANATEE_DEVELOPMENT_GOALS,
+  MANATEE_PRIMITIVE_OBSTRUCTION,
   MANATEE_RESOURCES,
   MANATEE_RESOURCE_IDS,
   MANATEE_SURVEYS,
@@ -8,6 +9,7 @@ import {
   getManateeSurveyLength,
   getManateeSurveyRequiredWork,
 } from './manateeConfig.js'
+import { normalizeWetlandsObstructions } from './wetlandsConnection.js'
 
 const FIND_REWARD_BY_KIND = new Map(
   Object.values(MANATEE_SURVEYS).flatMap((survey) =>
@@ -51,6 +53,10 @@ export function createInitialManateeState() {
     developmentGoalProgress: Object.fromEntries(
       Object.keys(MANATEE_DEVELOPMENT_GOALS).map((goalId) => [goalId, 0]),
     ),
+    wetlandsConnection: {
+      obstructions: [],
+      activeConstructions: [],
+    },
     nextFindId: 1,
   }
 }
@@ -230,6 +236,39 @@ export function normalizeManateeState(rawState) {
       ]
     }),
   )
+  const obstructions = normalizeWetlandsObstructions(
+    rawState.wetlandsConnection?.obstructions,
+  )
+  const obstructionSet = new Set(obstructions)
+  const seenConstructionTiles = new Set()
+  const activeConstructions = Array.isArray(
+    rawState.wetlandsConnection?.activeConstructions,
+  )
+    ? rawState.wetlandsConnection.activeConstructions
+        .map((construction) => {
+          const tileId = construction?.tileId
+          const remainingSeconds = Math.min(
+            MANATEE_PRIMITIVE_OBSTRUCTION.constructionSeconds,
+            toNonNegativeNumber(
+              construction?.remainingSeconds,
+              MANATEE_PRIMITIVE_OBSTRUCTION.constructionSeconds,
+            ),
+          )
+
+          if (
+            !normalizeWetlandsObstructions([tileId]).includes(tileId) ||
+            obstructionSet.has(tileId) ||
+            seenConstructionTiles.has(tileId) ||
+            remainingSeconds <= 0
+          ) {
+            return null
+          }
+
+          seenConstructionTiles.add(tileId)
+          return { tileId, remainingSeconds }
+        })
+        .filter(Boolean)
+    : []
 
   return {
     resources: Object.fromEntries(
@@ -252,6 +291,10 @@ export function normalizeManateeState(rawState) {
     buildingStages,
     completedDevelopmentGoals,
     developmentGoalProgress,
+    wetlandsConnection: {
+      obstructions,
+      activeConstructions,
+    },
     nextFindId: Math.max(
       pendingFinds.length + 1,
       toNonNegativeInteger(rawState.nextFindId, initialState.nextFindId),
@@ -317,9 +360,44 @@ function getAllocatedHamsterCount(state, predicate = () => true) {
   )
 }
 
+function getWetlandsConnectionHamsterCount(state) {
+  const obstructionCount = state.wetlandsConnection.obstructions.length
+  const constructionCount =
+    state.wetlandsConnection.activeConstructions.length
+
+  return (
+    (obstructionCount + constructionCount) *
+    MANATEE_PRIMITIVE_OBSTRUCTION.hamsterCrew
+  )
+}
+
+export function getWetlandsConnectionMaintenanceHamsterCount(game) {
+  const state = normalizeManateeState(game?.manatees)
+  return (
+    state.wetlandsConnection.obstructions.length *
+    MANATEE_PRIMITIVE_OBSTRUCTION.hamsterCrew
+  )
+}
+
+export function getWetlandsConnectionConstructionHamsterCount(game) {
+  const state = normalizeManateeState(game?.manatees)
+  return (
+    state.wetlandsConnection.activeConstructions.length *
+    MANATEE_PRIMITIVE_OBSTRUCTION.hamsterCrew
+  )
+}
+
 export function getManateeSurveyingHamsterCount(game) {
   const state = normalizeManateeState(game?.manatees)
   return Math.min(getOwnedHamsterCount(game), getAllocatedHamsterCount(state))
+}
+
+export function getManateeAssignedHamsterCount(game) {
+  const state = normalizeManateeState(game?.manatees)
+  return Math.min(
+    getOwnedHamsterCount(game),
+    getAllocatedHamsterCount(state) + getWetlandsConnectionHamsterCount(state),
+  )
 }
 
 export function getManateeSurveyAllocatedHamsterCount(game, surveyId) {
@@ -343,7 +421,9 @@ export function getManateeRemainingHamsterCount(game) {
   const state = normalizeManateeState(game?.manatees)
   return Math.max(
     0,
-    getOwnedHamsterCount(game) - getAllocatedHamsterCount(state),
+    getOwnedHamsterCount(game) -
+      getAllocatedHamsterCount(state) -
+      getWetlandsConnectionHamsterCount(state),
   )
 }
 
@@ -373,7 +453,9 @@ export function getManateeRemainingDivingHamsterCapacity(game) {
   const allocatedDivingHamsters = getAllocatedHamsterCount(
     state,
     (survey) => MANATEE_SURVEYS[survey.id]?.isUnderwater,
-  )
+  ) +
+    state.wetlandsConnection.activeConstructions.length *
+      MANATEE_PRIMITIVE_OBSTRUCTION.hamsterCrew
 
   return Math.max(
     0,

@@ -3,6 +3,8 @@ import { useMemo } from 'react'
 import {
   canPlaceMangroveSapling,
   canPlaceShoalGrass,
+  clearBlueprint,
+  createBlueprint,
   getBlueprintSlots,
   getDiagonalTileIndexes,
   getLeechingGourdFootprint,
@@ -12,6 +14,7 @@ import {
 } from '../game/gameLogic.js'
 import { getCropPlacementName } from '../game/crops.js'
 import { useBlueprintTransfer } from './useBlueprintTransfer.js'
+import { useRootTunnelEditor } from './useRootTunnelEditor.js'
 
 export function useBlueprintEditor({
   game,
@@ -63,13 +66,17 @@ export function useBlueprintEditor({
 
   function commitBlueprint(nextBlueprint) {
     const currentGame = gameRef.current
+    const normalizedNextBlueprint = createBlueprint({
+      ...nextBlueprint,
+      requireSplitweedFootprints: hasSplitweed,
+    })
     const currentBlueprintSlots = getBlueprintSlots(currentGame)
     const activeBlueprintSlot = Math.min(
       Math.max(0, Math.floor(Number(currentGame.activeBlueprintSlot) || 0)),
       currentBlueprintSlots.length - 1,
     )
     const hasReachedLimit = hasReachedMonocropLimit(
-      nextBlueprint,
+      normalizedNextBlueprint,
       currentGame.completedCropPerfections,
       currentGame.seedAugmentations,
     )
@@ -84,9 +91,9 @@ export function useBlueprintEditor({
 
     updateGame(() => ({
       ...currentGame,
-      blueprint: nextBlueprint,
+      blueprint: normalizedNextBlueprint,
       blueprintSlots: currentBlueprintSlots.map((blueprint, slotIndex) =>
-        slotIndex === activeBlueprintSlot ? nextBlueprint : blueprint,
+        slotIndex === activeBlueprintSlot ? normalizedNextBlueprint : blueprint,
       ),
       activeBlueprintSlot,
       hasSeenMonocropLimit:
@@ -112,6 +119,7 @@ export function useBlueprintEditor({
 
     setPendingMirrorCornPlacement(null)
     setHoveredEditorCrop(null)
+    rootTunnelEditor.resetRootTunnelEditor()
     updateGame(() => ({
       ...currentGame,
       blueprint: currentBlueprintSlots[slotIndex],
@@ -171,6 +179,12 @@ export function useBlueprintEditor({
 
     commitBlueprint(nextBlueprint)
   }
+
+  const rootTunnelEditor = useRootTunnelEditor({
+    blueprint: game.blueprint,
+    gameRef,
+    commitBlueprint,
+  })
 
   function removeLeechingGourd() {
     const currentGame = gameRef.current
@@ -298,6 +312,10 @@ export function useBlueprintEditor({
       return
     }
 
+    if (rootTunnelEditor.handlePlotClick(index, crop)) {
+      return
+    }
+
     if (crop === 'leechingGourd' || crop === 'leechingGourdPart') {
       removeLeechingGourd()
       return
@@ -343,11 +361,40 @@ export function useBlueprintEditor({
     seedAugmentations: game.seedAugmentations,
   })
 
+  function clearCurrentBlueprint() {
+    const currentGame = gameRef.current
+
+    if (!currentGame.blueprint.cells.some(Boolean)) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Clear every crop from Blueprint ${currentGame.activeBlueprintSlot + 1}? This cannot be undone.`,
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setPendingMirrorCornPlacement(null)
+    setHoveredEditorCrop(null)
+    rootTunnelEditor.resetRootTunnelEditor()
+    blueprintTransfer.resetBlueprintTransfer()
+    commitBlueprint(clearBlueprint(currentGame.blueprint))
+  }
+
   function handleEditorPlotContextMenu(index, crop, event) {
     event.preventDefault()
     setPendingMirrorCornPlacement(null)
     setHoveredEditorCrop(null)
     blueprintTransfer.resetBlueprintTransfer()
+
+    if (crop === 'rootTunnel') {
+      rootTunnelEditor.handlePlotClick(index, crop)
+      return
+    }
+
+    rootTunnelEditor.resetRootTunnelEditor()
 
     if (!crop) {
       return
@@ -370,6 +417,7 @@ export function useBlueprintEditor({
     setBlueprintEditing(false)
     setPendingMirrorCornPlacement(null)
     setHoveredEditorCrop(null)
+    rootTunnelEditor.resetRootTunnelEditor()
   }
 
   function resetBlueprintEditor() {
@@ -387,7 +435,15 @@ export function useBlueprintEditor({
             (targetIndex, sourceIndex) =>
               targetIndex !== null &&
               game.blueprint.cells[sourceIndex] === 'corn'
-                ? [{ sourceIndex, targetIndex }]
+                ? [{
+                    sourceIndex,
+                    targetIndex,
+                    tunnelIndex: game.blueprint.rootTunnelConnections?.find(
+                      (connection) =>
+                        connection.senderIndex === sourceIndex &&
+                        connection.recipientIndex === targetIndex,
+                    )?.tunnelIndex,
+                  }]
                 : [],
           )
         : [],
@@ -418,6 +474,7 @@ export function useBlueprintEditor({
           onSelectCrop: (cropId) => {
             setSelectedCrop(cropId)
             setPendingMirrorCornPlacement(null)
+            rootTunnelEditor.resetRootTunnelEditor()
           },
           pendingMirrorCornPlacement,
           hoveredEditorCrop,
@@ -431,9 +488,11 @@ export function useBlueprintEditor({
           mirrorCornLinks,
           pendingMirrorCornLinks,
           hasMirrorCorn,
+          rootTunnelEditor,
           getDisplayedCropName,
           onClose: closeBlueprintEditor,
           onResume: closeBlueprintEditor,
+          onClearBlueprint: clearCurrentBlueprint,
           onEditorPlotClick: handleEditorPlotClick,
           onEditorPlotContextMenu: handleEditorPlotContextMenu,
           blueprintTransfer: {
@@ -444,6 +503,7 @@ export function useBlueprintEditor({
               if (imported) {
                 setPendingMirrorCornPlacement(null)
                 setHoveredEditorCrop(null)
+                rootTunnelEditor.resetRootTunnelEditor()
               }
             },
           },

@@ -8,6 +8,7 @@ import {
   MANATEE_GARDEN_TENDING_DURATION_SECONDS,
   MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
   MANATEE_MANGROVE_TENDING_HAMSTER_COUNT,
+  MANATEE_PRIMITIVE_OBSTRUCTION,
   MANATEE_RESOURCE_IDS,
   MANATEE_RESOURCES,
   MANATEE_SURVEY_IDS,
@@ -25,6 +26,7 @@ import {
 } from './manateeConfig.js'
 import {
   createInitialManateeState,
+  getManateeAssignedHamsterCount,
   getCompletedManateeDevelopmentGoalCount,
   getManateeBuildingStage,
   getManateeDevelopmentGoalProgress,
@@ -34,6 +36,8 @@ import {
   getManateeSurveyAllocatedHamsterCount,
   getManateeSurveyingHamsterCount,
   getUnlockedManateeCropIds,
+  getWetlandsConnectionConstructionHamsterCount,
+  getWetlandsConnectionMaintenanceHamsterCount,
   hasCompletedManateeDevelopmentGoal,
   normalizeManateeState,
 } from './manateeState.js'
@@ -48,6 +52,7 @@ export {
   MANATEE_GARDEN_TENDING_DURATION_SECONDS,
   MANATEE_GARDEN_TENDING_HAMSTER_COUNT,
   MANATEE_MANGROVE_TENDING_HAMSTER_COUNT,
+  MANATEE_PRIMITIVE_OBSTRUCTION,
   MANATEE_RESOURCE_IDS,
   MANATEE_RESOURCES,
   MANATEE_SURVEY_IDS,
@@ -66,6 +71,7 @@ export {
 
 export {
   createInitialManateeState,
+  getManateeAssignedHamsterCount,
   getCompletedManateeDevelopmentGoalCount,
   getManateeBuildingStage,
   getManateeDevelopmentGoalProgress,
@@ -75,6 +81,8 @@ export {
   getManateeSurveyAllocatedHamsterCount,
   getManateeSurveyingHamsterCount,
   getUnlockedManateeCropIds,
+  getWetlandsConnectionConstructionHamsterCount,
+  getWetlandsConnectionMaintenanceHamsterCount,
   hasCompletedManateeDevelopmentGoal,
   normalizeManateeState,
 }

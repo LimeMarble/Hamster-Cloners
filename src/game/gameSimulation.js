@@ -32,8 +32,9 @@ import {
 } from './cropEffects.js'
 import {
   advanceManateeSurveyState,
-  getManateeSurveyingHamsterCount,
+  getManateeAssignedHamsterCount,
 } from './manateeLogic.js'
+import { advanceWetlandsConnectionState } from './wetlandsConnectionState.js'
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
   SIMULATION_TICK_INTERVAL_MS / 1000
@@ -155,10 +156,11 @@ export function advanceGameSimulationStep(
     currentGame.hamsters,
     currentGame.postUnionHamstersHired,
   )
-  const surveyingHamsters = getManateeSurveyingHamsterCount(currentGame)
+  const assignedManateeHamsters =
+    getManateeAssignedHamsterCount(currentGame)
   const productiveHamsters = Math.max(
     0,
-    Math.floor(Number(currentGame.hamsters) || 0) - surveyingHamsters,
+    Math.floor(Number(currentGame.hamsters) || 0) - assignedManateeHamsters,
   )
   const columnsProducedForTick = getColumnsProducedForTick(
     productiveHamsters,
@@ -241,13 +243,16 @@ export function advanceGameSimulationStep(
     hasUnlockedCropPerfection:
       currentGame.hasUnlockedCropPerfection ||
       nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
-    manatees: advanceManateeSurveyState(
-      currentGame.manatees,
+    manatees: advanceWetlandsConnectionState(
+      advanceManateeSurveyState(
+        currentGame.manatees,
+        safeElapsedSeconds,
+        hamsterCoordinationMultiplier,
+        random,
+        manateeSurveyDurationMultiplier,
+        manateeFindValueMultiplier,
+      ),
       safeElapsedSeconds,
-      hamsterCoordinationMultiplier,
-      random,
-      manateeSurveyDurationMultiplier,
-      manateeFindValueMultiplier,
     ),
     trade: advanceRabbitContract(
       currentGame,

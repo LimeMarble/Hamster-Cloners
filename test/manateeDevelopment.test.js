@@ -237,7 +237,7 @@ test('collecting the final waste object completes the cleanup Development Goal',
   )
 })
 
-test('Demonstration 2 requires three goals while only two are currently defined', () => {
+test('Demonstration 2 reaches its target after all three Development Goals', () => {
   const game = createDivingHubGame()
   const status = getCapybaraDemonstrationStatus(
     {
@@ -253,9 +253,9 @@ test('Demonstration 2 requires three goals while only two are currently defined'
   )
 
   assert.equal(MANATEE_DEVELOPMENT_GOAL_TARGET, 3)
-  assert.equal(status.current, 2)
+  assert.equal(status.current, 3)
   assert.equal(status.target, 3)
-  assert.equal(status.canComplete, false)
+  assert.equal(status.hasReachedGoal, true)
 })
 
 test('Root Tunnel stays hidden until its Demonstration reward without blocking other Crops', () => {
@@ -337,5 +337,32 @@ test('Manatee Development Goal progress and waste finds survive save normalizati
   assert.equal(
     normalized.manatees.pendingFinds[0].developmentGoalId,
     cleanupGoalId,
+  )
+})
+
+test('Wetlands obstructions survive save normalization and discard illegal tiles', () => {
+  const normalized = normalizeGame({
+    ...createDivingHubGame(),
+    manatees: {
+      ...createDivingHubGame().manatees,
+      wetlandsConnection: {
+        obstructions: ['C2', 'B5', 'B5', 'D10', 'H1'],
+        activeConstructions: [
+          { tileId: 'B5', remainingSeconds: 4 },
+          { tileId: 'C6', remainingSeconds: 4 },
+          { tileId: 'C6', remainingSeconds: 7 },
+          { tileId: 'C2', remainingSeconds: 4 },
+        ],
+      },
+    },
+  })
+
+  assert.deepEqual(normalized.manatees.wetlandsConnection.obstructions, [
+    'B5',
+    'D10',
+  ])
+  assert.deepEqual(
+    normalized.manatees.wetlandsConnection.activeConstructions,
+    [{ tileId: 'C6', remainingSeconds: 4 }],
   )
 })

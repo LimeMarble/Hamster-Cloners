@@ -2,6 +2,7 @@ import { createBlueprint } from './blueprintLogic.js'
 import { isKnownCrop, normalizeCropId } from './crops.js'
 import { getShoalGrassPlacementLimit } from './cropEffects.js'
 import { MANGROVE_SAPLING_PLACEMENT_LIMIT } from './mangroveSaplingLogic.js'
+import { remapRootTunnelConnections } from './rootTunnelLogic.js'
 
 export const BLUEPRINT_FORMAT_VERSION = 1
 const BLUEPRINT_FORMAT_TYPE = 'hamster-cloners-blueprint'
@@ -73,6 +74,15 @@ function resizeBlueprintFromTopLeft(
   const mirrorCornTargets = Array(targetRows * targetColumns).fill(null)
   const retainedRows = Math.min(blueprint.rows, targetRows)
   const retainedColumns = Math.min(blueprint.columns, targetColumns)
+  const remapIndex = (sourceIndex) => {
+    if (!Number.isInteger(sourceIndex)) return null
+
+    const row = Math.floor(sourceIndex / blueprint.columns)
+    const column = sourceIndex % blueprint.columns
+    return row < retainedRows && column < retainedColumns
+      ? row * targetColumns + column
+      : null
+  }
 
   for (let row = 0; row < retainedRows; row += 1) {
     for (let column = 0; column < retainedColumns; column += 1) {
@@ -98,11 +108,17 @@ function resizeBlueprintFromTopLeft(
     }
   }
 
+  const rootTunnelConnections = remapRootTunnelConnections(
+    blueprint.rootTunnelConnections,
+    remapIndex,
+  )
+
   return {
     rows: targetRows,
     columns: targetColumns,
     cells,
     mirrorCornTargets,
+    ...(rootTunnelConnections.length > 0 ? { rootTunnelConnections } : {}),
   }
 }
 
@@ -148,7 +164,9 @@ export function importBlueprint(
     !Array.isArray(rawBlueprint.cells) ||
     rawBlueprint.cells.length !== sourceCellCount ||
     !Array.isArray(rawBlueprint.mirrorCornTargets) ||
-    rawBlueprint.mirrorCornTargets.length !== sourceCellCount
+    rawBlueprint.mirrorCornTargets.length !== sourceCellCount ||
+    (rawBlueprint.rootTunnelConnections !== undefined &&
+      !Array.isArray(rawBlueprint.rootTunnelConnections))
   ) {
     throw new Error('The blueprint has an invalid number of tiles.')
   }
@@ -163,7 +181,9 @@ export function importBlueprint(
     JSON.stringify(normalizedSourceBlueprint.cells) !==
       JSON.stringify(normalizedRawCells) ||
     JSON.stringify(normalizedSourceBlueprint.mirrorCornTargets) !==
-      JSON.stringify(rawBlueprint.mirrorCornTargets)
+      JSON.stringify(rawBlueprint.mirrorCornTargets) ||
+    JSON.stringify(normalizedSourceBlueprint.rootTunnelConnections ?? []) !==
+      JSON.stringify(rawBlueprint.rootTunnelConnections ?? [])
   ) {
     throw new Error('The blueprint contains an invalid crop layout or tile link.')
   }

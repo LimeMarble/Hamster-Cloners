@@ -11,6 +11,7 @@ import {
 } from '../game/gameLogic.js'
 import { AllocatedManateeSurvey } from './UnderwaterMarsh.jsx'
 import { FormattedNumber } from './ui.jsx'
+import { WetlandsConnectionPuzzle } from './WetlandsConnectionPuzzle.jsx'
 
 function DevelopmentProgress({ label, current, target }) {
   const progress = target > 0 ? Math.min(1, current / target) : 0
@@ -152,6 +153,40 @@ function WasteCleanupGoal({
   )
 }
 
+function EstuaryView({
+  game,
+  state,
+  onToggleWetlandsObstruction,
+  onClearWetlandsObstructions,
+}) {
+  return (
+    <section className="estuary-view" aria-labelledby="estuary-view-title">
+      <div className="section-heading manatee-zone-heading">
+        <div>
+          <p className="eyebrow">Environmental management</p>
+          <h3 id="estuary-view-title">Estuary View</h3>
+        </div>
+      </div>
+      <nav className="estuary-view-sections" aria-label="Estuary sections">
+        <button
+          type="button"
+          className="estuary-view-section estuary-view-section-active"
+          aria-pressed="true"
+        >
+          <strong>Wetlands Connection</strong>
+          <span>Contains one Development Goal</span>
+        </button>
+      </nav>
+      <WetlandsConnectionPuzzle
+        game={game}
+        state={state}
+        onToggleObstruction={onToggleWetlandsObstruction}
+        onClearObstructions={onClearWetlandsObstructions}
+      />
+    </section>
+  )
+}
+
 export function EstuaryZone({
   game,
   state,
@@ -161,6 +196,8 @@ export function EstuaryZone({
   onCancelSurvey,
   onCollectFind,
   onCompleteDevelopmentGoal,
+  onToggleWetlandsObstruction,
+  onClearWetlandsObstructions,
 }) {
   const completedGoalCount = getCompletedManateeDevelopmentGoalCount(game)
 
@@ -182,9 +219,8 @@ export function EstuaryZone({
         </strong>
       </div>
       <p className="trade-copy">
-        Use the Diving Hub&apos;s flippers to help repair the Estuary. Two of the
-        three Development Goals required by Capybara Demonstration 2 are
-        currently available.
+        Use the Diving Hub&apos;s flippers to help repair the Estuary. Complete all
+        three Development Goals required by Capybara Demonstration 2.
       </p>
       <div className="manatee-development-grid">
         <FeedingGroundsGoal
@@ -202,6 +238,12 @@ export function EstuaryZone({
           onCollectFind={onCollectFind}
         />
       </div>
+      <EstuaryView
+        game={game}
+        state={state}
+        onToggleWetlandsObstruction={onToggleWetlandsObstruction}
+        onClearWetlandsObstructions={onClearWetlandsObstructions}
+      />
     </section>
   )
 }

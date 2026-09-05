@@ -396,6 +396,8 @@ export function Trade({
   onConstructManateeBuilding,
   onUpgradeManateeBuilding,
   onCompleteManateeDevelopmentGoal,
+  onToggleWetlandsObstruction,
+  onClearWetlandsObstructions,
 }) {
   const hasCapybaraContact = hasRabbitUnlock(
     game,
@@ -572,6 +574,8 @@ export function Trade({
               onCompleteManateeDevelopmentGoal={
                 onCompleteManateeDevelopmentGoal
               }
+              onToggleWetlandsObstruction={onToggleWetlandsObstruction}
+              onClearWetlandsObstructions={onClearWetlandsObstructions}
             />
           ) : null}
         </>

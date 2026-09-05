@@ -85,6 +85,7 @@ export function createBlueprintCalculationCache({
       blueprint.columns,
       blueprint.cells,
       blueprint.mirrorCornTargets,
+      blueprint.rootTunnelConnections,
       ...dependencies,
     ]
     const cached = cachedByBlueprint.get(blueprint)

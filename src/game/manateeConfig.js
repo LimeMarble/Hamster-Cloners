@@ -137,9 +137,21 @@ export const MANATEE_RESOURCES = Object.freeze({
 export const MANATEE_DEVELOPMENT_GOAL_IDS = Object.freeze({
   RESTORE_FEEDING_GROUNDS: 'restoreFeedingGrounds',
   CLEAN_HUMAN_WASTE: 'cleanHumanWaste',
+  STABILIZE_WETLANDS_CONNECTION: 'stabilizeWetlandsConnection',
 })
 
 export const MANATEE_DEVELOPMENT_GOAL_TARGET = 3
+
+export const MANATEE_PRIMITIVE_OBSTRUCTION = Object.freeze({
+  id: 'O1',
+  name: 'Primitive Obstruction',
+  constructionSeconds: 10,
+  hamsterCrew: 10,
+  cost: Object.freeze({
+    [MANATEE_RESOURCE_IDS.MANGROVE_WOOD]: 5,
+    [MANATEE_RESOURCE_IDS.MANGROVE_ROOTS]: 10,
+  }),
+})
 
 export const MANATEE_DEVELOPMENT_GOALS = Object.freeze({
   [MANATEE_DEVELOPMENT_GOAL_IDS.RESTORE_FEEDING_GROUNDS]: Object.freeze({
@@ -165,6 +177,13 @@ export const MANATEE_DEVELOPMENT_GOALS = Object.freeze({
     target: 125000,
     progressUnit: 'Waste cleared',
     surveyId: MANATEE_SURVEY_IDS.CLEAN_HUMAN_WASTE,
+  }),
+  [MANATEE_DEVELOPMENT_GOAL_IDS.STABILIZE_WETLANDS_CONNECTION]: Object.freeze({
+    id: MANATEE_DEVELOPMENT_GOAL_IDS.STABILIZE_WETLANDS_CONNECTION,
+    name: 'Restore Freshwater Flow',
+    type: 'puzzle',
+    description:
+      'Place primitive obstructions to spread the brackish flow evenly enough that every feeding ground remains safe.',
   }),
 })
 

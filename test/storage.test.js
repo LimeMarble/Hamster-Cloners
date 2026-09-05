@@ -170,10 +170,20 @@ test('current saves retain Root Tunnel after its Demonstration reward unlock', (
       rows: 1,
       columns: 3,
       cells: ['leek', 'rootTunnel', 'corn'],
+      rootTunnelConnections: [
+        { tunnelIndex: 1, senderIndex: 0, recipientIndex: 2 },
+      ],
     },
     blueprintSlots: [
       { rows: 1, columns: 3, cells: ['rootTunnel', 'corn', 'leek'] },
-      { rows: 1, columns: 3, cells: ['leek', 'rootTunnel', 'corn'] },
+      {
+        rows: 1,
+        columns: 3,
+        cells: ['leek', 'rootTunnel', 'corn'],
+        rootTunnelConnections: [
+          { tunnelIndex: 1, senderIndex: 0, recipientIndex: 2 },
+        ],
+      },
       { rows: 1, columns: 3, cells: ['corn', 'leek', 'rootTunnel'] },
     ],
     activeBlueprintSlot: 1,
@@ -192,6 +202,9 @@ test('current saves retain Root Tunnel after its Demonstration reward unlock', (
     'leek',
     'rootTunnel',
     'corn',
+  ])
+  assert.deepEqual(migratedGame.blueprint.rootTunnelConnections, [
+    { tunnelIndex: 1, senderIndex: 0, recipientIndex: 2 },
   ])
 })
 

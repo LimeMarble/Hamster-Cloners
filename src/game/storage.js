@@ -211,6 +211,7 @@ export function normalizeGame(rawGame) {
               columns: blueprint.columns,
               cells: rawSlot.cells,
               mirrorCornTargets: rawSlot.mirrorCornTargets,
+              rootTunnelConnections: rawSlot.rootTunnelConnections,
               requireSplitweedFootprints:
                 completedCropPerfections.includes('splitweed'),
             }),

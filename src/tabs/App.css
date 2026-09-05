@@ -3,12 +3,14 @@
 @import './styles/trade.css';
 @import './styles/manatee-finds.css';
 @import './styles/manatee.css';
+@import './styles/wetlands-connection.css';
 @import './styles/manatee-garden.css';
 @import './styles/blazing-carrot.css';
 @import './styles/field.css';
 @import './styles/controls-and-modals.css';
 @import './styles/background-catch-up.css';
 @import './styles/blueprint-editor.css';
+@import './styles/root-tunnel-editor.css';
 @import './styles/crop-visuals.css';
 @import './styles/responsive.css';
 @import './styles/testing-panel.css';

@@ -288,3 +288,15 @@
 .modal-actions .primary-button {
   width: auto;
 }
+
+.blueprint-clear-button {
+  width: auto;
+  border-color: #8f4b4b;
+  color: #ffd0d0;
+  background: #351b1b;
+}
+
+.blueprint-clear-button:hover:not(:disabled) {
+  border-color: #db7474;
+  background: #512323;
+}

@@ -9,6 +9,9 @@ export * from './gameSimulation.js'
 export * from './capybaraLogic.js'
 export * from './augmentationLogic.js'
 export * from './manateeLogic.js'
+export * from './wetlandsConnection.js'
+export * from './wetlandsConnectionState.js'
+export * from './rootTunnelLogic.js'
 export {
   canPlaceMangroveSapling,
   canPlaceShoalGrass,

@@ -16,6 +16,10 @@ import {
   MonocropStatus,
 } from './ui.jsx'
 import { CropVisual } from './CropVisual.jsx'
+import {
+  RootTunnelConnectionLines,
+  RootTunnelEditorPanel,
+} from './RootTunnelEditor.jsx'
 
 function BlueprintEditContent({
   game,
@@ -36,9 +40,11 @@ function BlueprintEditContent({
   mirrorCornLinks,
   pendingMirrorCornLinks,
   hasMirrorCorn,
+  rootTunnelEditor,
   getDisplayedCropName,
   onClose,
   onResume,
+  onClearBlueprint,
   onEditorPlotClick,
   onEditorPlotContextMenu,
   blueprintTransfer,
@@ -109,7 +115,8 @@ function BlueprintEditContent({
 
         <p className="editing-notice">
           Harvesting is paused while you modify this blueprint. Right-click a
-          planted crop to remove it.
+          planted crop to remove it. Select a Root Tunnel to configure it;
+          tunnels can only be removed from their configuration panel.
         </p>
 
         {pendingMirrorCornPlacement ? (
@@ -126,6 +133,12 @@ function BlueprintEditContent({
           </p>
         ) : null}
 
+        <RootTunnelEditorPanel
+          blueprint={game.blueprint}
+          completedCropPerfections={game.completedCropPerfections}
+          editor={rootTunnelEditor}
+        />
+
         <div className="blueprint-editor-layout">
           <div className="editor-grid-scroll">
             <div
@@ -141,6 +154,7 @@ function BlueprintEditContent({
               links={pendingMirrorCornLinks}
               pending
             />
+            <RootTunnelConnectionLines blueprint={game.blueprint} />
             <div
               className="editor-grid"
               style={{
@@ -157,11 +171,19 @@ function BlueprintEditContent({
                   index,
                   game.completedCropPerfections,
                 )
+                const isSelectedRootTunnel =
+                  rootTunnelEditor.selectedTunnelIndex === index
+                const isSelectedRootSender =
+                  rootTunnelEditor.connectionDraft?.senderIndex === index
+                const isValidRootSender =
+                  rootTunnelEditor.validSenderIndexes.includes(index)
+                const isValidRootRecipient =
+                  rootTunnelEditor.validRecipientIndexes.includes(index)
 
                 return (
                   <button
                     type="button"
-                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${isBurnedBlazingCarrot ? 'editor-plot-blazing-carrot-burned' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''}`}
+                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${isBurnedBlazingCarrot ? 'editor-plot-blazing-carrot-burned' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''} ${isSelectedRootTunnel ? 'editor-plot-root-selected' : ''} ${isSelectedRootSender ? 'editor-plot-root-sender-selected' : ''} ${isValidRootSender ? 'editor-plot-root-sender-option' : ''} ${isValidRootRecipient ? 'editor-plot-root-recipient-option' : ''}`}
                     key={index}
                     onClick={() => onEditorPlotClick(index, crop)}
                     onContextMenu={(event) =>
@@ -185,6 +207,12 @@ function BlueprintEditContent({
                     aria-label={
                       isPendingMirrorCornTarget
                         ? 'Assign this tile as the Mirror Corn target'
+                        : crop === 'rootTunnel'
+                          ? 'Configure this Root Tunnel'
+                        : isValidRootSender
+                          ? `Use ${getCropName(crop, game.completedCropPerfections)} as the Root Tunnel sender`
+                        : isValidRootRecipient
+                          ? `Use ${getCropName(crop, game.completedCropPerfections)} as the Root Tunnel recipient`
                         : crop === 'leechingGourd' || crop === 'leechingGourdPart'
                           ? 'Remove Leeching Gourd from blueprint'
                           : crop === 'splitweedPart' ||
@@ -330,6 +358,14 @@ function BlueprintEditContent({
         ) : null}
 
         <div className="modal-actions">
+          <button
+            type="button"
+            className="secondary-button blueprint-clear-button"
+            onClick={onClearBlueprint}
+            disabled={!game.blueprint.cells.some(Boolean)}
+          >
+            Clear blueprint
+          </button>
           <button type="button" className="primary-button" onClick={onResume}>
             Resume harvest
           </button>
@@ -383,6 +419,16 @@ function areBlueprintEditorPropsEqual(previous, next) {
     previous.mirrorCornLinks === next.mirrorCornLinks &&
     previous.pendingMirrorCornLinks === next.pendingMirrorCornLinks &&
     previous.hasMirrorCorn === next.hasMirrorCorn &&
+    previous.rootTunnelEditor.selectedTunnelIndex ===
+      next.rootTunnelEditor.selectedTunnelIndex &&
+    previous.rootTunnelEditor.connectionDraft ===
+      next.rootTunnelEditor.connectionDraft &&
+    previous.rootTunnelEditor.connectionState ===
+      next.rootTunnelEditor.connectionState &&
+    previous.rootTunnelEditor.validSenderIndexes ===
+      next.rootTunnelEditor.validSenderIndexes &&
+    previous.rootTunnelEditor.validRecipientIndexes ===
+      next.rootTunnelEditor.validRecipientIndexes &&
     previousTransfer.blueprintCode === nextTransfer.blueprintCode &&
     previousTransfer.blueprintTransferStatus ===
       nextTransfer.blueprintTransferStatus

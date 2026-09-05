@@ -45,6 +45,8 @@ export function ManateeRelations({
   onConstructManateeBuilding,
   onUpgradeManateeBuilding,
   onCompleteManateeDevelopmentGoal,
+  onToggleWetlandsObstruction,
+  onClearWetlandsObstructions,
 }) {
   const state = normalizeManateeState(game.manatees)
   const selectedZone = MANATEE_ZONES.some(
@@ -114,6 +116,8 @@ export function ManateeRelations({
           onCancelSurvey={onCancelManateeSurvey}
           onCollectFind={onCollectManateeFind}
           onCompleteDevelopmentGoal={onCompleteManateeDevelopmentGoal}
+          onToggleWetlandsObstruction={onToggleWetlandsObstruction}
+          onClearWetlandsObstructions={onClearWetlandsObstructions}
         />
       ) : selectedZone === MANATEE_ZONE_IDS.UNDERWATER_MARSH ? (
         <UnderwaterMarsh

@@ -134,7 +134,7 @@ export const CROP_DEFINITIONS = {
     canBeMirrorCornTarget: false,
     isRewardCrop: true,
     effectDescription:
-      'Transfers crop adjacencies at ×0.8 strength per tunnel tile; carries all effects except Mirror Corn.',
+      'Connects up to 2 surrounding sender-recipient pairs, including diagonals; Mirror Corn routes do not use a pair.',
     unlockDescription: 'Reward for Capybara Demonstration 2',
   },
   sunflower: {

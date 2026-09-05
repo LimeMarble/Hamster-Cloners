@@ -3,8 +3,9 @@ import {
   isLeechingGourdAnchor,
   isLeechingGourdCell,
 } from './cropFootprintLogic.js'
-import { CROP_DEFINITIONS, isCropEffectModifier } from './crops.js'
+import { CROP_DEFINITIONS } from './crops.js'
 import { ROOT_TUNNEL_ADJACENCY_DECAY } from './gameConfig.js'
+import { getRootTunnelConnections } from './rootTunnelLogic.js'
 
 export function getOrthogonalIndexes(blueprint, index) {
   const { rows, columns } = blueprint
@@ -12,18 +13,10 @@ export function getOrthogonalIndexes(blueprint, index) {
   const column = index % columns
   const neighboringIndexes = []
 
-  if (row > 0) {
-    neighboringIndexes.push(index - columns)
-  }
-  if (row < rows - 1) {
-    neighboringIndexes.push(index + columns)
-  }
-  if (column > 0) {
-    neighboringIndexes.push(index - 1)
-  }
-  if (column < columns - 1) {
-    neighboringIndexes.push(index + 1)
-  }
+  if (row > 0) neighboringIndexes.push(index - columns)
+  if (row < rows - 1) neighboringIndexes.push(index + columns)
+  if (column > 0) neighboringIndexes.push(index - 1)
+  if (column < columns - 1) neighboringIndexes.push(index + 1)
 
   return neighboringIndexes
 }
@@ -38,43 +31,15 @@ export function getRootTunnelAdjacencyStrength(adjacencyDistance = 0) {
     Math.floor(Number(adjacencyDistance) || 0),
   )
 
-  return ROOT_TUNNEL_ADJACENCY_DECAY ** safeDistance
-}
-
-function getRootTunnelDistanceMap(blueprint, startingIndexes) {
-  const { cells } = blueprint
-  const tunnelDistances = new Map()
-  const pendingTunnels = startingIndexes
-    .filter((index) => isRootTunnel(cells[index]))
-    .map((index) => ({ index, adjacencyDistance: 1 }))
-  let pendingIndex = 0
-
-  while (pendingIndex < pendingTunnels.length) {
-    const { index: tunnelIndex, adjacencyDistance } =
-      pendingTunnels[pendingIndex]
-    pendingIndex += 1
-
-    const knownDistance = tunnelDistances.get(tunnelIndex)
-    if (knownDistance !== undefined && knownDistance <= adjacencyDistance) {
-      continue
-    }
-
-    tunnelDistances.set(tunnelIndex, adjacencyDistance)
-    getOrthogonalIndexes(blueprint, tunnelIndex).forEach((neighborIndex) => {
-      if (isRootTunnel(cells[neighborIndex])) {
-        pendingTunnels.push({
-          index: neighborIndex,
-          adjacencyDistance: adjacencyDistance + 1,
-        })
-      }
-    })
-  }
-
-  return tunnelDistances
+  // A single-tile connection is the initial Root Tunnel stage and transfers
+  // at full strength. Attenuation starts if longer routes are unlocked later.
+  return ROOT_TUNNEL_ADJACENCY_DECAY ** Math.max(0, safeDistance - 1)
 }
 
 export function getConnectedRootTunnelIndexes(blueprint, startingIndexes) {
-  return [...getRootTunnelDistanceMap(blueprint, startingIndexes).keys()]
+  return [...new Set(startingIndexes)].filter((index) =>
+    isRootTunnel(blueprint.cells[index]),
+  )
 }
 
 function addNearestConnection(connections, index, adjacencyDistance) {
@@ -88,63 +53,35 @@ function addNearestConnection(connections, index, adjacencyDistance) {
 function getCropConnectionsFromOrigins(
   blueprint,
   originIndexes,
-  {
-    excludedIndexes = new Set(),
-    transferThroughTunnels = true,
-    canTransferCrop = () => true,
-  } = {},
+  excludedIndexes = new Set(),
 ) {
-  const { cells } = blueprint
   const connections = new Map()
-  const startingTunnelIndexes = []
 
   originIndexes.forEach((originIndex) => {
     getOrthogonalIndexes(blueprint, originIndex).forEach((neighborIndex) => {
-      if (excludedIndexes.has(neighborIndex)) {
-        return
-      }
+      const neighborCrop = blueprint.cells[neighborIndex]
 
-      const neighborCrop = cells[neighborIndex]
-      if (isRootTunnel(neighborCrop)) {
-        if (transferThroughTunnels) {
-          startingTunnelIndexes.push(neighborIndex)
-        }
-        return
-      }
-
-      if (neighborCrop && !isLeechingGourdCell(neighborCrop)) {
+      if (
+        !excludedIndexes.has(neighborIndex) &&
+        neighborCrop &&
+        !isRootTunnel(neighborCrop) &&
+        !isLeechingGourdCell(neighborCrop)
+      ) {
         addNearestConnection(connections, neighborIndex, 0)
       }
     })
   })
 
-  if (transferThroughTunnels) {
-    getRootTunnelDistanceMap(blueprint, startingTunnelIndexes).forEach(
-      (adjacencyDistance, tunnelIndex) => {
-        getOrthogonalIndexes(blueprint, tunnelIndex).forEach(
-          (neighborIndex) => {
-            if (excludedIndexes.has(neighborIndex)) {
-              return
-            }
-
-            const neighborCrop = cells[neighborIndex]
-            if (
-              neighborCrop &&
-              !isRootTunnel(neighborCrop) &&
-              !isLeechingGourdCell(neighborCrop) &&
-              canTransferCrop(neighborCrop)
-            ) {
-              addNearestConnection(
-                connections,
-                neighborIndex,
-                adjacencyDistance,
-              )
-            }
-          },
-        )
-      },
-    )
-  }
+  getRootTunnelConnections(blueprint).forEach(
+    ({ senderIndex, recipientIndex }) => {
+      if (
+        originIndexes.includes(recipientIndex) &&
+        !excludedIndexes.has(senderIndex)
+      ) {
+        addNearestConnection(connections, senderIndex, 1)
+      }
+    },
+  )
 
   return [...connections.entries()]
     .map(([index, adjacencyDistance]) => ({ index, adjacencyDistance }))
@@ -154,18 +91,16 @@ function getCropConnectionsFromOrigins(
 export function getLeechingGourdAdjacentCropConnections(blueprint) {
   const anchorIndex = blueprint.cells.findIndex(isLeechingGourdAnchor)
 
-  if (anchorIndex === -1) {
-    return []
-  }
+  if (anchorIndex === -1) return []
 
   const footprint = getLeechingGourdFootprint(blueprint, anchorIndex)
-  if (footprint.length !== 4) {
-    return []
-  }
+  if (footprint.length !== 4) return []
 
-  return getCropConnectionsFromOrigins(blueprint, footprint, {
-    excludedIndexes: new Set(footprint),
-  })
+  return getCropConnectionsFromOrigins(
+    blueprint,
+    footprint,
+    new Set(footprint),
+  )
 }
 
 export function getLeechingGourdAdjacentCropIndexes(blueprint) {
@@ -174,22 +109,16 @@ export function getLeechingGourdAdjacentCropIndexes(blueprint) {
   )
 }
 
-function canParticipateInTunnelAdjacency(crop) {
-  return !isCropEffectModifier(crop) || crop === 'turnip'
-}
-
 export function getAdjacentCropConnections(blueprint, index) {
   const crop = blueprint.cells[index]
-  const transferThroughTunnels =
-    Boolean(crop) &&
-    !isRootTunnel(crop) &&
-    canParticipateInTunnelAdjacency(crop)
 
-  return getCropConnectionsFromOrigins(blueprint, [index], {
-    excludedIndexes: new Set([index]),
-    transferThroughTunnels,
-    canTransferCrop: canParticipateInTunnelAdjacency,
-  })
+  if (!crop || isRootTunnel(crop)) return []
+
+  return getCropConnectionsFromOrigins(
+    blueprint,
+    [index],
+    new Set([index]),
+  )
 }
 
 export function getAdjacentCropIndexes(blueprint, index) {

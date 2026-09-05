@@ -1278,11 +1278,10 @@ export function getAdjacentCropEffectModifier(
       : monocropAdjustedBaseMultiplier / allPassiveEffectMultiplier
   const strength = getRootTunnelAdjacencyStrength(adjacencyDistance)
 
-  // Turnip's entire ×2-style modifier travels through the tunnel, rather
-  // than only its +1 above baseline. At ×0.8 per tile it remains a small buff
-  // at distance 3, then becomes a debuff from distance 4 onward.
+  // Turnip's multiplicative effect is exponentiated for longer routes. The
+  // initial one-tile Root Tunnel connection remains at full strength.
   return crop === 'turnip'
-    ? passiveAdjustedBaseMultiplier * strength
+    ? passiveAdjustedBaseMultiplier ** strength
     : 1 + (passiveAdjustedBaseMultiplier - 1) * strength
 }
 

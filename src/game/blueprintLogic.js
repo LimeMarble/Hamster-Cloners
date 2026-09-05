@@ -21,6 +21,10 @@ import {
   MANATEE_BUILDING_IDS,
 } from './manateeLogic.js'
 import { normalizeMultiTileCropCells } from './cropFootprintLogic.js'
+import {
+  normalizeRootTunnelConnections,
+  remapRootTunnelConnections,
+} from './rootTunnelLogic.js'
 
 function normalizeUniqueCloverCells(cells) {
   let hasClover = false
@@ -39,6 +43,7 @@ export function createBlueprint({
   columns = INITIAL_BLUEPRINT_SIZE.columns,
   cells,
   mirrorCornTargets,
+  rootTunnelConnections,
   requireSplitweedFootprints = false,
 } = {}) {
   const safeRows = Math.max(1, Math.floor(Number(rows) || 1))
@@ -62,21 +67,37 @@ export function createBlueprint({
   const sourceMirrorCornTargets = Array.isArray(mirrorCornTargets)
     ? mirrorCornTargets
     : []
+  const blueprintShape = {
+    rows: safeRows,
+    columns: safeColumns,
+    cells: normalizedCells,
+  }
+  const normalizedRootTunnelConnections = normalizeRootTunnelConnections(
+    blueprintShape,
+    rootTunnelConnections,
+  )
   const normalizedMirrorCornTargets = normalizedCells.map((crop, sourceIndex) => {
     const targetIndex = sourceMirrorCornTargets[sourceIndex]
     const sourceRow = Math.floor(sourceIndex / safeColumns)
     const sourceColumn = sourceIndex % safeColumns
     const targetRow = Math.floor(targetIndex / safeColumns)
     const targetColumn = targetIndex % safeColumns
-    const hasValidTarget =
+    const hasDirectDiagonalTarget =
       crop === 'corn' &&
       Number.isInteger(targetIndex) &&
       targetIndex >= 0 &&
       targetIndex < totalCells &&
       Math.abs(sourceRow - targetRow) === 1 &&
       Math.abs(sourceColumn - targetColumn) === 1
+    const hasRootTunnelTarget =
+      crop === 'corn' &&
+      normalizedRootTunnelConnections.some(
+        (connection) =>
+          connection.senderIndex === sourceIndex &&
+          connection.recipientIndex === targetIndex,
+      )
 
-    return hasValidTarget ? targetIndex : null
+    return hasDirectDiagonalTarget || hasRootTunnelTarget ? targetIndex : null
   })
 
   return {
@@ -84,7 +105,17 @@ export function createBlueprint({
     columns: safeColumns,
     cells: normalizedCells,
     mirrorCornTargets: normalizedMirrorCornTargets,
+    ...(normalizedRootTunnelConnections.length > 0
+      ? { rootTunnelConnections: normalizedRootTunnelConnections }
+      : {}),
   }
+}
+
+export function clearBlueprint(blueprint) {
+  return createBlueprint({
+    rows: blueprint?.rows,
+    columns: blueprint?.columns,
+  })
 }
 
 export function createInitialGame() {
@@ -448,12 +479,17 @@ function addBlueprintColumn(blueprint) {
       remappedMirrorCornTargets[remapIndex(sourceIndex)] = remapIndex(targetIndex)
     }
   })
+  const rootTunnelConnections = remapRootTunnelConnections(
+    blueprint.rootTunnelConnections,
+    remapIndex,
+  )
 
   return {
     ...blueprint,
     columns: blueprint.columns + 1,
     cells: expandedCells,
     mirrorCornTargets: remappedMirrorCornTargets,
+    ...(rootTunnelConnections.length > 0 ? { rootTunnelConnections } : {}),
   }
 }
 
@@ -469,6 +505,7 @@ function removeBlueprintRow(blueprint, requireSplitweedFootprints = false) {
     columns: blueprint.columns,
     cells: blueprint.cells.slice(0, totalCells),
     mirrorCornTargets: blueprint.mirrorCornTargets.slice(0, totalCells),
+    rootTunnelConnections: blueprint.rootTunnelConnections,
     requireSplitweedFootprints,
   })
 }
@@ -481,6 +518,13 @@ function removeBlueprintColumn(blueprint, requireSplitweedFootprints = false) {
   const nextColumnCount = blueprint.columns - 1
   const cells = []
   const mirrorCornTargets = []
+  const remapIndex = (index) => {
+    if (!Number.isInteger(index)) return null
+
+    const row = Math.floor(index / blueprint.columns)
+    const column = index % blueprint.columns
+    return column < nextColumnCount ? row * nextColumnCount + column : null
+  }
 
   blueprint.cells.forEach((crop, sourceIndex) => {
     const sourceColumn = sourceIndex % blueprint.columns
@@ -506,6 +550,10 @@ function removeBlueprintColumn(blueprint, requireSplitweedFootprints = false) {
     columns: nextColumnCount,
     cells,
     mirrorCornTargets,
+    rootTunnelConnections: remapRootTunnelConnections(
+      blueprint.rootTunnelConnections,
+      remapIndex,
+    ),
     requireSplitweedFootprints,
   })
 }
