@@ -910,7 +910,7 @@ export function getWaterLettucePassiveEffect(
     cropCount,
     fieldSize,
     monocropThresholdBonus,
-  ) * passiveEffectMultiplier
+  )
   const effects = plantedIndexes.flatMap((index) => {
     if (
       isMirrorCornOverloaded(

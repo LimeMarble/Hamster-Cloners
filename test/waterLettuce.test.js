@@ -33,7 +33,7 @@ test('Water Lettuce gives a protected passive boost and a separate insect debuff
   )
 })
 
-test('Water Lettuce passive boost ignores Crop and Fortune boosts', () => {
+test('Water Lettuce passive boost and insect loss ignore Fortune boosts', () => {
   const blueprint = createBlueprint({
     rows: 3,
     columns: 3,
@@ -57,8 +57,26 @@ test('Water Lettuce passive boost ignores Crop and Fortune boosts', () => {
   )
 
   assert.equal(effect.cropPassiveBonus, 0.2)
-  assert.ok(effect.insectPenalty < -0.175)
+  assert.equal(effect.insectPenalty, -0.175)
   assert.equal(canBeMirrorCornTarget('waterLettuce'), false)
+})
+
+test("Fortune's Demonstration cannot lower Water Lettuce passive effects", () => {
+  const cells = Array(100).fill(null)
+  for (let index = 0; index < 11; index += 1) {
+    cells[index * 2] = 'waterLettuce'
+  }
+  const blueprint = createBlueprint({ rows: 10, columns: 10, cells })
+  const normalMultiplier = getGlobalPassiveEffectMultiplier(blueprint)
+  const demonstrationMultiplier = getGlobalPassiveEffectMultiplier(
+    blueprint,
+    [],
+    1.1,
+  )
+
+  assert.ok(Math.abs(normalMultiplier - 1.275) < 1e-12)
+  assert.ok(Math.abs(demonstrationMultiplier - 1.4025) < 1e-12)
+  assert.ok(demonstrationMultiplier > normalMultiplier)
 })
 
 test('Water Lettuce boosts every ordinary passive like Fortune', () => {
