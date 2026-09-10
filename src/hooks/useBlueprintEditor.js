@@ -35,7 +35,7 @@ export function useBlueprintEditor({
   monocropPenaltyMultiplier,
 }) {
   const [isEditingBlueprint, setIsEditingBlueprint] = useState(false)
-  const [selectedCrop, setSelectedCrop] = useState('leek')
+  const [selectedCrop, setSelectedCrop] = useState(null)
   const [pendingMirrorCornPlacement, setPendingMirrorCornPlacement] =
     useState(null)
   const [hoveredEditorCrop, setHoveredEditorCrop] = useState(null)
@@ -299,7 +299,7 @@ export function useBlueprintEditor({
     })
   }
 
-  function handleEditorPlotClick(index, crop) {
+  function handleEditorPlotClick(index, crop, event) {
     if (pendingMirrorCornPlacement) {
       if (index === pendingMirrorCornPlacement.sourceIndex) {
         setPendingMirrorCornPlacement(null)
@@ -313,6 +313,11 @@ export function useBlueprintEditor({
     }
 
     if (rootTunnelEditor.handlePlotClick(index, crop)) {
+      return
+    }
+
+    if (selectedCrop === null) {
+      updateHoveredEditorCrop(index, event)
       return
     }
 
@@ -422,7 +427,7 @@ export function useBlueprintEditor({
 
   function resetBlueprintEditor() {
     closeBlueprintEditor()
-    setSelectedCrop('leek')
+    setSelectedCrop(null)
     blueprintTransfer.resetBlueprintTransfer()
   }
 
@@ -464,6 +469,9 @@ export function useBlueprintEditor({
     onSelectBlueprintSlot: selectBlueprintSlot,
     onOpenEditor: () => {
       setHoveredEditorCrop(null)
+      setSelectedCrop(null)
+      setPendingMirrorCornPlacement(null)
+      rootTunnelEditor.resetRootTunnelEditor()
       setBlueprintEditing(true)
     },
     resetBlueprintEditor,
@@ -472,7 +480,9 @@ export function useBlueprintEditor({
           game,
           selectedCrop,
           onSelectCrop: (cropId) => {
-            setSelectedCrop(cropId)
+            setSelectedCrop((currentCrop) =>
+              currentCrop === cropId ? null : cropId,
+            )
             setPendingMirrorCornPlacement(null)
             rootTunnelEditor.resetRootTunnelEditor()
           },

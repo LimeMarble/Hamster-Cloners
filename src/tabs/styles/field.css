@@ -316,31 +316,6 @@
   background: #4b2512;
 }
 
-/* Crop identity comes from its visual; editor borders are reserved for
-   interaction states such as Mirror Corn targets and Root Tunnel links. */
-.editor-plot-leek,
-.editor-plot-corn,
-.editor-plot-sweetPotato,
-.editor-plot-turnip,
-.editor-plot-pumpkin,
-.editor-plot-appleTree,
-.editor-plot-lentil,
-.editor-plot-knotweed,
-.editor-plot-wheat,
-.editor-plot-rootTunnel,
-.editor-plot-sunflower,
-.editor-plot-leechingGourd,
-.editor-plot-leechingGourdPart,
-.editor-plot-splitweedPart,
-.editor-plot-canola,
-.editor-plot-carrot,
-.editor-plot-fourLeafClover,
-.editor-plot-shoalGrass,
-.editor-plot-waterLettuce,
-.editor-plot-mangroveSapling {
-  border-color: #315a38;
-}
-
 .plot span,
 .editor-plot span {
   color: var(--field-green);

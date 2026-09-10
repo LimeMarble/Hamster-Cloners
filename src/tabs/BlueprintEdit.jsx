@@ -185,7 +185,9 @@ function BlueprintEditContent({
                     type="button"
                     className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${isBurnedBlazingCarrot ? 'editor-plot-blazing-carrot-burned' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''} ${isSelectedRootTunnel ? 'editor-plot-root-selected' : ''} ${isSelectedRootSender ? 'editor-plot-root-sender-selected' : ''} ${isValidRootSender ? 'editor-plot-root-sender-option' : ''} ${isValidRootRecipient ? 'editor-plot-root-recipient-option' : ''}`}
                     key={index}
-                    onClick={() => onEditorPlotClick(index, crop)}
+                    onClick={(event) =>
+                      onEditorPlotClick(index, crop, event)
+                    }
                     onContextMenu={(event) =>
                       onEditorPlotContextMenu(index, crop, event)
                     }
@@ -213,6 +215,10 @@ function BlueprintEditContent({
                           ? `Use ${getCropName(crop, game.completedCropPerfections)} as the Root Tunnel sender`
                         : isValidRootRecipient
                           ? `Use ${getCropName(crop, game.completedCropPerfections)} as the Root Tunnel recipient`
+                        : selectedCrop === null && crop
+                          ? `View ${getCropName(crop, game.completedCropPerfections)} information`
+                        : selectedCrop === null
+                          ? 'Empty blueprint plot'
                         : crop === 'leechingGourd' || crop === 'leechingGourdPart'
                           ? 'Remove Leeching Gourd from blueprint'
                           : crop === 'splitweedPart' ||
@@ -233,7 +239,7 @@ function BlueprintEditContent({
                         className="editor-crop-visual"
                       />
                     ) : (
-                      <span>Plant</span>
+                      <span>{selectedCrop ? 'Plant' : 'Empty'}</span>
                     )}
                   </button>
                 )
@@ -243,7 +249,9 @@ function BlueprintEditContent({
           </div>
 
           <div className="crop-palette" aria-label="Crop selection">
-            <p className="eyebrow">Selected crop</p>
+            <p className="eyebrow">
+              {selectedCrop ? 'Selected crop' : 'No crop selected'}
+            </p>
             <div className="crop-options">
               {visibleCropIds.map((cropId) => {
                 const unlocked = unlockedCropIds.includes(cropId)
