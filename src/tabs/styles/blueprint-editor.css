@@ -259,7 +259,6 @@
 
 .editor-plot {
   min-height: 80px;
-  border: 0;
   color: var(--text-muted);
   cursor: pointer;
   font: inherit;
