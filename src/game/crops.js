@@ -189,7 +189,7 @@ export const CROP_DEFINITIONS = {
   },
   shoalGrass: {
     name: 'Shoal Grass',
-    icon: '🌱',
+    icon: '🍃',
     baseYield: 0,
     hamsterEfficiencyBonus: 0,
     doesNotHarvest: true,
