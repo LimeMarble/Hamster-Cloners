@@ -34,8 +34,7 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     hint: 'Luck may need to be on your side...',
     secondaryObjective: Object.freeze({
       id: CAPYBARA_SECONDARY_OBJECTIVE_IDS.INTRODUCTION_NO_CLOVER,
-      condition:
-        'Have no 4-Leaf Clover planted and no active Breeze of Fortune effects.',
+      condition: 'Have no active Breeze of Fortune effects.',
       rewardName: 'Independent Engineering',
       rewardDescription:
         'Hamster Efficiency ×2 for every Capybara demonstration completed.',
@@ -48,16 +47,13 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     goal: 'Reach the listed field-blueprint Crop-yield requirement.',
     target: 1e20,
     unit: 'blueprint Crop yield',
-    restrictions: [
-      'No 4-Leaf Clover may be planted',
-      'No Breeze of Fortune effects may be active',
-    ],
+    restrictions: ['No Breeze of Fortune effects may be active'],
     rewardName: 'Floor Replicators',
     rewardDescription:
       'Unlocks shared machinery that produces Floors in every field area.',
     hint: 'Augmentations are your best friend here.',
     prerequisiteDemonstrationId: CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
-    requiresNoClover: true,
+    requiresNoActiveBreezeEffects: true,
   },
   {
     id: CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
@@ -214,15 +210,14 @@ export function getCapybaraBlueprintCropYield(game) {
   )
 }
 
-function isNoCloverConditionMet(game) {
-  const hasPlantedClover = game.blueprint?.cells?.includes('fourLeafClover') === true
+function hasNoActiveBreezeEffects(game) {
   const hasActiveCloverEffect =
     Array.isArray(game.fortune?.activeEffects) &&
     game.fortune.activeEffects.some(
       (effect) => Number(effect?.remainingSeconds) > 0,
     )
 
-  return !hasPlantedClover && !hasActiveCloverEffect
+  return !hasActiveCloverEffect
 }
 
 export function getCapybaraDemonstrationStatus(
@@ -250,7 +245,7 @@ export function getCapybaraDemonstrationStatus(
     ? hasCompletedCapybaraSecondaryObjective(game, secondaryObjective.id)
     : false
   const secondaryConditionMet = secondaryObjective
-    ? isNoCloverConditionMet(game)
+    ? hasNoActiveBreezeEffects(game)
     : false
   const hasContact = hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT)
   const hasReachedGoal = current >= demonstration.target
@@ -260,8 +255,8 @@ export function getCapybaraDemonstrationStatus(
         demonstration.prerequisiteDemonstrationId,
       )
     : true
-  const restrictionsMet = demonstration.requiresNoClover
-    ? isNoCloverConditionMet(game)
+  const restrictionsMet = demonstration.requiresNoActiveBreezeEffects
+    ? hasNoActiveBreezeEffects(game)
     : true
   const isRequiredAreaActive = demonstration.challengeArea
     ? demonstration.challengeArea === GAME_AREA_IDS.MISFORTUNE &&

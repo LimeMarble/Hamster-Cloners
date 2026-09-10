@@ -173,7 +173,7 @@ test('Capybara progress persists and legacy saves receive safe defaults', () => 
   )
 })
 
-test('the hidden secondary reward is checked on the first pass and can be retried', () => {
+test('the hidden secondary reward allows planted Clover but blocks active Breeze effects', () => {
   const target = CAPYBARA_DEMONSTRATIONS[0].target
   const cloverGame = {
     ...createContactGame(),
@@ -182,6 +182,11 @@ test('the hidden secondary reward is checked on the first pass and can be retrie
       columns: 2,
       cells: ['leek', 'fourLeafClover', null, null],
     }),
+    fortune: {
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 10 },
+      ],
+    },
   }
 
   const firstPass = completeCapybaraDemonstration(
@@ -204,11 +209,7 @@ test('the hidden secondary reward is checked on the first pass and can be retrie
 
   const cleanRetryGame = {
     ...firstPass,
-    blueprint: createBlueprint({
-      rows: 2,
-      columns: 2,
-      cells: ['leek', null, null, null],
-    }),
+    fortune: { activeEffects: [] },
   }
   const cleanRetry = completeCapybaraDemonstration(
     cleanRetryGame,
@@ -240,7 +241,7 @@ test('active Breeze effects fail Demonstration 0 secondary condition', () => {
   assert.deepEqual(completed.capybara.completedSecondaryObjectives, [])
 })
 
-test('Demonstration 1 visibly bans Clover and active Breeze effects', () => {
+test('Demonstration 1 allows planted Clover but bans active Breeze effects', () => {
   const target = CAPYBARA_DEMONSTRATIONS[1].target
   const introductionCompleteGame = {
     ...createContactGame(),
@@ -260,7 +261,6 @@ test('Demonstration 1 visibly bans Clover and active Breeze effects', () => {
     'Augmentations are your best friend here.',
   )
   assert.deepEqual(CAPYBARA_DEMONSTRATIONS[1].restrictions, [
-    'No 4-Leaf Clover may be planted',
     'No Breeze of Fortune effects may be active',
   ])
 
@@ -277,8 +277,8 @@ test('Demonstration 1 visibly bans Clover and active Breeze effects', () => {
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
     { blueprintCropYield: target },
   )
-  assert.equal(cloverStatus.restrictionsMet, false)
-  assert.equal(cloverStatus.canComplete, false)
+  assert.equal(cloverStatus.restrictionsMet, true)
+  assert.equal(cloverStatus.canComplete, true)
 
   const breezeGame = {
     ...introductionCompleteGame,
