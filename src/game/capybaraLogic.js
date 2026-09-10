@@ -280,3 +280,26 @@ export function completeCapybaraDemonstration(
     },
   }
 }
+
+export function completeNextCapybaraDemonstrationForTesting(game) {
+  const capybara = normalizeCapybaraState(game?.capybara)
+  const nextDemonstration = CAPYBARA_DEMONSTRATIONS.find(
+    ({ id }) => !capybara.completedDemonstrations.includes(id),
+  )
+
+  if (!game || !nextDemonstration) return null
+
+  return {
+    ...game,
+    ...(nextDemonstration.id === CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO
+      ? { hasUnlockedRootTunnel: true }
+      : {}),
+    capybara: {
+      ...capybara,
+      completedDemonstrations: [
+        ...capybara.completedDemonstrations,
+        nextDemonstration.id,
+      ],
+    },
+  }
+}

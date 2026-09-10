@@ -332,6 +332,8 @@ export function normalizeGame(rawGame) {
         rawGame.testingCheats?.cropMultiplierEnabled === true,
       hamsterEfficiencyEnabled:
         rawGame.testingCheats?.hamsterEfficiencyEnabled === true,
+      oneSecondManateeSurveysEnabled:
+        rawGame.testingCheats?.oneSecondManateeSurveysEnabled === true,
     },
     completedCropPerfections,
     hamstersBuildColumns: true,

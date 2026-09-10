@@ -3,6 +3,9 @@ function TestingPanelContent({
   isVisible,
   cropMultiplierEnabled,
   hamsterEfficiencyEnabled,
+  oneSecondManateeSurveysEnabled,
+  completedDemonstrationCount,
+  maximumDemonstrationCount,
   columnExpansionCount,
   maximumColumnExpansions,
   rowExpansionCount,
@@ -10,6 +13,11 @@ function TestingPanelContent({
   onToggleVisibility,
   onToggleCropMultiplier,
   onToggleHamsterEfficiency,
+  onToggleOneSecondManateeSurveys,
+  onCompleteNextDemonstration,
+  onMultiplyCurrentManateeMaterials,
+  onCompleteRabbitContracts,
+  onMultiplyCurrentRabbitRelations,
   onMultiplyCurrentCrops,
   onDivideCurrentCrops,
   onGrantColumnExpansion,
@@ -68,6 +76,47 @@ function TestingPanelContent({
             </button>
             <button
               type="button"
+              className={`testing-toggle ${oneSecondManateeSurveysEnabled ? 'testing-toggle-active' : ''}`}
+              onClick={onToggleOneSecondManateeSurveys}
+              aria-pressed={oneSecondManateeSurveysEnabled}
+            >
+              1-second Manatee surveys:{' '}
+              {oneSecondManateeSurveysEnabled ? 'On' : 'Off'}
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onCompleteNextDemonstration}
+              disabled={
+                completedDemonstrationCount >= maximumDemonstrationCount
+              }
+            >
+              Complete next Capybara demonstration (
+              {completedDemonstrationCount}/{maximumDemonstrationCount})
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onMultiplyCurrentManateeMaterials}
+            >
+              ×10 current Manatee materials
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onCompleteRabbitContracts}
+            >
+              +100 Rabbit contracts (with rewards)
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onMultiplyCurrentRabbitRelations}
+            >
+              ×1,000 current Rabbit Relations
+            </button>
+            <button
+              type="button"
               className="testing-action"
               onClick={onMultiplyCurrentCrops}
             >
@@ -111,7 +160,8 @@ function TestingPanelContent({
               disabled={rowExpansionCount <= 0}
             >
               -1 Row expansion ({rowExpansionCount}/{maximumRowExpansions})
-            </button>            <button
+            </button>
+            <button
               type="button"
               className="testing-action"
               onClick={onAddCloverEffect}
@@ -136,6 +186,9 @@ const TESTING_PANEL_DISPLAY_KEYS = [
   'isVisible',
   'cropMultiplierEnabled',
   'hamsterEfficiencyEnabled',
+  'oneSecondManateeSurveysEnabled',
+  'completedDemonstrationCount',
+  'maximumDemonstrationCount',
   'columnExpansionCount',
   'maximumColumnExpansions',
   'rowExpansionCount',

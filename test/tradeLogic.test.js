@@ -12,6 +12,7 @@ import {
   advanceRabbitContract,
   advanceRabbitContractPaceState,
   claimRabbitContract,
+  completeRabbitContractsForTesting,
   createBlueprint,
   createInitialGame,
   createRabbitContract,
@@ -30,6 +31,32 @@ test('Rabbit relation rewards match the logarithmic fields formula', () => {
   assert.equal(getRabbitContractRelationsReward(1e40, 30e6), 120)
   assert.equal(getRabbitContractRelationsReward(1e20, 10e6), 20)
   assert.equal(getRabbitContractRelationsReward(1e20, 50e6), 100)
+})
+
+test('testing contract grants include normal average Rabbit relation rewards', () => {
+  const initialGame = createInitialGame()
+  const game = {
+    ...initialGame,
+    farmland: {
+      ...initialGame.farmland,
+      columns: 1e40,
+    },
+    trade: {
+      ...initialGame.trade,
+      established: true,
+      rabbitRelations: 50,
+      totalRabbitRelationsEarned: 75,
+      rabbitContractsCompleted: 3,
+    },
+  }
+  const grantedGame = completeRabbitContractsForTesting(game, 100)
+
+  assert.equal(grantedGame.trade.rabbitContractsCompleted, 103)
+  assert.equal(grantedGame.trade.rabbitRelations, 50 + 100 * 120)
+  assert.equal(
+    grantedGame.trade.totalRabbitRelationsEarned,
+    75 + 100 * 120,
+  )
 })
 
 test('Rabbit pace uses the slowest grown crop and five-second hysteresis', () => {

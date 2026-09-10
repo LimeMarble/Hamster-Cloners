@@ -23,10 +23,26 @@ import {
   getManateeSurveyRewardMultipliers,
   getManateeSurveyingHamsterCount,
   getMarshSurveyDurationSeconds,
+  multiplyManateeResources,
   startManateeSurvey,
   upgradeManateeBuilding,
 } from '../src/game/gameLogic.js'
 import { normalizeGame } from '../src/game/storage.js'
+
+test('testing multiplies every current Manatee material by ten', () => {
+  const state = multiplyManateeResources({
+    resources: {
+      [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: 12,
+      [MANATEE_RESOURCE_IDS.LIMESTONE]: 25,
+      [MANATEE_RESOURCE_IDS.SHOAL_GRASS]: 7,
+    },
+  })
+
+  assert.equal(state.resources[MANATEE_RESOURCE_IDS.MANGROVE_TWIG], 120)
+  assert.equal(state.resources[MANATEE_RESOURCE_IDS.LIMESTONE], 250)
+  assert.equal(state.resources[MANATEE_RESOURCE_IDS.SHOAL_GRASS], 70)
+  assert.equal(state.resources[MANATEE_RESOURCE_IDS.MANGROVE_WOOD], 0)
+})
 
 test('legacy Musk Grass Manatee progress migrates to Shoal Grass', () => {
   const migratedGame = normalizeGame({
@@ -81,6 +97,32 @@ test('Search the Marsh matches the requested Hamster Coordination calibration', 
   assert.ok(threeOctillionDuration > 15)
   assert.ok(threeOctillionDuration < 16)
   assert.ok(baselineDuration / threeOctillionDuration > 3.8)
+})
+
+test('the testing override completes every Manatee survey in one second', () => {
+  const game = {
+    ...createInitialGame(),
+    hamsters: 1875,
+  }
+  const started = startManateeSurvey(game, MANATEE_SURVEY_IDS.SEARCH_MARSH)
+  const cheatGame = {
+    ...started,
+    testingCheats: {
+      ...started.testingCheats,
+      oneSecondManateeSurveysEnabled: true,
+    },
+  }
+  const halfway = advanceGameSimulationStep(cheatGame, 0.5, {
+    random: () => 0,
+  })
+  const completed = advanceGameSimulationStep(halfway, 0.5, {
+    random: () => 0,
+  })
+
+  assert.equal(halfway.manatees.activeSurveys.length, 1)
+  assert.equal(halfway.manatees.pendingFinds.length, 0)
+  assert.equal(completed.manatees.activeSurveys.length, 0)
+  assert.ok(completed.manatees.pendingFinds.length > 0)
 })
 
 test('underwater expeditions have three reward tiers and configurable default time scaling', () => {

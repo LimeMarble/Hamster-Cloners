@@ -7,6 +7,7 @@ import {
   FORTUNE_EFFECT_IDS,
   RABBIT_UNLOCK_IDS,
   completeCapybaraDemonstration,
+  completeNextCapybaraDemonstrationForTesting,
   createBlueprint,
   createInitialGame,
   getCapybaraBlueprintCropYield,
@@ -34,6 +35,23 @@ function createContactGame() {
     },
   }
 }
+
+test('testing completes each configured Capybara demonstration in order', () => {
+  let game = createInitialGame()
+
+  CAPYBARA_DEMONSTRATIONS.forEach((demonstration, index) => {
+    game = completeNextCapybaraDemonstrationForTesting(game)
+
+    assert.deepEqual(
+      game.capybara.completedDemonstrations,
+      CAPYBARA_DEMONSTRATIONS.slice(0, index + 1).map(({ id }) => id),
+    )
+    assert.ok(game.capybara.completedDemonstrations.includes(demonstration.id))
+  })
+
+  assert.equal(game.hasUnlockedRootTunnel, true)
+  assert.equal(completeNextCapybaraDemonstrationForTesting(game), null)
+})
 
 test('Capybara blueprint yield excludes Fields and testing multipliers but includes fortune', () => {
   const game = {

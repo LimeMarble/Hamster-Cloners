@@ -302,6 +302,24 @@ export function normalizeManateeState(rawState) {
   }
 }
 
+export function multiplyManateeResources(rawState, multiplier = 10) {
+  const state = normalizeManateeState(rawState)
+  const safeMultiplier = Math.max(0, Number(multiplier) || 0)
+
+  return {
+    ...state,
+    resources: Object.fromEntries(
+      Object.keys(MANATEE_RESOURCES).map((resourceId) => [
+        resourceId,
+        Math.min(
+          Number.MAX_VALUE,
+          state.resources[resourceId] * safeMultiplier,
+        ),
+      ]),
+    ),
+  }
+}
+
 export function hasCompletedManateeDevelopmentGoal(game, goalId) {
   return normalizeManateeState(game?.manatees).completedDevelopmentGoals.includes(
     goalId,

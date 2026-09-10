@@ -4,6 +4,7 @@ export const AUTOSAVE_INTERVAL_MS = 2 * 60 * 1000
 export const BASE_CROP_YIELD_PER_PLOT = 1
 export const INITIAL_BLUEPRINT_SIZE = { rows: 1, columns: 1 }
 export const STARTING_CROPS = 10
+export const FIELD_RESET_STARTING_COLUMNS = 0.9
 export const HAMSTER_BASE_COST = 5
 export const HAMSTER_COST_GROWTH = 1.1
 export const HAMSTER_ACCELERATED_COST_SCALING_START = 1500

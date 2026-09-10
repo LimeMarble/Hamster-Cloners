@@ -251,6 +251,7 @@ export function advanceGameSimulationStep(
         random,
         manateeSurveyDurationMultiplier,
         manateeFindValueMultiplier,
+        currentGame.testingCheats?.oneSecondManateeSurveysEnabled === true,
       ),
       safeElapsedSeconds,
     ),

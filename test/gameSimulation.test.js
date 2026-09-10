@@ -13,6 +13,27 @@ import {
 } from '../src/game/gameLogic.js'
 import { WHEAT_UNLOCK_CROP_COUNT } from '../src/game/crops.js'
 
+test('new games begin with a hidden nine-tenths Column head start', () => {
+  const game = createInitialGame()
+
+  assert.equal(game.farmland.columns, 0.9)
+  assert.equal(game.farmland.rows, 1)
+  assert.equal(game.farmland.floors, 1)
+  assert.equal(game.farmland.farms, 1)
+  assert.equal(game.farmland.otherMultiplier, 1)
+})
+
+test('one starting Hamster completes the first effective Column after one second', () => {
+  const game = {
+    ...createInitialGame(),
+    hamsters: 1,
+    totalHamstersHired: 1,
+  }
+  const advancedGame = advanceGameByElapsedTime(game, 1, { mode: 'active' })
+
+  assert.ok(Math.abs(advancedGame.farmland.columns - 1) < 1e-12)
+})
+
 test('active simulation uses no more than one-sixtieth second per step', () => {
   assert.equal(ACTIVE_SIMULATION_STEP_SECONDS, 1 / 60)
   assert.equal(getSimulationStepSeconds(10, 'active'), 1 / 60)

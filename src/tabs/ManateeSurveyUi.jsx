@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef } from 'react'
 import {
   MANATEE_DEVELOPMENT_GOALS,
   MANATEE_RESOURCES,
@@ -20,7 +21,10 @@ export function SurveyTime({ seconds }) {
   )
 }
 
-function MarshFind({ find, onCollect }) {
+const FIND_HOLD_DELAY_MS = 300
+const FIND_HOLD_REPEAT_MS = 70
+
+function MarshFind({ find, onCollect, onHoldStart }) {
   const resourceName =
     MANATEE_RESOURCES[find.resourceId]?.name ??
     MANATEE_DEVELOPMENT_GOALS[find.developmentGoalId]?.progressUnit ??
@@ -36,6 +40,7 @@ function MarshFind({ find, onCollect }) {
         top: `${find.y}%`,
         '--find-rotation': `${find.rotation}deg`,
       }}
+      onPointerDown={(event) => onHoldStart(event, find.id)}
       onClick={() => onCollect(find.id)}
       aria-label={`Clear ${findName} worth ${find.amount} ${resourceName}`}
     >
@@ -50,6 +55,76 @@ function MarshFind({ find, onCollect }) {
 
 export function SurveyResults({ finds, survey, onCollectFind }) {
   const rowCount = Math.max(1, Math.ceil(finds.length / 6))
+  const holdDelayRef = useRef(null)
+  const holdRepeatRef = useRef(null)
+  const suppressClickRef = useRef(false)
+
+  const stopHeldCollection = useCallback(() => {
+    window.clearTimeout(holdDelayRef.current)
+    window.clearInterval(holdRepeatRef.current)
+    holdDelayRef.current = null
+    holdRepeatRef.current = null
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('pointerup', stopHeldCollection)
+    window.addEventListener('pointercancel', stopHeldCollection)
+    window.addEventListener('blur', stopHeldCollection)
+
+    return () => {
+      stopHeldCollection()
+      window.removeEventListener('pointerup', stopHeldCollection)
+      window.removeEventListener('pointercancel', stopHeldCollection)
+      window.removeEventListener('blur', stopHeldCollection)
+    }
+  }, [stopHeldCollection])
+
+  function startHeldCollection(event, startingFindId) {
+    if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) {
+      return
+    }
+
+    stopHeldCollection()
+    suppressClickRef.current = false
+
+    const startingIndex = finds.findIndex(({ id }) => id === startingFindId)
+    if (startingIndex < 0) return
+
+    const orderedFindIds = [
+      ...finds.slice(startingIndex),
+      ...finds.slice(0, startingIndex),
+    ].map(({ id }) => id)
+
+    holdDelayRef.current = window.setTimeout(() => {
+      let nextFindIndex = 0
+      suppressClickRef.current = true
+
+      const collectNextFind = () => {
+        if (nextFindIndex >= orderedFindIds.length) {
+          stopHeldCollection()
+          return
+        }
+
+        onCollectFind(orderedFindIds[nextFindIndex])
+        nextFindIndex += 1
+      }
+
+      collectNextFind()
+      holdRepeatRef.current = window.setInterval(
+        collectNextFind,
+        FIND_HOLD_REPEAT_MS,
+      )
+    }, FIND_HOLD_DELAY_MS)
+  }
+
+  function collectSingleFind(findId) {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false
+      return
+    }
+
+    onCollectFind(findId)
+  }
 
   return (
     <section
@@ -75,11 +150,17 @@ export function SurveyResults({ finds, survey, onCollectFind }) {
       >
         <div className="manatee-marsh-water" aria-hidden="true" />
         {finds.map((find) => (
-          <MarshFind key={find.id} find={find} onCollect={onCollectFind} />
+          <MarshFind
+            key={find.id}
+            find={find}
+            onCollect={collectSingleFind}
+            onHoldStart={startHeldCollection}
+          />
         ))}
       </div>
       <p className="manatee-interaction-note">
-        Select each object in the marsh to collect it.
+        Select an object to collect it, or press and hold one to keep
+        collecting.
       </p>
     </section>
   )

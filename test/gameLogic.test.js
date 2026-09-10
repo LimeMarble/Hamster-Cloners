@@ -47,6 +47,7 @@ import {
   getRowDuplicatorCoordinationMultiplier,
   getRootTunnelAdjacencyStrength,
   getUnlockedBlueprintSlotCount,
+  FIELD_RESET_STARTING_COLUMNS,
   HAMSTER_ACCELERATED_COST_SCALING_START,
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
@@ -1495,7 +1496,7 @@ test('Row Duplicators reset the field before becoming the only Row source', () =
     hasUnlockedRowDuplicators: true,
     farmland: createFarmlandMultipliers({
       rows: 1,
-      columns: 0,
+      columns: FIELD_RESET_STARTING_COLUMNS,
       floors: 1,
       farms: 1,
       otherMultiplier: 2,
@@ -1759,7 +1760,7 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     firstColumnResult.farmland,
     createFarmlandMultipliers({
       rows: 1,
-      columns: 0,
+      columns: FIELD_RESET_STARTING_COLUMNS,
       floors: 1,
       farms: 1,
       otherMultiplier: 1.5,
@@ -1792,7 +1793,7 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     firstRowResult.farmland,
     createFarmlandMultipliers({
       rows: 1,
-      columns: 0,
+      columns: FIELD_RESET_STARTING_COLUMNS,
       floors: 1,
       farms: 1,
       otherMultiplier: 1.5,
@@ -1825,7 +1826,7 @@ test('blueprint expansions use the ordered milestone configuration', () => {
     secondColumnResult.farmland,
     createFarmlandMultipliers({
       rows: 1,
-      columns: 0,
+      columns: FIELD_RESET_STARTING_COLUMNS,
       floors: 1,
       farms: 1,
       otherMultiplier: 1.5,

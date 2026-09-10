@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import {
+  CAPYBARA_DEMONSTRATIONS,
+  completeRabbitContractsForTesting,
+  completeNextCapybaraDemonstrationForTesting,
   grantNextBlueprintExpansion,
+  multiplyManateeResources,
   revokeLastBlueprintExpansion,
   addRandomFortuneEffect,
   wipeActiveFortuneEffects,
@@ -87,6 +91,42 @@ export function useTestingCheats({
   function wipeTestingCloverEffects() {
     updateGame((currentGame) => wipeActiveFortuneEffects(currentGame))
   }
+
+  function completeNextDemonstration() {
+    updateGame((currentGame) =>
+      completeNextCapybaraDemonstrationForTesting(currentGame) ?? currentGame,
+    )
+  }
+
+  function multiplyCurrentManateeMaterials() {
+    updateGame((currentGame) => ({
+      ...currentGame,
+      manatees: multiplyManateeResources(currentGame.manatees, 10),
+    }))
+  }
+
+  function completeTestingRabbitContracts() {
+    updateGame((currentGame) =>
+      completeRabbitContractsForTesting(currentGame, 100),
+    )
+  }
+
+  function multiplyCurrentRabbitRelations() {
+    updateGame((currentGame) => ({
+      ...currentGame,
+      trade: {
+        ...currentGame.trade,
+        rabbitRelations: Math.min(
+          Number.MAX_VALUE,
+          Math.max(0, Number(currentGame.trade?.rabbitRelations) || 0) * 1000,
+        ),
+      },
+    }))
+  }
+
+  const completedDemonstrationCount = CAPYBARA_DEMONSTRATIONS.filter(
+    ({ id }) => game.capybara?.completedDemonstrations?.includes(id),
+  ).length
   const columnTrack = blueprintExpansionTracks.find(
     (track) => track.id === 'column',
   )
@@ -109,6 +149,10 @@ export function useTestingCheats({
             game.testingCheats?.cropMultiplierEnabled === true,
           hamsterEfficiencyEnabled:
             game.testingCheats?.hamsterEfficiencyEnabled === true,
+          oneSecondManateeSurveysEnabled:
+            game.testingCheats?.oneSecondManateeSurveysEnabled === true,
+          completedDemonstrationCount,
+          maximumDemonstrationCount: CAPYBARA_DEMONSTRATIONS.length,
           columnExpansionCount: columnTrack?.completedStageCount ?? 0,
           maximumColumnExpansions: columnTrack?.stages.length ?? 0,
           rowExpansionCount: rowTrack?.completedStageCount ?? 0,
@@ -117,6 +161,14 @@ export function useTestingCheats({
             toggleCheat('cropMultiplierEnabled'),
           onToggleHamsterEfficiency: () =>
             toggleCheat('hamsterEfficiencyEnabled'),
+          onToggleOneSecondManateeSurveys: () =>
+            toggleCheat('oneSecondManateeSurveysEnabled'),
+          onCompleteNextDemonstration: completeNextDemonstration,
+          onMultiplyCurrentManateeMaterials:
+            multiplyCurrentManateeMaterials,
+          onCompleteRabbitContracts: completeTestingRabbitContracts,
+          onMultiplyCurrentRabbitRelations:
+            multiplyCurrentRabbitRelations,
           onMultiplyCurrentCrops: multiplyCurrentCrops,
           onDivideCurrentCrops: divideCurrentCrops,
           onGrantColumnExpansion: () => grantExpansion('column'),

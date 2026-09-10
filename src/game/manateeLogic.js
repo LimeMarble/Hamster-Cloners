@@ -39,6 +39,7 @@ import {
   getWetlandsConnectionConstructionHamsterCount,
   getWetlandsConnectionMaintenanceHamsterCount,
   hasCompletedManateeDevelopmentGoal,
+  multiplyManateeResources,
   normalizeManateeState,
 } from './manateeState.js'
 
@@ -84,6 +85,7 @@ export {
   getWetlandsConnectionConstructionHamsterCount,
   getWetlandsConnectionMaintenanceHamsterCount,
   hasCompletedManateeDevelopmentGoal,
+  multiplyManateeResources,
   normalizeManateeState,
 }
 
@@ -384,6 +386,7 @@ export function advanceManateeSurveyState(
   random = Math.random,
   surveyDurationMultiplier = 1,
   findValueMultiplier = 1,
+  forceOneSecondSurveys = false,
 ) {
   const state = normalizeManateeState(rawState)
   if (state.activeSurveys.length === 0) return rawState ?? state
@@ -399,6 +402,10 @@ export function advanceManateeSurveyState(
 
   state.activeSurveys.forEach((activeSurvey) => {
     const survey = MANATEE_SURVEYS[activeSurvey.id]
+    const requiredWork = getManateeSurveyRequiredWork(
+      survey.id,
+      activeSurvey.lengthId,
+    )
     const baseWorkPerSecond = getManateeSurveyWorkPerSecond(
       activeSurvey.allocatedHamsters,
       hamsterCoordination,
@@ -407,13 +414,11 @@ export function advanceManateeSurveyState(
     const appliedDurationMultiplier = survey.fixedDurationSeconds
       ? 1
       : safeDurationMultiplier
+    const workPerSecond = forceOneSecondSurveys
+      ? requiredWork
+      : baseWorkPerSecond / appliedDurationMultiplier
     const workCompleted =
-      activeSurvey.workCompleted +
-      (baseWorkPerSecond / appliedDurationMultiplier) * safeElapsedSeconds
-    const requiredWork = getManateeSurveyRequiredWork(
-      survey.id,
-      activeSurvey.lengthId,
-    )
+      activeSurvey.workCompleted + workPerSecond * safeElapsedSeconds
 
     if (workCompleted < requiredWork) {
       activeSurveys.push({ ...activeSurvey, workCompleted })

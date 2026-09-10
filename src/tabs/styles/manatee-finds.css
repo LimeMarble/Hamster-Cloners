@@ -168,6 +168,9 @@
   color: inherit;
   background: transparent;
   cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-touch-callout: none;
   translate: -50% -50%;
   rotate: var(--find-rotation);
 }

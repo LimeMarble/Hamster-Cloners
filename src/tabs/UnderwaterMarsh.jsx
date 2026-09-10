@@ -97,6 +97,8 @@ export function AllocatedManateeSurvey({
     (find) => find.surveyId === survey.id,
   )
   const hasFinds = surveyFinds.length > 0
+  const oneSecondSurveysEnabled =
+    game.testingCheats?.oneSecondManateeSurveysEnabled === true
   const availableHamsters = Math.min(
     getManateeRemainingHamsterCount(game),
     getManateeRemainingDivingHamsterCapacity(game),
@@ -112,18 +114,22 @@ export function AllocatedManateeSurvey({
     survey.id,
     displayedLengthId,
   )
-  const estimatedDuration = getManateeSurveyDurationSeconds(
-    allocatedHamsters,
-    coordination,
-    survey.id,
-    displayedLengthId,
-    surveyTimeEffect.multiplier,
-  )
+  const estimatedDuration = oneSecondSurveysEnabled
+    ? 1
+    : getManateeSurveyDurationSeconds(
+        allocatedHamsters,
+        coordination,
+        survey.id,
+        displayedLengthId,
+        surveyTimeEffect.multiplier,
+      )
   const progress = activeSurvey
     ? Math.min(1, activeSurvey.workCompleted / requiredWork)
     : 0
   const remainingSeconds = activeSurvey
-    ? (requiredWork - activeSurvey.workCompleted) / currentWorkRate
+    ? oneSecondSurveysEnabled
+      ? Math.max(0, 1 - progress)
+      : (requiredWork - activeSurvey.workCompleted) / currentWorkRate
     : estimatedDuration
 
   return (

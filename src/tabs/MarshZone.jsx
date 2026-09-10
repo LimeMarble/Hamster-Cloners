@@ -40,6 +40,8 @@ function MarshSurvey({
     (find) => find.surveyId === survey.id,
   )
   const hasFinds = surveyFinds.length > 0
+  const oneSecondSurveysEnabled =
+    game.testingCheats?.oneSecondManateeSurveysEnabled === true
   const availableHamsters = getManateeRemainingHamsterCount(game)
   const surveyingHamsters = activeSurvey
     ? getManateeSurveyAllocatedHamsterCount(game, survey.id)
@@ -47,16 +49,20 @@ function MarshSurvey({
   const currentWorkRate =
     getMarshSurveyWorkPerSecond(surveyingHamsters, coordination) /
     surveyTimeEffect.multiplier
-  const estimatedDuration = getMarshSurveyDurationSeconds(
-    availableHamsters,
-    coordination,
-    surveyTimeEffect.multiplier,
-  )
+  const estimatedDuration = oneSecondSurveysEnabled
+    ? 1
+    : getMarshSurveyDurationSeconds(
+        availableHamsters,
+        coordination,
+        surveyTimeEffect.multiplier,
+      )
   const progress = activeSurvey
     ? Math.min(1, activeSurvey.workCompleted / survey.requiredWork)
     : 0
   const remainingSeconds = activeSurvey
-    ? (survey.requiredWork - activeSurvey.workCompleted) / currentWorkRate
+    ? oneSecondSurveysEnabled
+      ? Math.max(0, 1 - progress)
+      : (survey.requiredWork - activeSurvey.workCompleted) / currentWorkRate
     : estimatedDuration
 
   return (

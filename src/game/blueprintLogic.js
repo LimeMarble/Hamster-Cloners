@@ -10,6 +10,7 @@ import {
 import {
   BLUEPRINT_EXPANSIONS,
   BLUEPRINT_EXPANSION_TRACKS,
+  FIELD_RESET_STARTING_COLUMNS,
   INITIAL_BLUEPRINT_SIZE,
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   STARTING_CROPS,
@@ -164,6 +165,7 @@ export function createInitialGame() {
     testingCheats: {
       cropMultiplierEnabled: false,
       hamsterEfficiencyEnabled: false,
+      oneSecondManateeSurveysEnabled: false,
     },
     completedCropPerfections: [],
     blueprintExpansionAxesSwapped: true,
@@ -176,7 +178,9 @@ export function createInitialGame() {
     blueprintSlots: [blueprint],
     activeBlueprintSlot: 0,
     hamstersBuildColumns: true,
-    farmland: createFarmlandMultipliers({ columns: 0 }),
+    farmland: createFarmlandMultipliers({
+      columns: FIELD_RESET_STARTING_COLUMNS,
+    }),
   }
 }
 
@@ -232,7 +236,7 @@ const FARMLAND_UNIT_DEFAULT_VALUES = Object.freeze({
 })
 
 const FIELD_RESET_UNIT_OVERRIDES = Object.freeze({
-  columns: 0,
+  columns: FIELD_RESET_STARTING_COLUMNS,
 })
 
 export function createFarmlandMultipliers(values = {}) {

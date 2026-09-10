@@ -295,6 +295,44 @@ export function getRabbitBulkAverageRelationsPerContract(game) {
   return totalReward / eligibleCropIds.length
 }
 
+export function completeRabbitContractsForTesting(game, count = 100) {
+  const completedContracts = Math.max(
+    0,
+    Math.floor(toNonNegativeNumber(count)),
+  )
+
+  if (completedContracts === 0) return game
+
+  const exactRelations =
+    toNonNegativeNumber(game.trade?.rabbitBulkRelationRemainder) +
+    completedContracts * getRabbitBulkAverageRelationsPerContract(game)
+  const gainedRelations = Math.floor(exactRelations + 1e-9)
+
+  return {
+    ...game,
+    trade: {
+      ...game.trade,
+      rabbitRelations: Math.min(
+        Number.MAX_VALUE,
+        toNonNegativeNumber(game.trade?.rabbitRelations) + gainedRelations,
+      ),
+      totalRabbitRelationsEarned: Math.min(
+        Number.MAX_VALUE,
+        toNonNegativeNumber(game.trade?.totalRabbitRelationsEarned) +
+          gainedRelations,
+      ),
+      rabbitContractsCompleted:
+        Math.floor(
+          toNonNegativeNumber(game.trade?.rabbitContractsCompleted),
+        ) + completedContracts,
+      rabbitBulkRelationRemainder: Math.max(
+        0,
+        exactRelations - gainedRelations,
+      ),
+    },
+  }
+}
+
 export function createRabbitContract(game, random = Math.random) {
   const eligibleCropIds = getRabbitContractCropIds(game)
 

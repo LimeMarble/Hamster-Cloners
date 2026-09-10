@@ -133,6 +133,8 @@ function GardenCropTending({
     (find) => find.surveyId === survey.id,
   )
   const hasFinds = surveyFinds.length > 0
+  const oneSecondSurveysEnabled =
+    game.testingCheats?.oneSecondManateeSurveysEnabled === true
   const availableHamsters = Math.min(
     getManateeRemainingHamsterCount(game),
     getManateeRemainingDivingHamsterCapacity(game),
@@ -152,8 +154,12 @@ function GardenCropTending({
     ? Math.min(1, activeSurvey.workCompleted / requiredWork)
     : 0
   const remainingSeconds = activeSurvey
-    ? (requiredWork - activeSurvey.workCompleted) / workPerSecond
-    : fixedDurationSeconds
+    ? oneSecondSurveysEnabled
+      ? Math.max(0, 1 - progress)
+      : (requiredWork - activeSurvey.workCompleted) / workPerSecond
+    : oneSecondSurveysEnabled
+      ? 1
+      : fixedDurationSeconds
 
   return (
     <section className="manatee-garden-tending" aria-labelledby={headingId}>
@@ -198,8 +204,9 @@ function GardenCropTending({
         ))}
       </ul>
       <p className="manatee-fixed-time-note">
-        Tending time is unaffected by Hamster Coordination, Blazing Carrots,
-        or other survey-speed modifiers.
+        {oneSecondSurveysEnabled
+          ? 'Testing override active: this tending survey completes in one second.'
+          : 'Tending time is unaffected by Hamster Coordination, Blazing Carrots, or other survey-speed modifiers.'}
       </p>
 
       {hasFinds ? (

@@ -286,6 +286,7 @@ test('testing panel unlock and toggle states persist safely', () => {
     testingCheats: {
       cropMultiplierEnabled: true,
       hamsterEfficiencyEnabled: true,
+      oneSecondManateeSurveysEnabled: true,
     },
   })
   const legacyUnlockedSave = normalizeGame({ testingPanelUnlocked: true })
@@ -297,12 +298,14 @@ test('testing panel unlock and toggle states persist safely', () => {
   assert.deepEqual(testingSave.testingCheats, {
     cropMultiplierEnabled: true,
     hamsterEfficiencyEnabled: true,
+    oneSecondManateeSurveysEnabled: true,
   })
   assert.equal(ordinarySave.testingPanelUnlocked, false)
   assert.equal(ordinarySave.testingPanelVisible, false)
   assert.deepEqual(ordinarySave.testingCheats, {
     cropMultiplierEnabled: false,
     hamsterEfficiencyEnabled: false,
+    oneSecondManateeSurveysEnabled: false,
   })
 })
 
