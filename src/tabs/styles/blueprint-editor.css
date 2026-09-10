@@ -7,7 +7,17 @@
 }
 
 .blueprint-editor-income {
+  margin-top: 0;
+}
+
+.blueprint-editor-overview {
+  display: grid;
+  gap: 8px;
   margin-top: 14px;
+}
+
+.blueprint-editor-overview .monocrop-status {
+  width: 100%;
 }
 
 .crop-palette {
@@ -298,4 +308,27 @@
 .blueprint-clear-button:hover:not(:disabled) {
   border-color: #db7474;
   background: #512323;
+}
+
+/* Sticky editor information is only enabled when the viewport has enough
+   usable space. Browser zoom reduces these CSS dimensions naturally. */
+@media (min-width: 720px) and (min-height: 680px) {
+  .blueprint-editor-overview-sticky,
+  .blueprint-editor-root-status {
+    position: sticky;
+    z-index: 12;
+    top: 0;
+  }
+
+  .blueprint-editor-overview-sticky {
+    padding: 8px 0;
+    background: var(--panel);
+    box-shadow: 0 10px 16px rgb(0 0 0 / 35%);
+  }
+
+  .blueprint-editor-root-status {
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+    box-shadow: 0 10px 18px rgb(0 0 0 / 42%);
+  }
 }

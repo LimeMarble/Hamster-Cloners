@@ -36,7 +36,12 @@
 }
 
 .blueprint-heading {
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.blueprint-heading .monocrop-status {
+  flex: 1 1 380px;
 }
 
 .blueprint-slots {
@@ -74,29 +79,18 @@
   opacity: 0.55;
 }
 
-.monocrop-pill {
-  display: inline-flex;
-  flex-direction: column;
-  max-width: 250px;
-  padding: 5px 8px;
-  border: 1px solid #bd9b4f;
-  color: #e7c773;
-  font-size: 0.65rem;
-  font-weight: 700;
-  line-height: 1.2;
-  text-transform: uppercase;
+.monocrop-status {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: min(100%, 430px);
+  margin: 0;
 }
 
-.monocrop-pill strong {
-  color: var(--text-strong);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.74rem;
-}
-
-.monocrop-penalty-label {
-  margin-top: 5px;
-  padding-top: 5px;
-  border-top: 1px solid rgb(189 155 79 / 45%);
+.monocrop-status > div {
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
 }
 
 .hamster-badge {

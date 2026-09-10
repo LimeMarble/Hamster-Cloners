@@ -40,6 +40,24 @@
     grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   }
 
+  .monocrop-status {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .blueprint-heading > div {
+    order: 1;
+  }
+
+  .blueprint-heading .size-pill {
+    order: 2;
+  }
+
+  .blueprint-heading .monocrop-status {
+    flex-basis: 100%;
+    order: 3;
+  }
+
   .statistics-grid .statistics-playtime {
     grid-column: span 1;
   }

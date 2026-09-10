@@ -22,18 +22,20 @@ export function WholeNumber({ value }) {
 
 export function MonocropStatus({ limit, multiplier }) {
   return (
-    <span className="monocrop-pill">
-      <span>Monocrop limit</span>
-      <strong>
-        <FormattedNumber value={limit} maximumFractionDigits={0} /> plots
-      </strong>
-      <span className="monocrop-penalty-label">
-        Monocrop penalty to harvest and crop passives
-      </span>
-      <strong>
-        ×<FormattedNumber value={multiplier} maximumFractionDigits={3} />
-      </strong>
-    </span>
+    <dl className="monocrop-status">
+      <div>
+        <dt>Monocrop limit</dt>
+        <dd>
+          <FormattedNumber value={limit} maximumFractionDigits={0} /> plots
+        </dd>
+      </div>
+      <div>
+        <dt>Monocrop penalty to harvest and crop passives</dt>
+        <dd>
+          ×<FormattedNumber value={multiplier} maximumFractionDigits={3} />
+        </dd>
+      </div>
+    </dl>
   )
 }
 

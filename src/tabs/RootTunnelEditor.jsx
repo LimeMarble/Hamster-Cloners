@@ -77,7 +77,10 @@ export function RootTunnelEditorPanel({
         : 'This Root Tunnel is configured. Start another connection or edit an existing one.'
 
   return (
-    <section className="root-tunnel-editor" aria-live="polite">
+    <section
+      className="root-tunnel-editor blueprint-editor-root-status"
+      aria-live="polite"
+    >
       <div className="root-tunnel-editor-heading">
         <div>
           <p className="eyebrow">Root Tunnel configuration</p>
