@@ -6,6 +6,8 @@ import {
 import {
   BASE_CROP_YIELD_PER_PLOT,
   COLUMNS_PER_HAMSTER_PER_SECOND,
+  FLOOR_REPLICATOR_COORDINATION_GROWTH,
+  FLOORS_PER_FLOOR_REPLICATOR_PER_SECOND,
   POST_UNION_HAMSTER_EFFICIENCY_GROWTH,
   ROW_DUPLICATOR_COORDINATION_GROWTH,
   ROWS_PER_ROW_DUPLICATOR_PER_SECOND,
@@ -798,6 +800,30 @@ export function getRowsProducedPerSecond(
     Math.max(0, Number(rowDuplicatorEffectivenessMultiplier) || 0) *
     getRowDuplicatorExternalMultiplier(rowDuplicatorExternalMultiplier)
   )
+}
+
+export function getFloorsProducedPerSecond(floorReplicators = 0) {
+  const safeFloorReplicators = Math.max(
+    0,
+    Math.floor(Number(floorReplicators) || 0),
+  )
+
+  return (
+    safeFloorReplicators *
+    FLOORS_PER_FLOOR_REPLICATOR_PER_SECOND *
+    getFloorReplicatorCoordinationMultiplier(safeFloorReplicators)
+  )
+}
+
+export function getFloorReplicatorCoordinationMultiplier(
+  floorReplicators = 0,
+) {
+  const safeFloorReplicators = Math.max(
+    0,
+    Math.floor(Number(floorReplicators) || 0),
+  )
+
+  return FLOOR_REPLICATOR_COORDINATION_GROWTH ** safeFloorReplicators
 }
 
 export function getRowDuplicatorCoordinationMultiplier(rowDuplicators = 0) {

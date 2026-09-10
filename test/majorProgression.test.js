@@ -33,10 +33,11 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'crop-four-leaf-clover',
       'capybara-contact',
       'capybara-demonstration-introduction',
+      'capybara-demonstration-one',
       'perfection-samplingLentil',
       'perfection-blazingCarrot',
-      'capybara-demonstration-one',
       'capybara-demonstration-two',
+      'capybara-demonstration-three',
     ],
   )
 })
@@ -204,7 +205,7 @@ test('major progression advances to the earliest unfinished goal', () => {
   }
   const secondDemonstrationGoal = getNextMajorProgressionGoal(game)
   assert.equal(secondDemonstrationGoal.id, 'capybara-demonstration-one')
-  assert.equal(secondDemonstrationGoal.target, 1e24)
+  assert.equal(secondDemonstrationGoal.target, 1e20)
   assert.equal(secondDemonstrationGoal.displayProgressAsDash, false)
 
   const cloverRestrictedGoal = getNextMajorProgressionGoal({
@@ -230,7 +231,7 @@ test('major progression advances to the earliest unfinished goal', () => {
   const thirdDemonstrationGoal = getNextMajorProgressionGoal(game)
   assert.equal(thirdDemonstrationGoal.id, 'capybara-demonstration-two')
   assert.equal(thirdDemonstrationGoal.current, 0)
-  assert.equal(thirdDemonstrationGoal.target, 3)
+  assert.equal(thirdDemonstrationGoal.target, 1e300)
 
   game = {
     ...game,
@@ -238,6 +239,22 @@ test('major progression advances to the earliest unfinished goal', () => {
       completedDemonstrations: [
         'introduction',
         'demonstrationOne',
+        'misfortuneTrial',
+      ],
+    },
+  }
+  const fourthDemonstrationGoal = getNextMajorProgressionGoal(game)
+  assert.equal(fourthDemonstrationGoal.id, 'capybara-demonstration-three')
+  assert.equal(fourthDemonstrationGoal.current, 0)
+  assert.equal(fourthDemonstrationGoal.target, 3)
+
+  game = {
+    ...game,
+    capybara: {
+      completedDemonstrations: [
+        'introduction',
+        'demonstrationOne',
+        'misfortuneTrial',
         'demonstrationTwo',
       ],
     },

@@ -3,6 +3,8 @@ import {
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
   HAMSTER_COST_GROWTH_INCREASE_PER_HAMSTER,
+  FLOOR_REPLICATOR_BASE_COST,
+  FLOOR_REPLICATOR_COST_GROWTH,
   ROW_DUPLICATOR_BASE_COST,
   ROW_DUPLICATOR_COST_GROWTH,
   UNION_STATUS_RETIRE_HIRE_COUNT,
@@ -82,6 +84,18 @@ export function getNextRowDuplicatorCost(rowDuplicators = 0) {
   return Math.ceil(
     ROW_DUPLICATOR_BASE_COST *
       ROW_DUPLICATOR_COST_GROWTH ** safeRowDuplicators,
+  )
+}
+
+export function getNextFloorReplicatorCost(floorReplicators = 0) {
+  const safeFloorReplicators = Math.max(
+    0,
+    Math.floor(Number(floorReplicators) || 0),
+  )
+
+  return Math.ceil(
+    FLOOR_REPLICATOR_BASE_COST *
+      FLOOR_REPLICATOR_COST_GROWTH ** safeFloorReplicators,
   )
 }
 
@@ -187,6 +201,34 @@ export function getMaxDuplicatorPurchase(game) {
 
   return {
     rowDuplicators,
+    crops: remainingCrops,
+    purchased,
+  }
+}
+
+export function getMaxFloorReplicatorPurchase(game) {
+  let floorReplicators = Math.max(
+    0,
+    Math.floor(Number(game.floorReplicators) || 0),
+  )
+  let remainingCrops = Math.max(0, Number(game.crops) || 0)
+  let purchased = 0
+
+  if (game.hasUnlockedFloorReplicators !== true) {
+    return { floorReplicators, crops: remainingCrops, purchased }
+  }
+
+  while (purchased < 10000) {
+    const cost = getNextFloorReplicatorCost(floorReplicators)
+    if (!Number.isFinite(cost) || cost > remainingCrops) break
+
+    remainingCrops -= cost
+    floorReplicators += 1
+    purchased += 1
+  }
+
+  return {
+    floorReplicators,
     crops: remainingCrops,
     purchased,
   }

@@ -19,6 +19,10 @@
   border-left-color: #e4bf42;
 }
 
+.floor-replicator-upgrade-card {
+  border-left-color: #5ca8d8;
+}
+
 .size-pill,
 .hamster-badge {
   display: inline-flex;

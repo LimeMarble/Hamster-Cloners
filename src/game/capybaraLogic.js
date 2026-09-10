@@ -2,11 +2,17 @@ import { getBaseFieldProductionSnapshot } from './cropProduction.js'
 import { getFortuneModifiers } from './fortuneLogic.js'
 import { RABBIT_UNLOCK_IDS, hasRabbitUnlock } from './tradeLogic.js'
 import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
+import {
+  getMisfortuneAreaCrops,
+  isMisfortuneAreaActive,
+} from './areaLogic.js'
+import { GAME_AREA_IDS, MISFORTUNE_CROP_GOAL } from './gameConfig.js'
 
 export const CAPYBARA_DEMONSTRATION_IDS = Object.freeze({
   INTRODUCTION: 'introduction',
   DEMONSTRATION_ONE: 'demonstrationOne',
-  DEMONSTRATION_TWO: 'demonstrationTwo',
+  DEMONSTRATION_TWO: 'misfortuneTrial',
+  DEMONSTRATION_THREE: 'demonstrationTwo',
 })
 
 export const CAPYBARA_SECONDARY_OBJECTIVE_IDS = Object.freeze({
@@ -40,16 +46,15 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     number: 1,
     name: 'Beyond Fortune',
     goal: 'Reach the listed field-blueprint Crop-yield requirement.',
-    target: 1e24,
+    target: 1e20,
     unit: 'blueprint Crop yield',
     restrictions: [
       'No 4-Leaf Clover may be planted',
       'No Breeze of Fortune effects may be active',
     ],
-    rewardName: 'Establish contact with Manatees',
+    rewardName: 'Floor Replicators',
     rewardDescription:
-      "a species that didn't exactly get the best hand dealt to them by Fortune itself.",
-    rewardJoiner: ', ',
+      'Unlocks shared machinery that produces Floors in every field area.',
     hint: 'Augmentations are your best friend here.',
     prerequisiteDemonstrationId: CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
     requiresNoClover: true,
@@ -57,6 +62,29 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
   {
     id: CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
     number: 2,
+    name: "Fortune's Wrath",
+    goal: 'Reach the listed Crop requirement in the Misfortune area.',
+    target: MISFORTUNE_CROP_GOAL,
+    unit: 'Misfortune Crops',
+    metric: 'misfortuneCrops',
+    restrictions: [
+      'Begin with no Hamsters or Row Duplicators from the main field',
+      'Main-field Row and Column expansions do not carry over',
+      'Breezes of Fortune are disabled',
+      "Fortune's Wrath divides Crop production by 77.777k and reduces Crop passives by 37%",
+    ],
+    rewardName: 'Establish contact with Manatees',
+    rewardDescription:
+      "a species that didn't exactly get the best hand dealt to them by Fortune itself.",
+    rewardJoiner: ', ',
+    hint: 'Floor Replicators are the only machinery that follows you here.',
+    prerequisiteDemonstrationId:
+      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+    challengeArea: GAME_AREA_IDS.MISFORTUNE,
+  },
+  {
+    id: CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
+    number: 3,
     name: 'Estuary Development',
     goal: 'Complete 3 Manatee Development Goals.',
     target: 3,
@@ -68,7 +96,7 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
       'Unlocks Root Tunnel as a plantable Crop for transferring adjacency effects.',
     hint: 'The Diving Hub and its flippers open the way to the Estuary.',
     prerequisiteDemonstrationId:
-      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
   },
 ])
 
@@ -99,18 +127,32 @@ export function normalizeCapybaraState(rawCapybara) {
     return createInitialCapybaraState()
   }
 
-  return {
-    completedDemonstrations: Array.isArray(
-      rawCapybara.completedDemonstrations,
+  const completedDemonstrations = Array.isArray(
+    rawCapybara.completedDemonstrations,
+  )
+    ? [
+        ...new Set(
+          rawCapybara.completedDemonstrations.filter((id) =>
+            CAPYBARA_DEMONSTRATION_ID_SET.has(id),
+          ),
+        ),
+      ]
+    : []
+  const migratedCompletedDemonstrations =
+    completedDemonstrations.includes(
+      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
+    ) &&
+    !completedDemonstrations.includes(
+      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
     )
       ? [
-          ...new Set(
-            rawCapybara.completedDemonstrations.filter((id) =>
-              CAPYBARA_DEMONSTRATION_ID_SET.has(id),
-            ),
-          ),
+          ...completedDemonstrations,
+          CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
         ]
-      : [],
+      : completedDemonstrations
+
+  return {
+    completedDemonstrations: migratedCompletedDemonstrations,
     completedSecondaryObjectives: Array.isArray(
       rawCapybara.completedSecondaryObjectives,
     )
@@ -154,7 +196,7 @@ export function getCapybaraHamsterEfficiencyMultiplier(game) {
 }
 
 export function getCapybaraBlueprintCropYield(game) {
-  const fortuneModifiers = getFortuneModifiers(game.fortune)
+  const fortuneModifiers = getFortuneModifiers(game)
   const snapshot = getBaseFieldProductionSnapshot(
     game.blueprint,
     game.completedCropPerfections,
@@ -198,7 +240,9 @@ export function getCapybaraDemonstrationStatus(
     demonstration.metric === 'manateeDevelopmentGoals'
       ? metrics.manateeDevelopmentGoalsCompleted ??
           getCompletedManateeDevelopmentGoalCount(game)
-      : metrics.blueprintCropYield ?? getCapybaraBlueprintCropYield(game),
+      : demonstration.metric === 'misfortuneCrops'
+        ? metrics.misfortuneCrops ?? getMisfortuneAreaCrops(game)
+        : metrics.blueprintCropYield ?? getCapybaraBlueprintCropYield(game),
   )
   const completed = hasCompletedCapybaraDemonstration(game, demonstrationId)
   const secondaryObjective = demonstration.secondaryObjective
@@ -219,6 +263,10 @@ export function getCapybaraDemonstrationStatus(
   const restrictionsMet = demonstration.requiresNoClover
     ? isNoCloverConditionMet(game)
     : true
+  const isRequiredAreaActive = demonstration.challengeArea
+    ? demonstration.challengeArea === GAME_AREA_IDS.MISFORTUNE &&
+      isMisfortuneAreaActive(game)
+    : true
 
   return {
     ...demonstration,
@@ -231,6 +279,7 @@ export function getCapybaraDemonstrationStatus(
     hasReachedGoal,
     hasPrerequisite,
     restrictionsMet,
+    isRequiredAreaActive,
     secondaryVisible: completed && Boolean(secondaryObjective),
     secondaryCompleted,
     secondaryConditionMet,
@@ -239,6 +288,7 @@ export function getCapybaraDemonstrationStatus(
       hasPrerequisite &&
       hasReachedGoal &&
       restrictionsMet &&
+      isRequiredAreaActive &&
       (!completed ||
         (Boolean(secondaryObjective) &&
           !secondaryCompleted &&
@@ -263,7 +313,10 @@ export function completeCapybaraDemonstration(
 
   return {
     ...game,
-    ...(demonstrationId === CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO
+    ...(demonstrationId === CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE
+      ? { hasUnlockedFloorReplicators: true }
+      : {}),
+    ...(demonstrationId === CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE
       ? { hasUnlockedRootTunnel: true }
       : {}),
     capybara: {
@@ -291,7 +344,10 @@ export function completeNextCapybaraDemonstrationForTesting(game) {
 
   return {
     ...game,
-    ...(nextDemonstration.id === CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO
+    ...(nextDemonstration.id === CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE
+      ? { hasUnlockedFloorReplicators: true }
+      : {}),
+    ...(nextDemonstration.id === CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE
       ? { hasUnlockedRootTunnel: true }
       : {}),
     capybara: {

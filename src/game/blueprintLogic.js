@@ -143,6 +143,8 @@ export function createInitialGame() {
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
     rowDuplicators: 0,
+    hasUnlockedFloorReplicators: false,
+    floorReplicators: 0,
     fortune: createInitialFortuneState(),
     capybara: {
       completedDemonstrations: [],
@@ -178,6 +180,11 @@ export function createInitialGame() {
     blueprintSlots: [blueprint],
     activeBlueprintSlot: 0,
     hamstersBuildColumns: true,
+    activeArea: 'main',
+    areaProgress: {
+      main: null,
+      misfortune: null,
+    },
     farmland: createFarmlandMultipliers({
       columns: FIELD_RESET_STARTING_COLUMNS,
     }),

@@ -1,6 +1,8 @@
 import { memo } from 'react'
 import {
+  CAPYBARA_DEMONSTRATION_IDS,
   getFieldsPlanted,
+  hasCompletedCapybaraDemonstration,
   isWaterLettuceFieldInfested,
 } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
@@ -21,10 +23,10 @@ function BlueprintPanel({
 }) {
   const plantedCrops = getBlueprintCropSummary(game.blueprint.cells)
   const fieldInfested = isWaterLettuceFieldInfested(game.blueprint)
-  const hasUnlockedManatees =
-    game.capybara?.completedDemonstrations?.includes(
-      'demonstrationOne',
-    ) === true
+  const hasUnlockedManatees = hasCompletedCapybaraDemonstration(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
   const visibleBlueprintSlotIndexes = hasUnlockedManatees
     ? [0, 1, 2, 3]
     : game.hasUnlockedKnotweed
@@ -171,6 +173,17 @@ function BlueprintPanel({
             </div>
           </>
         ) : null}
+        {game.hasUnlockedFloorReplicators ? (
+          <div>
+            <dt>Floors built</dt>
+            <dd>
+              <FormattedNumber
+                value={Math.floor(game.farmland.floors)}
+                maximumFractionDigits={0}
+              />
+            </dd>
+          </div>
+        ) : null}
       </dl>
 
     </article>
@@ -204,14 +217,18 @@ function areBlueprintPropsEqual(previous, next) {
       nextGame.suffixScientificExponent &&
     previousGame.activeBlueprintSlot === nextGame.activeBlueprintSlot &&
     previousGame.hasUnlockedKnotweed === nextGame.hasUnlockedKnotweed &&
-    previousGame.capybara?.completedDemonstrations?.includes(
-      'demonstrationOne',
+    hasCompletedCapybaraDemonstration(
+      previousGame,
+      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
     ) ===
-      nextGame.capybara?.completedDemonstrations?.includes(
-        'demonstrationOne',
+      hasCompletedCapybaraDemonstration(
+        nextGame,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
       ) &&
     previousGame.hasUnlockedRowDuplicators ===
       nextGame.hasUnlockedRowDuplicators &&
+    previousGame.hasUnlockedFloorReplicators ===
+      nextGame.hasUnlockedFloorReplicators &&
     ['rows', 'columns', 'floors', 'farms'].every(
       (key) =>
         getFlooredFarmlandValue(previousGame, key) ===

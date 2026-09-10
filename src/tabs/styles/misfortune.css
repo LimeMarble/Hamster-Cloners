@@ -1,0 +1,59 @@
+.game-tab-misfortune {
+  border-color: #9c3f47;
+  color: #e8848c;
+}
+
+.game-tab-misfortune.game-tab-active {
+  border-color: #e45d68;
+  color: #ffd7da;
+  background: #3a151b;
+}
+
+.misfortune-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-bottom: 12px;
+  padding: 11px 14px;
+  border: 1px solid #c54c57;
+  color: #ffc5ca;
+  background: #351116;
+  box-shadow: inset 3px 0 #f06b76;
+  font-size: 0.78rem;
+}
+
+.misfortune-status strong {
+  color: #ff7681;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.misfortune-panel {
+  margin-top: 12px;
+  padding: 22px;
+  border: 1px solid #8f333c;
+  background: linear-gradient(145deg, #251013, var(--panel) 62%);
+}
+
+.misfortune-panel h1 {
+  color: #ff7681;
+}
+
+.misfortune-panel > p {
+  max-width: 720px;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.misfortune-upgrades-empty {
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px dashed #76343a;
+  background: #1d1113;
+}
+
+.misfortune-upgrades-empty p:last-child {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+}

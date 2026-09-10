@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  CAPYBARA_DEMONSTRATION_IDS,
   cancelManateeSurvey,
   claimRabbitContract,
   clearWetlandsConnectionObstructions,
@@ -12,12 +13,17 @@ import {
   getBlueprintExpansion,
   getHamsterStateAfterHire,
   getMaxDuplicatorPurchase,
+  getMaxFloorReplicatorPurchase,
   getMaxHamsterPurchase,
   getNextHamsterCost,
+  getNextFloorReplicatorCost,
   getNextRowDuplicatorCost,
+  GAME_AREA_IDS,
+  hasCompletedCapybaraDemonstration,
   MANATEE_ZONE_IDS,
   resetForBlueprintExpansion,
   resetForRowDuplicators,
+  switchGameArea,
   startManateeSurvey,
   purchaseRabbitUnlock,
   purchaseSeedAugmentation,
@@ -140,6 +146,33 @@ export function useGameActions({
   function buyMaxRowDuplicators() {
     updateGame((currentGame) => {
       const { purchased, ...nextGame } = getMaxDuplicatorPurchase(currentGame)
+      return purchased > 0 ? { ...currentGame, ...nextGame } : currentGame
+    })
+  }
+
+  function buyFloorReplicator() {
+    updateGame((currentGame) => {
+      if (!currentGame.hasUnlockedFloorReplicators) return currentGame
+
+      const cost = getNextFloorReplicatorCost(currentGame.floorReplicators)
+      if (currentGame.crops < cost) return currentGame
+
+      return {
+        ...currentGame,
+        crops: currentGame.crops - cost,
+        floorReplicators:
+          Math.max(
+            0,
+            Math.floor(Number(currentGame.floorReplicators) || 0),
+          ) + 1,
+      }
+    })
+  }
+
+  function buyMaxFloorReplicators() {
+    updateGame((currentGame) => {
+      const { purchased, ...nextGame } =
+        getMaxFloorReplicatorPurchase(currentGame)
       return purchased > 0 ? { ...currentGame, ...nextGame } : currentGame
     })
   }
@@ -282,10 +315,43 @@ export function useGameActions({
   }
 
   function completeCapybaraDemo(demonstrationId) {
-    updateGame((currentGame) =>
-      completeCapybaraDemonstration(currentGame, demonstrationId) ??
+    updateGame((currentGame) => {
+      const completedGame = completeCapybaraDemonstration(
         currentGame,
+        demonstrationId,
+      )
+
+      if (!completedGame) return currentGame
+
+      return demonstrationId ===
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO
+        ? switchGameArea(completedGame, GAME_AREA_IDS.MAIN)
+        : completedGame
+    })
+  }
+
+  function enterMisfortuneArea() {
+    updateGame((currentGame) => {
+      const canEnter =
+        hasCompletedCapybaraDemonstration(
+          currentGame,
+          CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+        )
+
+      return canEnter
+        ? switchGameArea(currentGame, GAME_AREA_IDS.MISFORTUNE)
+        : currentGame
+    })
+    resetBlueprintEditor()
+    setActiveTab('field')
+  }
+
+  function leaveMisfortuneArea() {
+    updateGame((currentGame) =>
+      switchGameArea(currentGame, GAME_AREA_IDS.MAIN),
     )
+    resetBlueprintEditor()
+    setActiveTab('field')
   }
 
   function startMarshSurvey(surveyId, lengthId, allocatedHamsters) {
@@ -383,6 +449,7 @@ export function useGameActions({
       onShowField: () => setActiveTab('field'),
       onShowTrade: openTrade,
       onShowAugmentation: openAugmentation,
+      onShowMisfortune: () => setActiveTab('misfortune'),
       onOpenInventions: openInventions,
       onShowStatistics: () => setActiveTab('statistics'),
       onOpenOptions: openOptions,
@@ -392,6 +459,8 @@ export function useGameActions({
       onBuyMaxHamsters: buyMaxHamsters,
       onBuyRowDuplicator: buyRowDuplicator,
       onBuyMaxRowDuplicators: buyMaxRowDuplicators,
+      onBuyFloorReplicator: buyFloorReplicator,
+      onBuyMaxFloorReplicators: buyMaxFloorReplicators,
     },
     tradeActions: {
       activeRelation: activeTradeRelation,
@@ -403,6 +472,8 @@ export function useGameActions({
       onPurchaseRabbitUnlock: buyRabbitUnlock,
       onUnlockBlazingCarrot: () => unlockPerfection('blazingCarrot'),
       onCompleteCapybaraDemonstration: completeCapybaraDemo,
+      onEnterMisfortuneArea: enterMisfortuneArea,
+      onLeaveMisfortuneArea: leaveMisfortuneArea,
       onStartManateeSurvey: startMarshSurvey,
       onCancelManateeSurvey: cancelMarshSurvey,
       onCollectManateeFind: collectMarshFind,
@@ -436,6 +507,7 @@ export function useGameActions({
       ? getBlueprintExpansion(pendingBlueprintExpansionId)
       : null,
     isRowDuplicatorUnlockPending,
+    onLeaveMisfortuneArea: leaveMisfortuneArea,
     options: {
       saveCode,
       onSaveCodeChange: setSaveCode,

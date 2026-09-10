@@ -5,6 +5,7 @@ import { BackgroundCatchUpOverlay } from './BackgroundCatchUpOverlay.jsx'
 import { GameOverlays } from './GameOverlays.jsx'
 import { GameScreen } from './GameScreen.jsx'
 import { MajorProgressionBar } from './MajorProgressionBar.jsx'
+import { MisfortuneStatus } from './Misfortune.jsx'
 import './App.css'
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
     <main className="game-shell">
       <GameHeader />
       <GameNavigation {...navigation} />
+      {navigation.isMisfortuneTabVisible ? <MisfortuneStatus /> : null}
       <CloverFortune {...overlays.fortune} />
       <GameScreen {...screen} />
       <MajorProgressionBar {...progression} />

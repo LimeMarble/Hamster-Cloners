@@ -237,7 +237,7 @@ test('collecting the final waste object completes the cleanup Development Goal',
   )
 })
 
-test('Demonstration 2 reaches its target after all three Development Goals', () => {
+test('Demonstration 3 reaches its target after all three Development Goals', () => {
   const game = createDivingHubGame()
   const status = getCapybaraDemonstrationStatus(
     {
@@ -249,7 +249,7 @@ test('Demonstration 2 reaches its target after all three Development Goals', () 
         ),
       },
     },
-    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
   )
 
   assert.equal(MANATEE_DEVELOPMENT_GOAL_TARGET, 3)

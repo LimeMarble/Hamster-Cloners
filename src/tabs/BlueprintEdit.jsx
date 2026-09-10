@@ -5,7 +5,9 @@ import {
   getCropUnlockDescription,
 } from '../game/crops.js'
 import {
+  CAPYBARA_DEMONSTRATION_IDS,
   getMirrorCornMaximumReflections,
+  hasCompletedCapybaraDemonstration,
   isBlazingCarrotBurned,
   isWaterLettuceFieldInfested,
 } from '../game/gameLogic.js'
@@ -54,10 +56,10 @@ function BlueprintEditContent({
   const safeMirrorCornReflectionLimit = getMirrorCornMaximumReflections(
     game.seedAugmentations,
   )
-  const revealManateeEffects =
-    game.capybara?.completedDemonstrations?.includes(
-      'demonstrationOne',
-    ) === true
+  const revealManateeEffects = hasCompletedCapybaraDemonstration(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
   const fieldInfested = isWaterLettuceFieldInfested(game.blueprint)
   const hasSelectedRootTunnel =
     rootTunnelEditor.selectedTunnelIndex !== null &&
@@ -122,8 +124,13 @@ function BlueprintEditContent({
 
         <p className="editing-notice">
           Harvesting is paused while you modify this blueprint. Right-click a
-          planted crop to remove it. Select a Root Tunnel to configure it;
-          tunnels can only be removed from their configuration panel.
+          planted crop to remove it.
+          {game.hasUnlockedRootTunnel ? (
+            <>
+              {' '}Select a Root Tunnel to configure it; tunnels can only be
+              removed from their configuration panel.
+            </>
+          ) : null}
         </p>
 
         {pendingMirrorCornPlacement ? (
@@ -367,6 +374,7 @@ function BlueprintEditContent({
             }
             revealManateeEffects={revealManateeEffects}
             fortune={game.fortune}
+            activeArea={game.activeArea}
             seedAugmentations={game.seedAugmentations}
             cursor={hoveredEditorCrop}
           />
@@ -406,6 +414,8 @@ function areBlueprintEditorPropsEqual(previous, next) {
       nextGame.suffixScientificExponent &&
     previousGame.fortune === nextGame.fortune &&
     previousGame.hasUnlockedSunflower === nextGame.hasUnlockedSunflower &&
+    previousGame.hasUnlockedRootTunnel ===
+      nextGame.hasUnlockedRootTunnel &&
     previousGame.activeBlueprintSlot === nextGame.activeBlueprintSlot &&
     previousGame.hamsters === nextGame.hamsters &&
     Object.is(previous.fieldIncomePerSecond, next.fieldIncomePerSecond) &&

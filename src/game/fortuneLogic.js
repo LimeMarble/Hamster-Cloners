@@ -7,6 +7,11 @@ import {
   getMonocropThresholdBonus,
 } from './cropEffects.js'
 import { getMonocropYieldMultiplier } from './monocropPenalty.js'
+import {
+  FORTUNES_WRATH_CROP_DIVISOR,
+  FORTUNES_WRATH_PASSIVE_MULTIPLIER,
+  GAME_AREA_IDS,
+} from './gameConfig.js'
 
 export const CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS = 60
 export const CLOVER_BUNDLE_MAX_CHANCE = 0.77
@@ -142,6 +147,14 @@ export function normalizeFortuneState(rawFortune) {
 }
 
 export function getFortuneModifiers(gameOrFortune) {
+  if (gameOrFortune?.activeArea === GAME_AREA_IDS.MISFORTUNE) {
+    return {
+      passiveEffectMultiplier: FORTUNES_WRATH_PASSIVE_MULTIPLIER,
+      cropYieldMultiplier: 1 / FORTUNES_WRATH_CROP_DIVISOR,
+      harvestMultiplier: 1,
+    }
+  }
+
   const fortune = normalizeFortuneState(
     gameOrFortune?.fortune ?? gameOrFortune,
   )
@@ -171,6 +184,8 @@ export function getFortuneModifiers(gameOrFortune) {
 }
 
 export function getCloverBundleChancePerMinute(game) {
+  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return 0
+
   const completedCropPerfections = game.completedCropPerfections ?? []
   const blueprint = getMirrorCornEffectBlueprint(
     game.blueprint,
@@ -250,6 +265,8 @@ export function advanceFortuneState(
   elapsedSeconds,
   random = Math.random,
 ) {
+  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return game
+
   const fortune = normalizeFortuneState(game.fortune)
   const safeElapsedSeconds = toNonNegativeNumber(elapsedSeconds)
   const activeEffects = fortune.activeEffects.flatMap((activeEffect) => {
@@ -296,6 +313,8 @@ export function advanceFortuneState(
 }
 
 export function addRandomFortuneEffect(game, random = Math.random) {
+  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return game
+
   const fortune = normalizeFortuneState(game.fortune)
   const effect = chooseFortuneEffect(random())
   const matchingEffect = fortune.activeEffects.some(
@@ -338,6 +357,8 @@ export function collectCloverBundle(
   bundleIndexOrRandom = 0,
   suppliedRandom = Math.random,
 ) {
+  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return game
+
   const fortune = normalizeFortuneState(game.fortune)
   const bundleIndex = typeof bundleIndexOrRandom === 'function'
     ? 0
@@ -361,6 +382,8 @@ export function collectCloverBundle(
   return addRandomFortuneEffect(gameAfterCollection, random)
 }
 export function spawnCloverBundle(game, random = Math.random) {
+  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return game
+
   const fortune = normalizeFortuneState(game.fortune)
 
   return {

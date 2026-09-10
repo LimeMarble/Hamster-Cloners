@@ -17,7 +17,7 @@ export function BlazingCarrotPerfection({
   )
   const revealSurveyEffect = hasCompletedCapybaraDemonstration(
     game,
-    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
   )
 
   if (!isVisible) return null

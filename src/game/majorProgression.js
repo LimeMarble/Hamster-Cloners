@@ -29,6 +29,7 @@ import {
   hasCompletedCapybaraDemonstration,
 } from './capybaraLogic.js'
 import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
+import { getMisfortuneAreaCrops } from './areaLogic.js'
 
 const FIRST_COLUMN_EXPANSION_COST =
   BLUEPRINT_EXPANSIONS.find((expansion) => expansion.id === 'firstColumn')
@@ -290,8 +291,6 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: getCapybaraBlueprintCropYield,
     requiresAction: true,
   },
-  createPerfectionGoal('samplingLentil'),
-  createPerfectionGoal('blazingCarrot'),
   {
     id: 'capybara-demonstration-one',
     category: 'Demonstration',
@@ -309,19 +308,38 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: getCapybaraBlueprintCropYield,
     requiresAction: true,
   },
+  createPerfectionGoal('samplingLentil'),
+  createPerfectionGoal('blazingCarrot'),
   {
     id: 'capybara-demonstration-two',
     category: 'Demonstration',
-    title: 'Capybara Demonstration 2: Estuary Development',
+    title: "Capybara Demonstration 2: Fortune's Wrath",
     demonstrationId: CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
     target: CAPYBARA_DEMONSTRATIONS[2].target,
+    unit: 'Misfortune Crops',
+    description:
+      'Enter Misfortune from Trade and reach the Crop requirement under Fortune’s Wrath.',
+    isComplete: (game) =>
+      hasCompletedCapybaraDemonstration(
+        game,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+      ),
+    getCurrent: getMisfortuneAreaCrops,
+    requiresAction: true,
+  },
+  {
+    id: 'capybara-demonstration-three',
+    category: 'Demonstration',
+    title: 'Capybara Demonstration 3: Estuary Development',
+    demonstrationId: CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
+    target: CAPYBARA_DEMONSTRATIONS[3].target,
     unit: 'Manatee Development Goals',
     description:
       'Complete three Manatee Development Goals, then report back to the Capybaras.',
     isComplete: (game) =>
       hasCompletedCapybaraDemonstration(
         game,
-        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
       ),
     getCurrent: getCompletedManateeDevelopmentGoalCount,
     requiresAction: true,
@@ -372,7 +390,11 @@ export function getNextMajorProgressionGoal(game) {
     unit: goal.unit,
     progress,
     displayProgressAsDash,
-    isReady: goal.requiresAction === true && current >= target,
+    isReady:
+      goal.requiresAction === true &&
+      (demonstrationStatus
+        ? demonstrationStatus.canComplete
+        : current >= target),
     isComplete: false,
   }
 }

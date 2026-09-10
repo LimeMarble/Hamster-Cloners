@@ -1,6 +1,10 @@
 import { normalizeTradeState, RABBIT_UNLOCK_IDS } from './tradeLogic.js'
 import { normalizeFortuneState } from './fortuneLogic.js'
-import { normalizeCapybaraState } from './capybaraLogic.js'
+import {
+  CAPYBARA_DEMONSTRATION_IDS,
+  normalizeCapybaraState,
+} from './capybaraLogic.js'
+import { normalizeStoredAreaState } from './areaLogic.js'
 import { normalizeSeedAugmentationState } from './augmentationLogic.js'
 import { normalizeManateeState } from './manateeLogic.js'
 import { normalizeMangroveSaplingCells } from './mangroveSaplingLogic.js'
@@ -26,6 +30,7 @@ import {
   isCropPerfectionTemporarilyUnavailable,
   isCropTemporarilyUnavailable,
 } from './crops.js'
+import { GAME_AREA_IDS } from './gameConfig.js'
 
 export const DEFAULT_SAVE_KEY = 'hamster-cloners-save-v1'
 export const SAVE_KEY =
@@ -167,6 +172,18 @@ export function normalizeGame(rawGame) {
     rawGame.seedAugmentations,
   )
   const manatees = normalizeManateeState(rawGame.manatees)
+  const capybara = normalizeCapybaraState(rawGame.capybara)
+  const activeArea = rawGame.activeArea === GAME_AREA_IDS.MISFORTUNE
+    ? GAME_AREA_IDS.MISFORTUNE
+    : GAME_AREA_IDS.MAIN
+  const normalizeOptionalArea = (rawArea) =>
+    rawArea && typeof rawArea === 'object'
+      ? normalizeStoredAreaState(rawArea)
+      : null
+  const areaProgress = {
+    main: normalizeOptionalArea(rawGame.areaProgress?.main),
+    misfortune: normalizeOptionalArea(rawGame.areaProgress?.misfortune),
+  }
 
   if (completedCropPerfections.includes('splitweed')) {
     blueprint = removeUnavailableCrops(
@@ -311,8 +328,14 @@ export function normalizeGame(rawGame) {
       toNonNegativeNumber(rawGame.crops, 0) >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
     hasUnlockedRowDuplicators: rawGame.hasUnlockedRowDuplicators === true,
     rowDuplicators: toNonNegativeInteger(rawGame.rowDuplicators, 0),
+    hasUnlockedFloorReplicators:
+      rawGame.hasUnlockedFloorReplicators === true ||
+      capybara.completedDemonstrations.includes(
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+      ),
+    floorReplicators: toNonNegativeInteger(rawGame.floorReplicators, 0),
     fortune: normalizeFortuneState(rawGame.fortune),
-    capybara: normalizeCapybaraState(rawGame.capybara),
+    capybara,
     seedAugmentations,
     manatees,
     trade,
@@ -337,6 +360,8 @@ export function normalizeGame(rawGame) {
     },
     completedCropPerfections,
     hamstersBuildColumns: true,
+    activeArea,
+    areaProgress,
     blueprintExpansionAxesSwapped: true,
     completedBlueprintExpansions: BLUEPRINT_EXPANSIONS.map(
       (expansion) => expansion.id,

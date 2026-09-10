@@ -5,7 +5,9 @@ import {
 } from '../game/fortuneLogic.js'
 import { FormattedNumber } from './ui.jsx'
 
-function CloverFortuneContent({ fortune, onCollect }) {
+function CloverFortuneContent({ fortune, isDisabled, onCollect }) {
+  if (isDisabled) return null
+
   const state = normalizeFortuneState(fortune)
 
   return (
@@ -85,6 +87,7 @@ export const CloverFortune = memo(
   CloverFortuneContent,
   (previous, next) =>
     previous.fortune === next.fortune &&
+    previous.isDisabled === next.isDisabled &&
     previous.numberNotation === next.numberNotation &&
     previous.suffixScientificExponent === next.suffixScientificExponent,
 )

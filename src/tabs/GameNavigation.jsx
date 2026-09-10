@@ -18,10 +18,12 @@ function GameNavigationContent({
   inventionsUnlockCount,
   isTradeTabVisible,
   isAugmentationTabVisible,
+  isMisfortuneTabVisible,
   onShowField,
   onOpenInventions,
   onShowTrade,
   onShowAugmentation,
+  onShowMisfortune,
   onShowStatistics,
   onOpenOptions,
 }) {
@@ -76,7 +78,17 @@ function GameNavigationContent({
         >
           Augmentation
         </button>
-      ) : null}      <button
+      ) : null}
+      {isMisfortuneTabVisible ? (
+        <button
+          type="button"
+          className={`game-tab game-tab-misfortune ${activeTab === 'misfortune' ? 'game-tab-active' : ''}`}
+          onClick={onShowMisfortune}
+        >
+          Misfortune
+        </button>
+      ) : null}
+      <button
         type="button"
         className={`game-tab ${activeTab === 'statistics' ? 'game-tab-active' : ''}`}
         onClick={onShowStatistics}
@@ -101,6 +113,7 @@ const NAVIGATION_DISPLAY_KEYS = [
   'inventionsUnlockCount',
   'isTradeTabVisible',
   'isAugmentationTabVisible',
+  'isMisfortuneTabVisible',
 ]
 
 function areNavigationPropsEqual(previous, next) {

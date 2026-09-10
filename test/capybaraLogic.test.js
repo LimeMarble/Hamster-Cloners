@@ -250,16 +250,11 @@ test('Demonstration 1 visibly bans Clover and active Breeze effects', () => {
     },
   }
 
-  assert.equal(target, 1e24)
+  assert.equal(target, 1e20)
   assert.equal(
     CAPYBARA_DEMONSTRATIONS[1].rewardName,
-    'Establish contact with Manatees',
+    'Floor Replicators',
   )
-  assert.equal(
-    CAPYBARA_DEMONSTRATIONS[1].rewardDescription,
-    "a species that didn't exactly get the best hand dealt to them by Fortune itself.",
-  )
-  assert.equal(CAPYBARA_DEMONSTRATIONS[1].rewardJoiner, ', ')
   assert.equal(
     CAPYBARA_DEMONSTRATIONS[1].hint,
     'Augmentations are your best friend here.',
@@ -310,15 +305,53 @@ test('Demonstration 1 visibly bans Clover and active Breeze effects', () => {
     CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
   ])
+  assert.equal(completed.hasUnlockedFloorReplicators, true)
 })
 
-test('Demonstration 2 tracks Manatee Development Goals and rewards Root Tunnel', () => {
+test("Demonstration 2 requires 1e300 Crops inside Fortune's Wrath", () => {
   const game = {
     ...createContactGame(),
     capybara: {
       completedDemonstrations: [
         CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
         CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+      ],
+      completedSecondaryObjectives: [],
+    },
+    activeArea: 'misfortune',
+    crops: 1e300,
+  }
+  const demonstration = CAPYBARA_DEMONSTRATIONS[2]
+  const status = getCapybaraDemonstrationStatus(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
+
+  assert.equal(demonstration.target, 1e300)
+  assert.equal(demonstration.rewardName, 'Establish contact with Manatees')
+  assert.equal(status.current, 1e300)
+  assert.equal(status.progress, 1)
+  assert.equal(status.canComplete, true)
+
+  const completion = completeCapybaraDemonstration(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
+  assert.ok(
+    completion.capybara.completedDemonstrations.includes(
+      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+    ),
+  )
+})
+
+test('Demonstration 3 tracks Manatee Development Goals and rewards Root Tunnel', () => {
+  const game = {
+    ...createContactGame(),
+    capybara: {
+      completedDemonstrations: [
+        CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
       ],
       completedSecondaryObjectives: [],
     },
@@ -330,10 +363,10 @@ test('Demonstration 2 tracks Manatee Development Goals and rewards Root Tunnel',
       ],
     },
   }
-  const demonstration = CAPYBARA_DEMONSTRATIONS[2]
+  const demonstration = CAPYBARA_DEMONSTRATIONS[3]
   const status = getCapybaraDemonstrationStatus(
     game,
-    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
   )
 
   assert.equal(demonstration.target, 3)
@@ -344,13 +377,13 @@ test('Demonstration 2 tracks Manatee Development Goals and rewards Root Tunnel',
 
   const futureCompletion = completeCapybaraDemonstration(
     game,
-    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
     { manateeDevelopmentGoalsCompleted: 3 },
   )
   assert.equal(futureCompletion.hasUnlockedRootTunnel, true)
   assert.ok(
     futureCompletion.capybara.completedDemonstrations.includes(
-      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
     ),
   )
 })

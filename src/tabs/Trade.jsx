@@ -201,6 +201,8 @@ function CapybaraDemonstrations({
   game,
   blueprintCropYield,
   onCompleteCapybaraDemonstration,
+  onEnterMisfortuneArea,
+  onLeaveMisfortuneArea,
 }) {
   return (
     <section
@@ -230,9 +232,13 @@ function CapybaraDemonstrations({
           const hasSecondaryObjective = Boolean(status.secondaryObjective)
           const usesDevelopmentGoals =
             demonstration.metric === 'manateeDevelopmentGoals'
+          const usesMisfortuneCrops =
+            demonstration.metric === 'misfortuneCrops'
           const progressLabel = usesDevelopmentGoals
             ? 'Development Goals completed'
-            : 'Blueprint Crop yield'
+            : usesMisfortuneCrops
+              ? 'Misfortune Crops'
+              : 'Blueprint Crop yield'
           const statusLabel = status.secondaryCompleted
             ? 'Mastered'
             : status.completed
@@ -254,8 +260,12 @@ function CapybaraDemonstrations({
                     ? 'Secondary condition not met'
                     : 'Goal not reached'
               : 'Demonstration passed'
-            : !status.hasPrerequisite
-              ? `Complete Demonstration ${demonstration.number - 1} first`
+              : !status.hasPrerequisite
+                ? `Complete Demonstration ${demonstration.number - 1} first`
+              : usesMisfortuneCrops &&
+                  status.hasReachedGoal &&
+                  !status.isRequiredAreaActive
+                ? 'Re-enter Misfortune to pass'
               : !status.restrictionsMet
                 ? 'Restrictions not met'
                 : status.canComplete
@@ -281,6 +291,12 @@ function CapybaraDemonstrations({
               <p className='trade-copy'>
                 {usesDevelopmentGoals ? (
                   demonstration.goal
+                ) : usesMisfortuneCrops ? (
+                  <>
+                    Accumulate at least{' '}
+                    <FormattedNumber value={demonstration.target} /> Crops in
+                    the Misfortune area.
+                  </>
                 ) : (
                   <>
                     Have a field blueprint with a Crop yield of at least{' '}
@@ -358,6 +374,23 @@ function CapybaraDemonstrations({
                 </div>
               ) : null}
 
+              {usesMisfortuneCrops &&
+              status.hasPrerequisite ? (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={
+                    status.isRequiredAreaActive
+                      ? onLeaveMisfortuneArea
+                      : onEnterMisfortuneArea
+                  }
+                >
+                  {status.isRequiredAreaActive
+                    ? 'Leave Misfortune'
+                    : 'Enter Misfortune'}
+                </button>
+              ) : null}
+
               <button
                 type='button'
                 className='trade-primary-button'
@@ -390,6 +423,8 @@ export function Trade({
   onPurchaseRabbitUnlock,
   onUnlockBlazingCarrot,
   onCompleteCapybaraDemonstration,
+  onEnterMisfortuneArea,
+  onLeaveMisfortuneArea,
   onStartManateeSurvey,
   onCancelManateeSurvey,
   onCollectManateeFind,
@@ -405,7 +440,7 @@ export function Trade({
   )
   const hasManateeContact = hasCompletedCapybaraDemonstration(
     game,
-    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
   )
   const rabbitContracts = game.trade.rabbitContracts ?? []
   const rabbitContractsCompleted =
@@ -558,6 +593,8 @@ export function Trade({
               onCompleteCapybaraDemonstration={
                 onCompleteCapybaraDemonstration
               }
+              onEnterMisfortuneArea={onEnterMisfortuneArea}
+              onLeaveMisfortuneArea={onLeaveMisfortuneArea}
             />
           ) : activeRelation === 'manatees' && hasManateeContact ? (
             <ManateeRelations

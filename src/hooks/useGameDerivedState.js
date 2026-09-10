@@ -15,9 +15,13 @@ import {
 
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
+  isMisfortuneAreaActive,
+  getFloorReplicatorCoordinationMultiplier,
+  getFloorsProducedPerSecond,
   getManateeSurveyingHamsterCount,
   getUnlockedManateeCropIds,
   getNextHamsterCost,
+  getNextFloorReplicatorCost,
   getNextMajorProgressionGoal,
   getNextRowDuplicatorCost,
   getMonocropThresholdBonus,
@@ -40,8 +44,12 @@ import { formatWholeNumber } from '../game/numberFormat.js'
 
 export function useGameDerivedState(game) {
   const fortuneModifiers = useMemo(
-    () => getFortuneModifiers(game.fortune),
-    [game.fortune],
+    () =>
+      getFortuneModifiers({
+        fortune: game.fortune,
+        activeArea: game.activeArea,
+      }),
+    [game.activeArea, game.fortune],
   )
   const nextHamsterCost = useMemo(
     () => getNextHamsterCost(game.hamsters, game.unionized),
@@ -130,6 +138,22 @@ export function useGameDerivedState(game) {
   const nextRowDuplicatorCost = useMemo(
     () => getNextRowDuplicatorCost(game.rowDuplicators),
     [game.rowDuplicators],
+  )
+  const nextFloorReplicatorCost = useMemo(
+    () => getNextFloorReplicatorCost(game.floorReplicators),
+    [game.floorReplicators],
+  )
+  const floorReplicatorCoordinationMultiplier = useMemo(
+    () =>
+      getFloorReplicatorCoordinationMultiplier(game.floorReplicators),
+    [game.floorReplicators],
+  )
+  const floorsBuiltPerSecond = useMemo(
+    () =>
+      game.hasUnlockedFloorReplicators
+        ? getFloorsProducedPerSecond(game.floorReplicators)
+        : 0,
+    [game.floorReplicators, game.hasUnlockedFloorReplicators],
   )
   const rowDuplicatorEffectivenessMultiplier = useMemo(
     () =>
@@ -224,7 +248,7 @@ export function useGameDerivedState(game) {
   const hasUnlockedFourLeafClover = hasRabbitUnlock(
     game,
     RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
-  )
+  ) && !isMisfortuneAreaActive(game)
   const unlockedManateeCropIds = useMemo(
     () => getUnlockedManateeCropIds({ manatees: game.manatees }),
     [game.manatees],
@@ -341,6 +365,7 @@ export function useGameDerivedState(game) {
   )
 
   return {
+    isMisfortuneAreaActive: isMisfortuneAreaActive(game),
     nextHamsterCost,
     majorProgressionGoal,
     productionPerSecond,
@@ -354,6 +379,9 @@ export function useGameDerivedState(game) {
     hamsterExternalMultiplier,
     columnsBuiltPerSecond,
     nextRowDuplicatorCost,
+    nextFloorReplicatorCost,
+    floorReplicatorCoordinationMultiplier,
+    floorsBuiltPerSecond,
     rowDuplicatorEffectivenessMultiplier,
     rowDuplicatorCoordinationMultiplier,
     rowDuplicatorExternalMultiplier,

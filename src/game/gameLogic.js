@@ -1,5 +1,6 @@
 export * from './gameConfig.js'
 export * from './blueprintLogic.js'
+export * from './areaLogic.js'
 export * from './cropFootprintLogic.js'
 export * from './purchaseLogic.js'
 export * from './majorProgression.js'

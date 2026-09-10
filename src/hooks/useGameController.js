@@ -50,7 +50,7 @@ export function useGameController() {
     saveGameNow: saveCurrentGame,
     areInventionsUnlocked: derived.areInventionsUnlocked,
     isTradeTabVisible: derived.isTradeTabVisible,
-      isAugmentationTabVisible: derived.isAugmentationTabVisible,
+    isAugmentationTabVisible: derived.isAugmentationTabVisible,
     resetBlueprintEditor: blueprintEditor.resetBlueprintEditor,
   })
   const testing = useTestingCheats({
@@ -71,6 +71,7 @@ export function useGameController() {
       areInventionsUnlocked: derived.areInventionsUnlocked,
       isTradeTabVisible: derived.isTradeTabVisible,
       isAugmentationTabVisible: derived.isAugmentationTabVisible,
+      isMisfortuneTabVisible: derived.isMisfortuneAreaActive,
       showInventionsUnlockPrompt: derived.showInventionsUnlockPrompt,
       inventionsUnlockCount: INVENTIONS_HAMSTER_UNLOCK_COUNT,
       ...actions.navigationActions,
@@ -122,6 +123,19 @@ export function useGameController() {
                 actions.purchaseActions.onBuyMaxRowDuplicators,
             }
           : null,
+        floorReplicatorPurchase: game.hasUnlockedFloorReplicators
+          ? {
+              game,
+              nextFloorReplicatorCost: derived.nextFloorReplicatorCost,
+              floorReplicatorCoordinationMultiplier:
+                derived.floorReplicatorCoordinationMultiplier,
+              floorsBuiltPerSecond: derived.floorsBuiltPerSecond,
+              onBuyFloorReplicator:
+                actions.purchaseActions.onBuyFloorReplicator,
+              onBuyMaxFloorReplicators:
+                actions.purchaseActions.onBuyMaxFloorReplicators,
+            }
+          : null,
       },
       trade: {
         game,
@@ -136,6 +150,9 @@ export function useGameController() {
       augmentation: {
         game,
         ...actions.augmentationActions,
+      },
+      misfortune: {
+        onLeave: actions.onLeaveMisfortuneArea,
       },
       inventions: {
         game,
@@ -200,6 +217,7 @@ export function useGameController() {
       testingPanel: testing.testingPanel,
       fortune: {
         fortune: game.fortune,
+        isDisabled: derived.isMisfortuneAreaActive,
         numberNotation: game.numberNotation,
         suffixScientificExponent: game.suffixScientificExponent,
         onCollect: (bundleIndex) =>

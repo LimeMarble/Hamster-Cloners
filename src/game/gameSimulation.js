@@ -3,6 +3,7 @@ import {
   getColumnsProducedForTick,
   getCropHamsterEfficiencyMultiplier,
   getCropProductionSnapshotPerSecond,
+  getFloorsProducedPerSecond,
   getHamsterCoordinationMultiplier,
   getRowsProducedPerSecond,
   getRowDuplicatorEffectivenessMultiplier,
@@ -184,6 +185,10 @@ export function advanceGameSimulationStep(
     currentGame.hamsters,
   )
   const rowsProducedForTick = rowsBuiltPerSecond * safeElapsedSeconds
+  const floorsProducedForTick = currentGame.hasUnlockedFloorReplicators
+    ? getFloorsProducedPerSecond(currentGame.floorReplicators) *
+      safeElapsedSeconds
+    : 0
   const hasUnlockedRootTunnel =
     currentGame.hasUnlockedRootTunnel ||
     nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT
@@ -266,6 +271,7 @@ export function advanceGameSimulationStep(
       ...currentGame.farmland,
       columns: currentGame.farmland.columns + columnsProducedForTick,
       rows: currentGame.farmland.rows + rowsProducedForTick,
+      floors: currentGame.farmland.floors + floorsProducedForTick,
     },
     blueprintSlots: nextBlueprintSlots,
     activeBlueprintSlot,

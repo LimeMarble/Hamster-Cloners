@@ -1,12 +1,14 @@
 import { Blueprint } from './Blueprint.jsx'
 import { DuplicatorPurchase } from './DuplicatorPurchase.jsx'
 import { HamsterPurchase } from './HamsterPurchase.jsx'
+import { FloorReplicatorPurchase } from './FloorReplicatorPurchase.jsx'
 import { Inventions } from './Inventions.jsx'
 import { Options } from './Options.jsx'
 import { Statistics } from './Statistics.jsx'
 import { Trade } from './Trade.jsx'
 import { Augmentation } from './Augmentation.jsx'
 import { FormattedNumber } from './ui.jsx'
+import { Misfortune } from './Misfortune.jsx'
 
 function FieldScreen({
   game,
@@ -14,6 +16,7 @@ function FieldScreen({
   blueprint,
   hamsterPurchase,
   duplicatorPurchase,
+  floorReplicatorPurchase,
 }) {
   return (
     <>
@@ -35,6 +38,9 @@ function FieldScreen({
         {duplicatorPurchase ? (
           <DuplicatorPurchase {...duplicatorPurchase} />
         ) : null}
+        {floorReplicatorPurchase ? (
+          <FloorReplicatorPurchase {...floorReplicatorPurchase} />
+        ) : null}
       </section>
     </>
   )
@@ -46,6 +52,7 @@ export function GameScreen({
   inventions,
   trade,
   augmentation,
+  misfortune,
   statistics,
   options,
 }) {
@@ -63,6 +70,9 @@ export function GameScreen({
 
   if (activeTab === 'augmentation') {
     return <Augmentation {...augmentation} />
+  }
+  if (activeTab === 'misfortune') {
+    return <Misfortune {...misfortune} />
   }
   if (activeTab === 'statistics') {
     return <Statistics {...statistics} />

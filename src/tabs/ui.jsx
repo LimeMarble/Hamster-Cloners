@@ -137,6 +137,7 @@ export function CropHoverInspector({
   totalRabbitRelationsEarned,
   revealManateeEffects,
   fortune,
+  activeArea,
   seedAugmentations,
   cursor,
 }) {
@@ -147,7 +148,7 @@ export function CropHoverInspector({
     rowsProducedPerSecond,
     activeHamsters,
     rabbitContractsCompleted,
-    getFortuneModifiers(fortune),
+    getFortuneModifiers({ fortune, activeArea }),
     seedAugmentations,
     totalRabbitRelationsEarned,
   )
