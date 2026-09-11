@@ -8,7 +8,7 @@ export function MisfortuneStatus() {
     <aside className="misfortune-status" aria-label="Fortune's Wrath">
       <strong>Fortune&apos;s Wrath</strong>
       <span>
-        Crop production /1.777M
+        Crop production /1777
       </span>
       <span>Machinery costs ×100</span>
       <span>

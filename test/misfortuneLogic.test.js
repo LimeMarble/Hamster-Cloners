@@ -162,7 +162,7 @@ test("Fortune's Wrath replaces Breezes throughout Misfortune", () => {
   }
   const modifiers = getFortuneModifiers(game)
 
-  assert.equal(FORTUNES_WRATH_CROP_DIVISOR, 1_777_000)
+  assert.equal(FORTUNES_WRATH_CROP_DIVISOR, 1777)
   assert.equal(
     modifiers.passiveEffectMultiplier,
     FORTUNES_WRATH_PASSIVE_MULTIPLIER,
