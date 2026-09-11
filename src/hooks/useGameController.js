@@ -144,8 +144,8 @@ export function useGameController() {
                 derived.floorReplicatorExternalMultiplier,
               isFloorReplicatorSupportMode:
                 derived.isFloorReplicatorSupportMode,
-              burdenedFoundationsCropProductionMultiplier:
-                derived.burdenedFoundationsCropProductionMultiplier,
+              burdenedFoundationsPassiveEffectBonus:
+                derived.burdenedFoundationsPassiveEffectBonus,
               hasBurdenedFoundations:
                 derived.isMisfortuneAreaActive &&
                 hasMisfortuneUpgrade(

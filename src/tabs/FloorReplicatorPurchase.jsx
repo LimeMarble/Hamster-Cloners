@@ -11,7 +11,7 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
   canPurchaseFloorReplicators,
   hasBurdenedFoundations,
   isFloorReplicatorSupportMode,
-  burdenedFoundationsCropProductionMultiplier,
+  burdenedFoundationsPassiveEffectBonus,
   onToggleFloorReplicatorMode,
 }) {
   return (
@@ -108,9 +108,9 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
             {isFloorReplicatorSupportMode
               ? <>
                   Floor construction is paused. Burdened Foundations grants
-                  {' '}×<FormattedNumber
-                    value={burdenedFoundationsCropProductionMultiplier}
-                  />{' '}Crop production after Fortune&apos;s Wrath.
+                  {' '}+<FormattedNumber
+                    value={burdenedFoundationsPassiveEffectBonus * 100}
+                  />% Crop passive effects.
                 </>
               : 'Floor Replicators are constructing Floors normally.'}
           </p>
@@ -147,7 +147,7 @@ export function FloorReplicatorPurchase({
   canPurchaseFloorReplicators,
   hasBurdenedFoundations,
   isFloorReplicatorSupportMode,
-  burdenedFoundationsCropProductionMultiplier,
+  burdenedFoundationsPassiveEffectBonus,
   onBuyFloorReplicator,
   onBuyMaxFloorReplicators,
   onToggleFloorReplicatorMode,
@@ -170,8 +170,8 @@ export function FloorReplicatorPurchase({
         canPurchaseFloorReplicators={canPurchaseFloorReplicators}
         hasBurdenedFoundations={hasBurdenedFoundations}
         isFloorReplicatorSupportMode={isFloorReplicatorSupportMode}
-        burdenedFoundationsCropProductionMultiplier={
-          burdenedFoundationsCropProductionMultiplier
+        burdenedFoundationsPassiveEffectBonus={
+          burdenedFoundationsPassiveEffectBonus
         }
         onToggleFloorReplicatorMode={onToggleFloorReplicatorMode}
       />

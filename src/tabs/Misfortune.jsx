@@ -21,7 +21,7 @@ export function MisfortuneStatus() {
       <span>Blueprint Rows −1</span>
       <span>Blueprint Columns −1</span>
       <span>
-        Crop passives −
+        Base Crop passives −
         <FormattedNumber
           value={(1 - FORTUNES_WRATH_PASSIVE_MULTIPLIER) * 100}
           maximumFractionDigits={0}
@@ -167,11 +167,10 @@ export function Misfortune({
             <h2>{burdenedFoundations.name}</h2>
             <p>
               Unlocks Construction and Support modes for Floor Replicators.
-              Support pauses Floor production and multiplies Crop production
-              after Fortune&apos;s Wrath by ×
-              {burdenedFoundations.cropProductionMultiplierPerTier} for every
-              complete tier of {burdenedFoundations.floorReplicatorsPerTier}
-              {' '}Floor Replicators.
+              Support pauses Floor production and additively grants +
+              {burdenedFoundations.passiveEffectBonusPerTier * 100}% Crop
+              passive effects for every complete tier of{' '}
+              {burdenedFoundations.floorReplicatorsPerTier} Floor Replicators.
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={burdenedFoundations.cost} />

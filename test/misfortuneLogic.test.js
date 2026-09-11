@@ -21,7 +21,7 @@ import {
   createBlueprint,
   createInitialGame,
   getCapybaraDemonstrationStatus,
-  getBurdenedFoundationsCropProductionMultiplier,
+  getBurdenedFoundationsPassiveEffectBonus,
   getBurdenedFoundationsTierCount,
   getCloverBundleChancePerMinute,
   getCropProductionSnapshotPerSecond,
@@ -488,7 +488,7 @@ test('Floor Replicators use ten-purchase cost and effectiveness tiers', () => {
   )
 })
 
-test('Burdened Foundations trades Floor production for post-Wrath Crops', () => {
+test('Burdened Foundations trades Floor production for Crop passives', () => {
   const upgrade = MISFORTUNE_UPGRADES[
     MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS
   ]
@@ -512,7 +512,7 @@ test('Burdened Foundations trades Floor production for post-Wrath Crops', () => 
   }
 
   assert.equal(upgrade.cost, 4.44e29)
-  assert.equal(upgrade.cropProductionMultiplierPerTier, 1.24)
+  assert.equal(upgrade.passiveEffectBonusPerTier, 0.01)
   assert.equal(toggleFloorReplicatorMode(game), null)
 
   const purchased = purchaseMisfortuneUpgrade(
@@ -527,34 +527,28 @@ test('Burdened Foundations trades Floor production for post-Wrath Crops', () => 
   )
 
   const supportMode = toggleFloorReplicatorMode(purchased)
-  const expectedMultiplier = 1.24 ** 3
+  const expectedBonus = 0.03
   assert.ok(supportMode)
   assert.equal(getBurdenedFoundationsTierCount(supportMode), 3)
   assert.equal(isFloorReplicatorSupportModeActive(supportMode), true)
   assert.ok(Math.abs(
-    getBurdenedFoundationsCropProductionMultiplier(supportMode) -
-      expectedMultiplier,
+    getBurdenedFoundationsPassiveEffectBonus(supportMode) - expectedBonus,
   ) < 1e-12)
 
-  const constructionProduction = getCropProductionSnapshotPerSecond(
-    blueprint,
-    farmland,
-    [],
-    1,
-    0,
-    getFortuneModifiers(purchased),
-  ).total
-  const supportProduction = getCropProductionSnapshotPerSecond(
-    blueprint,
-    farmland,
-    [],
-    1,
-    0,
-    getFortuneModifiers(supportMode),
-  ).total
+  const constructionModifiers = getFortuneModifiers(purchased)
+  const supportModifiers = getFortuneModifiers(supportMode)
   assert.ok(Math.abs(
-    supportProduction / constructionProduction - expectedMultiplier,
+    constructionModifiers.passiveEffectMultiplier -
+      FORTUNES_WRATH_PASSIVE_MULTIPLIER,
   ) < 1e-12)
+  assert.ok(Math.abs(
+    supportModifiers.passiveEffectMultiplier -
+      (FORTUNES_WRATH_PASSIVE_MULTIPLIER + expectedBonus),
+  ) < 1e-12)
+  assert.equal(
+    supportModifiers.cropProductionMultiplier,
+    constructionModifiers.cropProductionMultiplier,
+  )
 
   const supportedTick = advanceGameSimulationStep(supportMode, 1)
   assert.equal(supportedTick.farmland.floors, farmland.floors)

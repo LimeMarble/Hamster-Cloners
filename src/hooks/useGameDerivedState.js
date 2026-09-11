@@ -5,7 +5,7 @@ import {
   getCapybaraBlueprintCropYield,
   getCapybaraHamsterEfficiencyMultiplier,
   getBlueprintExpansionTrackProgress,
-  getBurdenedFoundationsCropProductionMultiplier,
+  getBurdenedFoundationsPassiveEffectBonus,
   getBlueprintMonocropMultiplier,
   getBlueprintSlots,
   getColumnsProducedPerSecond,
@@ -187,8 +187,8 @@ export function useGameDerivedState(game) {
     getFloorReplicatorExternalMultiplier(rushedStartExternalMultiplier)
   const isFloorReplicatorSupportMode =
     isFloorReplicatorSupportModeActive(game)
-  const burdenedFoundationsCropProductionMultiplier =
-    getBurdenedFoundationsCropProductionMultiplier(game)
+  const burdenedFoundationsPassiveEffectBonus =
+    getBurdenedFoundationsPassiveEffectBonus(game)
   const floorsBuiltPerSecond = useMemo(
     () =>
       game.hasUnlockedFloorReplicators
@@ -433,7 +433,7 @@ export function useGameDerivedState(game) {
     floorReplicatorCoordinationMultiplier,
     floorReplicatorExternalMultiplier,
     isFloorReplicatorSupportMode,
-    burdenedFoundationsCropProductionMultiplier,
+    burdenedFoundationsPassiveEffectBonus,
     floorsBuiltPerSecond,
     rowDuplicatorEffectivenessMultiplier,
     rowDuplicatorCoordinationMultiplier,

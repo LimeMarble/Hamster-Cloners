@@ -14,7 +14,7 @@ import {
   GAME_AREA_IDS,
 } from './gameConfig.js'
 import {
-  getBurdenedFoundationsCropProductionMultiplier,
+  getBurdenedFoundationsPassiveEffectBonus,
   getUnfortunateRowCropProductionMultiplier,
 } from './misfortuneUpgrades.js'
 
@@ -154,12 +154,13 @@ export function normalizeFortuneState(rawFortune) {
 export function getFortuneModifiers(gameOrFortune) {
   if (gameOrFortune?.activeArea === GAME_AREA_IDS.MISFORTUNE) {
     return {
-      passiveEffectMultiplier: FORTUNES_WRATH_PASSIVE_MULTIPLIER,
+      passiveEffectMultiplier:
+        FORTUNES_WRATH_PASSIVE_MULTIPLIER +
+        getBurdenedFoundationsPassiveEffectBonus(gameOrFortune),
       cropYieldMultiplier: 1 / FORTUNES_WRATH_CROP_DIVISOR,
       cropProductionExponent: FORTUNES_WRATH_CROP_EXPONENT,
       cropProductionMultiplier:
-        getUnfortunateRowCropProductionMultiplier(gameOrFortune) *
-        getBurdenedFoundationsCropProductionMultiplier(gameOrFortune),
+        getUnfortunateRowCropProductionMultiplier(gameOrFortune),
       harvestMultiplier: 1,
       source: 'fortunesWrath',
     }

@@ -40,7 +40,7 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
     name: 'Burdened Foundations',
     cost: 4.44e29,
-    cropProductionMultiplierPerTier: 1.24,
+    passiveEffectBonusPerTier: 0.01,
     floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
   }),
 })
@@ -176,14 +176,14 @@ export function getBurdenedFoundationsTierCount(game) {
   )
 }
 
-export function getBurdenedFoundationsCropProductionMultiplier(game) {
-  if (!isFloorReplicatorSupportModeActive(game)) return 1
+export function getBurdenedFoundationsPassiveEffectBonus(game) {
+  if (!isFloorReplicatorSupportModeActive(game)) return 0
 
   const upgrade = MISFORTUNE_UPGRADES[
     MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS
   ]
 
-  return upgrade.cropProductionMultiplierPerTier **
+  return upgrade.passiveEffectBonusPerTier *
     getBurdenedFoundationsTierCount(game)
 }
 
