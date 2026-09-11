@@ -363,6 +363,7 @@ function BlueprintEditContent({
 
         {hoveredEditorCrop ? (
           <CropHoverInspector
+            game={game}
             blueprint={game.blueprint}
             index={hoveredEditorCrop.index}
             completedCropPerfections={game.completedCropPerfections}
@@ -373,11 +374,6 @@ function BlueprintEditContent({
               game.trade?.totalRabbitRelationsEarned ?? 0
             }
             revealManateeEffects={revealManateeEffects}
-            fortune={game.fortune}
-            activeArea={game.activeArea}
-            completedMisfortuneUpgrades={
-              game.completedMisfortuneUpgrades
-            }
             seedAugmentations={game.seedAugmentations}
             cursor={hoveredEditorCrop}
           />

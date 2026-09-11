@@ -128,6 +128,7 @@ export function MirrorCornConnectionLines({ blueprint, links, pending = false })
 }
 
 export function CropHoverInspector({
+  game,
   blueprint,
   index,
   completedCropPerfections,
@@ -136,9 +137,6 @@ export function CropHoverInspector({
   rabbitContractsCompleted,
   totalRabbitRelationsEarned,
   revealManateeEffects,
-  fortune,
-  activeArea,
-  completedMisfortuneUpgrades,
   seedAugmentations,
   cursor,
 }) {
@@ -149,11 +147,7 @@ export function CropHoverInspector({
     rowsProducedPerSecond,
     activeHamsters,
     rabbitContractsCompleted,
-    getFortuneModifiers({
-      fortune,
-      activeArea,
-      completedMisfortuneUpgrades,
-    }),
+    getFortuneModifiers(game),
     seedAugmentations,
     totalRabbitRelationsEarned,
   )
