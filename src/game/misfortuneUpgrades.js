@@ -9,7 +9,7 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
     name: 'Unfortunate Row',
     cost: 250_000,
-    cropProductionMultiplier: 0.25,
+    cropProductionMultiplier: 0.8,
   }),
 })
 
