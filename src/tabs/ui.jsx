@@ -283,6 +283,15 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'leeching-vine') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> additional Turnip effectiveness from Leeching Vine
+                  {' '}(Gourd multiplier ^ <FormattedNumber value={effect.exponent} maximumFractionDigits={2} /> from <FormattedNumber value={effect.strength} maximumFractionDigits={0} /> nourishment strength)
+                </li>
+              )
+            }
+
             if (effect.type === 'shoal-grass-network') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>

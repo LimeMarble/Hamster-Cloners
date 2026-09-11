@@ -42,6 +42,7 @@ import {
   isWaterLettuceFieldInfested,
 } from './cropEffects.js'
 import { getCropPassiveStats } from './cropPassiveStats.js'
+import { getLeechingVineStatus } from './leechingVineLogic.js'
 function normalizeFortuneMultiplier(value) {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1
@@ -263,6 +264,7 @@ export function getBlueprintCropStats(
             completedCropPerfections,
             passiveEffectMultiplier,
             seedAugmentations,
+            neighborIndex,
           )
 
           if (multiplier === 1) {
@@ -326,6 +328,22 @@ export function getBlueprintCropStats(
         ...(tunneledDistances.length > 0
           ? { adjacencyDistances: tunneledDistances }
           : {}),
+      })
+    }
+
+    const leechingVineStatus = getLeechingVineStatus(
+      blueprint,
+      completedCropPerfections,
+      seedAugmentations,
+    )
+    if (leechingVineStatus.activeTargetIndexes.includes(index)) {
+      receivedEffects.push({
+        type: 'leeching-vine',
+        strength: leechingVineStatus.nourishment.strength,
+        exponent: leechingVineStatus.nourishment.bonusExponent,
+        multiplier:
+          leechingGourdEffect.multiplier **
+          leechingVineStatus.nourishment.bonusExponent,
       })
     }
   }

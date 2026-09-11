@@ -53,6 +53,7 @@ import {
   getSweetPotatoBeds,
   getSweetPotatoBedTurnipConnections,
 } from './sweetPotatoLogic.js'
+import { getLeechingVineTurnipMultiplier } from './leechingVineLogic.js'
 
 const getCachedRabbitRelationsMultiplier = createBlueprintCalculationCache()
 const getCachedBlazingCarrotSurveyTimeEffect =
@@ -125,7 +126,7 @@ export function getSweetPotatoBedEffects(
           bed.indexes,
         )
         const turnipEffectMultiplier = turnipConnections.reduce(
-          (multiplier, { adjacencyDistance }) =>
+          (multiplier, { index, adjacencyDistance }) =>
             multiplier *
             getAdjacentCropEffectModifier(
               blueprint,
@@ -136,6 +137,7 @@ export function getSweetPotatoBedEffects(
               completedCropPerfections,
               passiveEffectMultiplier,
               seedAugmentations,
+              index,
             ),
           1,
         )
@@ -709,6 +711,7 @@ export function getAdjacentCropEffectMultiplier(
           completedCropPerfections,
           passiveEffectMultiplier,
           seedAugmentations,
+          neighborIndex,
         ),
       1,
     )
@@ -1383,6 +1386,7 @@ export function getAdjacentCropEffectModifier(
   completedCropPerfections = [],
   passiveEffectMultiplier = 1,
   seedAugmentations = {},
+  sourceCropIndex = null,
 ) {
   const cropDefinition = CROP_DEFINITIONS[crop]
   const adjacentCropEffectModifier = cropDefinition?.adjacentCropEffectModifier
@@ -1405,16 +1409,26 @@ export function getAdjacentCropEffectModifier(
     return 1
   }
 
-  const baseMultiplier =
-    crop === 'turnip'
-      ? adjacentCropEffectModifier *
-        getLeechingGourdTurnipEffect(
+  const gourdEffect = crop === 'turnip'
+    ? getLeechingGourdTurnipEffect(
           blueprint,
           completedCropPerfections,
           passiveEffectMultiplier,
           seedAugmentations,
-        ).multiplier
-      : adjacentCropEffectModifier
+        )
+    : null
+  const vineMultiplier = gourdEffect
+    ? getLeechingVineTurnipMultiplier(
+        blueprint,
+        sourceCropIndex,
+        gourdEffect.multiplier,
+        completedCropPerfections,
+        seedAugmentations,
+      )
+    : 1
+  const baseMultiplier = gourdEffect
+    ? adjacentCropEffectModifier * gourdEffect.multiplier * vineMultiplier
+    : adjacentCropEffectModifier
   const monocropAdjustedBaseMultiplier =
     getMonocropAdjustedCropEffectMultiplier(
       blueprint,
@@ -1978,6 +1992,7 @@ export function getExternalCropBuffMultiplier(
               completedCropPerfections,
               passiveEffectMultiplier,
               seedAugmentations,
+              neighborIndex,
             ),
         ]
   })

@@ -227,6 +227,19 @@ export function useGameController() {
         ),
         onUnlockBurdenedFoundations:
           actions.onUnlockBurdenedFoundations,
+        nourishingMisery: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY
+        ],
+        hasNourishingMisery: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+        ),
+        canUnlockNourishingMisery: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+        ),
+        onUnlockNourishingMisery:
+          actions.onUnlockNourishingMisery,
         onLeave: actions.onLeaveMisfortuneArea,
       },
       inventions: {

@@ -10,11 +10,13 @@ import {
   getLeechingGourdFootprint,
   getSplitweedAnchorIndex,
   getSplitweedFootprint,
+  hasLeechingVineAugmentation,
   hasReachedMonocropLimit,
 } from '../game/gameLogic.js'
 import { getCropPlacementName } from '../game/crops.js'
 import { useBlueprintTransfer } from './useBlueprintTransfer.js'
 import { useRootTunnelEditor } from './useRootTunnelEditor.js'
+import { useLeechingVineEditor } from './useLeechingVineEditor.js'
 
 export function useBlueprintEditor({
   game,
@@ -120,6 +122,7 @@ export function useBlueprintEditor({
     setPendingMirrorCornPlacement(null)
     setHoveredEditorCrop(null)
     rootTunnelEditor.resetRootTunnelEditor()
+    leechingVineEditor.resetLeechingVineEditor()
     updateGame(() => ({
       ...currentGame,
       blueprint: currentBlueprintSlots[slotIndex],
@@ -134,6 +137,12 @@ export function useBlueprintEditor({
     }
 
     const currentGame = gameRef.current
+    if (
+      crop !== null &&
+      (currentGame.blueprint.leechingVines?.[0]?.path ?? []).includes(index)
+    ) {
+      return
+    }
     if (
       crop === 'shoalGrass' &&
       !canPlaceShoalGrass(
@@ -182,6 +191,13 @@ export function useBlueprintEditor({
 
   const rootTunnelEditor = useRootTunnelEditor({
     blueprint: game.blueprint,
+    gameRef,
+    commitBlueprint,
+  })
+  const leechingVineEditor = useLeechingVineEditor({
+    blueprint: game.blueprint,
+    completedCropPerfections: game.completedCropPerfections,
+    seedAugmentations: game.seedAugmentations,
     gameRef,
     commitBlueprint,
   })
@@ -312,7 +328,16 @@ export function useBlueprintEditor({
       return
     }
 
+    if (
+      selectedCrop === null &&
+      leechingVineEditor.handlePlotClick(index, crop)
+    ) {
+      rootTunnelEditor.resetRootTunnelEditor()
+      return
+    }
+
     if (rootTunnelEditor.handlePlotClick(index, crop)) {
+      leechingVineEditor.resetLeechingVineEditor()
       return
     }
 
@@ -362,6 +387,7 @@ export function useBlueprintEditor({
     hasMirrorCorn,
     hasLeechingGourd,
     hasSplitweed,
+    hasLeechingVine: hasLeechingVineAugmentation(game.seedAugmentations),
     completedCropPerfections: game.completedCropPerfections,
     seedAugmentations: game.seedAugmentations,
   })
@@ -384,6 +410,7 @@ export function useBlueprintEditor({
     setPendingMirrorCornPlacement(null)
     setHoveredEditorCrop(null)
     rootTunnelEditor.resetRootTunnelEditor()
+    leechingVineEditor.resetLeechingVineEditor()
     blueprintTransfer.resetBlueprintTransfer()
     commitBlueprint(clearBlueprint(currentGame.blueprint))
   }
@@ -395,11 +422,13 @@ export function useBlueprintEditor({
     blueprintTransfer.resetBlueprintTransfer()
 
     if (crop === 'rootTunnel') {
+      leechingVineEditor.resetLeechingVineEditor()
       rootTunnelEditor.handlePlotClick(index, crop)
       return
     }
 
     rootTunnelEditor.resetRootTunnelEditor()
+    leechingVineEditor.resetLeechingVineEditor()
 
     if (!crop) {
       return
@@ -423,6 +452,7 @@ export function useBlueprintEditor({
     setPendingMirrorCornPlacement(null)
     setHoveredEditorCrop(null)
     rootTunnelEditor.resetRootTunnelEditor()
+    leechingVineEditor.resetLeechingVineEditor()
   }
 
   function resetBlueprintEditor() {
@@ -472,6 +502,7 @@ export function useBlueprintEditor({
       setSelectedCrop(null)
       setPendingMirrorCornPlacement(null)
       rootTunnelEditor.resetRootTunnelEditor()
+      leechingVineEditor.resetLeechingVineEditor()
       setBlueprintEditing(true)
     },
     resetBlueprintEditor,
@@ -485,6 +516,7 @@ export function useBlueprintEditor({
             )
             setPendingMirrorCornPlacement(null)
             rootTunnelEditor.resetRootTunnelEditor()
+            leechingVineEditor.resetLeechingVineEditor()
           },
           pendingMirrorCornPlacement,
           hoveredEditorCrop,
@@ -499,6 +531,7 @@ export function useBlueprintEditor({
           pendingMirrorCornLinks,
           hasMirrorCorn,
           rootTunnelEditor,
+          leechingVineEditor,
           getDisplayedCropName,
           onClose: closeBlueprintEditor,
           onResume: closeBlueprintEditor,
@@ -514,6 +547,7 @@ export function useBlueprintEditor({
                 setPendingMirrorCornPlacement(null)
                 setHoveredEditorCrop(null)
                 rootTunnelEditor.resetRootTunnelEditor()
+                leechingVineEditor.resetLeechingVineEditor()
               }
             },
           },

@@ -11,6 +11,7 @@ export function useBlueprintTransfer({
   hasMirrorCorn,
   hasLeechingGourd,
   hasSplitweed,
+  hasLeechingVine,
   completedCropPerfections,
   seedAugmentations,
 }) {
@@ -52,6 +53,7 @@ export function useBlueprintTransfer({
         hasMirrorCorn,
         hasLeechingGourd,
         hasSplitweed,
+        hasLeechingVine,
         completedCropPerfections,
         seedAugmentations,
       })

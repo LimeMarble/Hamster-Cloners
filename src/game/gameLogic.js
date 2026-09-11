@@ -15,6 +15,7 @@ export * from './wetlandsConnection.js'
 export * from './wetlandsConnectionState.js'
 export * from './rootTunnelLogic.js'
 export * from './sweetPotatoLogic.js'
+export * from './leechingVineLogic.js'
 export {
   canPlaceMangroveSapling,
   canPlaceShoalGrass,

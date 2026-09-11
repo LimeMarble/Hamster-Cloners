@@ -1,0 +1,159 @@
+.leeching-vine-editor {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 16px;
+  border: 1px solid #7da54b;
+  border-radius: 8px;
+  background: #1b2a16;
+}
+
+.leeching-vine-editor-heading,
+.leeching-vine-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.leeching-vine-editor h3,
+.leeching-vine-editor p {
+  margin: 0;
+}
+
+.leeching-vine-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.leeching-vine-stats div {
+  padding: 9px;
+  border: 1px solid rgba(164, 205, 97, 0.28);
+  background: rgba(7, 17, 6, 0.5);
+}
+
+.leeching-vine-stats dt {
+  color: var(--text-muted);
+  font-size: 0.67rem;
+  text-transform: uppercase;
+}
+
+.leeching-vine-stats dd {
+  margin: 4px 0 0;
+  color: #dcf3ad;
+  font-weight: 700;
+}
+
+.leeching-vine-sources {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.leeching-vine-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.leeching-vine-actions button,
+.leeching-vine-editor-heading button {
+  width: auto;
+}
+
+.leeching-vine-clear-button {
+  padding: 10px 14px;
+  border: 1px solid #a65353;
+  border-radius: 5px;
+  color: #ffd1d1;
+  background: #3a1d1d;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.leeching-vine-clear-button:hover:not(:disabled) {
+  border-color: #e27b7b;
+  background: #522424;
+}
+
+.leeching-vine-lines {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.leeching-vine-line,
+.leeching-vine-target-line {
+  fill: none;
+  stroke: #96d34f;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 8;
+  opacity: 0.78;
+  vector-effect: non-scaling-stroke;
+}
+
+.leeching-vine-target-line {
+  stroke: #d2ed76;
+  stroke-width: 6;
+  opacity: 0.7;
+}
+
+.leeching-vine-line-inactive {
+  stroke-dasharray: 7 7;
+  opacity: 0.28;
+}
+
+.editor-plot-vine-gourd-selected,
+.editor-plot-vine-path,
+.editor-plot-vine-path-option,
+.editor-plot-vine-target-option,
+.editor-plot-vine-target-selected {
+  position: relative;
+  border-color: #96d34f !important;
+  box-shadow: inset 0 0 0 2px rgba(150, 211, 79, 0.7);
+}
+
+.editor-plot-vine-path-option {
+  background: #28431a !important;
+  box-shadow: inset 0 0 0 3px rgba(210, 237, 118, 0.72);
+}
+
+.editor-plot-vine-target-option {
+  border-color: #d2ed76 !important;
+}
+
+.editor-plot-vine-target-selected {
+  box-shadow:
+    inset 0 0 0 3px rgba(210, 237, 118, 0.92),
+    0 0 12px rgba(150, 211, 79, 0.5);
+}
+
+.editor-plot-vine-path-inactive {
+  border-color: #64734c !important;
+  box-shadow: inset 0 0 0 2px rgba(126, 145, 94, 0.35);
+}
+
+@media (min-width: 720px) and (min-height: 680px) {
+  .leeching-vine-editor {
+    position: sticky;
+    z-index: 12;
+    top: 0;
+    max-height: calc(100dvh - 80px);
+    overflow-y: auto;
+    box-shadow: 0 10px 18px rgb(0 0 0 / 42%);
+  }
+}
+
+@media (max-width: 640px) {
+  .leeching-vine-editor-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

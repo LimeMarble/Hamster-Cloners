@@ -96,6 +96,18 @@ export function Augmentation({
       game.completedCropPerfections,
       game.seedAugmentations,
     )
+  const leechingVine =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LEECHING_VINE]
+  const leechingVineCost = getNextSeedAugmentationCost(
+    game,
+    leechingVine.id,
+  )
+  const hasLeechingGourd =
+    game.completedCropPerfections.includes('leechingGourd')
+  const isLeechingVineVisible = isSeedAugmentationVisible(
+    game,
+    leechingVine.id,
+  )
 
   return (
     <section className='trade-panel' aria-labelledby='augmentation-title'>
@@ -372,6 +384,62 @@ export function Augmentation({
           game={game}
           onPurchaseSeedAugmentation={onPurchaseSeedAugmentation}
         />
+
+        {isLeechingVineVisible ? (
+          <article className='seed-augmentation-card'>
+            <div className='seed-augmentation-heading'>
+              <CropVisual
+                cropId='pumpkin'
+                completedCropPerfections={game.completedCropPerfections}
+                className='seed-augmentation-crop'
+              />
+              <div>
+                <p className='eyebrow'>Leeching Gourd</p>
+                <h2>{leechingVine.name}</h2>
+              </div>
+            </div>
+            <p>
+              Draw one bending vine from Leeching Gourd through empty tiles.
+              Adjacent debuff Crops provide nourishment strength: each point
+              adds one tile of range and +0.1 to the exponent of the extra
+              Gourd multiplier. Splitweed provides 2 strength. Each unique
+              debuff Crop type lets the vine affect one selected Turnip.
+            </p>
+            <p>
+              The existing Gourd bonus remains global. A selected Turnip also
+              receives Gourd multiplier ^ (0.1 × nourishment strength).
+            </p>
+            <dl className='seed-augmentation-stats'>
+              <div>
+                <dt>Status</dt>
+                <dd>{leechingVineCost === null ? 'Active' : 'Locked'}</dd>
+              </div>
+              <div>
+                <dt>Cost</dt>
+                <dd><FormattedNumber value={leechingVine.cost} /> Crops</dd>
+              </div>
+            </dl>
+            <button
+              type='button'
+              className='trade-primary-button'
+              onClick={() => onPurchaseSeedAugmentation(leechingVine.id)}
+              disabled={
+                !hasLeechingGourd ||
+                leechingVineCost === null ||
+                game.crops < leechingVineCost
+              }
+            >
+              {!hasLeechingGourd
+                ? 'Perfect Pumpkin first'
+                : leechingVineCost === null
+                  ? 'Augmentation active'
+                  : <>
+                      Augment —{' '}
+                      <FormattedNumber value={leechingVineCost} /> Crops
+                    </>}
+            </button>
+          </article>
+        ) : null}
 
         {isSplitweedAugmentationVisible ? (
         <article className='seed-augmentation-card'>

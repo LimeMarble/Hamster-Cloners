@@ -6,6 +6,7 @@ import {
   getSweetPotatoBuffDecayDelay,
   getSweetPotatoGrowthExponentCapBonus,
   getSplitweedMonocropLimitLevel,
+  hasLeechingVineAugmentation,
   hasLeekDiagonalAugmentation,
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
@@ -365,6 +366,7 @@ export const CROP_PERFECTIONS = {
     isHarmful: false,
     globalPassiveEffectMultiplier: 0,
     gourdAdjacencyContribution: 8,
+    vineNourishmentStrength: 2,
     mirrorCornEffectivenessBonus: 0.5,
     requiresRowDuplicators: true,
     monocropThresholdBonusPerCrop: 2,
@@ -510,6 +512,12 @@ function getPerfectionEffectDescription(
   seedAugmentations,
   revealManateeEffects = false,
 ) {
+  if (cropId === 'pumpkin' && perfection?.id === 'leechingGourd') {
+    return hasLeechingVineAugmentation(seedAugmentations)
+      ? `${perfection.effectDescription} · draws one configurable bending vine through empty plots; nourishment strength adds one tile of range and +0.1 extra Gourd exponent per point, while each unique adjacent debuff Crop type adds one Turnip target`
+      : perfection.effectDescription
+  }
+
   if (cropId === 'corn' && perfection?.id === 'mirrorCorn') {
     const effectMultiplier =
       perfection.diagonalTargetEffectMultiplier +
@@ -595,6 +603,13 @@ export function getCropEffectDescription(
 
   if (!cropDefinition) {
     return cropId
+  }
+
+  if (
+    cropId === 'leechingGourd' &&
+    hasLeechingVineAugmentation(seedAugmentations)
+  ) {
+    return `${cropDefinition.effectDescription} · draws one configurable bending vine through empty plots; nourishment strength adds one tile of range and +0.1 extra Gourd exponent per point, while each unique adjacent debuff Crop type adds one Turnip target`
   }
 
   if (cropId === 'pumpkin' && perfection?.id === 'leechingGourd') {

@@ -126,6 +126,8 @@ export function useGameDerivedState(game) {
         activeArea: game.activeArea,
         completedMisfortuneUpgrades:
           game.completedMisfortuneUpgrades,
+        floorReplicators: game.floorReplicators,
+        floorReplicatorMode: game.floorReplicatorMode,
         seedAugmentations: game.seedAugmentations,
         trade: {
           rabbitContractsCompleted:
@@ -139,6 +141,8 @@ export function useGameDerivedState(game) {
       game.activeArea,
       game.completedCropPerfections,
       game.completedMisfortuneUpgrades,
+      game.floorReplicatorMode,
+      game.floorReplicators,
       game.fortune,
       game.seedAugmentations,
       game.trade?.rabbitContractsCompleted,

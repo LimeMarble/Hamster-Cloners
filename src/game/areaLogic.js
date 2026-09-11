@@ -163,6 +163,7 @@ export function normalizeStoredAreaState(rawArea, fallbackArea) {
           cells: slot?.cells,
           mirrorCornTargets: slot?.mirrorCornTargets,
           rootTunnelConnections: slot?.rootTunnelConnections,
+          leechingVines: slot?.leechingVines,
         }, cropUnlocks),
       )
     : [blueprint]

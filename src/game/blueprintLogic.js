@@ -28,6 +28,10 @@ import {
   remapRootTunnelConnections,
 } from './rootTunnelLogic.js'
 import {
+  normalizeLeechingVines,
+  remapLeechingVines,
+} from './leechingVineLogic.js'
+import {
   createInitialMisfortuneUpgradeState,
   FLOOR_REPLICATOR_MODES,
 } from './misfortuneUpgrades.js'
@@ -50,6 +54,7 @@ export function createBlueprint({
   cells,
   mirrorCornTargets,
   rootTunnelConnections,
+  leechingVines,
   requireSplitweedFootprints = false,
 } = {}) {
   const safeRows = Math.max(1, Math.floor(Number(rows) || 1))
@@ -82,6 +87,10 @@ export function createBlueprint({
     blueprintShape,
     rootTunnelConnections,
   )
+  const normalizedLeechingVines = normalizeLeechingVines(
+    blueprintShape,
+    leechingVines,
+  )
   const normalizedMirrorCornTargets = normalizedCells.map((crop, sourceIndex) => {
     const targetIndex = sourceMirrorCornTargets[sourceIndex]
     const sourceRow = Math.floor(sourceIndex / safeColumns)
@@ -113,6 +122,9 @@ export function createBlueprint({
     mirrorCornTargets: normalizedMirrorCornTargets,
     ...(normalizedRootTunnelConnections.length > 0
       ? { rootTunnelConnections: normalizedRootTunnelConnections }
+      : {}),
+    ...(normalizedLeechingVines.length > 0
+      ? { leechingVines: normalizedLeechingVines }
       : {}),
   }
 }
@@ -504,6 +516,10 @@ function addBlueprintColumn(blueprint) {
     blueprint.rootTunnelConnections,
     remapIndex,
   )
+  const leechingVines = remapLeechingVines(
+    blueprint.leechingVines,
+    remapIndex,
+  )
 
   return {
     ...blueprint,
@@ -511,6 +527,7 @@ function addBlueprintColumn(blueprint) {
     cells: expandedCells,
     mirrorCornTargets: remappedMirrorCornTargets,
     ...(rootTunnelConnections.length > 0 ? { rootTunnelConnections } : {}),
+    ...(leechingVines.length > 0 ? { leechingVines } : {}),
   }
 }
 
@@ -527,6 +544,7 @@ function removeBlueprintRow(blueprint, requireSplitweedFootprints = false) {
     cells: blueprint.cells.slice(0, totalCells),
     mirrorCornTargets: blueprint.mirrorCornTargets.slice(0, totalCells),
     rootTunnelConnections: blueprint.rootTunnelConnections,
+    leechingVines: blueprint.leechingVines,
     requireSplitweedFootprints,
   })
 }
@@ -573,6 +591,10 @@ function removeBlueprintColumn(blueprint, requireSplitweedFootprints = false) {
     mirrorCornTargets,
     rootTunnelConnections: remapRootTunnelConnections(
       blueprint.rootTunnelConnections,
+      remapIndex,
+    ),
+    leechingVines: remapLeechingVines(
+      blueprint.leechingVines,
       remapIndex,
     ),
     requireSplitweedFootprints,

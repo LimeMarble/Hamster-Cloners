@@ -50,6 +50,10 @@ export function Misfortune({
   hasBurdenedFoundations,
   canUnlockBurdenedFoundations,
   onUnlockBurdenedFoundations,
+  nourishingMisery,
+  hasNourishingMisery,
+  canUnlockNourishingMisery,
+  onUnlockNourishingMisery,
   onLeave,
 }) {
   return (
@@ -199,6 +203,41 @@ export function Misfortune({
                       Need{' '}
                       <FormattedNumber value={burdenedFoundations.cost} />
                       {' '}Crops
+                    </>
+                  )}
+          </button>
+        </article>
+        <article className="misfortune-upgrade-card">
+          <div>
+            <h2>{nourishingMisery.name}</h2>
+            <p>
+              Unlocks the Leeching Vine modification for Leeching Gourd
+              within Seed Augmentation. This research does not alter the
+              Gourd by itself.
+            </p>
+            <p className="misfortune-upgrade-note">
+              Cost: <FormattedNumber value={nourishingMisery.cost} /> Crops.
+              This choice is permanent until Misfortune progress is wiped.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={
+              hasNourishingMisery ? 'secondary-button' : 'primary-button'
+            }
+            onClick={onUnlockNourishingMisery}
+            disabled={
+              hasNourishingMisery || !canUnlockNourishingMisery
+            }
+          >
+            {hasNourishingMisery
+              ? 'Accepted'
+              : canUnlockNourishingMisery
+                ? 'Study Gourd nourishment'
+                : (
+                    <>
+                      Need{' '}
+                      <FormattedNumber value={nourishingMisery.cost} /> Crops
                     </>
                   )}
           </button>

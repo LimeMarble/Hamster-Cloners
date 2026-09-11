@@ -13,6 +13,7 @@ export const MISFORTUNE_UPGRADE_IDS = Object.freeze({
   RUSHED_START: 'rushedStart',
   ADVERSITY_GROWN_TUBERS: 'adversityGrownTubers',
   BURDENED_FOUNDATIONS: 'burdenedFoundations',
+  NOURISHING_MISERY: 'nourishingMisery',
 })
 
 export const MISFORTUNE_UPGRADES = Object.freeze({
@@ -42,6 +43,11 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     cost: 4.44e29,
     passiveEffectBonusPerTier: 0.01,
     floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
+  }),
+  [MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY]: Object.freeze({
+    id: MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+    name: 'Nourishing Misery',
+    cost: 2e37,
   }),
 })
 

@@ -8,6 +8,7 @@ export const SEED_AUGMENTATION_IDS = Object.freeze({
   SWEETER_BOND: 'sweeterBond',
   LOOSENED_BOUNDARIES: 'loosenedBoundaries',
   RESTORED_CONNECTIONS: 'restoredConnections',
+  LEECHING_VINE: 'leechingVine',
 })
 
 export const SEED_AUGMENTATIONS = Object.freeze({
@@ -74,6 +75,15 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     buffDecayDelay: 3,
     requiredMisfortuneUpgradeId: 'adversityGrownTubers',
   }),
+  [SEED_AUGMENTATION_IDS.LEECHING_VINE]: Object.freeze({
+    id: SEED_AUGMENTATION_IDS.LEECHING_VINE,
+    name: 'Leeching Vine',
+    cost: 1e120,
+    nourishmentExponentPerStrength: 0.1,
+    baseVineLength: 1,
+    maximumVines: 1,
+    requiredMisfortuneUpgradeId: 'nourishingMisery',
+  }),
 })
 
 export function createInitialSeedAugmentationState() {
@@ -88,6 +98,7 @@ export function createInitialSeedAugmentationState() {
     sweeterBondLevel: 0,
     loosenedBoundariesLevel: 0,
     restoredConnectionsUnlocked: false,
+    leechingVineUnlocked: false,
   }
 }
 
@@ -155,6 +166,7 @@ export function normalizeSeedAugmentationState(rawState) {
     ),
     restoredConnectionsUnlocked:
       rawState?.restoredConnectionsUnlocked === true,
+    leechingVineUnlocked: rawState?.leechingVineUnlocked === true,
   }
 }
 
@@ -241,6 +253,11 @@ export function getSweetPotatoBuffDecayDelay(seedAugmentations) {
     : 0
 }
 
+export function hasLeechingVineAugmentation(seedAugmentations) {
+  return normalizeSeedAugmentationState(seedAugmentations)
+    .leechingVineUnlocked
+}
+
 export function getNextSeedAugmentationCost(game, augmentationId) {
   const state = normalizeSeedAugmentationState(game.seedAugmentations)
 
@@ -298,6 +315,8 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
       'mirrorCornReflectionLimitUnlocked',
     [SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS]:
       'restoredConnectionsUnlocked',
+    [SEED_AUGMENTATION_IDS.LEECHING_VINE]:
+      'leechingVineUnlocked',
   }
   const stateKey = oneTimeAugmentationStateKeys[augmentationId]
 
@@ -347,6 +366,8 @@ function canPurchaseSeedAugmentation(game, augmentationId) {
     augmentationId === SEED_AUGMENTATION_IDS.SWEETER_BOND ||
     augmentationId === SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES ||
     augmentationId === SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS
+  const isLeechingGourdAugmentation =
+    augmentationId === SEED_AUGMENTATION_IDS.LEECHING_VINE
 
   return (
     (isLeekAugmentation &&
@@ -355,6 +376,8 @@ function canPurchaseSeedAugmentation(game, augmentationId) {
       game.completedCropPerfections?.includes('mirrorCorn') === true) ||
     (isSweetPotatoAugmentation &&
       game.completedCropPerfections?.includes('sweetPotato') === true) ||
+    (isLeechingGourdAugmentation &&
+      game.completedCropPerfections?.includes('leechingGourd') === true) ||
     (isSplitweedAugmentation &&
       game.completedCropPerfections?.includes('splitweed') === true)
   )
@@ -421,6 +444,11 @@ export function purchaseSeedAugmentation(game, augmentationId) {
     seedAugmentations = {
       ...state,
       restoredConnectionsUnlocked: true,
+    }
+  } else if (augmentationId === SEED_AUGMENTATION_IDS.LEECHING_VINE) {
+    seedAugmentations = {
+      ...state,
+      leechingVineUnlocked: true,
     }
   }
 

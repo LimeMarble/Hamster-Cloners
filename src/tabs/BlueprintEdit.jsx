@@ -22,6 +22,10 @@ import {
   RootTunnelConnectionLines,
   RootTunnelEditorPanel,
 } from './RootTunnelEditor.jsx'
+import {
+  LeechingVineEditorPanel,
+  LeechingVineLines,
+} from './LeechingVineEditor.jsx'
 
 function BlueprintEditContent({
   game,
@@ -43,6 +47,7 @@ function BlueprintEditContent({
   pendingMirrorCornLinks,
   hasMirrorCorn,
   rootTunnelEditor,
+  leechingVineEditor,
   getDisplayedCropName,
   onClose,
   onResume,
@@ -64,6 +69,8 @@ function BlueprintEditContent({
   const hasSelectedRootTunnel =
     rootTunnelEditor.selectedTunnelIndex !== null &&
     Boolean(rootTunnelEditor.connectionState)
+  const hasSelectedLeechingVine =
+    leechingVineEditor.selectedGourdIndex !== null
 
   return (
     <div className="modal-backdrop" role="presentation">
@@ -89,7 +96,7 @@ function BlueprintEditContent({
         </div>
 
         <div
-          className={`blueprint-editor-overview ${showMonocropLimit && !hasSelectedRootTunnel ? 'blueprint-editor-overview-sticky' : ''}`}
+          className={`blueprint-editor-overview ${showMonocropLimit && !hasSelectedRootTunnel && !hasSelectedLeechingVine ? 'blueprint-editor-overview-sticky' : ''}`}
         >
           {showMonocropLimit ? (
             <MonocropStatus
@@ -131,6 +138,12 @@ function BlueprintEditContent({
               removed from their configuration panel.
             </>
           ) : null}
+          {leechingVineEditor.status.unlocked ? (
+            <>
+              {' '}Select the Leeching Gourd with no Crop selected to
+              configure its vine.
+            </>
+          ) : null}
         </p>
 
         {pendingMirrorCornPlacement ? (
@@ -153,6 +166,11 @@ function BlueprintEditContent({
           editor={rootTunnelEditor}
         />
 
+        <LeechingVineEditorPanel
+          completedCropPerfections={game.completedCropPerfections}
+          editor={leechingVineEditor}
+        />
+
         <div className="blueprint-editor-layout">
           <div className="editor-grid-scroll">
             <div
@@ -169,6 +187,10 @@ function BlueprintEditContent({
               pending
             />
             <RootTunnelConnectionLines blueprint={game.blueprint} />
+            <LeechingVineLines
+              blueprint={game.blueprint}
+              editor={leechingVineEditor}
+            />
             <div
               className="editor-grid"
               style={{
@@ -193,11 +215,25 @@ function BlueprintEditContent({
                   rootTunnelEditor.validSenderIndexes.includes(index)
                 const isValidRootRecipient =
                   rootTunnelEditor.validRecipientIndexes.includes(index)
+                const isSelectedVineGourd =
+                  leechingVineEditor.selectedGourdIndex !== null &&
+                  (crop === 'leechingGourd' || crop === 'leechingGourdPart')
+                const isActiveVinePath =
+                  leechingVineEditor.status.activePath.includes(index)
+                const isInactiveVinePath =
+                  leechingVineEditor.status.inactivePath.includes(index)
+                const isValidVinePath =
+                  leechingVineEditor.validPathIndexes.includes(index)
+                const isEligibleVineTarget =
+                  hasSelectedLeechingVine &&
+                  leechingVineEditor.status.eligibleTargetIndexes.includes(index)
+                const isSelectedVineTarget =
+                  leechingVineEditor.status.activeTargetIndexes.includes(index)
 
                 return (
                   <button
                     type="button"
-                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${isBurnedBlazingCarrot ? 'editor-plot-blazing-carrot-burned' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''} ${isSelectedRootTunnel ? 'editor-plot-root-selected' : ''} ${isSelectedRootSender ? 'editor-plot-root-sender-selected' : ''} ${isValidRootSender ? 'editor-plot-root-sender-option' : ''} ${isValidRootRecipient ? 'editor-plot-root-recipient-option' : ''}`}
+                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${isBurnedBlazingCarrot ? 'editor-plot-blazing-carrot-burned' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''} ${isSelectedRootTunnel ? 'editor-plot-root-selected' : ''} ${isSelectedRootSender ? 'editor-plot-root-sender-selected' : ''} ${isValidRootSender ? 'editor-plot-root-sender-option' : ''} ${isValidRootRecipient ? 'editor-plot-root-recipient-option' : ''} ${isSelectedVineGourd ? 'editor-plot-vine-gourd-selected' : ''} ${isActiveVinePath ? 'editor-plot-vine-path' : ''} ${isInactiveVinePath ? 'editor-plot-vine-path-inactive' : ''} ${isValidVinePath ? 'editor-plot-vine-path-option' : ''} ${isEligibleVineTarget ? 'editor-plot-vine-target-option' : ''} ${isSelectedVineTarget ? 'editor-plot-vine-target-selected' : ''}`}
                     key={index}
                     onClick={(event) =>
                       onEditorPlotClick(index, crop, event)
@@ -223,6 +259,14 @@ function BlueprintEditContent({
                     aria-label={
                       isPendingMirrorCornTarget
                         ? 'Assign this tile as the Mirror Corn target'
+                        : isValidVinePath
+                          ? 'Extend the Leeching Vine into this tile'
+                        : isSelectedVineTarget
+                          ? 'Release this Turnip from the Leeching Vine'
+                        : isEligibleVineTarget
+                          ? 'Assign this Turnip to the Leeching Vine'
+                        : isSelectedVineGourd
+                          ? 'Selected Leeching Gourd'
                         : crop === 'rootTunnel'
                           ? 'Configure this Root Tunnel'
                         : isValidRootSender
@@ -453,6 +497,14 @@ function areBlueprintEditorPropsEqual(previous, next) {
       next.rootTunnelEditor.validSenderIndexes &&
     previous.rootTunnelEditor.validRecipientIndexes ===
       next.rootTunnelEditor.validRecipientIndexes &&
+    previous.leechingVineEditor.selectedGourdIndex ===
+      next.leechingVineEditor.selectedGourdIndex &&
+    previous.leechingVineEditor.isDrawing ===
+      next.leechingVineEditor.isDrawing &&
+    previous.leechingVineEditor.status ===
+      next.leechingVineEditor.status &&
+    previous.leechingVineEditor.validPathIndexes ===
+      next.leechingVineEditor.validPathIndexes &&
     previousTransfer.blueprintCode === nextTransfer.blueprintCode &&
     previousTransfer.blueprintTransferStatus ===
       nextTransfer.blueprintTransferStatus

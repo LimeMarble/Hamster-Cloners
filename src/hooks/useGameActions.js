@@ -416,6 +416,15 @@ export function useGameActions({
     )
   }
 
+  function unlockNourishingMisery() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+      ) ?? currentGame,
+    )
+  }
+
   function switchFloorReplicatorMode() {
     updateGame((currentGame) =>
       toggleFloorReplicatorMode(currentGame) ?? currentGame,
@@ -582,6 +591,7 @@ export function useGameActions({
     onUnlockRushedStart: unlockRushedStart,
     onUnlockAdversityGrownTubers: unlockAdversityGrownTubers,
     onUnlockBurdenedFoundations: unlockBurdenedFoundations,
+    onUnlockNourishingMisery: unlockNourishingMisery,
     options: {
       saveCode,
       onSaveCodeChange: setSaveCode,

@@ -3,6 +3,7 @@ import { isKnownCrop, normalizeCropId } from './crops.js'
 import { getShoalGrassPlacementLimit } from './cropEffects.js'
 import { MANGROVE_SAPLING_PLACEMENT_LIMIT } from './mangroveSaplingLogic.js'
 import { remapRootTunnelConnections } from './rootTunnelLogic.js'
+import { remapLeechingVines } from './leechingVineLogic.js'
 
 export const BLUEPRINT_FORMAT_VERSION = 1
 const BLUEPRINT_FORMAT_TYPE = 'hamster-cloners-blueprint'
@@ -112,6 +113,10 @@ function resizeBlueprintFromTopLeft(
     blueprint.rootTunnelConnections,
     remapIndex,
   )
+  const leechingVines = remapLeechingVines(
+    blueprint.leechingVines,
+    remapIndex,
+  )
 
   return {
     rows: targetRows,
@@ -119,6 +124,7 @@ function resizeBlueprintFromTopLeft(
     cells,
     mirrorCornTargets,
     ...(rootTunnelConnections.length > 0 ? { rootTunnelConnections } : {}),
+    ...(leechingVines.length > 0 ? { leechingVines } : {}),
   }
 }
 
@@ -141,6 +147,7 @@ export function importBlueprint(
     hasMirrorCorn = false,
     hasLeechingGourd = false,
     hasSplitweed = false,
+    hasLeechingVine = false,
     completedCropPerfections = [],
     seedAugmentations = {},
   },
@@ -166,7 +173,9 @@ export function importBlueprint(
     !Array.isArray(rawBlueprint.mirrorCornTargets) ||
     rawBlueprint.mirrorCornTargets.length !== sourceCellCount ||
     (rawBlueprint.rootTunnelConnections !== undefined &&
-      !Array.isArray(rawBlueprint.rootTunnelConnections))
+      !Array.isArray(rawBlueprint.rootTunnelConnections)) ||
+    (rawBlueprint.leechingVines !== undefined &&
+      !Array.isArray(rawBlueprint.leechingVines))
   ) {
     throw new Error('The blueprint has an invalid number of tiles.')
   }
@@ -183,7 +192,9 @@ export function importBlueprint(
     JSON.stringify(normalizedSourceBlueprint.mirrorCornTargets) !==
       JSON.stringify(rawBlueprint.mirrorCornTargets) ||
     JSON.stringify(normalizedSourceBlueprint.rootTunnelConnections ?? []) !==
-      JSON.stringify(rawBlueprint.rootTunnelConnections ?? [])
+      JSON.stringify(rawBlueprint.rootTunnelConnections ?? []) ||
+    JSON.stringify(normalizedSourceBlueprint.leechingVines ?? []) !==
+      JSON.stringify(rawBlueprint.leechingVines ?? [])
   ) {
     throw new Error('The blueprint contains an invalid crop layout or tile link.')
   }
@@ -244,6 +255,10 @@ export function importBlueprint(
     )
   ) {
     throw new Error('Unlock Mirror Corn before importing its tile links.')
+  }
+
+  if (!hasLeechingVine && (resizedBlueprint.leechingVines?.length ?? 0) > 0) {
+    throw new Error('Unlock Leeching Vine before importing its paths.')
   }
 
   return createBlueprint({

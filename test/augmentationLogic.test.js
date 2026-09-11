@@ -364,6 +364,7 @@ test('Seed Augmentations require perfected crops and persist with safe limits', 
     sweeterBondLevel: 0,
     loosenedBoundariesLevel: 0,
     restoredConnectionsUnlocked: false,
+    leechingVineUnlocked: false,
   })
   assert.equal(
     normalizeGame({
@@ -395,6 +396,7 @@ test('Seed Augmentations require perfected crops and persist with safe limits', 
       sweeterBondLevel: 0,
       loosenedBoundariesLevel: 0,
       restoredConnectionsUnlocked: false,
+      leechingVineUnlocked: false,
     },
   )
 })

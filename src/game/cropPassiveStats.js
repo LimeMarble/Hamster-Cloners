@@ -72,6 +72,7 @@ export function getCropPassiveStats({
         completedCropPerfections,
         passiveEffectMultiplier,
         seedAugmentations,
+        index,
       ),
     })
   }
