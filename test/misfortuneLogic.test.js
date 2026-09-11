@@ -239,7 +239,7 @@ test('the Misfortune wipe resets only the area-specific state', () => {
 
   assert.equal(wipedFromMain.crops, 123)
   assert.equal(wipedFromMain.hamsters, 50)
-  assert.equal(wipedFromMain.floorReplicators, 7)
+  assert.equal(wipedFromMain.floorReplicators, 0)
   assert.equal(wipedFromMain.areaProgress.misfortune, null)
 
   const activeMisfortune = switchGameArea(
@@ -252,7 +252,7 @@ test('the Misfortune wipe resets only the area-specific state', () => {
   assert.equal(wipedWhileActive.crops, 0)
   assert.equal(wipedWhileActive.hamsters, 1)
   assert.equal(wipedWhileActive.rowDuplicators, 0)
-  assert.equal(wipedWhileActive.floorReplicators, 7)
+  assert.equal(wipedWhileActive.floorReplicators, 0)
   assert.equal(wipedWhileActive.farmland.columns, 0.9)
   assert.deepEqual(wipedWhileActive.blueprint.cells, ['leek'])
   assert.equal(wipedWhileActive.areaProgress.misfortune, null)
@@ -263,6 +263,7 @@ test('the Misfortune wipe resets only the area-specific state', () => {
   )
   assert.equal(restoredMain.crops, 123)
   assert.equal(restoredMain.hamsters, 50)
+  assert.equal(restoredMain.floorReplicators, 0)
 })
 
 test('Floor Replicators use ten-purchase cost and effectiveness tiers', () => {

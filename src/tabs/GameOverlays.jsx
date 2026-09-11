@@ -106,8 +106,9 @@ function MisfortuneWipeConfirmation({ onCancel, onConfirm }) {
           field growth, paid expansions, Crop unlocks, and blueprints.
         </p>
         <p>
-          Main-field progress, Floor Replicators, completed demonstrations,
-          and other permanent progression will be preserved.
+          Floor Replicators are also removed while they can only be purchased
+          in Misfortune. Main-field progress, completed demonstrations, and
+          other permanent progression will be preserved.
         </p>
         <div className="union-modal-actions">
           <button type="button" className="secondary-button" onClick={onCancel}>

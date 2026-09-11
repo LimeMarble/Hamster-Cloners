@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import {
+  canPurchaseFloorReplicatorsInArea,
   collectCloverBundle,
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
 } from '../game/gameLogic.js'
@@ -124,7 +125,8 @@ export function useGameController() {
             }
           : null,
         floorReplicatorPurchase:
-          game.hasUnlockedFloorReplicators && derived.isMisfortuneAreaActive
+          game.hasUnlockedFloorReplicators &&
+          canPurchaseFloorReplicatorsInArea(game)
           ? {
               game,
               nextFloorReplicatorCost: derived.nextFloorReplicatorCost,

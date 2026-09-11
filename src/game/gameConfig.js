@@ -41,6 +41,18 @@ export const FLOOR_REPLICATOR_COST_GROWTH = 10
 export const FLOOR_REPLICATOR_COST_TIER_SIZE = 10
 export const FLOORS_PER_FLOOR_REPLICATOR_PER_SECOND = 0.1
 export const FLOOR_REPLICATOR_COORDINATION_GROWTH = 2
+export const FLOOR_REPLICATOR_PURCHASE_AREA_IDS = Object.freeze([
+  GAME_AREA_IDS.MISFORTUNE,
+])
+
+export function canPurchaseFloorReplicatorsInArea(gameOrAreaId) {
+  const areaId =
+    typeof gameOrAreaId === 'string'
+      ? gameOrAreaId
+      : gameOrAreaId?.activeArea
+
+  return FLOOR_REPLICATOR_PURCHASE_AREA_IDS.includes(areaId)
+}
 
 export function getGameAreaCostMultiplier(gameOrAreaId) {
   const areaId =

@@ -4,6 +4,7 @@ import {
 } from './blueprintLogic.js'
 import {
   BLUEPRINT_EXPANSIONS,
+  canPurchaseFloorReplicatorsInArea,
   FIELD_RESET_STARTING_COLUMNS,
   GAME_AREA_IDS,
   MISFORTUNE_BLUEPRINT_EXPANSION_MODIFIER,
@@ -189,6 +190,11 @@ export function wipeMisfortuneAreaProgress(game) {
   if (!isMisfortuneAreaActive(game)) {
     return {
       ...game,
+      floorReplicators: canPurchaseFloorReplicatorsInArea(
+        GAME_AREA_IDS.MAIN,
+      )
+        ? game.floorReplicators
+        : 0,
       areaProgress: clearedAreaProgress,
     }
   }
@@ -196,6 +202,11 @@ export function wipeMisfortuneAreaProgress(game) {
   return {
     ...game,
     ...createInitialMisfortuneAreaState(game.rabbitBlueprintExpansions),
+    floorReplicators: canPurchaseFloorReplicatorsInArea(
+      GAME_AREA_IDS.MAIN,
+    )
+      ? game.floorReplicators
+      : 0,
     areaProgress: clearedAreaProgress,
   }
 }

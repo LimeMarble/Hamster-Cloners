@@ -6,7 +6,7 @@ import {
   FLOOR_REPLICATOR_BASE_COST,
   FLOOR_REPLICATOR_COST_GROWTH,
   FLOOR_REPLICATOR_COST_TIER_SIZE,
-  GAME_AREA_IDS,
+  canPurchaseFloorReplicatorsInArea,
   getGameAreaCostMultiplier,
   ROW_DUPLICATOR_BASE_COST,
   ROW_DUPLICATOR_COST_GROWTH,
@@ -245,7 +245,7 @@ export function getMaxFloorReplicatorPurchase(game) {
 
   if (
     game.hasUnlockedFloorReplicators !== true ||
-    game.activeArea !== GAME_AREA_IDS.MISFORTUNE
+    !canPurchaseFloorReplicatorsInArea(game)
   ) {
     return { floorReplicators, crops: remainingCrops, purchased }
   }

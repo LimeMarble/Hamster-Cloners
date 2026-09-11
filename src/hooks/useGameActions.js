@@ -15,6 +15,7 @@ import {
   getHamsterStateAfterHire,
   getMaxDuplicatorPurchase,
   getMaxFloorReplicatorPurchase,
+  canPurchaseFloorReplicatorsInArea,
   getMaxHamsterPurchase,
   getNextHamsterCost,
   getNextFloorReplicatorCost,
@@ -160,7 +161,7 @@ export function useGameActions({
     updateGame((currentGame) => {
       if (
         !currentGame.hasUnlockedFloorReplicators ||
-        currentGame.activeArea !== GAME_AREA_IDS.MISFORTUNE
+        !canPurchaseFloorReplicatorsInArea(currentGame)
       ) {
         return currentGame
       }
