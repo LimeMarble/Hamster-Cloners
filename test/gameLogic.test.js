@@ -838,8 +838,8 @@ test('Enriching Leek costs 20 billion Crops to unlock', () => {
   })
 })
 
-test('Wheat replaces the unobtainable Sweet Potato logarithmic perfection', () => {
-  const dormantPerfectionGame = {
+test('Sweet Potato is purchasable while Wheat retains the logarithmic effect', () => {
+  const sweetPotatoPerfectionGame = {
     crops: CROP_PERFECTIONS.sweetPotato.cost,
     hasUnlockedCropPerfection: true,
     hasUnlockedRowDuplicators: true,
@@ -853,16 +853,34 @@ test('Wheat replaces the unobtainable Sweet Potato logarithmic perfection', () =
 
   assert.equal(WHEAT_UNLOCK_CROP_COUNT, 1.25e32)
   assert.equal(CROP_DEFINITIONS.wheat.baseYield, 100)
-  assert.equal(CROP_PERFECTIONS.sweetPotato.temporarilyUnavailable, true)
+  assert.equal(CROP_PERFECTIONS.sweetPotato.cost, 4e95)
   assert.equal(getCropName('sweetPotato'), 'Potato')
-  assert.equal(getCropName('sweetPotato', ['sweetPotato']), 'Potato')
   assert.equal(
-    canUnlockCropPerfection(dormantPerfectionGame, 'sweetPotato'),
-    false,
+    getCropName('sweetPotato', ['sweetPotato']),
+    'Sweet Potato',
   )
   assert.equal(
-    unlockCropPerfection(dormantPerfectionGame, 'sweetPotato'),
-    null,
+    canUnlockCropPerfection(sweetPotatoPerfectionGame, 'sweetPotato'),
+    true,
+  )
+  assert.deepEqual(
+    unlockCropPerfection(sweetPotatoPerfectionGame, 'sweetPotato'),
+    {
+      ...sweetPotatoPerfectionGame,
+      crops: 0,
+      completedCropPerfections: ['sweetPotato'],
+    },
+  )
+
+  const potatoBlueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['sweetPotato', null, null, null],
+  })
+  assert.equal(getCropHamsterEfficiencyMultiplier(potatoBlueprint), 1.25)
+  assert.equal(
+    getCropHamsterEfficiencyMultiplier(potatoBlueprint, ['sweetPotato']),
+    3,
   )
 
   assert.equal(getCropHamsterEfficiencyMultiplier(blueprint, [], 100), 3)

@@ -241,6 +241,19 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'sweet-potato-bed') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Connected bed: <FormattedNumber value={effect.connectedCropCount} maximumFractionDigits={0} /> Sweet Potatoes.{' '}
+                  <FormattedNumber value={effect.adjacentBuffCount} maximumFractionDigits={0} /> unique connected buffs
+                  {' '}(
+                  <FormattedNumber value={effect.turnipCount} maximumFractionDigits={0} /> Turnips,{' '}
+                  <FormattedNumber value={effect.mirrorCornCount} maximumFractionDigits={0} /> Mirror Corns)
+                  apply ×<FormattedNumber value={effect.buffMultiplier} maximumFractionDigits={3} />, followed by a ×<FormattedNumber value={effect.crowdingMultiplier} maximumFractionDigits={3} /> crowding penalty.
+                </li>
+              )
+            }
+
             if (effect.type === 'mirror-corn') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>

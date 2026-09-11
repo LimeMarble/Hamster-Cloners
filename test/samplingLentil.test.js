@@ -17,7 +17,7 @@ import {
   isTradedCrop,
 } from '../src/game/crops.js'
 
-test('Sampling Lentil costs 1e87 Crops and uses the normal perfection flow', () => {
+test('Sampling Lentil costs 1e123 Crops and uses the normal perfection flow', () => {
   const game = {
     crops: CROP_PERFECTIONS.samplingLentil.cost,
     hasUnlockedCropPerfection: true,
@@ -25,7 +25,7 @@ test('Sampling Lentil costs 1e87 Crops and uses the normal perfection flow', () 
     completedCropPerfections: [],
   }
 
-  assert.equal(CROP_PERFECTIONS.samplingLentil.cost, 1e87)
+  assert.equal(CROP_PERFECTIONS.samplingLentil.cost, 1e123)
   assert.equal(canUnlockCropPerfection(game, 'samplingLentil'), true)
   assert.deepEqual(unlockCropPerfection(game, 'samplingLentil'), {
     ...game,

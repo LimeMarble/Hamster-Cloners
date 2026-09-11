@@ -120,7 +120,7 @@ test('current saves retain valid Splitweed footprints and clear legacy single ti
   assert.deepEqual(legacySave.blueprint.cells, [null, 'leek', null, null])
 })
 
-test('Wheat unlock migration requires Row Duplicators and removes dormant Sweet Potato perfection', () => {
+test('Wheat requires Row Duplicators and saves preserve Sweet Potato perfection', () => {
   const withoutDuplicators = normalizeGame({
     crops: WHEAT_UNLOCK_CROP_COUNT,
     completedCropPerfections: ['sweetPotato'],
@@ -135,7 +135,7 @@ test('Wheat unlock migration requires Row Duplicators and removes dormant Sweet 
   assert.equal(withDuplicators.hasUnlockedWheat, true)
   assert.equal(
     withDuplicators.completedCropPerfections.includes('sweetPotato'),
-    false,
+    true,
   )
 })
 

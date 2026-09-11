@@ -14,6 +14,7 @@ export * from './manateeLogic.js'
 export * from './wetlandsConnection.js'
 export * from './wetlandsConnectionState.js'
 export * from './rootTunnelLogic.js'
+export * from './sweetPotatoLogic.js'
 export {
   canPlaceMangroveSapling,
   canPlaceShoalGrass,
@@ -42,6 +43,8 @@ export {
   isMirrorCornOverloaded,
   getSplitweedMirrorCornEffectivenessBonus,
   getSplitweedMonocropLimitAugmentationEffect,
+  getSweetPotatoBedEffect,
+  getSweetPotatoBedEffects,
   getWaterLettucePassiveEffect,
   getMonocropCropCount,
   getMonocropThresholdBonus,

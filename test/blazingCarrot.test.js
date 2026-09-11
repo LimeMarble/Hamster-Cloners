@@ -41,7 +41,9 @@ test('Blazing Carrot is gated by Demonstration 0 and spends Rabbit relations', (
     ...initialGame,
     crops: 123,
     hasUnlockedCropPerfection: true,
-    capybara: { completedDemonstrations: ['introduction'] },
+    capybara: {
+      completedDemonstrations: ['introduction'],
+    },
     trade: {
       ...initialGame.trade,
       rabbitRelations: CROP_PERFECTIONS.blazingCarrot.cost,
@@ -207,7 +209,7 @@ test('Blazing Carrot survey reduction is lifetime-relation-limited and caps at 8
   assert.ok(Math.abs(cappedEffect.multiplier - 0.2) < 1e-12)
 })
 
-test('major progression places Sampling Lentil then Blazing Carrot before Demonstration 1', () => {
+test('major progression places Sweet Potato before the Lentil and Carrot perfections', () => {
   const initialGame = createInitialGame()
   const game = {
     ...initialGame,
@@ -236,15 +238,31 @@ test('major progression places Sampling Lentil then Blazing Carrot before Demons
       rabbitRelations: 5e12,
       rabbitUnlocks: ['carrot', 'fourLeafClover', 'capybaraContact'],
     },
-    capybara: { completedDemonstrations: ['introduction'] },
+    capybara: {
+      completedDemonstrations: ['introduction', 'demonstrationOne'],
+    },
   }
   assert.equal(
     getNextMajorProgressionGoal(game).id,
+    'perfection-sweetPotato',
+  )
+  const sweetPotatoCompleteGame = {
+    ...game,
+    completedCropPerfections: [
+      ...game.completedCropPerfections,
+      'sweetPotato',
+    ],
+  }
+  assert.equal(
+    getNextMajorProgressionGoal(sweetPotatoCompleteGame).id,
     'perfection-samplingLentil',
   )
   const samplingCompleteGame = {
-    ...game,
-    completedCropPerfections: [...game.completedCropPerfections, 'samplingLentil'],
+    ...sweetPotatoCompleteGame,
+    completedCropPerfections: [
+      ...sweetPotatoCompleteGame.completedCropPerfections,
+      'samplingLentil',
+    ],
   }
   const goal = getNextMajorProgressionGoal(samplingCompleteGame)
 
@@ -259,6 +277,6 @@ test('major progression places Sampling Lentil then Blazing Carrot before Demons
         BLAZING_CARROT,
       ],
     }).id,
-    'capybara-demonstration-one',
+    'capybara-demonstration-two',
   )
 })

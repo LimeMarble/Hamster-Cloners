@@ -46,6 +46,13 @@ import {
   canPlaceMangroveSapling,
   getMangroveNurseryBaseEffect,
 } from './mangroveSaplingLogic.js'
+import {
+  getSweetPotatoBed,
+  getSweetPotatoBedBaseBonus,
+  getSweetPotatoBedCrowdingMultiplier,
+  getSweetPotatoBeds,
+  getSweetPotatoBedTurnipConnections,
+} from './sweetPotatoLogic.js'
 
 const getCachedRabbitRelationsMultiplier = createBlueprintCalculationCache()
 const getCachedBlazingCarrotSurveyTimeEffect =
@@ -53,6 +60,7 @@ const getCachedBlazingCarrotSurveyTimeEffect =
 const getCachedGlobalPassiveEffectMultiplier =
   createBlueprintCalculationCache()
 const getCachedMangroveNurseryEffect = createBlueprintCalculationCache()
+const getCachedSweetPotatoBedEffects = createBlueprintCalculationCache()
 
 export {
   getAdjacentCropConnections,
@@ -75,6 +83,141 @@ export { canPlaceMangroveSapling }
 
 export function getPlantedCropCount(blueprint, crop = 'leek') {
   return blueprint.cells.filter((cell) => cell === crop).length
+}
+
+export function getSweetPotatoBedEffects(
+  blueprint,
+  completedCropPerfections = [],
+  passiveEffectMultiplier = 1,
+  seedAugmentations = {},
+) {
+  const perfection = getCropPerfection(
+    'sweetPotato',
+    completedCropPerfections,
+  )
+
+  if (perfection?.id !== 'sweetPotato') return []
+
+  return getCachedSweetPotatoBedEffects(
+    blueprint,
+    [completedCropPerfections, passiveEffectMultiplier, seedAugmentations],
+    () => {
+      const fieldSize = blueprint.rows * blueprint.columns
+      const monocropMultiplier = getMonocropYieldMultiplier(
+        getMonocropCropCount(blueprint, 'sweetPotato'),
+        fieldSize,
+        getMonocropThresholdBonus(
+          blueprint,
+          completedCropPerfections,
+          seedAugmentations,
+        ),
+      )
+      const allPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
+        blueprint,
+        completedCropPerfections,
+        passiveEffectMultiplier,
+        seedAugmentations,
+      )
+
+      return getSweetPotatoBeds(blueprint).map((bed) => {
+        const turnipConnections = getSweetPotatoBedTurnipConnections(
+          blueprint,
+          bed.indexes,
+        )
+        const turnipEffectMultiplier = turnipConnections.reduce(
+          (multiplier, { adjacencyDistance }) =>
+            multiplier *
+            getAdjacentCropEffectModifier(
+              blueprint,
+              'turnip',
+              'sweetPotato',
+              adjacencyDistance,
+              false,
+              completedCropPerfections,
+              passiveEffectMultiplier,
+              seedAugmentations,
+            ),
+          1,
+        )
+        let mirrorCornCount = 0
+        const mirrorCornEffectMultiplier = bed.indexes.reduce(
+          (multiplier, index) => {
+            const targetCount = getMirrorCornTargetCount(
+              blueprint,
+              index,
+              completedCropPerfections,
+              seedAugmentations,
+            )
+
+            mirrorCornCount += targetCount
+            return targetCount > 0
+              ? multiplier *
+                  getMirrorCornEffectMultiplier(
+                    blueprint,
+                    index,
+                    completedCropPerfections,
+                    passiveEffectMultiplier,
+                    seedAugmentations,
+                  )
+              : multiplier
+          },
+          1,
+        )
+        const turnipCount = turnipConnections.length
+        const adjacentBuffCount = turnipCount + mirrorCornCount
+        const baseBonus = getSweetPotatoBedBaseBonus(
+          perfection,
+          bed.indexes.length,
+        )
+        const buffMultiplier =
+          turnipEffectMultiplier * mirrorCornEffectMultiplier
+        const crowdingMultiplier = getSweetPotatoBedCrowdingMultiplier(
+          perfection,
+          adjacentBuffCount,
+        )
+        const bonus =
+          baseBonus *
+          monocropMultiplier *
+          allPassiveEffectMultiplier *
+          buffMultiplier *
+          crowdingMultiplier
+
+        return {
+          ...bed,
+          connectedCropCount: bed.indexes.length,
+          turnipCount,
+          mirrorCornCount,
+          adjacentBuffCount,
+          baseBonus,
+          monocropMultiplier,
+          allPassiveEffectMultiplier,
+          turnipEffectMultiplier,
+          mirrorCornEffectMultiplier,
+          buffMultiplier,
+          crowdingMultiplier,
+          bonus,
+        }
+      })
+    },
+  )
+}
+
+export function getSweetPotatoBedEffect(
+  blueprint,
+  index,
+  completedCropPerfections = [],
+  passiveEffectMultiplier = 1,
+  seedAugmentations = {},
+) {
+  const bed = getSweetPotatoBed(blueprint, index)
+  if (!bed) return null
+
+  return getSweetPotatoBedEffects(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  ).find((effect) => effect.anchorIndex === bed.anchorIndex) ?? null
 }
 
 export function isBlazingCarrotBurned(

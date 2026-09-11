@@ -35,6 +35,7 @@ import {
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
   getSamplingLentilTradedCropEffect,
+  getSweetPotatoBedEffects,
   isBlazingCarrotBurned,
   isMirrorCornOverloaded,
   isWaterLettuceFieldInfested,
@@ -152,6 +153,12 @@ function calculateCropHamsterEfficiencyMultiplier(
     },
     0,
   )
+  const sweetPotatoBedBonus = getSweetPotatoBedEffects(
+    effectBlueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  ).reduce((totalBonus, bed) => totalBonus + bed.bonus, 0)
 
   const globalHamsterEfficiencyMultiplier =
     getGlobalHamsterEfficiencyMultiplier(
@@ -164,7 +171,8 @@ function calculateCropHamsterEfficiencyMultiplier(
 
   return Math.max(
     0,
-    (1 + additiveCropBonus) * globalHamsterEfficiencyMultiplier,
+    (1 + additiveCropBonus + sweetPotatoBedBonus) *
+      globalHamsterEfficiencyMultiplier,
   )
 }
 export function getRowDuplicatorEffectivenessMultiplier(

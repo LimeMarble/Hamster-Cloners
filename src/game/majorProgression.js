@@ -308,6 +308,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: getCapybaraBlueprintCropYield,
     requiresAction: true,
   },
+  createPerfectionGoal('sweetPotato'),
   createPerfectionGoal('samplingLentil'),
   createPerfectionGoal('blazingCarrot'),
   {

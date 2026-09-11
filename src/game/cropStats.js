@@ -27,6 +27,7 @@ import {
   getLeechingGourdTurnipEffect,
   getMangroveNurseryEffect,
   getShoalGrassNetworkSize,
+  getSweetPotatoBedEffect,
   getMirrorCornEffectBlueprint,
   getMirrorCornEffectMultiplier,
   getMirrorCornMaximumReflections,
@@ -194,11 +195,27 @@ export function getBlueprintCropStats(
   const receivedEffects = []
   const effectDefinition =
     getCropPerfection(crop, completedCropPerfections) ?? definition
+  const sweetPotatoBedEffect = crop === 'sweetPotato'
+    ? getSweetPotatoBedEffect(
+        blueprint,
+        index,
+        completedCropPerfections,
+        passiveEffectMultiplier,
+        seedAugmentations,
+      )
+    : null
 
   if (crop === 'shoalGrass') {
     receivedEffects.push({
       type: 'shoal-grass-network',
       count: getShoalGrassNetworkSize(blueprint, index),
+    })
+  }
+
+  if (sweetPotatoBedEffect) {
+    receivedEffects.push({
+      type: 'sweet-potato-bed',
+      ...sweetPotatoBedEffect,
     })
   }
 
@@ -227,7 +244,7 @@ export function getBlueprintCropStats(
     ),
   )
 
-  if (!isCropEffectModifier(crop)) {
+  if (!isCropEffectModifier(crop) && !sweetPotatoBedEffect) {
     const modifierStacksByCrop = new Map()
 
     neighboringConnections.forEach(
@@ -319,7 +336,7 @@ export function getBlueprintCropStats(
     completedCropPerfections,
     seedAugmentations,
   )
-  if (mirrorCornTargetCount > 0) {
+  if (mirrorCornTargetCount > 0 && !sweetPotatoBedEffect) {
     receivedEffects.push({
       type: 'mirror-corn',
       count: mirrorCornTargetCount,
@@ -463,11 +480,12 @@ export function getBlueprintCropStats(
       : 1
   const adjustForMonocrop = (bonus) =>
     bonus > 0 ? bonus * monocropMultiplier : bonus / monocropMultiplier
-  const hamsterEfficiencyBonus =
-    adjustForMonocrop(baseHamsterEfficiencyBonus) *
-    allPassiveEffectMultiplier *
-    cropEffectMultiplier *
-    getAugmentedMirrorCornEffectMultiplier(index)
+  const hamsterEfficiencyBonus = sweetPotatoBedEffect
+    ? sweetPotatoBedEffect.bonus
+    : adjustForMonocrop(baseHamsterEfficiencyBonus) *
+      allPassiveEffectMultiplier *
+      cropEffectMultiplier *
+      getAugmentedMirrorCornEffectMultiplier(index)
   const baseGlobalPassiveEffectMultiplier =
     getGlobalPassiveEffectMultiplier(
       blueprint,
@@ -624,6 +642,15 @@ export function getBlueprintCropStats(
     baseGlobalPassiveEffectMultiplier,
     seedAugmentations,
   })
+
+  if (sweetPotatoBedEffect) {
+    passiveStats.unshift({
+      id: 'sweet-potato-bed-hamster-efficiency',
+      label: 'Bed Hamster efficiency',
+      format: 'percentage',
+      value: sweetPotatoBedEffect.bonus,
+    })
+  }
 
   if (mangroveNurseryEffect) {
     passiveStats.push({
