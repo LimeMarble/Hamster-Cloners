@@ -7,6 +7,7 @@ export const SEED_AUGMENTATION_IDS = Object.freeze({
   SPLITWEED_MONOCROP_LIMIT: 'splitweedMonocropLimit',
   SWEETER_BOND: 'sweeterBond',
   LOOSENED_BOUNDARIES: 'loosenedBoundaries',
+  RESTORED_CONNECTIONS: 'restoredConnections',
 })
 
 export const SEED_AUGMENTATIONS = Object.freeze({
@@ -66,6 +67,13 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     crowdingBaseBonusPerLevel: 0.05,
     requiredMisfortuneUpgradeId: 'adversityGrownTubers',
   }),
+  [SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS]: Object.freeze({
+    id: SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS,
+    name: 'Restored Connections',
+    cost: 1e109,
+    buffDecayDelay: 3,
+    requiredMisfortuneUpgradeId: 'adversityGrownTubers',
+  }),
 })
 
 export function createInitialSeedAugmentationState() {
@@ -79,6 +87,7 @@ export function createInitialSeedAugmentationState() {
     splitweedMonocropLimitLevel: 0,
     sweeterBondLevel: 0,
     loosenedBoundariesLevel: 0,
+    restoredConnectionsUnlocked: false,
   }
 }
 
@@ -144,6 +153,8 @@ export function normalizeSeedAugmentationState(rawState) {
         Math.floor(Number(rawState?.loosenedBoundariesLevel) || 0),
       ),
     ),
+    restoredConnectionsUnlocked:
+      rawState?.restoredConnectionsUnlocked === true,
   }
 }
 
@@ -218,6 +229,18 @@ export function getSweetPotatoCrowdingBaseBonus(seedAugmentations) {
     augmentation.crowdingBaseBonusPerLevel
 }
 
+export function hasRestoredConnectionsAugmentation(seedAugmentations) {
+  return normalizeSeedAugmentationState(seedAugmentations)
+    .restoredConnectionsUnlocked
+}
+
+export function getSweetPotatoBuffDecayDelay(seedAugmentations) {
+  return hasRestoredConnectionsAugmentation(seedAugmentations)
+    ? SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS]
+      .buffDecayDelay
+    : 0
+}
+
 export function getNextSeedAugmentationCost(game, augmentationId) {
   const state = normalizeSeedAugmentationState(game.seedAugmentations)
 
@@ -271,8 +294,10 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
     [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]:
       'mirrorCornDebuffRemovalUnlocked',
 
-      [SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT]:
+    [SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT]:
       'mirrorCornReflectionLimitUnlocked',
+    [SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS]:
+      'restoredConnectionsUnlocked',
   }
   const stateKey = oneTimeAugmentationStateKeys[augmentationId]
 
@@ -320,7 +345,8 @@ function canPurchaseSeedAugmentation(game, augmentationId) {
     augmentationId === SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT
   const isSweetPotatoAugmentation =
     augmentationId === SEED_AUGMENTATION_IDS.SWEETER_BOND ||
-    augmentationId === SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES
+    augmentationId === SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES ||
+    augmentationId === SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS
 
   return (
     (isLeekAugmentation &&
@@ -388,6 +414,13 @@ export function purchaseSeedAugmentation(game, augmentationId) {
     seedAugmentations = {
       ...state,
       loosenedBoundariesLevel: state.loosenedBoundariesLevel + 1,
+    }
+  } else if (
+    augmentationId === SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS
+  ) {
+    seedAugmentations = {
+      ...state,
+      restoredConnectionsUnlocked: true,
     }
   }
 

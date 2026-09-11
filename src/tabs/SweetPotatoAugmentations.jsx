@@ -1,9 +1,11 @@
 import {
+  getSweetPotatoBuffDecayDelay,
   getLoosenedBoundariesLevel,
   getNextSeedAugmentationCost,
   getSweeterBondLevel,
   getSweetPotatoCrowdingBase,
   getSweetPotatoGrowthExponentCap,
+  hasRestoredConnectionsAugmentation,
   isSeedAugmentationVisible,
   SEED_AUGMENTATIONS,
   SEED_AUGMENTATION_IDS,
@@ -20,6 +22,9 @@ function AugmentationButton({
   onPurchase,
 }) {
   const isMaximumLevel = cost === null
+  const completionLabel = augmentation.maximumLevel
+    ? 'Maximum level reached'
+    : 'Augmentation active'
 
   return (
     <button
@@ -31,7 +36,7 @@ function AugmentationButton({
       {!hasSweetPotato
         ? 'Perfect Potato first'
         : isMaximumLevel
-          ? 'Maximum level reached'
+          ? completionLabel
           : <>
               Augment — <FormattedNumber value={cost} /> Crops
             </>}
@@ -47,6 +52,8 @@ export function SweetPotatoAugmentations({
     SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SWEETER_BOND]
   const loosenedBoundaries =
     SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES]
+  const restoredConnections =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS]
 
   if (!isSeedAugmentationVisible(game, sweeterBond.id)) {
     return null
@@ -63,12 +70,22 @@ export function SweetPotatoAugmentations({
     game,
     loosenedBoundaries.id,
   )
+  const restoredConnectionsCost = getNextSeedAugmentationCost(
+    game,
+    restoredConnections.id,
+  )
   const growthExponentCap = getSweetPotatoGrowthExponentCap(
     CROP_PERFECTIONS.sweetPotato,
     game.seedAugmentations,
   )
   const crowdingBase = getSweetPotatoCrowdingBase(
     CROP_PERFECTIONS.sweetPotato,
+    game.seedAugmentations,
+  )
+  const restoredConnectionsActive = hasRestoredConnectionsAugmentation(
+    game.seedAugmentations,
+  )
+  const buffDecayDelay = getSweetPotatoBuffDecayDelay(
     game.seedAugmentations,
   )
 
@@ -165,6 +182,52 @@ export function SweetPotatoAugmentations({
         <AugmentationButton
           augmentation={loosenedBoundaries}
           cost={loosenedBoundariesCost}
+          hasSweetPotato={hasSweetPotato}
+          crops={game.crops}
+          onPurchase={onPurchaseSeedAugmentation}
+        />
+      </article>
+
+      <article className='seed-augmentation-card'>
+        <div className='seed-augmentation-heading'>
+          <CropVisual
+            cropId='sweetPotato'
+            completedCropPerfections={game.completedCropPerfections}
+            className='seed-augmentation-crop'
+          />
+          <div>
+            <p className='eyebrow'>Sweet Potato</p>
+            <h2>{restoredConnections.name}</h2>
+          </div>
+        </div>
+        <p>
+          Delays Sweet Potato bed buff decay by 3 buffs. The first four
+          connected Turnip or Mirror Corn buffs therefore cause no crowding
+          penalty; later buffs use m′ = max(0, m − 3).
+        </p>
+        <dl className='seed-augmentation-stats'>
+          <div>
+            <dt>Status</dt>
+            <dd>{restoredConnectionsActive ? 'Active' : 'Locked'}</dd>
+          </div>
+          <div>
+            <dt>Buff-decay delay</dt>
+            <dd>{buffDecayDelay} / {restoredConnections.buffDecayDelay}</dd>
+          </div>
+          <div>
+            <dt>Cost</dt>
+            <dd>
+              {restoredConnectionsActive
+                ? 'Purchased'
+                : <>
+                    <FormattedNumber value={restoredConnectionsCost} /> Crops
+                  </>}
+            </dd>
+          </div>
+        </dl>
+        <AugmentationButton
+          augmentation={restoredConnections}
+          cost={restoredConnectionsCost}
           hasSweetPotato={hasSweetPotato}
           crops={game.crops}
           onPurchase={onPurchaseSeedAugmentation}

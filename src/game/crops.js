@@ -3,6 +3,7 @@ import {
   getMirrorCornEffectivenessBonus,
   getMirrorCornReflectionLimitBonus,
   getSweetPotatoCrowdingBaseBonus,
+  getSweetPotatoBuffDecayDelay,
   getSweetPotatoGrowthExponentCapBonus,
   getSplitweedMonocropLimitLevel,
   hasLeekDiagonalAugmentation,
@@ -553,13 +554,19 @@ function getPerfectionEffectDescription(
       perfection.bedBuffCrowdingMultiplier +
         getSweetPotatoCrowdingBaseBonus(seedAugmentations),
     )
+    const buffDecayDelay = getSweetPotatoBuffDecayDelay(seedAugmentations)
+    const effectiveBuffCount = buffDecayDelay > 0 ? 'm′' : 'm'
+    const buffDecayDelayDescription = buffDecayDelay > 0
+      ? `, where m′ = max(0, m − ${buffDecayDelay})`
+      : ''
 
     return (
       `Orthogonally connected Sweet Potatoes form one bed · each bed gives ` +
       `+${perfection.bedHamsterEfficiencyBonusPerCrop} × n × ` +
       `${perfection.bedGrowthMultiplier}^min(n − 1, ${growthExponentCap}) Hamster Efficiency · ` +
       `every unique connected Turnip or Mirror Corn buffs the whole bed once, ` +
-      `followed by a ×${getCachedFormattedNumber(crowdingBase, 2)}^(m × (m − 1) / 2) crowding penalty`
+      `followed by a ×${getCachedFormattedNumber(crowdingBase, 2)}^(${effectiveBuffCount} × (${effectiveBuffCount} − 1) / 2) crowding penalty`
+      + buffDecayDelayDescription
     )
   }
 

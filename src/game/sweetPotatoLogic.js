@@ -3,6 +3,7 @@ import {
   getOrthogonalIndexes,
 } from './adjacencyLogic.js'
 import {
+  getSweetPotatoBuffDecayDelay,
   getSweetPotatoCrowdingBaseBonus,
   getSweetPotatoGrowthExponentCapBonus,
 } from './augmentationLogic.js'
@@ -130,7 +131,11 @@ export function getSweetPotatoBedCrowdingMultiplier(
   seedAugmentations = {},
 ) {
   const count = Math.max(0, Math.floor(Number(adjacentBuffCount) || 0))
-  const pairCount = (count * (count - 1)) / 2
+  const crowdingBuffCount = Math.max(
+    0,
+    count - getSweetPotatoBuffDecayDelay(seedAugmentations),
+  )
+  const pairCount = (crowdingBuffCount * (crowdingBuffCount - 1)) / 2
 
   return getSweetPotatoCrowdingBase(
     perfection,

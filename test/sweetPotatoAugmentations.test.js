@@ -14,9 +14,11 @@ import {
   getSweeterBondLevel,
   getSweetPotatoBedBaseBonus,
   getSweetPotatoBedCrowdingMultiplier,
+  getSweetPotatoBuffDecayDelay,
   getSweetPotatoBedEffects,
   getSweetPotatoCrowdingBase,
   getSweetPotatoGrowthExponentCap,
+  hasRestoredConnectionsAugmentation,
   isSeedAugmentationVisible,
   purchaseMisfortuneUpgrade,
   purchaseSeedAugmentation,
@@ -83,10 +85,14 @@ test('Adversity-Grown Tubers costs 7e22 and unlocks only the branch', () => {
 test('Sweeter Bond has three levels with 1000x costs and +4 cap each', () => {
   const augmentation =
     SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SWEETER_BOND]
-  const costs = [7e100, 7e103, 7e106]
+  const costs = Array.from(
+    { length: augmentation.maximumLevel },
+    (_, level) => augmentation.baseCost * augmentation.costGrowth ** level,
+  )
   let game = createEligibleGame()
 
   assert.equal(augmentation.maximumLevel, 3)
+  assert.equal(augmentation.costGrowth, 1000)
   assert.equal(augmentation.growthExponentCapBonusPerLevel, 4)
 
   costs.forEach((cost, level) => {
@@ -177,4 +183,49 @@ test('Sweet Potato bed calculations use both augmentation levels', () => {
   )
   assert.match(description, /min\(n − 1, 15\)/)
   assert.match(description, /×0\.55\^\(m × \(m − 1\) \/ 2\)/)
+})
+
+test('Restored Connections delays Sweet Potato buff decay by three buffs', () => {
+  const augmentation =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS]
+  const game = createEligibleGame()
+
+  assert.equal(augmentation.cost, 1e109)
+  assert.equal(getNextSeedAugmentationCost(game, augmentation.id), 1e109)
+
+  const purchased = purchaseSeedAugmentation(
+    { ...game, crops: augmentation.cost },
+    augmentation.id,
+  )
+
+  assert.ok(purchased)
+  assert.equal(
+    hasRestoredConnectionsAugmentation(purchased.seedAugmentations),
+    true,
+  )
+  assert.equal(getSweetPotatoBuffDecayDelay(purchased.seedAugmentations), 3)
+  assert.equal(getNextSeedAugmentationCost(purchased, augmentation.id), null)
+  assert.equal(
+    getSweetPotatoBedCrowdingMultiplier(
+      CROP_PERFECTIONS.sweetPotato,
+      4,
+      purchased.seedAugmentations,
+    ),
+    1,
+  )
+  assert.equal(
+    getSweetPotatoBedCrowdingMultiplier(
+      CROP_PERFECTIONS.sweetPotato,
+      5,
+      purchased.seedAugmentations,
+    ),
+    0.5,
+  )
+
+  const description = getCropEffectDescription(
+    'sweetPotato',
+    ['sweetPotato'],
+    purchased.seedAugmentations,
+  )
+  assert.match(description, /m′ = max\(0, m − 3\)/)
 })
