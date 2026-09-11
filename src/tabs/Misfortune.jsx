@@ -10,12 +10,12 @@ export function MisfortuneStatus() {
     <aside className="misfortune-status" aria-label="Fortune's Wrath">
       <strong>Fortune&apos;s Wrath</strong>
       <span>
-        Crop production ^
+        Crop production /<FormattedNumber value={FORTUNES_WRATH_CROP_DIVISOR} />
+        , then ^
         <FormattedNumber
           value={FORTUNES_WRATH_CROP_EXPONENT}
           maximumFractionDigits={2}
         />
-        , then /<FormattedNumber value={FORTUNES_WRATH_CROP_DIVISOR} />
       </span>
       <span>Machinery costs ×100</span>
       <span>

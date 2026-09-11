@@ -531,17 +531,17 @@ export function getBlueprintCropStats(
       multiplier: passiveEffectMultiplier,
     })
   }
-  if (cropProductionExponent !== 1) {
-    receivedEffects.push({
-      type: 'fortune-production-exponent',
-      exponent: cropProductionExponent,
-      source: fortuneModifiers.source,
-    })
-  }
   if (cropYieldMultiplier !== 1) {
     receivedEffects.push({
       type: 'fortune-crop-yield',
       multiplier: cropYieldMultiplier,
+      source: fortuneModifiers.source,
+    })
+  }
+  if (cropProductionExponent !== 1) {
+    receivedEffects.push({
+      type: 'fortune-production-exponent',
+      exponent: cropProductionExponent,
       source: fortuneModifiers.source,
     })
   }

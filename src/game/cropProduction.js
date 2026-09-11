@@ -673,13 +673,12 @@ function normalizeCropProductionModifiers(modifiers = {}) {
 export function applyCropProductionModifiers(production, modifiers = {}) {
   const normalized = normalizeCropProductionModifiers(modifiers)
   const safeProduction = Math.max(0, Number(production) || 0)
-  const productionBeforeDivision =
-    safeProduction * normalized.harvestMultiplier
-
-  return (
-    productionBeforeDivision ** normalized.cropProductionExponent *
+  const productionBeforeExponent =
+    safeProduction *
+    normalized.harvestMultiplier *
     normalized.cropYieldMultiplier
-  )
+
+  return productionBeforeExponent ** normalized.cropProductionExponent
 }
 
 export function getCropProductionModifierScale(production, modifiers = {}) {

@@ -183,7 +183,7 @@ test("Fortune's Wrath replaces Breezes throughout Misfortune", () => {
   assert.strictEqual(advanceFortuneState(game, 60, () => 0), game)
 })
 
-test("Fortune's Wrath applies its exponent before its division", () => {
+test("Fortune's Wrath applies its division before its exponent", () => {
   const blueprint = createBlueprint({ cells: ['leek'] })
   const farmland = {
     rows: 1,
@@ -204,9 +204,9 @@ test("Fortune's Wrath applies its exponent before its division", () => {
     0,
     getFortuneModifiers({ activeArea: GAME_AREA_IDS.MISFORTUNE }),
   )
-  const expected =
-    Math.sqrt(productionBeforeWrath.total) /
-    FORTUNES_WRATH_CROP_DIVISOR
+  const expected = Math.sqrt(
+    productionBeforeWrath.total / FORTUNES_WRATH_CROP_DIVISOR,
+  )
 
   assert.ok(Math.abs(productionUnderWrath.total - expected) < 1e-15)
   assert.ok(
