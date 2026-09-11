@@ -123,7 +123,7 @@ export function Augmentation({
           </div>
           <p>
             Each level adds a further +5, +10, +15, +20, then +25 Crops
-            to Enriching Leek's adjacent harvest boost.
+            to Enriching Leek's personal and adjacent harvest boost.
           </p>
           <dl className='seed-augmentation-stats'>
             <div>

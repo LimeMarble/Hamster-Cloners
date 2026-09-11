@@ -5,6 +5,9 @@ import {
   HAMSTER_COST_GROWTH_INCREASE_PER_HAMSTER,
   FLOOR_REPLICATOR_BASE_COST,
   FLOOR_REPLICATOR_COST_GROWTH,
+  FLOOR_REPLICATOR_COST_TIER_SIZE,
+  GAME_AREA_IDS,
+  getGameAreaCostMultiplier,
   ROW_DUPLICATOR_BASE_COST,
   ROW_DUPLICATOR_COST_GROWTH,
   UNION_STATUS_RETIRE_HIRE_COUNT,
@@ -49,11 +52,21 @@ export function getHamsterCostGrowth(hamsters) {
   )
 }
 
-export function getNextHamsterCost(hamsters, unionized = false) {
+function normalizeCostMultiplier(value) {
+  const multiplier = Number(value)
+  return Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1
+}
+
+export function getNextHamsterCost(
+  hamsters,
+  unionized = false,
+  costMultiplier = 1,
+) {
   const safeHamsters = Math.max(0, Math.floor(Number(hamsters) || 0))
+  const safeCostMultiplier = normalizeCostMultiplier(costMultiplier)
 
   if (!unionized) {
-    return HAMSTER_BASE_COST + safeHamsters
+    return (HAMSTER_BASE_COST + safeHamsters) * safeCostMultiplier
   }
 
   const regularScalingHamsters = Math.min(
@@ -72,10 +85,13 @@ export function getNextHamsterCost(hamsters, unionized = false) {
     if (!Number.isFinite(cost)) return Infinity
   }
 
-  return Math.ceil(cost)
+  return Math.ceil(cost) * safeCostMultiplier
 }
 
-export function getNextRowDuplicatorCost(rowDuplicators = 0) {
+export function getNextRowDuplicatorCost(
+  rowDuplicators = 0,
+  costMultiplier = 1,
+) {
   const safeRowDuplicators = Math.max(
     0,
     Math.floor(Number(rowDuplicators) || 0),
@@ -84,18 +100,25 @@ export function getNextRowDuplicatorCost(rowDuplicators = 0) {
   return Math.ceil(
     ROW_DUPLICATOR_BASE_COST *
       ROW_DUPLICATOR_COST_GROWTH ** safeRowDuplicators,
-  )
+  ) * normalizeCostMultiplier(costMultiplier)
 }
 
-export function getNextFloorReplicatorCost(floorReplicators = 0) {
+export function getNextFloorReplicatorCost(
+  floorReplicators = 0,
+  costMultiplier = 1,
+) {
   const safeFloorReplicators = Math.max(
     0,
     Math.floor(Number(floorReplicators) || 0),
   )
+  const completedTiers = Math.floor(
+    safeFloorReplicators / FLOOR_REPLICATOR_COST_TIER_SIZE,
+  )
 
-  return Math.ceil(
+  return (
     FLOOR_REPLICATOR_BASE_COST *
-      FLOOR_REPLICATOR_COST_GROWTH ** safeFloorReplicators,
+    FLOOR_REPLICATOR_COST_GROWTH ** completedTiers *
+    normalizeCostMultiplier(costMultiplier)
   )
 }
 
@@ -149,6 +172,7 @@ export function getMaxHamsterPurchase(game) {
   }
   let remainingCrops = Math.max(0, Number(game.crops) || 0)
   let purchased = 0
+  const costMultiplier = getGameAreaCostMultiplier(game)
 
   while (purchased < 10000) {
     if (
@@ -158,7 +182,11 @@ export function getMaxHamsterPurchase(game) {
       break
     }
 
-    const cost = getNextHamsterCost(nextGame.hamsters, nextGame.unionized)
+    const cost = getNextHamsterCost(
+      nextGame.hamsters,
+      nextGame.unionized,
+      costMultiplier,
+    )
     if (!Number.isFinite(cost) || cost > remainingCrops) {
       break
     }
@@ -183,13 +211,14 @@ export function getMaxDuplicatorPurchase(game) {
   )
   let remainingCrops = Math.max(0, Number(game.crops) || 0)
   let purchased = 0
+  const costMultiplier = getGameAreaCostMultiplier(game)
 
   if (game.hasUnlockedRowDuplicators !== true) {
     return { rowDuplicators, crops: remainingCrops, purchased }
   }
 
   while (purchased < 10000) {
-    const cost = getNextRowDuplicatorCost(rowDuplicators)
+    const cost = getNextRowDuplicatorCost(rowDuplicators, costMultiplier)
     if (!Number.isFinite(cost) || cost > remainingCrops) {
       break
     }
@@ -214,12 +243,19 @@ export function getMaxFloorReplicatorPurchase(game) {
   let remainingCrops = Math.max(0, Number(game.crops) || 0)
   let purchased = 0
 
-  if (game.hasUnlockedFloorReplicators !== true) {
+  if (
+    game.hasUnlockedFloorReplicators !== true ||
+    game.activeArea !== GAME_AREA_IDS.MISFORTUNE
+  ) {
     return { floorReplicators, crops: remainingCrops, purchased }
   }
 
+  const costMultiplier = getGameAreaCostMultiplier(game)
   while (purchased < 10000) {
-    const cost = getNextFloorReplicatorCost(floorReplicators)
+    const cost = getNextFloorReplicatorCost(
+      floorReplicators,
+      costMultiplier,
+    )
     if (!Number.isFinite(cost) || cost > remainingCrops) break
 
     remainingCrops -= cost

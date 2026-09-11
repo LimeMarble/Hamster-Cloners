@@ -121,13 +121,21 @@ export function getHarvestBonusConnections(
   completedCropPerfections = [],
   seedAugmentations = {},
 ) {
-  return getAugmentedHarvestConnections(
+  const connections = getAugmentedHarvestConnections(
     blueprint,
     index,
     getAdjacentCropConnections(blueprint, index),
     completedCropPerfections,
     seedAugmentations,
   )
+  const isEnrichingLeek =
+    blueprint.cells[index] === 'leek' &&
+    getCropPerfection('leek', completedCropPerfections)?.id ===
+      'enrichingLeek'
+
+  return isEnrichingLeek
+    ? [{ index, adjacencyDistance: 0 }, ...connections]
+    : connections
 }
 
 export function getMonocropCropCount(blueprint, crop) {

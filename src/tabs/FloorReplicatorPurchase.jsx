@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { FLOOR_REPLICATOR_COST_TIER_SIZE } from '../game/gameLogic.js'
 import { FormattedNumber, WholeNumber } from './ui.jsx'
 
 const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
@@ -11,7 +12,7 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
     <>
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Shared machinery</p>
+          <p className="eyebrow">Misfortune machinery</p>
           <h2>Floor Replicators</h2>
         </div>
         <span className="hamster-badge" aria-label="Floor Replicators owned">
@@ -19,9 +20,10 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
         </span>
       </div>
       <p className="card-copy">
-        Floor Replicators follow you between field areas. Each supplies a base
-        0.1 Floors per second, and their effectiveness grows by 1.5% per
-        Replicator.
+        Floor Replicators follow you between field areas, but can initially
+        only be built in Misfortune. Each supplies a base 0.1 Floors per
+        second. Every ten Replicators multiply their effectiveness by 2 and
+        the price of the next tier by 10.
       </p>
       <dl className="replicator-stats">
         <div>
@@ -34,7 +36,7 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
           </dd>
         </div>
         <div>
-          <dt>Replicator effectiveness</dt>
+          <dt>Tier effectiveness</dt>
           <dd>
             ×<FormattedNumber
               value={floorReplicatorCoordinationMultiplier}
@@ -43,6 +45,17 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
           </dd>
         </div>
       </dl>
+      <p className="card-copy">
+        Next ×2 tier at{' '}
+        <WholeNumber
+          value={
+            (Math.floor(floorReplicators / FLOOR_REPLICATOR_COST_TIER_SIZE) +
+              1) *
+            FLOOR_REPLICATOR_COST_TIER_SIZE
+          }
+        />{' '}
+        Floor Replicators.
+      </p>
       <div className="replicator-summary next-lesson">
         <span>Next replicator</span>
         <strong>

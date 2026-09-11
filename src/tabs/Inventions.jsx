@@ -74,7 +74,7 @@ export function Inventions({
                 </h2>
                 <p>
                   Rename Leek to Enriching Leek and grant +5 Crop yield to
-                  adjacent crops.
+                  itself and adjacent crops.
                 </p>
               </div>
               {hasEnrichingLeek ? (

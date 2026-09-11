@@ -12,7 +12,7 @@ import {
   getCropProductionSnapshotPerSecond,
   getCloverBundleChancePerMinute,
   getFortuneModifiers,
-
+  getGameAreaCostMultiplier,
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
   isMisfortuneAreaActive,
@@ -52,8 +52,13 @@ export function useGameDerivedState(game) {
     [game.activeArea, game.fortune],
   )
   const nextHamsterCost = useMemo(
-    () => getNextHamsterCost(game.hamsters, game.unionized),
-    [game.hamsters, game.unionized],
+    () =>
+      getNextHamsterCost(
+        game.hamsters,
+        game.unionized,
+        getGameAreaCostMultiplier(game.activeArea),
+      ),
+    [game.activeArea, game.hamsters, game.unionized],
   )
   const cropProductionSnapshot = useMemo(
     () =>
@@ -136,12 +141,20 @@ export function useGameDerivedState(game) {
       getCapybaraHamsterEfficiencyMultiplier(game),
   )
   const nextRowDuplicatorCost = useMemo(
-    () => getNextRowDuplicatorCost(game.rowDuplicators),
-    [game.rowDuplicators],
+    () =>
+      getNextRowDuplicatorCost(
+        game.rowDuplicators,
+        getGameAreaCostMultiplier(game.activeArea),
+      ),
+    [game.activeArea, game.rowDuplicators],
   )
   const nextFloorReplicatorCost = useMemo(
-    () => getNextFloorReplicatorCost(game.floorReplicators),
-    [game.floorReplicators],
+    () =>
+      getNextFloorReplicatorCost(
+        game.floorReplicators,
+        getGameAreaCostMultiplier(game.activeArea),
+      ),
+    [game.activeArea, game.floorReplicators],
   )
   const floorReplicatorCoordinationMultiplier = useMemo(
     () =>

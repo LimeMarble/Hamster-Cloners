@@ -87,6 +87,7 @@ test('legacy Musk Grass blueprint tiles migrate to Shoal Grass', () => {
 test('current saves retain valid Splitweed footprints and clear legacy single tiles', () => {
   const validSave = normalizeGame({
     blueprintExpansionAxesSwapped: true,
+    hasUnlockedKnotweed: true,
     completedCropPerfections: ['splitweed'],
     blueprint: {
       rows: 2,
@@ -101,6 +102,7 @@ test('current saves retain valid Splitweed footprints and clear legacy single ti
   })
   const legacySave = normalizeGame({
     blueprintExpansionAxesSwapped: true,
+    hasUnlockedKnotweed: true,
     completedCropPerfections: ['splitweed'],
     blueprint: {
       rows: 2,

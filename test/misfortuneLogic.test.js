@@ -5,9 +5,12 @@ import {
   FLOOR_REPLICATOR_BASE_COST,
   FLOOR_REPLICATOR_COORDINATION_GROWTH,
   FLOOR_REPLICATOR_COST_GROWTH,
+  FLOOR_REPLICATOR_COST_TIER_SIZE,
   FORTUNES_WRATH_CROP_DIVISOR,
   FORTUNES_WRATH_PASSIVE_MULTIPLIER,
   GAME_AREA_IDS,
+  MISFORTUNE_AREA_STATE_VERSION,
+  AREA_CROP_UNLOCK_FIELDS,
   advanceFortuneState,
   advanceGameByElapsedTime,
   createBlueprint,
@@ -16,9 +19,12 @@ import {
   getCloverBundleChancePerMinute,
   getFloorReplicatorCoordinationMultiplier,
   getFloorsProducedPerSecond,
+  getGameAreaCostMultiplier,
   getFortuneModifiers,
   getMaxFloorReplicatorPurchase,
   getNextFloorReplicatorCost,
+  getNextHamsterCost,
+  getNextRowDuplicatorCost,
   hasCompletedCapybaraDemonstration,
   switchGameArea,
 } from '../src/game/gameLogic.js'
@@ -35,6 +41,9 @@ test('Misfortune preserves separate area machinery, fields, and expansions', () 
     crops: 12345,
     hamsters: 250,
     rowDuplicators: 75,
+    ...Object.fromEntries(
+      AREA_CROP_UNLOCK_FIELDS.map((field) => [field, true]),
+    ),
     floorReplicators: 4,
     completedBlueprintExpansions: ['firstColumn', 'firstRow'],
     rabbitBlueprintExpansions: { row: 1, column: 1 },
@@ -53,9 +62,12 @@ test('Misfortune preserves separate area machinery, fields, and expansions', () 
     GAME_AREA_IDS.MISFORTUNE,
   )
 
-  assert.equal(misfortuneGame.crops, 10)
-  assert.equal(misfortuneGame.hamsters, 0)
+  assert.equal(misfortuneGame.crops, 0)
+  assert.equal(misfortuneGame.hamsters, 1)
   assert.equal(misfortuneGame.rowDuplicators, 0)
+  AREA_CROP_UNLOCK_FIELDS.forEach((field) => {
+    assert.equal(misfortuneGame[field], false)
+  })
   assert.equal(misfortuneGame.floorReplicators, 4)
   assert.equal(misfortuneGame.blueprint.rows, 1)
   assert.equal(misfortuneGame.blueprint.columns, 1)
@@ -67,6 +79,7 @@ test('Misfortune preserves separate area machinery, fields, and expansions', () 
     crops: 999,
     hamsters: 12,
     rowDuplicators: 3,
+    hasUnlockedTurnip: true,
   }
   const restoredMain = switchGameArea(
     developedMisfortune,
@@ -76,6 +89,9 @@ test('Misfortune preserves separate area machinery, fields, and expansions', () 
   assert.equal(restoredMain.crops, 12345)
   assert.equal(restoredMain.hamsters, 250)
   assert.equal(restoredMain.rowDuplicators, 75)
+  AREA_CROP_UNLOCK_FIELDS.forEach((field) => {
+    assert.equal(restoredMain[field], true)
+  })
   assert.equal(restoredMain.floorReplicators, 4)
   assert.equal(restoredMain.blueprint.rows, 2)
   assert.equal(restoredMain.blueprint.columns, 2)
@@ -91,6 +107,46 @@ test('Misfortune preserves separate area machinery, fields, and expansions', () 
   assert.equal(restoredMisfortune.crops, 999)
   assert.equal(restoredMisfortune.hamsters, 12)
   assert.equal(restoredMisfortune.rowDuplicators, 3)
+  assert.equal(restoredMisfortune.hasUnlockedTurnip, true)
+  AREA_CROP_UNLOCK_FIELDS.filter(
+    (field) => field !== 'hasUnlockedTurnip',
+  ).forEach((field) => {
+    assert.equal(restoredMisfortune[field], false)
+  })
+})
+
+test('legacy Misfortune saves move shared Crop unlocks back to the main area', () => {
+  const legacyMisfortuneSave = {
+    ...createInitialGame(),
+    areaCropUnlocksSeparated: undefined,
+    activeArea: GAME_AREA_IDS.MISFORTUNE,
+    crops: 10,
+    hasUnlockedTurnip: true,
+    hasUnlockedAppleTree: true,
+    hasUnlockedLentil: true,
+    hasUnlockedKnotweed: true,
+    hasUnlockedWheat: true,
+    hasUnlockedSunflower: true,
+    areaProgress: {
+      main: {
+        crops: 1e100,
+        hamsters: 1800,
+        rowDuplicators: 600,
+        blueprint: createBlueprint({ cells: ['leek'] }),
+      },
+      misfortune: null,
+    },
+  }
+  const normalized = normalizeGame(legacyMisfortuneSave)
+
+  AREA_CROP_UNLOCK_FIELDS.forEach((field) => {
+    assert.equal(normalized[field], false)
+  })
+
+  const restoredMain = switchGameArea(normalized, GAME_AREA_IDS.MAIN)
+  AREA_CROP_UNLOCK_FIELDS.forEach((field) => {
+    assert.equal(restoredMain[field], true)
+  })
 })
 
 test("Fortune's Wrath replaces Breezes throughout Misfortune", () => {
@@ -106,6 +162,7 @@ test("Fortune's Wrath replaces Breezes throughout Misfortune", () => {
   }
   const modifiers = getFortuneModifiers(game)
 
+  assert.equal(FORTUNES_WRATH_CROP_DIVISOR, 1_777_000)
   assert.equal(
     modifiers.passiveEffectMultiplier,
     FORTUNES_WRATH_PASSIVE_MULTIPLIER,
@@ -118,36 +175,115 @@ test("Fortune's Wrath replaces Breezes throughout Misfortune", () => {
   assert.strictEqual(advanceFortuneState(game, 60, () => 0), game)
 })
 
-test('Floor Replicators use 30% costs and shared 1.5% coordination', () => {
-  assert.equal(getNextFloorReplicatorCost(0), FLOOR_REPLICATOR_BASE_COST)
-  assert.equal(
-    getNextFloorReplicatorCost(1),
-    Math.ceil(FLOOR_REPLICATOR_BASE_COST * FLOOR_REPLICATOR_COST_GROWTH),
+test('Floor Replicators use ten-purchase cost and effectiveness tiers', () => {
+  const misfortuneCostMultiplier = getGameAreaCostMultiplier(
+    GAME_AREA_IDS.MISFORTUNE,
   )
-  assert.equal(getFloorReplicatorCoordinationMultiplier(2), 1.015 ** 2)
-  assert.equal(FLOOR_REPLICATOR_COORDINATION_GROWTH, 1.015)
-  assert.equal(getFloorsProducedPerSecond(2), 0.2 * 1.015 ** 2)
+
+  assert.equal(FLOOR_REPLICATOR_BASE_COST, 0.01)
+  assert.equal(FLOOR_REPLICATOR_COST_TIER_SIZE, 10)
+  assert.equal(FLOOR_REPLICATOR_COST_GROWTH, 10)
+  assert.equal(misfortuneCostMultiplier, 100)
+  assert.equal(getNextHamsterCost(1, false, misfortuneCostMultiplier), 600)
+  assert.equal(
+    getNextRowDuplicatorCost(0, misfortuneCostMultiplier),
+    1e14,
+  )
+  assert.equal(
+    getNextFloorReplicatorCost(0, misfortuneCostMultiplier),
+    1,
+  )
+  assert.equal(
+    getNextFloorReplicatorCost(9, misfortuneCostMultiplier),
+    1,
+  )
+  assert.equal(
+    getNextFloorReplicatorCost(10, misfortuneCostMultiplier),
+    10,
+  )
+  assert.equal(FLOOR_REPLICATOR_COORDINATION_GROWTH, 2)
+  assert.equal(getFloorReplicatorCoordinationMultiplier(9), 1)
+  assert.equal(getFloorReplicatorCoordinationMultiplier(10), 2)
+  assert.equal(getFloorReplicatorCoordinationMultiplier(20), 4)
+  assert.equal(getFloorsProducedPerSecond(10), 2)
 
   const game = {
     ...createInitialGame(),
-    crops: FLOOR_REPLICATOR_BASE_COST * 3,
+    activeArea: GAME_AREA_IDS.MISFORTUNE,
+    crops: 10,
     hasUnlockedFloorReplicators: true,
     floorReplicators: 0,
   }
   const purchase = getMaxFloorReplicatorPurchase(game)
-  assert.ok(purchase.purchased >= 2)
+  assert.equal(purchase.purchased, 10)
+  assert.equal(purchase.floorReplicators, 10)
+  assert.equal(purchase.crops, 0)
+  assert.equal(
+    getMaxFloorReplicatorPurchase({
+      ...game,
+      activeArea: GAME_AREA_IDS.MAIN,
+    }).purchased,
+    0,
+  )
 
   const advanced = advanceGameByElapsedTime(
     {
       ...game,
-      floorReplicators: 2,
+      floorReplicators: 10,
     },
     1,
     { mode: 'active' },
   )
   assert.ok(
-    Math.abs(advanced.farmland.floors - (1 + 0.2 * 1.015 ** 2)) < 1e-10,
+    Math.abs(advanced.farmland.floors - 3) < 1e-10,
   )
+})
+
+test('the new Demonstration 2 state replaces pre-existing Misfortune progress', () => {
+  const oldSave = {
+    ...createInitialGame(),
+    misfortuneAreaStateVersion: MISFORTUNE_AREA_STATE_VERSION - 1,
+    activeArea: GAME_AREA_IDS.MISFORTUNE,
+    crops: 1e250,
+    hamsters: 999,
+    rowDuplicators: 300,
+    floorReplicators: 12,
+    blueprint: createBlueprint({
+      rows: 2,
+      columns: 2,
+      cells: ['leek', 'corn', 'turnip', 'sunflower'],
+    }),
+    areaProgress: {
+      main: {
+        crops: 123,
+        hamsters: 40,
+        rowDuplicators: 5,
+        blueprint: createBlueprint({ cells: ['leek'] }),
+      },
+      misfortune: {
+        crops: 1e200,
+        hamsters: 500,
+        rowDuplicators: 100,
+        blueprint: createBlueprint({ cells: ['leek'] }),
+      },
+    },
+  }
+  const normalized = normalizeGame(oldSave)
+
+  assert.equal(normalized.misfortuneAreaStateVersion, MISFORTUNE_AREA_STATE_VERSION)
+  assert.equal(normalized.activeArea, GAME_AREA_IDS.MISFORTUNE)
+  assert.equal(normalized.crops, 0)
+  assert.equal(normalized.hamsters, 1)
+  assert.equal(normalized.rowDuplicators, 0)
+  assert.equal(normalized.floorReplicators, 12)
+  assert.deepEqual(normalized.blueprint.cells, ['leek'])
+  assert.equal(normalized.areaProgress.misfortune, null)
+
+  const restoredMain = switchGameArea(normalized, GAME_AREA_IDS.MAIN)
+  assert.equal(restoredMain.crops, 123)
+  assert.equal(restoredMain.hamsters, 40)
+  assert.equal(restoredMain.rowDuplicators, 5)
+  assert.equal(restoredMain.floorReplicators, 12)
 })
 
 test('Demonstration 2 progress is saved but can only pass in Misfortune', () => {

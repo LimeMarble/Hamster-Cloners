@@ -64,16 +64,18 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     unit: 'Misfortune Crops',
     metric: 'misfortuneCrops',
     restrictions: [
-      'Begin with no Hamsters or Row Duplicators from the main field',
+      'Begin with 0 Crops, 1 Hamster, and no Row Duplicators from the main field',
       'Main-field Row and Column expansions do not carry over',
+      'All machinery costs are multiplied by 100',
       'Breezes of Fortune are disabled',
-      "Fortune's Wrath divides Crop production by 77.777k and reduces Crop passives by 37%",
+      "Fortune's Wrath divides Crop production by 1.777M and reduces Crop passives by 37%",
     ],
     rewardName: 'Establish contact with Manatees',
     rewardDescription:
       "a species that didn't exactly get the best hand dealt to them by Fortune itself.",
     rewardJoiner: ', ',
-    hint: 'Floor Replicators are the only machinery that follows you here.',
+    hint:
+      'Floor Replicators are the only machinery that follows you here and can initially only be purchased here.',
     prerequisiteDemonstrationId:
       CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
     challengeArea: GAME_AREA_IDS.MISFORTUNE,

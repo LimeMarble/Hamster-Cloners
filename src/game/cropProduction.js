@@ -7,6 +7,7 @@ import {
   BASE_CROP_YIELD_PER_PLOT,
   COLUMNS_PER_HAMSTER_PER_SECOND,
   FLOOR_REPLICATOR_COORDINATION_GROWTH,
+  FLOOR_REPLICATOR_COST_TIER_SIZE,
   FLOORS_PER_FLOOR_REPLICATOR_PER_SECOND,
   POST_UNION_HAMSTER_EFFICIENCY_GROWTH,
   ROW_DUPLICATOR_COORDINATION_GROWTH,
@@ -823,7 +824,10 @@ export function getFloorReplicatorCoordinationMultiplier(
     Math.floor(Number(floorReplicators) || 0),
   )
 
-  return FLOOR_REPLICATOR_COORDINATION_GROWTH ** safeFloorReplicators
+  return (
+    FLOOR_REPLICATOR_COORDINATION_GROWTH **
+    Math.floor(safeFloorReplicators / FLOOR_REPLICATOR_COST_TIER_SIZE)
+  )
 }
 
 export function getRowDuplicatorCoordinationMultiplier(rowDuplicators = 0) {

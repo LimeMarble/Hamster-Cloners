@@ -7,12 +7,30 @@ import {
   FIELD_RESET_STARTING_COLUMNS,
   GAME_AREA_IDS,
   MISFORTUNE_BLUEPRINT_EXPANSION_MODIFIER,
-  STARTING_CROPS,
 } from './gameConfig.js'
 
 const VALID_EXPANSION_IDS = new Set(
   BLUEPRINT_EXPANSIONS.map(({ id }) => id),
 )
+
+export const AREA_CROP_UNLOCK_FIELDS = Object.freeze([
+  'hasUnlockedTurnip',
+  'hasUnlockedAppleTree',
+  'hasUnlockedLentil',
+  'hasUnlockedKnotweed',
+  'hasUnlockedWheat',
+  'hasUnlockedSunflower',
+])
+
+const AREA_CROP_UNLOCK_FIELD_BY_CROP_ID = Object.freeze({
+  turnip: 'hasUnlockedTurnip',
+  appleTree: 'hasUnlockedAppleTree',
+  lentil: 'hasUnlockedLentil',
+  knotweed: 'hasUnlockedKnotweed',
+  splitweedPart: 'hasUnlockedKnotweed',
+  wheat: 'hasUnlockedWheat',
+  sunflower: 'hasUnlockedSunflower',
+})
 
 function toNonNegativeNumber(value, fallback = 0) {
   const parsed = Number(value)
@@ -21,6 +39,29 @@ function toNonNegativeNumber(value, fallback = 0) {
 
 function toNonNegativeInteger(value, fallback = 0) {
   return Math.floor(toNonNegativeNumber(value, fallback))
+}
+
+function getAreaCropUnlockState(source = {}, fallback = {}) {
+  return Object.fromEntries(
+    AREA_CROP_UNLOCK_FIELDS.map((field) => [
+      field,
+      source[field] === undefined
+        ? fallback[field] === true
+        : source[field] === true,
+    ]),
+  )
+}
+
+export function removeLockedAreaCrops(blueprint, cropUnlocks = {}) {
+  const normalizedBlueprint = createBlueprint(blueprint)
+
+  return createBlueprint({
+    ...normalizedBlueprint,
+    cells: normalizedBlueprint.cells.map((cropId) => {
+      const unlockField = AREA_CROP_UNLOCK_FIELD_BY_CROP_ID[cropId]
+      return unlockField && cropUnlocks[unlockField] !== true ? null : cropId
+    }),
+  })
 }
 
 export function createInitialMisfortuneAreaState(
@@ -40,9 +81,10 @@ export function createInitialMisfortuneAreaState(
   })
 
   return {
-    crops: STARTING_CROPS,
-    hamsters: 0,
+    crops: 0,
+    hamsters: 1,
     rowDuplicators: 0,
+    ...getAreaCropUnlockState(),
     farmland: createFarmlandMultipliers({
       columns: FIELD_RESET_STARTING_COLUMNS,
     }),
@@ -58,6 +100,7 @@ export function captureCurrentAreaState(game) {
     crops: toNonNegativeNumber(game.crops),
     hamsters: toNonNegativeInteger(game.hamsters),
     rowDuplicators: toNonNegativeInteger(game.rowDuplicators),
+    ...getAreaCropUnlockState(game),
     farmland: createFarmlandMultipliers(game.farmland),
     completedBlueprintExpansions: Array.isArray(
       game.completedBlueprintExpansions,
@@ -77,19 +120,23 @@ export function captureCurrentAreaState(game) {
 export function normalizeStoredAreaState(rawArea, fallbackArea) {
   const fallback = fallbackArea ?? createInitialMisfortuneAreaState()
   const source = rawArea && typeof rawArea === 'object' ? rawArea : fallback
-  const blueprint = createBlueprint(source.blueprint ?? fallback.blueprint)
+  const cropUnlocks = getAreaCropUnlockState(source, fallback)
+  const blueprint = removeLockedAreaCrops(
+    source.blueprint ?? fallback.blueprint,
+    cropUnlocks,
+  )
   const rawSlots = Array.isArray(source.blueprintSlots)
     ? source.blueprintSlots
     : []
   const blueprintSlots = rawSlots.length > 0
     ? rawSlots.map((slot) =>
-        createBlueprint({
+        removeLockedAreaCrops({
           rows: blueprint.rows,
           columns: blueprint.columns,
           cells: slot?.cells,
           mirrorCornTargets: slot?.mirrorCornTargets,
           rootTunnelConnections: slot?.rootTunnelConnections,
-        }),
+        }, cropUnlocks),
       )
     : [blueprint]
   const activeBlueprintSlot = Math.min(
@@ -104,6 +151,7 @@ export function normalizeStoredAreaState(rawArea, fallbackArea) {
       source.rowDuplicators,
       fallback.rowDuplicators,
     ),
+    ...cropUnlocks,
     farmland: createFarmlandMultipliers(
       source.farmland ?? fallback.farmland,
     ),

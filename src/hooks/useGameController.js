@@ -123,7 +123,8 @@ export function useGameController() {
                 actions.purchaseActions.onBuyMaxRowDuplicators,
             }
           : null,
-        floorReplicatorPurchase: game.hasUnlockedFloorReplicators
+        floorReplicatorPurchase:
+          game.hasUnlockedFloorReplicators && derived.isMisfortuneAreaActive
           ? {
               game,
               nextFloorReplicatorCost: derived.nextFloorReplicatorCost,

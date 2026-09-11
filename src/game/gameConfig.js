@@ -9,8 +9,10 @@ export const GAME_AREA_IDS = Object.freeze({
   MAIN: 'main',
   MISFORTUNE: 'misfortune',
 })
+export const MISFORTUNE_AREA_STATE_VERSION = 2
 export const MISFORTUNE_CROP_GOAL = 1e300
-export const FORTUNES_WRATH_CROP_DIVISOR = 77777
+export const MISFORTUNE_COST_MULTIPLIER = 100
+export const FORTUNES_WRATH_CROP_DIVISOR = 1_777_000
 export const FORTUNES_WRATH_PASSIVE_MULTIPLIER = 0.63
 export const MISFORTUNE_BLUEPRINT_EXPANSION_MODIFIER = Object.freeze({
   row: -1,
@@ -33,10 +35,23 @@ export const INVENTIONS_HAMSTER_UNLOCK_COUNT = 50
 export const ROW_DUPLICATORS_UNLOCK_CROP_COUNT = 4.04e23
 export const ROW_DUPLICATOR_BASE_COST = 1e12
 export const ROW_DUPLICATOR_COST_GROWTH = 1.2
-export const FLOOR_REPLICATOR_BASE_COST = 1e60
-export const FLOOR_REPLICATOR_COST_GROWTH = 1.3
+export const FLOOR_REPLICATOR_BASE_COST = 0.01
+export const FLOOR_REPLICATOR_COST_GROWTH = 10
+export const FLOOR_REPLICATOR_COST_TIER_SIZE = 10
 export const FLOORS_PER_FLOOR_REPLICATOR_PER_SECOND = 0.1
-export const FLOOR_REPLICATOR_COORDINATION_GROWTH = 1.015
+export const FLOOR_REPLICATOR_COORDINATION_GROWTH = 2
+
+export function getGameAreaCostMultiplier(gameOrAreaId) {
+  const areaId =
+    typeof gameOrAreaId === 'string'
+      ? gameOrAreaId
+      : gameOrAreaId?.activeArea
+
+  return areaId === GAME_AREA_IDS.MISFORTUNE
+    ? MISFORTUNE_COST_MULTIPLIER
+    : 1
+}
+
 export const BLUEPRINT_EXPANSION_CONFIG = [
   {
     id: 'column',

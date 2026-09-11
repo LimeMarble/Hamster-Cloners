@@ -85,7 +85,7 @@ test('Diagonal Enrichment costs 1e68 and applies Leek boosts diagonally', () => 
       1,
       maxedState,
     ),
-    3,
+    83,
   )
   assert.equal(
     getNextSeedAugmentationCost(
@@ -113,7 +113,7 @@ test('Diagonal Enrichment costs 1e68 and applies Leek boosts diagonally', () => 
       1,
       purchased.seedAugmentations,
     ),
-    83,
+    163,
   )
 
   const cornStats = getBlueprintCropStats(

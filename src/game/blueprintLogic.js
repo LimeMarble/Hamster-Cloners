@@ -12,6 +12,7 @@ import {
   BLUEPRINT_EXPANSION_TRACKS,
   FIELD_RESET_STARTING_COLUMNS,
   INITIAL_BLUEPRINT_SIZE,
+  MISFORTUNE_AREA_STATE_VERSION,
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   STARTING_CROPS,
 } from './gameConfig.js'
@@ -180,6 +181,8 @@ export function createInitialGame() {
     blueprintSlots: [blueprint],
     activeBlueprintSlot: 0,
     hamstersBuildColumns: true,
+    areaCropUnlocksSeparated: true,
+    misfortuneAreaStateVersion: MISFORTUNE_AREA_STATE_VERSION,
     activeArea: 'main',
     areaProgress: {
       main: null,

@@ -293,7 +293,7 @@ export const CROP_PERFECTIONS = {
     name: 'Enriching Leek',
     cost: 2e10,
     adjacentCropYieldBonus: 5,
-    effectDescription: '+5 Crop yield to adjacent crops',
+    effectDescription: '+5 Crop yield to itself and adjacent crops',
   },
   mirrorCorn: {
     id: 'mirrorCorn',
@@ -551,7 +551,7 @@ function getPerfectionEffectDescription(
     ? 'orthogonally and diagonally adjacent crops'
     : 'adjacent crops'
 
-  return `+${adjacentCropYieldBonus} Crop yield to ${adjacencyDescription}`
+  return `+${adjacentCropYieldBonus} Crop yield to itself and ${adjacencyDescription}`
 }
 
 export function getCropEffectDescription(

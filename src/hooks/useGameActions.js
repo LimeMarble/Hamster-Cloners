@@ -11,6 +11,7 @@ import {
   createInitialGame,
   establishTradeRelations,
   getBlueprintExpansion,
+  getGameAreaCostMultiplier,
   getHamsterStateAfterHire,
   getMaxDuplicatorPurchase,
   getMaxFloorReplicatorPurchase,
@@ -80,6 +81,7 @@ export function useGameActions({
       const currentCost = getNextHamsterCost(
         currentGame.hamsters,
         currentGame.unionized,
+        getGameAreaCostMultiplier(currentGame),
       )
       if (currentGame.crops < currentCost) {
         return currentGame
@@ -98,6 +100,7 @@ export function useGameActions({
     const currentHamsterCost = getNextHamsterCost(
       currentGame.hamsters,
       currentGame.unionized,
+      getGameAreaCostMultiplier(currentGame),
     )
 
     if (currentGame.crops < currentHamsterCost) {
@@ -128,7 +131,10 @@ export function useGameActions({
         return currentGame
       }
 
-      const cost = getNextRowDuplicatorCost(currentGame.rowDuplicators)
+      const cost = getNextRowDuplicatorCost(
+        currentGame.rowDuplicators,
+        getGameAreaCostMultiplier(currentGame),
+      )
 
       if (currentGame.crops < cost) {
         return currentGame
@@ -152,9 +158,17 @@ export function useGameActions({
 
   function buyFloorReplicator() {
     updateGame((currentGame) => {
-      if (!currentGame.hasUnlockedFloorReplicators) return currentGame
+      if (
+        !currentGame.hasUnlockedFloorReplicators ||
+        currentGame.activeArea !== GAME_AREA_IDS.MISFORTUNE
+      ) {
+        return currentGame
+      }
 
-      const cost = getNextFloorReplicatorCost(currentGame.floorReplicators)
+      const cost = getNextFloorReplicatorCost(
+        currentGame.floorReplicators,
+        getGameAreaCostMultiplier(currentGame),
+      )
       if (currentGame.crops < cost) return currentGame
 
       return {

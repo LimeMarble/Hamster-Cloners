@@ -345,7 +345,7 @@ test('Turnips double adjacent crop bonuses without increasing crop yield', () =>
   )
 })
 
-test('Enriching Leek changes its name and enriches adjacent crop yield', () => {
+test('Enriching Leek enriches itself and adjacent crop yield', () => {
   const blueprint = createBlueprint({
     rows: 1,
     columns: 2,
@@ -359,7 +359,11 @@ test('Enriching Leek changes its name and enriches adjacent crop yield', () => {
       createFarmlandMultipliers({ rows: 1 }),
       ['enrichingLeek'],
     ),
-    8,
+    13,
+  )
+  assert.deepEqual(
+    getBlueprintCropStats(blueprint, 0, ['enrichingLeek']).receivedEffects,
+    [{ type: 'crop-yield', sourceCropId: 'leek', count: 1, bonus: 5 }],
   )
 })
 
@@ -446,7 +450,7 @@ test('Mirror Corn keeps excess reflections but overloads the targeted crop', () 
     {},
     { mirrorCornReflectionLimitUnlocked: true },
   )
-  assert.equal(safelyAugmentedStats.harvestYield, 1)
+  assert.equal(safelyAugmentedStats.harvestYield, 321)
   assert.deepEqual(
     safelyAugmentedStats.receivedEffects.find(
       (effect) => effect.type === 'mirror-corn',
@@ -556,6 +560,12 @@ test('Root Tunnel transfers Apple Tree harvest destruction at full initial stren
   assert.equal(leekStats.harvestDestroyedByAppleTree, true)
   assert.equal(leekStats.harvestYield, 0)
   assert.deepEqual(leekStats.receivedEffects, [
+    {
+      type: 'crop-yield',
+      sourceCropId: 'leek',
+      count: 1,
+      bonus: 5,
+    },
     {
       type: 'harvest-destruction',
       adjacencyDistances: [1],
@@ -740,7 +750,7 @@ test('Turnips and Pumpkins modify Apple Tree external Crop buffs', () => {
   )
   assert.equal(
     getCropProductionPerSecond(pumpkinBlueprint, farmland, ['enrichingLeek']),
-    17.5,
+    20,
   )
 })
 
@@ -809,7 +819,7 @@ test('ordinary yield bonuses affect and are affected by crop-effect modifiers', 
       createFarmlandMultipliers({ rows: 1 }),
       ['enrichingLeek'],
     ),
-    23.5,
+    33.5,
   )
 })
 

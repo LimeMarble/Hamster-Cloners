@@ -8,8 +8,9 @@ export function MisfortuneStatus() {
     <aside className="misfortune-status" aria-label="Fortune's Wrath">
       <strong>Fortune&apos;s Wrath</strong>
       <span>
-        Crop production ÷77.777k
+        Crop production /1.777M
       </span>
+      <span>Machinery costs ×100</span>
       <span>
         Crop passives −
         <FormattedNumber
@@ -30,8 +31,9 @@ export function Misfortune({ onLeave }) {
       <h1 id="misfortune-title">Misfortune</h1>
       <p>
         This area keeps its own Crops, Hamsters, Row Duplicators, farmland,
-        blueprints, and paid Row and Column expansions. Floor Replicators and
-        permanent unlocks are shared with the main field.
+        blueprints, paid Row and Column expansions, and milestone Crop
+        unlocks. Floor Replicators and other permanent progression are shared
+        with the main field.
       </p>
       <p>
         Its −1 Row and −1 Column modifiers offset the two Rabbit expansion
