@@ -51,7 +51,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   [SEED_AUGMENTATION_IDS.SWEETER_BOND]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.SWEETER_BOND,
     name: 'Sweeter Bond',
-    baseCost: 7e102,
+    baseCost: 7e99,
     costGrowth: 1000,
     maximumLevel: 3,
     growthExponentCapBonusPerLevel: 4,
