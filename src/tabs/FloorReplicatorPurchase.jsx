@@ -99,7 +99,7 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
                   : 'secondary-button'
               }
               onClick={onToggleFloorReplicatorMode}
-              disabled={!isFloorReplicatorSupportMode}
+              disabled={isFloorReplicatorSupportMode}
             >
               Support
             </button>
