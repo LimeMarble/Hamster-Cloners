@@ -107,6 +107,7 @@ export function useGameDerivedState(game) {
         blueprint: game.blueprint,
         completedCropPerfections: game.completedCropPerfections,
         fortune: game.fortune,
+        activeArea: game.activeArea,
         seedAugmentations: game.seedAugmentations,
         trade: {
           rabbitContractsCompleted:
@@ -117,6 +118,7 @@ export function useGameDerivedState(game) {
       }),
     [
       game.blueprint,
+      game.activeArea,
       game.completedCropPerfections,
       game.fortune,
       game.seedAugmentations,

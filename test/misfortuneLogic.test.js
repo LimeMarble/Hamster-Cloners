@@ -7,6 +7,7 @@ import {
   FLOOR_REPLICATOR_COST_GROWTH,
   FLOOR_REPLICATOR_COST_TIER_SIZE,
   FORTUNES_WRATH_CROP_DIVISOR,
+  FORTUNES_WRATH_CROP_EXPONENT,
   FORTUNES_WRATH_PASSIVE_MULTIPLIER,
   GAME_AREA_IDS,
   MISFORTUNE_AREA_STATE_VERSION,
@@ -17,6 +18,7 @@ import {
   createInitialGame,
   getCapybaraDemonstrationStatus,
   getCloverBundleChancePerMinute,
+  getCropProductionSnapshotPerSecond,
   getFloorReplicatorCoordinationMultiplier,
   getFloorsProducedPerSecond,
   getGameAreaCostMultiplier,
@@ -27,6 +29,7 @@ import {
   getNextRowDuplicatorCost,
   hasCompletedCapybaraDemonstration,
   switchGameArea,
+  wipeMisfortuneAreaProgress,
 } from '../src/game/gameLogic.js'
 import { normalizeGame } from '../src/game/storage.js'
 
@@ -163,6 +166,7 @@ test("Fortune's Wrath replaces Breezes throughout Misfortune", () => {
   const modifiers = getFortuneModifiers(game)
 
   assert.equal(FORTUNES_WRATH_CROP_DIVISOR, 1777)
+  assert.equal(FORTUNES_WRATH_CROP_EXPONENT, 0.5)
   assert.equal(
     modifiers.passiveEffectMultiplier,
     FORTUNES_WRATH_PASSIVE_MULTIPLIER,
@@ -171,8 +175,94 @@ test("Fortune's Wrath replaces Breezes throughout Misfortune", () => {
     modifiers.cropYieldMultiplier,
     1 / FORTUNES_WRATH_CROP_DIVISOR,
   )
+  assert.equal(
+    modifiers.cropProductionExponent,
+    FORTUNES_WRATH_CROP_EXPONENT,
+  )
   assert.equal(getCloverBundleChancePerMinute(game), 0)
   assert.strictEqual(advanceFortuneState(game, 60, () => 0), game)
+})
+
+test("Fortune's Wrath applies its exponent before its division", () => {
+  const blueprint = createBlueprint({ cells: ['leek'] })
+  const farmland = {
+    rows: 1,
+    columns: 100,
+    floors: 1,
+    farms: 1,
+    otherMultiplier: 1,
+  }
+  const productionBeforeWrath = getCropProductionSnapshotPerSecond(
+    blueprint,
+    farmland,
+  )
+  const productionUnderWrath = getCropProductionSnapshotPerSecond(
+    blueprint,
+    farmland,
+    [],
+    1,
+    0,
+    getFortuneModifiers({ activeArea: GAME_AREA_IDS.MISFORTUNE }),
+  )
+  const expected =
+    Math.sqrt(productionBeforeWrath.total) /
+    FORTUNES_WRATH_CROP_DIVISOR
+
+  assert.ok(Math.abs(productionUnderWrath.total - expected) < 1e-15)
+  assert.ok(
+    Math.abs(productionUnderWrath.byCrop.leek - expected) < 1e-15,
+  )
+})
+
+test('the Misfortune wipe resets only the area-specific state', () => {
+  const mainGame = {
+    ...createInitialGame(),
+    crops: 123,
+    hamsters: 50,
+    floorReplicators: 7,
+    areaProgress: {
+      main: null,
+      misfortune: {
+        crops: 1e200,
+        hamsters: 800,
+        rowDuplicators: 90,
+        hasUnlockedTurnip: true,
+        blueprint: createBlueprint({
+          rows: 2,
+          columns: 2,
+          cells: ['turnip', 'leek', null, null],
+        }),
+      },
+    },
+  }
+  const wipedFromMain = wipeMisfortuneAreaProgress(mainGame)
+
+  assert.equal(wipedFromMain.crops, 123)
+  assert.equal(wipedFromMain.hamsters, 50)
+  assert.equal(wipedFromMain.floorReplicators, 7)
+  assert.equal(wipedFromMain.areaProgress.misfortune, null)
+
+  const activeMisfortune = switchGameArea(
+    mainGame,
+    GAME_AREA_IDS.MISFORTUNE,
+  )
+  const wipedWhileActive = wipeMisfortuneAreaProgress(activeMisfortune)
+
+  assert.equal(wipedWhileActive.activeArea, GAME_AREA_IDS.MISFORTUNE)
+  assert.equal(wipedWhileActive.crops, 0)
+  assert.equal(wipedWhileActive.hamsters, 1)
+  assert.equal(wipedWhileActive.rowDuplicators, 0)
+  assert.equal(wipedWhileActive.floorReplicators, 7)
+  assert.equal(wipedWhileActive.farmland.columns, 0.9)
+  assert.deepEqual(wipedWhileActive.blueprint.cells, ['leek'])
+  assert.equal(wipedWhileActive.areaProgress.misfortune, null)
+
+  const restoredMain = switchGameArea(
+    wipedWhileActive,
+    GAME_AREA_IDS.MAIN,
+  )
+  assert.equal(restoredMain.crops, 123)
+  assert.equal(restoredMain.hamsters, 50)
 })
 
 test('Floor Replicators use ten-purchase cost and effectiveness tiers', () => {

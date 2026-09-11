@@ -180,6 +180,26 @@ export function getMisfortuneAreaCrops(game) {
   return toNonNegativeNumber(game.areaProgress?.misfortune?.crops)
 }
 
+export function wipeMisfortuneAreaProgress(game) {
+  const clearedAreaProgress = {
+    main: game.areaProgress?.main ?? null,
+    misfortune: null,
+  }
+
+  if (!isMisfortuneAreaActive(game)) {
+    return {
+      ...game,
+      areaProgress: clearedAreaProgress,
+    }
+  }
+
+  return {
+    ...game,
+    ...createInitialMisfortuneAreaState(game.rabbitBlueprintExpansions),
+    areaProgress: clearedAreaProgress,
+  }
+}
+
 export function switchGameArea(game, targetAreaId) {
   const currentAreaId = isMisfortuneAreaActive(game)
     ? GAME_AREA_IDS.MISFORTUNE

@@ -1,4 +1,7 @@
-import { getBaseFieldProductionSnapshot } from './cropProduction.js'
+import {
+  applyCropProductionModifiers,
+  getBaseFieldProductionSnapshot,
+} from './cropProduction.js'
 import { getFortuneModifiers } from './fortuneLogic.js'
 import { RABBIT_UNLOCK_IDS, hasRabbitUnlock } from './tradeLogic.js'
 import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
@@ -68,7 +71,7 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
       'Main-field Row and Column expansions do not carry over',
       'All machinery costs are multiplied by 100',
       'Breezes of Fortune are disabled',
-      "Fortune's Wrath divides Crop production by 1777 and reduces Crop passives by 37%",
+      "Fortune's Wrath raises Crop production to ^0.5, divides it by 1777, and reduces Crop passives by 37%",
     ],
     rewardName: 'Establish contact with Manatees',
     rewardDescription:
@@ -204,12 +207,7 @@ export function getCapybaraBlueprintCropYield(game) {
     game.trade?.totalRabbitRelationsEarned ?? 0,
   )
 
-  return Math.max(
-    0,
-    snapshot.total *
-      fortuneModifiers.cropYieldMultiplier *
-      fortuneModifiers.harvestMultiplier,
-  )
+  return applyCropProductionModifiers(snapshot.total, fortuneModifiers)
 }
 
 function hasNoActiveBreezeEffects(game) {

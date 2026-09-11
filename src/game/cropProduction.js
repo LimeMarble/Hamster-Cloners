@@ -657,12 +657,37 @@ function normalizeCropProductionModifiers(modifiers = {}) {
     const parsed = Number(value)
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1
   }
+  const parsedExponent = Number(modifiers.cropProductionExponent)
 
   return {
     passiveEffectMultiplier: getMultiplier(modifiers.passiveEffectMultiplier),
     cropYieldMultiplier: getMultiplier(modifiers.cropYieldMultiplier),
+    cropProductionExponent:
+      Number.isFinite(parsedExponent) && parsedExponent > 0
+        ? parsedExponent
+        : 1,
     harvestMultiplier: getMultiplier(modifiers.harvestMultiplier),
   }
+}
+
+export function applyCropProductionModifiers(production, modifiers = {}) {
+  const normalized = normalizeCropProductionModifiers(modifiers)
+  const safeProduction = Math.max(0, Number(production) || 0)
+  const productionBeforeDivision =
+    safeProduction * normalized.harvestMultiplier
+
+  return (
+    productionBeforeDivision ** normalized.cropProductionExponent *
+    normalized.cropYieldMultiplier
+  )
+}
+
+export function getCropProductionModifierScale(production, modifiers = {}) {
+  const safeProduction = Math.max(0, Number(production) || 0)
+
+  return safeProduction > 0
+    ? applyCropProductionModifiers(safeProduction, modifiers) / safeProduction
+    : 0
 }
 
 export function getCropProductionPerSecond(
@@ -719,6 +744,7 @@ export function getCropProductionSnapshotPerSecond(
       rabbitRelationDependency,
       modifiers.passiveEffectMultiplier,
       modifiers.cropYieldMultiplier,
+      modifiers.cropProductionExponent,
       modifiers.harvestMultiplier,
       seedAugmentations,
       effectiveFarmland.rows,
@@ -737,22 +763,29 @@ export function getCropProductionSnapshotPerSecond(
         seedAugmentations,
         totalRabbitRelationsEarned,
       )
-      const multiplier =
+      const preFortuneMultiplier =
         effectiveFarmland.rows *
         effectiveFarmland.columns *
         effectiveFarmland.floors *
         effectiveFarmland.farms *
         effectiveFarmland.otherMultiplier *
-        safeExternalCropMultiplier *
-        modifiers.cropYieldMultiplier *
-        modifiers.harvestMultiplier
+        safeExternalCropMultiplier
+      const productionBeforeFortune =
+        fieldSnapshot.total * preFortuneMultiplier
+      const fortuneScale = getCropProductionModifierScale(
+        productionBeforeFortune,
+        modifiers,
+      )
 
       return {
-        total: fieldSnapshot.total * multiplier,
+        total: applyCropProductionModifiers(
+          productionBeforeFortune,
+          modifiers,
+        ),
         byCrop: Object.fromEntries(
           Object.entries(fieldSnapshot.byCrop).map(([cropId, amount]) => [
             cropId,
-            amount * multiplier,
+            amount * preFortuneMultiplier * fortuneScale,
           ]),
         ),
       }

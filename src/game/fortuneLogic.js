@@ -9,6 +9,7 @@ import {
 import { getMonocropYieldMultiplier } from './monocropPenalty.js'
 import {
   FORTUNES_WRATH_CROP_DIVISOR,
+  FORTUNES_WRATH_CROP_EXPONENT,
   FORTUNES_WRATH_PASSIVE_MULTIPLIER,
   GAME_AREA_IDS,
 } from './gameConfig.js'
@@ -151,7 +152,9 @@ export function getFortuneModifiers(gameOrFortune) {
     return {
       passiveEffectMultiplier: FORTUNES_WRATH_PASSIVE_MULTIPLIER,
       cropYieldMultiplier: 1 / FORTUNES_WRATH_CROP_DIVISOR,
+      cropProductionExponent: FORTUNES_WRATH_CROP_EXPONENT,
       harvestMultiplier: 1,
+      source: 'fortunesWrath',
     }
   }
 
@@ -171,6 +174,7 @@ export function getFortuneModifiers(gameOrFortune) {
           (effect.passiveEffectMultiplier ?? 1),
         cropYieldMultiplier:
           modifiers.cropYieldMultiplier * (effect.cropYieldMultiplier ?? 1),
+        cropProductionExponent: modifiers.cropProductionExponent,
         harvestMultiplier:
           modifiers.harvestMultiplier * (effect.harvestMultiplier ?? 1),
       }
@@ -178,6 +182,7 @@ export function getFortuneModifiers(gameOrFortune) {
     {
       passiveEffectMultiplier: 1,
       cropYieldMultiplier: 1,
+      cropProductionExponent: 1,
       harvestMultiplier: 1,
     },
   )

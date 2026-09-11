@@ -7,10 +7,12 @@ import {
   multiplyManateeResources,
   revokeLastBlueprintExpansion,
   addRandomFortuneEffect,
+  wipeMisfortuneAreaProgress,
   wipeActiveFortuneEffects,
 } from '../game/gameLogic.js'
 
 const TESTING_CODE = 'limesaysopensesame'
+const MISFORTUNE_WIPE_CODE = 'trulyunfortunate'
 
 export function useTestingCheats({
   game,
@@ -19,9 +21,20 @@ export function useTestingCheats({
 }) {
   const [codeInput, setCodeInput] = useState('')
   const [codeStatus, setCodeStatus] = useState(null)
+  const [isMisfortuneWipeConfirmationOpen, setIsMisfortuneWipeConfirmationOpen] =
+    useState(false)
 
   function submitCode() {
-    if (codeInput.trim().toLowerCase() !== TESTING_CODE) {
+    const submittedCode = codeInput.trim().toLowerCase()
+
+    if (submittedCode === MISFORTUNE_WIPE_CODE) {
+      setCodeInput('')
+      setCodeStatus(null)
+      setIsMisfortuneWipeConfirmationOpen(true)
+      return
+    }
+
+    if (submittedCode !== TESTING_CODE) {
       setCodeStatus({ type: 'error', message: 'Invalid code.' })
       return
     }
@@ -35,6 +48,21 @@ export function useTestingCheats({
     setCodeStatus({
       type: 'success',
       message: 'Testing panel unlocked.',
+    })
+  }
+
+  function cancelMisfortuneWipe() {
+    setIsMisfortuneWipeConfirmationOpen(false)
+  }
+
+  function confirmMisfortuneWipe() {
+    updateGame((currentGame) =>
+      wipeMisfortuneAreaProgress(currentGame),
+    )
+    setIsMisfortuneWipeConfirmationOpen(false)
+    setCodeStatus({
+      type: 'success',
+      message: 'Misfortune progress wiped.',
     })
   }
 
@@ -140,6 +168,11 @@ export function useTestingCheats({
       onCodeInputChange: setCodeInput,
       codeStatus,
       onSubmitCode: submitCode,
+    },
+    misfortuneWipeConfirmation: {
+      isOpen: isMisfortuneWipeConfirmationOpen,
+      onCancel: cancelMisfortuneWipe,
+      onConfirm: confirmMisfortuneWipe,
     },
     testingPanel: game.testingPanelUnlocked
       ? {

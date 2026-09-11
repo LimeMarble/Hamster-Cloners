@@ -90,12 +90,45 @@ function UnionConfirmation({ onCancel, onConfirm }) {
   )
 }
 
+function MisfortuneWipeConfirmation({ onCancel, onConfirm }) {
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section
+        className="union-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="misfortune-wipe-title"
+      >
+        <p className="eyebrow">Irreversible Misfortune reset</p>
+        <h2 id="misfortune-wipe-title">Wipe all Misfortune progress?</h2>
+        <p>
+          This clears Misfortune&apos;s Crops, Hamsters, Row Duplicators,
+          field growth, paid expansions, Crop unlocks, and blueprints.
+        </p>
+        <p>
+          Main-field progress, Floor Replicators, completed demonstrations,
+          and other permanent progression will be preserved.
+        </p>
+        <div className="union-modal-actions">
+          <button type="button" className="secondary-button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" className="hard-reset-button" onClick={onConfirm}>
+            Wipe Misfortune
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 export function GameOverlays({
   backgroundCatchUp,
   blueprintEditor,
   monocropWarning,
   blueprintMastery,
   unionConfirmation,
+  misfortuneWipeConfirmation,
   testingPanel,
 }) {
   return (
@@ -112,6 +145,12 @@ export function GameOverlays({
         <UnionConfirmation
           onCancel={unionConfirmation.onCancel}
           onConfirm={unionConfirmation.onConfirm}
+        />
+      ) : null}
+      {misfortuneWipeConfirmation.isOpen ? (
+        <MisfortuneWipeConfirmation
+          onCancel={misfortuneWipeConfirmation.onCancel}
+          onConfirm={misfortuneWipeConfirmation.onConfirm}
         />
       ) : null}
       {backgroundCatchUp ? (

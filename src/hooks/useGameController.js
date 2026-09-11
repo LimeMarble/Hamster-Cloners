@@ -215,6 +215,7 @@ export function useGameController() {
         onClose: actions.onCloseBlueprintMastery,
       },
       unionConfirmation: actions.unionConfirmation,
+      misfortuneWipeConfirmation: testing.misfortuneWipeConfirmation,
       testingPanel: testing.testingPanel,
       fortune: {
         fortune: game.fortune,

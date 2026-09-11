@@ -4,7 +4,10 @@ import {
   getCropPerfection,
   isCropEffectModifier,
 } from './crops.js'
-import { getBaseFieldProductionSnapshot } from './cropProduction.js'
+import {
+  getBaseFieldProductionSnapshot,
+  getCropProductionModifierScale,
+} from './cropProduction.js'
 import {
   doesNotHarvest,
   getAdjacentCropConnections,
@@ -161,6 +164,9 @@ export function getBlueprintCropStats(
   )
   const fortuneHarvestMultiplier = normalizeFortuneMultiplier(
     fortuneModifiers.harvestMultiplier,
+  )
+  const cropProductionExponent = normalizeFortuneMultiplier(
+    fortuneModifiers.cropProductionExponent,
   )
   const getAugmentedMirrorCornEffectMultiplier = (targetIndex) =>
     getMirrorCornEffectMultiplier(
@@ -499,6 +505,10 @@ export function getBlueprintCropStats(
     totalRabbitRelationsEarned,
   )
   const globalHarvestMultiplier = fieldProductionSnapshot.globalHarvestMultiplier
+  const fortuneProductionScale = getCropProductionModifierScale(
+    fieldProductionSnapshot.total,
+    fortuneModifiers,
+  )
   const harvestYield = doesNotHarvest(crop) || harvestDestroyedByAppleTree
     ? 0
     : (getCropBaseYield(crop, completedCropPerfections) +
@@ -506,8 +516,7 @@ export function getBlueprintCropStats(
       monocropMultiplier *
       globalHarvestMultiplier *
       harvestDestructionMultiplier *
-      cropYieldMultiplier *
-      fortuneHarvestMultiplier
+      fortuneProductionScale
 
   if (baseGlobalPassiveEffectMultiplier !== 1) {
     receivedEffects.push({
@@ -522,10 +531,18 @@ export function getBlueprintCropStats(
       multiplier: passiveEffectMultiplier,
     })
   }
+  if (cropProductionExponent !== 1) {
+    receivedEffects.push({
+      type: 'fortune-production-exponent',
+      exponent: cropProductionExponent,
+      source: fortuneModifiers.source,
+    })
+  }
   if (cropYieldMultiplier !== 1) {
     receivedEffects.push({
       type: 'fortune-crop-yield',
       multiplier: cropYieldMultiplier,
+      source: fortuneModifiers.source,
     })
   }
   if (fortuneHarvestMultiplier !== 1) {

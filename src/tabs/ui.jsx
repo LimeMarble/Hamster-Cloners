@@ -340,7 +340,15 @@ export function CropHoverInspector({
             if (effect.type === 'fortune-crop-yield') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> Crop yields from Breezes of Fortune
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> Crop yields from {effect.source === 'fortunesWrath' ? "Fortune's Wrath" : 'Breezes of Fortune'}
+                </li>
+              )
+            }
+
+            if (effect.type === 'fortune-production-exponent') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Crop production ^<FormattedNumber value={effect.exponent} maximumFractionDigits={2} /> from Fortune&apos;s Wrath
                 </li>
               )
             }

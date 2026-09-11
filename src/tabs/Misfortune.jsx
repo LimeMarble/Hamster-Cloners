@@ -1,4 +1,6 @@
 import {
+  FORTUNES_WRATH_CROP_DIVISOR,
+  FORTUNES_WRATH_CROP_EXPONENT,
   FORTUNES_WRATH_PASSIVE_MULTIPLIER,
 } from '../game/gameLogic.js'
 import { FormattedNumber } from './ui.jsx'
@@ -8,7 +10,12 @@ export function MisfortuneStatus() {
     <aside className="misfortune-status" aria-label="Fortune's Wrath">
       <strong>Fortune&apos;s Wrath</strong>
       <span>
-        Crop production /1777
+        Crop production ^
+        <FormattedNumber
+          value={FORTUNES_WRATH_CROP_EXPONENT}
+          maximumFractionDigits={2}
+        />
+        , then /<FormattedNumber value={FORTUNES_WRATH_CROP_DIVISOR} />
       </span>
       <span>Machinery costs ×100</span>
       <span>
