@@ -145,17 +145,31 @@ export function getRabbitContractCompletionsPerSecond(
   const averageContractSize =
     Math.max(1, getFieldsPlanted(game.farmland)) *
     RABBIT_CONTRACT_AVERAGE_FACTOR
-  const grownCropRates = Object.entries(productionByCrop ?? {}).flatMap(
-    ([cropId, productionPerSecond]) =>
-      isRabbitContractCropEligible(cropId)
-        ? [
-            toNonNegativeNumber(productionPerSecond) /
-              averageContractSize,
-          ]
-        : [],
+  const limitingCropId = getRabbitContractLimitingCropId(productionByCrop)
+
+  return limitingCropId === null
+    ? 0
+    : toNonNegativeNumber(productionByCrop[limitingCropId]) /
+        averageContractSize
+}
+
+export function getRabbitContractLimitingCropId(productionByCrop) {
+  let limitingCropId = null
+  let limitingProduction = Number.POSITIVE_INFINITY
+
+  Object.entries(productionByCrop ?? {}).forEach(
+    ([cropId, productionPerSecond]) => {
+      if (!isRabbitContractCropEligible(cropId)) return
+
+      const safeProduction = toNonNegativeNumber(productionPerSecond)
+      if (safeProduction < limitingProduction) {
+        limitingCropId = cropId
+        limitingProduction = safeProduction
+      }
+    },
   )
 
-  return grownCropRates.length > 0 ? Math.min(...grownCropRates) : 0
+  return limitingCropId
 }
 
 export function advanceRabbitContractPaceState(

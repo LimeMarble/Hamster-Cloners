@@ -160,6 +160,23 @@
   gap: 12px;
 }
 
+.rabbit-contract-limiting-crop {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.rabbit-contract-limiting-crop strong {
+  color: var(--crop-gold);
+}
+
+.rabbit-contract-limiting-crop-icon {
+  width: 24px;
+  height: 24px;
+}
+
 .rabbit-contract-crop > span {
   font-size: 2rem;
 }

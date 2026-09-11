@@ -7,6 +7,7 @@ import {
   getCapybaraDemonstrationStatus,
   hasCompletedCapybaraDemonstration,
   CAPYBARA_DEMONSTRATION_IDS,
+  getRabbitContractLimitingCropId,
   getRabbitRelationsMultiplier,
   hasRabbitUnlock,
 } from '../game/gameLogic.js'
@@ -453,6 +454,11 @@ export function Trade({
     game.trade.rabbitContractEstimatedCompletionsPerSecond ?? 0
   const hasBlazingContractPace =
     game.trade.rabbitContractsBlazing === true
+  const limitingRabbitContractCropId = hasBlazingContractPace
+    ? getRabbitContractLimitingCropId(
+        rabbitContractProductionPerSecondByCrop,
+      )
+    : null
 
   return (
     <section className="trade-panel" aria-labelledby="trade-title">
@@ -555,6 +561,26 @@ export function Trade({
                           maximumFractionDigits={0}
                         />{' '}
                         per-second display limit.
+                      </p>
+                      <p className="rabbit-contract-limiting-crop">
+                        <strong>Limiting Crop:</strong>{' '}
+                        {limitingRabbitContractCropId ? (
+                          <>
+                            <CropVisual
+                              cropId={limitingRabbitContractCropId}
+                              completedCropPerfections={
+                                game.completedCropPerfections
+                              }
+                              className="rabbit-contract-limiting-crop-icon"
+                            />
+                            {getCropName(
+                              limitingRabbitContractCropId,
+                              game.completedCropPerfections,
+                            )}
+                          </>
+                        ) : (
+                          'No eligible Crop currently grown'
+                        )}
                       </p>
                     </article>
                   ) : (

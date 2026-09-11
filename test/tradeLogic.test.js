@@ -20,6 +20,7 @@ import {
   getCarrotHighHarvestEffect,
   getCropProductionSnapshotPerSecond,
   getRabbitContractCompletionsPerSecond,
+  getRabbitContractLimitingCropId,
   getRabbitContractRelationsReward,
   getRabbitRelationsMultiplier,
   hasRabbitUnlock,
@@ -71,6 +72,15 @@ test('Rabbit pace uses the slowest grown crop and five-second hysteresis', () =>
   const exactThresholdProduction = { leek: 1.5e8, corn: 1e30 }
   const blazingProduction = { leek: 1.53e8, corn: 1e30 }
   const underThresholdProduction = { leek: 1.47e8, corn: 1e30 }
+
+  assert.equal(
+    getRabbitContractLimitingCropId({
+      appleTree: 0,
+      corn: 1e30,
+      leek: 1.53e8,
+    }),
+    'leek',
+  )
 
   assert.equal(RABBIT_CONTRACT_AVERAGE_FACTOR, 3e7)
   assert.equal(RABBIT_BLAZING_PACE_SWITCH_SECONDS, 5)
