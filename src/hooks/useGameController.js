@@ -63,6 +63,11 @@ export function useGameController() {
     updateGame,
     blueprintExpansionTracks: derived.blueprintExpansionTracks,
   })
+  const canPurchaseFloorReplicators =
+    canPurchaseFloorReplicatorsInArea(game)
+  const shouldShowFloorReplicators =
+    game.hasUnlockedFloorReplicators &&
+    (canPurchaseFloorReplicators || game.floorReplicators >= 1)
 
   return {
     isGameReady,
@@ -128,11 +133,10 @@ export function useGameController() {
                 actions.purchaseActions.onBuyMaxRowDuplicators,
             }
           : null,
-        floorReplicatorPurchase:
-          game.hasUnlockedFloorReplicators &&
-          canPurchaseFloorReplicatorsInArea(game)
+        floorReplicatorPurchase: shouldShowFloorReplicators
           ? {
               game,
+              canPurchaseFloorReplicators,
               nextFloorReplicatorCost: derived.nextFloorReplicatorCost,
               floorReplicatorCoordinationMultiplier:
                 derived.floorReplicatorCoordinationMultiplier,
@@ -185,6 +189,19 @@ export function useGameController() {
           MISFORTUNE_UPGRADE_IDS.RUSHED_START,
         ),
         onUnlockRushedStart: actions.onUnlockRushedStart,
+        adversityGrownTubers: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS
+        ],
+        hasAdversityGrownTubers: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
+        ),
+        canUnlockAdversityGrownTubers: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
+        ),
+        onUnlockAdversityGrownTubers:
+          actions.onUnlockAdversityGrownTubers,
         onLeave: actions.onLeaveMisfortuneArea,
       },
       inventions: {

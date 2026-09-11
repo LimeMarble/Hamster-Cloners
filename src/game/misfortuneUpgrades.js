@@ -3,6 +3,7 @@ import { GAME_AREA_IDS } from './gameConfig.js'
 export const MISFORTUNE_UPGRADE_IDS = Object.freeze({
   UNFORTUNATE_ROW: 'unfortunateRow',
   RUSHED_START: 'rushedStart',
+  ADVERSITY_GROWN_TUBERS: 'adversityGrownTubers',
 })
 
 export const MISFORTUNE_UPGRADES = Object.freeze({
@@ -20,6 +21,11 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     boostMultiplier: 10,
     penaltyDurationSeconds: 60,
     penaltyMultiplier: 0.5,
+  }),
+  [MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS]: Object.freeze({
+    id: MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
+    name: 'Adversity-Grown Tubers',
+    cost: 7e22,
   }),
 })
 

@@ -2,6 +2,10 @@ import {
   getAdjacentCropConnections,
   getOrthogonalIndexes,
 } from './adjacencyLogic.js'
+import {
+  getSweetPotatoCrowdingBaseBonus,
+  getSweetPotatoGrowthExponentCapBonus,
+} from './augmentationLogic.js'
 
 const sweetPotatoBedCache = new WeakMap()
 
@@ -82,7 +86,30 @@ export function getSweetPotatoBedTurnipConnections(blueprint, bedIndexes) {
     .sort((left, right) => left.index - right.index)
 }
 
-export function getSweetPotatoBedBaseBonus(perfection, connectedCropCount) {
+export function getSweetPotatoGrowthExponentCap(
+  perfection,
+  seedAugmentations = {},
+) {
+  return perfection.bedGrowthExponentCap +
+    getSweetPotatoGrowthExponentCapBonus(seedAugmentations)
+}
+
+export function getSweetPotatoCrowdingBase(
+  perfection,
+  seedAugmentations = {},
+) {
+  return Math.min(
+    1,
+    perfection.bedBuffCrowdingMultiplier +
+      getSweetPotatoCrowdingBaseBonus(seedAugmentations),
+  )
+}
+
+export function getSweetPotatoBedBaseBonus(
+  perfection,
+  connectedCropCount,
+  seedAugmentations = {},
+) {
   const count = Math.max(0, Math.floor(Number(connectedCropCount) || 0))
   if (count === 0) return 0
 
@@ -90,16 +117,23 @@ export function getSweetPotatoBedBaseBonus(perfection, connectedCropCount) {
     perfection.bedHamsterEfficiencyBonusPerCrop *
     count *
     perfection.bedGrowthMultiplier **
-      Math.min(count - 1, perfection.bedGrowthExponentCap)
+      Math.min(
+        count - 1,
+        getSweetPotatoGrowthExponentCap(perfection, seedAugmentations),
+      )
   )
 }
 
 export function getSweetPotatoBedCrowdingMultiplier(
   perfection,
   adjacentBuffCount,
+  seedAugmentations = {},
 ) {
   const count = Math.max(0, Math.floor(Number(adjacentBuffCount) || 0))
   const pairCount = (count * (count - 1)) / 2
 
-  return perfection.bedBuffCrowdingMultiplier ** pairCount
+  return getSweetPotatoCrowdingBase(
+    perfection,
+    seedAugmentations,
+  ) ** pairCount
 }

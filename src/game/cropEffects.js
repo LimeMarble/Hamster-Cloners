@@ -168,12 +168,14 @@ export function getSweetPotatoBedEffects(
         const baseBonus = getSweetPotatoBedBaseBonus(
           perfection,
           bed.indexes.length,
+          seedAugmentations,
         )
         const buffMultiplier =
           turnipEffectMultiplier * mirrorCornEffectMultiplier
         const crowdingMultiplier = getSweetPotatoBedCrowdingMultiplier(
           perfection,
           adjacentBuffCount,
+          seedAugmentations,
         )
         const bonus =
           baseBonus *

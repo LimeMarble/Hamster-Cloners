@@ -8,6 +8,7 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
   floorReplicatorCoordinationMultiplier,
   floorReplicatorExternalMultiplier,
   floorsBuiltPerSecond,
+  canPurchaseFloorReplicators,
 }) {
   return (
     <>
@@ -67,13 +68,21 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
         Floor Replicators.
       </p>
       <div className="replicator-summary next-lesson">
-        <span>Next replicator</span>
+        <span>
+          {canPurchaseFloorReplicators ? 'Next replicator' : 'Construction'}
+        </span>
         <strong>
-          <FormattedNumber
-            value={nextFloorReplicatorCost}
-            maximumFractionDigits={0}
-          />{' '}
-          Crops
+          {canPurchaseFloorReplicators ? (
+            <>
+              <FormattedNumber
+                value={nextFloorReplicatorCost}
+                maximumFractionDigits={0}
+              />{' '}
+              Crops
+            </>
+          ) : (
+            'Misfortune only'
+          )}
         </strong>
       </div>
     </>
@@ -86,10 +95,12 @@ export function FloorReplicatorPurchase({
   floorReplicatorCoordinationMultiplier,
   floorReplicatorExternalMultiplier,
   floorsBuiltPerSecond,
+  canPurchaseFloorReplicators,
   onBuyFloorReplicator,
   onBuyMaxFloorReplicators,
 }) {
-  const canAfford = game.crops >= nextFloorReplicatorCost
+  const canAfford =
+    canPurchaseFloorReplicators && game.crops >= nextFloorReplicatorCost
 
   return (
     <article className="replicator-card floor-replicator-upgrade-card">
@@ -103,6 +114,7 @@ export function FloorReplicatorPurchase({
           floorReplicatorExternalMultiplier
         }
         floorsBuiltPerSecond={floorsBuiltPerSecond}
+        canPurchaseFloorReplicators={canPurchaseFloorReplicators}
       />
       <div className="hire-actions">
         <button
@@ -123,7 +135,9 @@ export function FloorReplicatorPurchase({
         </button>
       </div>
       <p className="affordability" aria-live="polite">
-        {canAfford ? (
+        {!canPurchaseFloorReplicators ? (
+          'Return to Misfortune to build more Floor Replicators.'
+        ) : canAfford ? (
           'Ready to build another Floor generator.'
         ) : (
           <>

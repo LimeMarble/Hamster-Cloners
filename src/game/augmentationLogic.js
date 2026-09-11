@@ -5,6 +5,8 @@ export const SEED_AUGMENTATION_IDS = Object.freeze({
   MIRROR_CORN_EFFECTIVENESS: 'mirrorCornEffectiveness',
   MIRROR_CORN_REFLECTION_LIMIT: 'mirrorCornReflectionLimit',
   SPLITWEED_MONOCROP_LIMIT: 'splitweedMonocropLimit',
+  SWEETER_BOND: 'sweeterBond',
+  LOOSENED_BOUNDARIES: 'loosenedBoundaries',
 })
 
 export const SEED_AUGMENTATIONS = Object.freeze({
@@ -40,10 +42,29 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   [SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT,
     name: 'Sterile Symbiosis',
-    baseCost: 3e97,
+    baseCost: 1e180,
     costGrowth: 50,
     maximumLevel: 4,
     monocropLimitBonusPerAdjacentNonHarvestingCropPerLevel: 1,
+    requiredDemonstrationId: 'misfortuneTrial',
+  }),
+  [SEED_AUGMENTATION_IDS.SWEETER_BOND]: Object.freeze({
+    id: SEED_AUGMENTATION_IDS.SWEETER_BOND,
+    name: 'Sweeter Bond',
+    baseCost: 7e102,
+    costGrowth: 1000,
+    maximumLevel: 3,
+    growthExponentCapBonusPerLevel: 4,
+    requiredMisfortuneUpgradeId: 'adversityGrownTubers',
+  }),
+  [SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES]: Object.freeze({
+    id: SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES,
+    name: 'Loosened Boundaries',
+    baseCost: 1e107,
+    costGrowth: 500,
+    maximumLevel: 4,
+    crowdingBaseBonusPerLevel: 0.05,
+    requiredMisfortuneUpgradeId: 'adversityGrownTubers',
   }),
 })
 
@@ -56,6 +77,8 @@ export function createInitialSeedAugmentationState() {
     mirrorCornEffectivenessLevel: 0,
     mirrorCornReflectionLimitUnlocked: false,
     splitweedMonocropLimitLevel: 0,
+    sweeterBondLevel: 0,
+    loosenedBoundariesLevel: 0,
   }
 }
 
@@ -88,6 +111,10 @@ export function normalizeSeedAugmentationState(rawState) {
         : 0
       : Number(rawSplitweedMonocropLimitLevel) || 0,
   )
+  const sweeterBond =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SWEETER_BOND]
+  const loosenedBoundaries =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES]
 
   return {
     leekEnrichmentLevel: Math.min(maximumLevel, Math.max(0, parsedLevel)),
@@ -105,6 +132,17 @@ export function normalizeSeedAugmentationState(rawState) {
     splitweedMonocropLimitLevel: Math.min(
       splitweedMonocropLimit.maximumLevel,
       Math.max(0, parsedSplitweedMonocropLimitLevel),
+    ),
+    sweeterBondLevel: Math.min(
+      sweeterBond.maximumLevel,
+      Math.max(0, Math.floor(Number(rawState?.sweeterBondLevel) || 0)),
+    ),
+    loosenedBoundariesLevel: Math.min(
+      loosenedBoundaries.maximumLevel,
+      Math.max(
+        0,
+        Math.floor(Number(rawState?.loosenedBoundariesLevel) || 0),
+      ),
     ),
   }
 }
@@ -158,6 +196,28 @@ export function getSplitweedMonocropLimitLevel(seedAugmentations) {
     .splitweedMonocropLimitLevel
 }
 
+export function getSweeterBondLevel(seedAugmentations) {
+  return normalizeSeedAugmentationState(seedAugmentations).sweeterBondLevel
+}
+
+export function getSweetPotatoGrowthExponentCapBonus(seedAugmentations) {
+  const augmentation = SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SWEETER_BOND]
+  return getSweeterBondLevel(seedAugmentations) *
+    augmentation.growthExponentCapBonusPerLevel
+}
+
+export function getLoosenedBoundariesLevel(seedAugmentations) {
+  return normalizeSeedAugmentationState(seedAugmentations)
+    .loosenedBoundariesLevel
+}
+
+export function getSweetPotatoCrowdingBaseBonus(seedAugmentations) {
+  const augmentation =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES]
+  return getLoosenedBoundariesLevel(seedAugmentations) *
+    augmentation.crowdingBaseBonusPerLevel
+}
+
 export function getNextSeedAugmentationCost(game, augmentationId) {
   const state = normalizeSeedAugmentationState(game.seedAugmentations)
 
@@ -191,6 +251,22 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
           augmentation.costGrowth ** state.splitweedMonocropLimitLevel
   }
 
+  if (augmentationId === SEED_AUGMENTATION_IDS.SWEETER_BOND) {
+    const augmentation = SEED_AUGMENTATIONS[augmentationId]
+    return state.sweeterBondLevel >= augmentation.maximumLevel
+      ? null
+      : augmentation.baseCost *
+          augmentation.costGrowth ** state.sweeterBondLevel
+  }
+
+  if (augmentationId === SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES) {
+    const augmentation = SEED_AUGMENTATIONS[augmentationId]
+    return state.loosenedBoundariesLevel >= augmentation.maximumLevel
+      ? null
+      : augmentation.baseCost *
+          augmentation.costGrowth ** state.loosenedBoundariesLevel
+  }
+
   const oneTimeAugmentationStateKeys = {
     [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]:
       'mirrorCornDebuffRemovalUnlocked',
@@ -205,9 +281,30 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
     : null
 }
 
+export function isSeedAugmentationVisible(game, augmentationId) {
+  const augmentation = SEED_AUGMENTATIONS[augmentationId]
+  if (!augmentation) return false
+
+  const requiredDemonstrationId = augmentation.requiredDemonstrationId
+  const requiredMisfortuneUpgradeId =
+    augmentation.requiredMisfortuneUpgradeId
+
+  return (
+    (!requiredDemonstrationId ||
+      game.capybara?.completedDemonstrations?.includes(
+        requiredDemonstrationId,
+      ) === true) &&
+    (!requiredMisfortuneUpgradeId ||
+      game.completedMisfortuneUpgrades?.includes(
+        requiredMisfortuneUpgradeId,
+      ) === true)
+  )
+}
+
 function canPurchaseSeedAugmentation(game, augmentationId) {
   if (
-    game.capybara?.completedDemonstrations?.includes('introduction') !== true
+    game.capybara?.completedDemonstrations?.includes('introduction') !== true ||
+    !isSeedAugmentationVisible(game, augmentationId)
   ) {
     return false
   }
@@ -221,12 +318,17 @@ function canPurchaseSeedAugmentation(game, augmentationId) {
     augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT
   const isSplitweedAugmentation =
     augmentationId === SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT
+  const isSweetPotatoAugmentation =
+    augmentationId === SEED_AUGMENTATION_IDS.SWEETER_BOND ||
+    augmentationId === SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES
 
   return (
     (isLeekAugmentation &&
       game.completedCropPerfections?.includes('enrichingLeek') === true) ||
     (isCornAugmentation &&
       game.completedCropPerfections?.includes('mirrorCorn') === true) ||
+    (isSweetPotatoAugmentation &&
+      game.completedCropPerfections?.includes('sweetPotato') === true) ||
     (isSplitweedAugmentation &&
       game.completedCropPerfections?.includes('splitweed') === true)
   )
@@ -274,6 +376,18 @@ export function purchaseSeedAugmentation(game, augmentationId) {
       ...state,
       splitweedMonocropLimitLevel:
         state.splitweedMonocropLimitLevel + 1,
+    }
+  } else if (augmentationId === SEED_AUGMENTATION_IDS.SWEETER_BOND) {
+    seedAugmentations = {
+      ...state,
+      sweeterBondLevel: state.sweeterBondLevel + 1,
+    }
+  } else if (
+    augmentationId === SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES
+  ) {
+    seedAugmentations = {
+      ...state,
+      loosenedBoundariesLevel: state.loosenedBoundariesLevel + 1,
     }
   }
 

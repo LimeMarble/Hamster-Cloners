@@ -397,6 +397,15 @@ export function useGameActions({
     )
   }
 
+  function unlockAdversityGrownTubers() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
+      ) ?? currentGame,
+    )
+  }
+
   function startMarshSurvey(surveyId, lengthId, allocatedHamsters) {
     updateGame((currentGame) =>
       startManateeSurvey(
@@ -554,6 +563,7 @@ export function useGameActions({
     onLeaveMisfortuneArea: leaveMisfortuneArea,
     onUnlockUnfortunateRow: unlockUnfortunateRow,
     onUnlockRushedStart: unlockRushedStart,
+    onUnlockAdversityGrownTubers: unlockAdversityGrownTubers,
     options: {
       saveCode,
       onSaveCodeChange: setSaveCode,

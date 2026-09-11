@@ -17,6 +17,7 @@ import {
   getNextSeedAugmentationCost,
   getMonocropThresholdBonus,
   getSplitweedMonocropLimitAugmentationEffect,
+  isSeedAugmentationVisible,
   purchaseSeedAugmentation,
   toggleSeedAugmentation,
 } from '../src/game/gameLogic.js'
@@ -360,6 +361,8 @@ test('Seed Augmentations require perfected crops and persist with safe limits', 
     mirrorCornEffectivenessLevel: 0,
     mirrorCornReflectionLimitUnlocked: false,
     splitweedMonocropLimitLevel: 0,
+    sweeterBondLevel: 0,
+    loosenedBoundariesLevel: 0,
   })
   assert.equal(
     normalizeGame({
@@ -388,21 +391,28 @@ test('Seed Augmentations require perfected crops and persist with safe limits', 
       mirrorCornEffectivenessLevel: 0,
       mirrorCornReflectionLimitUnlocked: false,
       splitweedMonocropLimitLevel: 0,
+      sweeterBondLevel: 0,
+      loosenedBoundariesLevel: 0,
     },
   )
 })
 
-test('Sterile Symbiosis has three levels starting at 3e97 with 50x cost growth', () => {
+test('Sterile Symbiosis is hidden until Demo 2 and starts at 1e180', () => {
   const augmentationId =
     SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT
   const baseGame = createAugmentationGame()
 
-  assert.equal(SEED_AUGMENTATIONS[augmentationId].baseCost, 3e97)
+  assert.equal(SEED_AUGMENTATIONS[augmentationId].baseCost, 1e180)
   assert.equal(SEED_AUGMENTATIONS[augmentationId].costGrowth, 50)
-  assert.equal(SEED_AUGMENTATIONS[augmentationId].maximumLevel, 3)
+  assert.equal(SEED_AUGMENTATIONS[augmentationId].maximumLevel, 4)
+  assert.equal(isSeedAugmentationVisible(baseGame, augmentationId), false)
   assert.equal(
     purchaseSeedAugmentation(
-      { ...baseGame, crops: 3e97 },
+      {
+        ...baseGame,
+        crops: 1e180,
+        completedCropPerfections: ['splitweed'],
+      },
       augmentationId,
     ),
     null,
@@ -410,10 +420,20 @@ test('Sterile Symbiosis has three levels starting at 3e97 with 50x cost growth',
 
   let game = {
     ...baseGame,
-    crops: 3e97,
+    crops: 1e180,
     completedCropPerfections: ['splitweed'],
+    capybara: {
+      ...baseGame.capybara,
+      completedDemonstrations: [
+        CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+      ],
+    },
   }
-  const expectedCosts = [3e97, 1.5e99, 7.5e100]
+  const expectedCosts = [1e180, 5e181, 2.5e183, 1.25e185]
+
+  assert.equal(isSeedAugmentationVisible(game, augmentationId), true)
 
   expectedCosts.forEach((expectedCost, level) => {
     assert.ok(

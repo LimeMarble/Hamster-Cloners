@@ -42,6 +42,10 @@ export function Misfortune({
   hasRushedStart,
   canUnlockRushedStart,
   onUnlockRushedStart,
+  adversityGrownTubers,
+  hasAdversityGrownTubers,
+  canUnlockAdversityGrownTubers,
+  onUnlockAdversityGrownTubers,
   onLeave,
 }) {
   return (
@@ -112,6 +116,44 @@ export function Misfortune({
                 : (
                     <>
                       Need <FormattedNumber value={rushedStart.cost} /> Crops
+                    </>
+                  )}
+          </button>
+        </article>
+        <article className="misfortune-upgrade-card">
+          <div>
+            <h2>Adversity-Grown Tubers</h2>
+            <p>
+              Unlocks Sweet Potato modifications within Seed Augmentation.
+              This research does not alter Sweet Potatoes by itself.
+            </p>
+            <p className="misfortune-upgrade-note">
+              Cost: <FormattedNumber value={adversityGrownTubers.cost} />
+              {' '}Crops. This choice is permanent until Misfortune progress
+              is wiped.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={
+              hasAdversityGrownTubers
+                ? 'secondary-button'
+                : 'primary-button'
+            }
+            onClick={onUnlockAdversityGrownTubers}
+            disabled={
+              hasAdversityGrownTubers || !canUnlockAdversityGrownTubers
+            }
+          >
+            {hasAdversityGrownTubers
+              ? 'Accepted'
+              : canUnlockAdversityGrownTubers
+                ? 'Study adversity-grown tubers'
+                : (
+                    <>
+                      Need{' '}
+                      <FormattedNumber value={adversityGrownTubers.cost} />
+                      {' '}Crops
                     </>
                   )}
           </button>

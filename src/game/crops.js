@@ -2,6 +2,8 @@ import {
   getLeekAugmentationYieldBonus,
   getMirrorCornEffectivenessBonus,
   getMirrorCornReflectionLimitBonus,
+  getSweetPotatoCrowdingBaseBonus,
+  getSweetPotatoGrowthExponentCapBonus,
   getSplitweedMonocropLimitLevel,
   hasLeekDiagonalAugmentation,
   isMirrorCornDebuffRemovalEnabled,
@@ -540,6 +542,25 @@ function getPerfectionEffectDescription(
     return augmentationLevel > 0
       ? `${perfection.effectDescription} · +${augmentationLevel} Monocrop limit per directly adjacent Crop that inherently produces no harvest`
       : perfection.effectDescription
+  }
+
+  if (cropId === 'sweetPotato' && perfection?.id === 'sweetPotato') {
+    const growthExponentCap =
+      perfection.bedGrowthExponentCap +
+      getSweetPotatoGrowthExponentCapBonus(seedAugmentations)
+    const crowdingBase = Math.min(
+      1,
+      perfection.bedBuffCrowdingMultiplier +
+        getSweetPotatoCrowdingBaseBonus(seedAugmentations),
+    )
+
+    return (
+      `Orthogonally connected Sweet Potatoes form one bed · each bed gives ` +
+      `+${perfection.bedHamsterEfficiencyBonusPerCrop} × n × ` +
+      `${perfection.bedGrowthMultiplier}^min(n − 1, ${growthExponentCap}) Hamster Efficiency · ` +
+      `every unique connected Turnip or Mirror Corn buffs the whole bed once, ` +
+      `followed by a ×${getCachedFormattedNumber(crowdingBase, 2)}^(m × (m − 1) / 2) crowding penalty`
+    )
   }
 
   if (cropId !== 'leek' || perfection?.id !== 'enrichingLeek') {

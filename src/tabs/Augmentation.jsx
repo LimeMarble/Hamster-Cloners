@@ -9,12 +9,14 @@ import {
   getSplitweedMonocropLimitAugmentationEffect,
   hasMirrorCornDebuffRemovalAugmentation,
   isMirrorCornDebuffRemovalEnabled,
+  isSeedAugmentationVisible,
   SEED_AUGMENTATIONS,
   SEED_AUGMENTATION_IDS,
 } from '../game/gameLogic.js'
 import { CROP_PERFECTIONS } from '../game/crops.js'
 import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber } from './ui.jsx'
+import { SweetPotatoAugmentations } from './SweetPotatoAugmentations.jsx'
 
 export function Augmentation({
   game,
@@ -84,6 +86,10 @@ export function Augmentation({
     game.seedAugmentations,
   )
   const hasSplitweed = game.completedCropPerfections.includes('splitweed')
+  const isSplitweedAugmentationVisible = isSeedAugmentationVisible(
+    game,
+    splitweedMonocropLimit.id,
+  )
   const splitweedMonocropEffect =
     getSplitweedMonocropLimitAugmentationEffect(
       game.blueprint,
@@ -362,6 +368,12 @@ export function Augmentation({
           </button>
         </article>
 
+        <SweetPotatoAugmentations
+          game={game}
+          onPurchaseSeedAugmentation={onPurchaseSeedAugmentation}
+        />
+
+        {isSplitweedAugmentationVisible ? (
         <article className='seed-augmentation-card'>
           <div className='seed-augmentation-heading'>
             <CropVisual
@@ -439,6 +451,7 @@ export function Augmentation({
                   </>}
           </button>
         </article>
+        ) : null}
       </div>
     </section>
   )
