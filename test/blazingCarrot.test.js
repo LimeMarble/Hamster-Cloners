@@ -147,7 +147,7 @@ test('Blazing Carrot grants +25 percent per crop type reaching 1T harvest', () =
   assert.equal(effect.multiplier, 1.25)
 })
 
-test('orthogonally adjacent Blazing Carrots burn and lose harvest and passives', () => {
+test('orthogonally adjacent Blazing Carrots retain their harvest and passives', () => {
   const blueprint = createBlueprint({
     rows: 1,
     columns: 2,
@@ -168,9 +168,9 @@ test('orthogonally adjacent Blazing Carrots burn and lose harvest and passives',
 
   assert.equal(
     getRabbitRelationsMultiplier(blueprint, [BLAZING_CARROT]),
-    1,
+    1.2,
   )
-  assert.equal(
+  assert.ok(
     getCropProductionPerSecond(
       blueprint,
       farmland,
@@ -180,12 +180,10 @@ test('orthogonally adjacent Blazing Carrots burn and lose harvest and passives',
       {},
       {},
       1e40,
-    ),
-    0,
+    ) > 0,
   )
-  assert.equal(stats.harvestYield, 0)
-  assert.equal(stats.harvestDestroyedByBlazingCarrot, true)
-  assert.deepEqual(stats.passiveStats, [])
+  assert.ok(stats.harvestYield > 0)
+  assert.ok(stats.passiveStats.length > 0)
 })
 
 test('Blazing Carrot survey reduction is lifetime-relation-limited and caps at 80 percent', () => {

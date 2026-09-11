@@ -224,25 +224,6 @@ export function getSweetPotatoBedEffect(
   ).find((effect) => effect.anchorIndex === bed.anchorIndex) ?? null
 }
 
-export function isBlazingCarrotBurned(
-  blueprint,
-  index,
-  completedCropPerfections = [],
-) {
-  const perfection = getCropPerfection(
-    'carrot',
-    completedCropPerfections,
-  )
-
-  return Boolean(
-    perfection?.id === 'blazingCarrot' &&
-      blueprint.cells[index] === 'carrot' &&
-      getOrthogonalIndexes(blueprint, index).some(
-        (neighborIndex) => blueprint.cells[neighborIndex] === 'carrot',
-      ),
-  )
-}
-
 export function isWaterLettuceFieldInfested(blueprint) {
   const infestationThreshold =
     CROP_DEFINITIONS.waterLettuce?.infestationThreshold ?? Infinity
@@ -250,15 +231,9 @@ export function isWaterLettuceFieldInfested(blueprint) {
   return getPlantedCropCount(blueprint, 'waterLettuce') > infestationThreshold
 }
 
-function getActiveBlazingCarrotIndexes(
-  blueprint,
-  completedCropPerfections = [],
-) {
+function getActiveBlazingCarrotIndexes(blueprint) {
   return blueprint.cells.flatMap((crop, index) =>
-    crop === 'carrot' &&
-    !isBlazingCarrotBurned(blueprint, index, completedCropPerfections)
-      ? [index]
-      : [],
+    crop === 'carrot' ? [index] : [],
   )
 }
 
@@ -1474,61 +1449,61 @@ function getCarrotContractBonus(
   )
 }
 
-export function getSamplingLentilTradedCropEffect(
+function getSamplingLentilNeighborCropType(crop) {
+  if (crop === 'splitweedPart') return 'knotweed'
+  if (crop === 'leechingGourd' || crop === 'leechingGourdPart') {
+    return 'pumpkin'
+  }
+
+  return crop
+}
+
+export function getSamplingLentilPatternEffect(
   blueprint,
+  index,
   completedCropPerfections = [],
-  passiveEffectMultiplier = 1,
-  seedAugmentations = {},
 ) {
   const samplingLentil = getCropPerfection(
     'lentil',
     completedCropPerfections,
   )
-  const bonusPerAdjacency =
-    samplingLentil?.tradedCropGlobalHarvestBonus
 
-  if (bonusPerAdjacency === undefined) {
-    return { adjacentTradedCropCount: 0, multiplier: 1 }
+  if (
+    blueprint.cells[index] !== 'lentil' ||
+    samplingLentil?.nonTradedNeighborEffectMultiplier === undefined ||
+    samplingLentil?.tradedNeighborEffectMultiplier === undefined
+  ) {
+    return {
+      uniqueNonTradedCropTypeCount: 0,
+      uniqueTradedCropTypeCount: 0,
+      multiplier: 1,
+    }
   }
 
-  const lentilCount = getMonocropCropCount(blueprint, 'lentil')
-  const fieldSize = blueprint.rows * blueprint.columns
-  const adjustedBonusPerAdjacency =
-    applyMonocropPenaltyToBonus(
-      bonusPerAdjacency,
-      lentilCount,
-      fieldSize,
-      getMonocropThresholdBonus(
-        blueprint,
-        completedCropPerfections,
-        seedAugmentations,
-      ),
-    ) * getGlobalPassiveEffectMultiplier(
-      blueprint,
-      completedCropPerfections,
-      passiveEffectMultiplier,
-      seedAugmentations,
-    )
-  const adjacentTradedCropCount = blueprint.cells.reduce(
-    (total, crop, index) => {
-      if (crop !== 'lentil') return total
-
-      return total + getAdjacentCropConnections(blueprint, index).reduce(
-        (adjacentTotal, connection) =>
-          isTradedCrop(blueprint.cells[connection.index])
-            ? adjacentTotal +
-              getRootTunnelAdjacencyStrength(connection.adjacencyDistance)
-            : adjacentTotal,
-        0,
+  const neighboringCropTypes = new Set(
+    [
+      ...getOrthogonalIndexes(blueprint, index),
+      ...getDiagonalTileIndexes(blueprint, index),
+    ]
+      .map((neighborIndex) =>
+        getSamplingLentilNeighborCropType(blueprint.cells[neighborIndex]),
       )
-    },
-    0,
+      .filter(Boolean),
   )
+  const uniqueTradedCropTypeCount = [...neighboringCropTypes].filter(
+    isTradedCrop,
+  ).length
+  const uniqueNonTradedCropTypeCount =
+    neighboringCropTypes.size - uniqueTradedCropTypeCount
 
   return {
-    adjacentTradedCropCount,
+    uniqueNonTradedCropTypeCount,
+    uniqueTradedCropTypeCount,
     multiplier:
-      1 + adjacentTradedCropCount * adjustedBonusPerAdjacency,
+      samplingLentil.nonTradedNeighborEffectMultiplier **
+        uniqueNonTradedCropTypeCount *
+      samplingLentil.tradedNeighborEffectMultiplier **
+        uniqueTradedCropTypeCount,
   }
 }
 
@@ -1581,13 +1556,6 @@ export function getGlobalHarvestEffects(
               ))
         : effectDefinition?.globalHarvestMultiplier
 
-    if (
-      isBlazingCarrot &&
-      isBlazingCarrotBurned(blueprint, index, completedCropPerfections)
-    ) {
-      return []
-    }
-
     if (globalHarvestMultiplier === undefined) {
       return []
     }
@@ -1613,12 +1581,20 @@ export function getGlobalHarvestEffects(
         passiveEffectMultiplier,
         seedAugmentations,
       )
+    const samplingLentilPatternMultiplier =
+      crop === 'lentil'
+        ? getSamplingLentilPatternEffect(
+            blueprint,
+            index,
+            completedCropPerfections,
+          ).multiplier
+        : 1
 
     return [
       {
         sourceCropId: crop,
         sourceIndex: index,
-        bonus: adjustedBonus,
+        bonus: adjustedBonus * samplingLentilPatternMultiplier,
       },
     ]
   })
@@ -1712,10 +1688,7 @@ function calculateBlazingCarrotSurveyTimeEffect(
     }
   }
 
-  const activeIndexes = getActiveBlazingCarrotIndexes(
-    blueprint,
-    completedCropPerfections,
-  )
+  const activeIndexes = getActiveBlazingCarrotIndexes(blueprint)
   const relationLog = Math.min(
     perfection.maximumSurveyRelationLog,
     Math.log10(Math.max(1, Number(totalRabbitRelationsEarned) || 0)),
@@ -1836,15 +1809,7 @@ export function getRabbitRelationsEffects(
     completedCropPerfections,
   )
   const effectDefinition = perfection ?? definition
-  const activeIndexes =
-    perfection?.id === 'blazingCarrot'
-      ? getActiveBlazingCarrotIndexes(
-          blueprint,
-          completedCropPerfections,
-        )
-      : blueprint.cells.flatMap((crop, index) =>
-          crop === sourceCropId ? [index] : [],
-        )
+  const activeIndexes = getActiveBlazingCarrotIndexes(blueprint)
 
   if (!definition || activeIndexes.length === 0) {
     return []

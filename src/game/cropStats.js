@@ -36,7 +36,6 @@ import {
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
-  isBlazingCarrotBurned,
   isCropDebuffIsolatedByShoalGrass,
   isMirrorCornOverloaded,
   isWaterLettuceFieldInfested,
@@ -98,26 +97,6 @@ export function getBlueprintCropStats(
           ? [{ type: 'mangrove-nursery', ...mangroveNurseryEffect }]
           : []),
       ],
-    }
-  }
-
-  const burnedByBlazingCarrot = isBlazingCarrotBurned(
-    sourceBlueprint,
-    index,
-    completedCropPerfections,
-  )
-
-  if (burnedByBlazingCarrot) {
-    return {
-      crop,
-      baseYield: getCropBaseYield(crop, completedCropPerfections),
-      harvestYield: 0,
-      hamsterEfficiencyBonus: 0,
-      passiveStats: [],
-      harvestDestroyedByAppleTree: false,
-      harvestDestroyedByBlazingCarrot: true,
-      externalCropBuffMultiplier: null,
-      receivedEffects: [{ type: 'blazing-carrot-burn' }],
     }
   }
 
@@ -604,12 +583,6 @@ export function getBlueprintCropStats(
     receivedEffects.push({
       type: 'carrot-high-harvest',
       ...fieldProductionSnapshot.carrotHighHarvestEffect,
-    })
-  }
-  if (fieldProductionSnapshot.samplingLentilTradedCropEffect.multiplier !== 1) {
-    receivedEffects.push({
-      type: 'sampling-lentil-trade',
-      ...fieldProductionSnapshot.samplingLentilTradedCropEffect,
     })
   }
   globalRowProductionEffects.forEach((effect) => {

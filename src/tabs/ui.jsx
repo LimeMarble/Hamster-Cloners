@@ -176,7 +176,6 @@ export function CropHoverInspector({
           <dt>Harvest</dt>
           <dd>
             {stats.harvestDestroyedByAppleTree ||
-            stats.harvestDestroyedByBlazingCarrot ||
             stats.harvestDestroyedByInfestation ? (
               'Destroyed'
             ) : (
@@ -215,15 +214,6 @@ export function CropHoverInspector({
       {stats.receivedEffects.length > 0 ? (
         <ul className="crop-hover-effects">
           {stats.receivedEffects.map((effect, effectIndex) => {
-            if (effect.type === 'blazing-carrot-burn') {
-              return (
-                <li key={`${effect.type}-${effectIndex}`}>
-                  Burned by an orthogonally adjacent Blazing Carrot; harvest
-                  and all passive effects are disabled.
-                </li>
-              )
-            }
-
             if (effect.type === 'crop-effect-modifier') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
@@ -416,14 +406,6 @@ export function CropHoverInspector({
                   <FormattedNumber value={effect.activeCarrotCount} maximumFractionDigits={0} />{' '}
                   {getCropName('carrot', completedCropPerfections)}
                   {effect.activeCarrotCount === 1 ? '' : 's'}
-                </li>
-              )
-            }
-            if (effect.type === 'sampling-lentil-trade') {
-              return (
-                <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from Sampling Lentil beside{' '}
-                  <FormattedNumber value={effect.adjacentTradedCropCount} maximumFractionDigits={2} /> traded Crop adjacencies (cannot be boosted)
                 </li>
               )
             }

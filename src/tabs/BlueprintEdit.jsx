@@ -8,7 +8,6 @@ import {
   CAPYBARA_DEMONSTRATION_IDS,
   getMirrorCornMaximumReflections,
   hasCompletedCapybaraDemonstration,
-  isBlazingCarrotBurned,
   isWaterLettuceFieldInfested,
 } from '../game/gameLogic.js'
 import {
@@ -202,11 +201,6 @@ function BlueprintEditContent({
                   pendingMirrorCornPlacement?.sourceIndex === index
                 const isPendingMirrorCornTarget =
                   pendingMirrorCornPlacement?.targetIndexes.includes(index)
-                const isBurnedBlazingCarrot = isBlazingCarrotBurned(
-                  game.blueprint,
-                  index,
-                  game.completedCropPerfections,
-                )
                 const isSelectedRootTunnel =
                   rootTunnelEditor.selectedTunnelIndex === index
                 const isSelectedRootSender =
@@ -233,7 +227,7 @@ function BlueprintEditContent({
                 return (
                   <button
                     type="button"
-                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${isBurnedBlazingCarrot ? 'editor-plot-blazing-carrot-burned' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''} ${isSelectedRootTunnel ? 'editor-plot-root-selected' : ''} ${isSelectedRootSender ? 'editor-plot-root-sender-selected' : ''} ${isValidRootSender ? 'editor-plot-root-sender-option' : ''} ${isValidRootRecipient ? 'editor-plot-root-recipient-option' : ''} ${isSelectedVineGourd ? 'editor-plot-vine-gourd-selected' : ''} ${isActiveVinePath ? 'editor-plot-vine-path' : ''} ${isInactiveVinePath ? 'editor-plot-vine-path-inactive' : ''} ${isValidVinePath ? 'editor-plot-vine-path-option' : ''} ${isEligibleVineTarget ? 'editor-plot-vine-target-option' : ''} ${isSelectedVineTarget ? 'editor-plot-vine-target-selected' : ''}`}
+                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''} ${isSelectedRootTunnel ? 'editor-plot-root-selected' : ''} ${isSelectedRootSender ? 'editor-plot-root-sender-selected' : ''} ${isValidRootSender ? 'editor-plot-root-sender-option' : ''} ${isValidRootRecipient ? 'editor-plot-root-recipient-option' : ''} ${isSelectedVineGourd ? 'editor-plot-vine-gourd-selected' : ''} ${isActiveVinePath ? 'editor-plot-vine-path' : ''} ${isInactiveVinePath ? 'editor-plot-vine-path-inactive' : ''} ${isValidVinePath ? 'editor-plot-vine-path-option' : ''} ${isEligibleVineTarget ? 'editor-plot-vine-target-option' : ''} ${isSelectedVineTarget ? 'editor-plot-vine-target-selected' : ''}`}
                     key={index}
                     onClick={(event) =>
                       onEditorPlotClick(index, crop, event)

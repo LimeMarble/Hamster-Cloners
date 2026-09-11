@@ -1,24 +1,3 @@
-.editor-plot-blazing-carrot-burned {
-  position: relative;
-  border-color: #dd6b28;
-  background: radial-gradient(circle, #52200d, #1c120c 72%);
-  box-shadow: inset 0 0 18px rgb(255 86 19 / 55%);
-}
-
-.editor-plot-blazing-carrot-burned::after {
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  padding: 2px 4px;
-  border: 1px solid #ff9a52;
-  color: #ffe0c1;
-  background: #361006;
-  content: 'Burned';
-  font-size: 0.56rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
 .editor-plot-water-lettuce-infested {
   position: relative;
   border-color: #7b3f28;

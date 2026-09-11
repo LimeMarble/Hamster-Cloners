@@ -116,6 +116,25 @@ export function getCropPassiveStats({
     totalRabbitRelationsEarned,
     seedAugmentations,
   ).find((effect) => effect.sourceIndex === index)
+  if (
+    crop === 'lentil' &&
+    completedCropPerfections.includes('samplingLentil')
+  ) {
+    const patternEffect = cropEffects.getSamplingLentilPatternEffect(
+      blueprint,
+      index,
+      completedCropPerfections,
+    )
+
+    passiveStats.push({
+      id: 'sampling-lentil-pattern',
+      label:
+        `Neighbor pattern (${patternEffect.uniqueNonTradedCropTypeCount} ` +
+        `non-traded, ${patternEffect.uniqueTradedCropTypeCount} traded)`,
+      format: 'multiplier',
+      value: patternEffect.multiplier,
+    })
+  }
   if (ownGlobalHarvestEffect) {
     passiveStats.push({
       id: 'global-crop-harvest',

@@ -352,10 +352,11 @@ export const CROP_PERFECTIONS = {
     name: 'Sampling Lentil',
     cost: 1e123,
     globalHarvestMultiplier: 1.8,
-    tradedCropGlobalHarvestBonus: 1,
+    nonTradedNeighborEffectMultiplier: 1.5,
+    tradedNeighborEffectMultiplier: 2,
     baseEffectDescription: '25 Crops per slot · ×1.8 all Crop harvest',
     effectDescription:
-      '+1× all Crop harvest per adjacent traded Crop as a separate global multiplier · traded-Crop multiplier cannot be boosted',
+      'Each Sampling Lentil\'s +80% all Crop harvest is multiplied by ×1.5 per unique non-traded Crop type and ×2 per unique traded Crop type among its orthogonal and diagonal neighbors',
   },
   splitweed: {
     id: 'splitweed',
@@ -393,7 +394,7 @@ export const CROP_PERFECTIONS = {
     maximumSurveyTimeReduction: 0.8,
     baseEffectDescription: '40 Crops per slot',
     effectDescription:
-      '+10% Rabbit relations · +50% all Crop harvest per log10(total Rabbit relations earned), capped at +1,900% · +25% all Crop harvest per Crop type with at least 1T harvest · adjacent Blazing Carrots burn each other',
+      '+10% Rabbit relations · +50% all Crop harvest per log10(total Rabbit relations earned), capped at +1,900% · +25% all Crop harvest per Crop type with at least 1T harvest',
     manateeEffectDescription:
       '−2% survey time per active Blazing Carrot, with contributing Carrots limited by log10(total Rabbit relations earned) and capped at 10DDc relations',
   },
@@ -533,8 +534,7 @@ function getPerfectionEffectDescription(
     const baseDescription =
       `+${perfection.rabbitRelationsBonusAtZero * 100}% Rabbit relations · ` +
       `+${perfection.globalHarvestBonusPerRelationLog * 100}% all Crop harvest per log10(total Rabbit relations earned), capped at +${perfection.maximumRelationHarvestBonus * 100}% · ` +
-      `+${perfection.highHarvestGlobalHarvestBonus * 100}% all Crop harvest per Crop type with at least ${getCachedFormattedNumber(perfection.highHarvestThreshold, 0)} harvest · ` +
-      'adjacent Blazing Carrots burn each other'
+      `+${perfection.highHarvestGlobalHarvestBonus * 100}% all Crop harvest per Crop type with at least ${getCachedFormattedNumber(perfection.highHarvestThreshold, 0)} harvest`
 
     if (!revealManateeEffects) return baseDescription
 

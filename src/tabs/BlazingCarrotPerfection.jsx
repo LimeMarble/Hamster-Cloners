@@ -35,8 +35,7 @@ export function BlazingCarrotPerfection({
             global harvest per log10 of total Rabbit relations earned (capped
             at +1,900%), and +25% global harvest per Crop type with at least{' '}
             <FormattedNumber value={1e12} maximumFractionDigits={0} /> harvest
-            before this multiplier. Orthogonally adjacent Blazing Carrots burn
-            each other, disabling their harvest and every passive.
+            before this multiplier.
           </p>
           {revealSurveyEffect ? (
             <p>

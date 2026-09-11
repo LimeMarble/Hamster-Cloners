@@ -34,9 +34,7 @@ import {
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getRootTunnelAdjacencyStrength,
-  getSamplingLentilTradedCropEffect,
   getSweetPotatoBedEffects,
-  isBlazingCarrotBurned,
   isMirrorCornOverloaded,
   isWaterLettuceFieldInfested,
 } from './cropEffects.js'
@@ -301,10 +299,7 @@ export function getCarrotHighHarvestEffect(
   const effectDefinition = perfection ?? baseDefinition
   const carrotCount = getMonocropCropCount(blueprint, 'carrot')
   const activeCarrotIndexes = blueprint.cells.flatMap((crop, index) =>
-    crop === 'carrot' &&
-    !isBlazingCarrotBurned(blueprint, index, completedCropPerfections)
-      ? [index]
-      : [],
+    crop === 'carrot' ? [index] : [],
   )
   const highHarvestThreshold =
     effectDefinition?.highHarvestThreshold ?? Infinity
@@ -453,16 +448,6 @@ function calculateBaseFieldProductionSnapshot(
     }
 
     if (
-      isBlazingCarrotBurned(
-        blueprint,
-        index,
-        completedCropPerfections,
-      )
-    ) {
-      return { cropId: crop, amount: 0 }
-    }
-
-    if (
       isMirrorCornOverloaded(
         blueprint,
         index,
@@ -556,26 +541,17 @@ function calculateBaseFieldProductionSnapshot(
     totalRabbitRelationsEarned,
     seedAugmentations,
   )
-  const samplingLentilTradedCropEffect =
-    getSamplingLentilTradedCropEffect(
-      effectBlueprint,
-      completedCropPerfections,
-      passiveEffectMultiplier,
-      seedAugmentations,
-    )
   const carrotHighHarvestEffect = getCarrotHighHarvestEffect(
     effectBlueprint,
     contributions,
-    baseGlobalHarvestMultiplier *
-      samplingLentilTradedCropEffect.multiplier,
+    baseGlobalHarvestMultiplier,
     completedCropPerfections,
     passiveEffectMultiplier,
     seedAugmentations,
   )
   const globalHarvestMultiplier =
     baseGlobalHarvestMultiplier *
-    carrotHighHarvestEffect.multiplier *
-    samplingLentilTradedCropEffect.multiplier
+    carrotHighHarvestEffect.multiplier
   const byCrop = contributions.reduce((cropTotals, contribution) => {
     if (!contribution) return cropTotals
 
@@ -595,7 +571,6 @@ function calculateBaseFieldProductionSnapshot(
     byCrop,
     globalHarvestMultiplier,
     carrotHighHarvestEffect,
-    samplingLentilTradedCropEffect,
   }
 }
 export function getBaseFieldIncome(
