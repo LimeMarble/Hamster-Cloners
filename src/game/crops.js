@@ -352,8 +352,8 @@ export const CROP_PERFECTIONS = {
     name: 'Sampling Lentil',
     cost: 1e123,
     globalHarvestMultiplier: 1.8,
-    nonTradedNeighborEffectMultiplier: 1.5,
-    tradedNeighborEffectMultiplier: 2,
+    nonTradedNeighborEffectMultiplier: 3,
+    tradedNeighborEffectMultiplier: 6,
     baseEffectDescription: '25 Crops per slot · ×1.8 all Crop harvest',
     effectDescription:
       'Each Sampling Lentil\'s +80% all Crop harvest is multiplied by ×1.5 per unique non-traded Crop type and ×2 per unique traded Crop type among its orthogonal and diagonal neighbors',
