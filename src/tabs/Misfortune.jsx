@@ -58,7 +58,7 @@ export function Misfortune({
           <div>
             <h2>Unfortunate Row</h2>
             <p>
-              Misfortune Crop production /1.25.Purchasing resets Crops and
+              Misfortune Crop production /1.25. Purchasing resets Crops and
               field growth in both areas, then gives the blueprints in both
               areas one permanent Row.
             </p>
