@@ -14,6 +14,7 @@ import {
   GAME_AREA_IDS,
 } from './gameConfig.js'
 import {
+  getBurdenedFoundationsCropProductionMultiplier,
   getUnfortunateRowCropProductionMultiplier,
 } from './misfortuneUpgrades.js'
 
@@ -157,7 +158,8 @@ export function getFortuneModifiers(gameOrFortune) {
       cropYieldMultiplier: 1 / FORTUNES_WRATH_CROP_DIVISOR,
       cropProductionExponent: FORTUNES_WRATH_CROP_EXPONENT,
       cropProductionMultiplier:
-        getUnfortunateRowCropProductionMultiplier(gameOrFortune),
+        getUnfortunateRowCropProductionMultiplier(gameOrFortune) *
+        getBurdenedFoundationsCropProductionMultiplier(gameOrFortune),
       harvestMultiplier: 1,
       source: 'fortunesWrath',
     }

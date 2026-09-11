@@ -38,6 +38,7 @@ import {
 import { advanceWetlandsConnectionState } from './wetlandsConnectionState.js'
 import {
   getRushedStartExternalMultiplier,
+  isFloorReplicatorSupportModeActive,
   RUSHED_START_TOTAL_DURATION_SECONDS,
 } from './misfortuneUpgrades.js'
 
@@ -199,6 +200,7 @@ export function advanceGameSimulationStep(
   )
   const rowsProducedForTick = rowsBuiltPerSecond * safeElapsedSeconds
   const floorsProducedForTick = currentGame.hasUnlockedFloorReplicators
+    && !isFloorReplicatorSupportModeActive(currentGame)
     ? getFloorsProducedPerSecond(
       currentGame.floorReplicators,
       rushedStartExternalMultiplier,

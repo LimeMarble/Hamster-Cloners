@@ -14,6 +14,7 @@ import {
 } from './gameConfig.js'
 import {
   createInitialMisfortuneUpgradeState,
+  FLOOR_REPLICATOR_MODES,
   hasMisfortuneUpgrade,
   MISFORTUNE_UPGRADE_IDS,
   RUSHED_START_TOTAL_DURATION_SECONDS,
@@ -301,6 +302,7 @@ export function wipeMisfortuneAreaProgress(game) {
         : 0,
       completedMisfortuneUpgrades:
         createInitialMisfortuneUpgradeState(),
+      floorReplicatorMode: FLOOR_REPLICATOR_MODES.CONSTRUCTION,
       areaProgress: clearedAreaProgress,
     }
   }
@@ -315,6 +317,7 @@ export function wipeMisfortuneAreaProgress(game) {
       : 0,
     completedMisfortuneUpgrades:
       createInitialMisfortuneUpgradeState(),
+    floorReplicatorMode: FLOOR_REPLICATOR_MODES.CONSTRUCTION,
     areaProgress: clearedAreaProgress,
   }
 }

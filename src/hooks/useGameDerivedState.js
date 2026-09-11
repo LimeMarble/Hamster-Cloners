@@ -5,6 +5,7 @@ import {
   getCapybaraBlueprintCropYield,
   getCapybaraHamsterEfficiencyMultiplier,
   getBlueprintExpansionTrackProgress,
+  getBurdenedFoundationsCropProductionMultiplier,
   getBlueprintMonocropMultiplier,
   getBlueprintSlots,
   getColumnsProducedPerSecond,
@@ -32,6 +33,7 @@ import {
   getRowDuplicatorCoordinationMultiplier,
   getUnlockedBlueprintSlotCount,
   getRushedStartExternalMultiplier,
+  isFloorReplicatorSupportModeActive,
   hasReachedMonocropLimit,
   hasRabbitUnlock,
   hasSeedAugmentation,
@@ -54,10 +56,14 @@ export function useGameDerivedState(game) {
         activeArea: game.activeArea,
         completedMisfortuneUpgrades:
           game.completedMisfortuneUpgrades,
+        floorReplicators: game.floorReplicators,
+        floorReplicatorMode: game.floorReplicatorMode,
       }),
     [
       game.activeArea,
       game.completedMisfortuneUpgrades,
+      game.floorReplicatorMode,
+      game.floorReplicators,
       game.fortune,
     ],
   )
@@ -179,9 +185,14 @@ export function useGameDerivedState(game) {
   )
   const floorReplicatorExternalMultiplier =
     getFloorReplicatorExternalMultiplier(rushedStartExternalMultiplier)
+  const isFloorReplicatorSupportMode =
+    isFloorReplicatorSupportModeActive(game)
+  const burdenedFoundationsCropProductionMultiplier =
+    getBurdenedFoundationsCropProductionMultiplier(game)
   const floorsBuiltPerSecond = useMemo(
     () =>
       game.hasUnlockedFloorReplicators
+        && !isFloorReplicatorSupportMode
         ? getFloorsProducedPerSecond(
             game.floorReplicators,
             floorReplicatorExternalMultiplier,
@@ -191,6 +202,7 @@ export function useGameDerivedState(game) {
       floorReplicatorExternalMultiplier,
       game.floorReplicators,
       game.hasUnlockedFloorReplicators,
+      isFloorReplicatorSupportMode,
     ],
   )
   const rowDuplicatorEffectivenessMultiplier = useMemo(
@@ -420,6 +432,8 @@ export function useGameDerivedState(game) {
     nextFloorReplicatorCost,
     floorReplicatorCoordinationMultiplier,
     floorReplicatorExternalMultiplier,
+    isFloorReplicatorSupportMode,
+    burdenedFoundationsCropProductionMultiplier,
     floorsBuiltPerSecond,
     rowDuplicatorEffectivenessMultiplier,
     rowDuplicatorCoordinationMultiplier,

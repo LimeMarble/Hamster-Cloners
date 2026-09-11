@@ -29,6 +29,7 @@ import {
 } from './rootTunnelLogic.js'
 import {
   createInitialMisfortuneUpgradeState,
+  FLOOR_REPLICATOR_MODES,
 } from './misfortuneUpgrades.js'
 
 function normalizeUniqueCloverCells(cells) {
@@ -150,6 +151,7 @@ export function createInitialGame() {
     rowDuplicators: 0,
     hasUnlockedFloorReplicators: false,
     floorReplicators: 0,
+    floorReplicatorMode: FLOOR_REPLICATOR_MODES.CONSTRUCTION,
     fortune: createInitialFortuneState(),
     capybara: {
       completedDemonstrations: [],

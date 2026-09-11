@@ -142,11 +142,23 @@ export function useGameController() {
                 derived.floorReplicatorCoordinationMultiplier,
               floorReplicatorExternalMultiplier:
                 derived.floorReplicatorExternalMultiplier,
+              isFloorReplicatorSupportMode:
+                derived.isFloorReplicatorSupportMode,
+              burdenedFoundationsCropProductionMultiplier:
+                derived.burdenedFoundationsCropProductionMultiplier,
+              hasBurdenedFoundations:
+                derived.isMisfortuneAreaActive &&
+                hasMisfortuneUpgrade(
+                  game,
+                  MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+                ),
               floorsBuiltPerSecond: derived.floorsBuiltPerSecond,
               onBuyFloorReplicator:
                 actions.purchaseActions.onBuyFloorReplicator,
               onBuyMaxFloorReplicators:
                 actions.purchaseActions.onBuyMaxFloorReplicators,
+              onToggleFloorReplicatorMode:
+                actions.purchaseActions.onToggleFloorReplicatorMode,
             }
           : null,
       },
@@ -202,6 +214,19 @@ export function useGameController() {
         ),
         onUnlockAdversityGrownTubers:
           actions.onUnlockAdversityGrownTubers,
+        burdenedFoundations: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS
+        ],
+        hasBurdenedFoundations: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+        ),
+        canUnlockBurdenedFoundations: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+        ),
+        onUnlockBurdenedFoundations:
+          actions.onUnlockBurdenedFoundations,
         onLeave: actions.onLeaveMisfortuneArea,
       },
       inventions: {

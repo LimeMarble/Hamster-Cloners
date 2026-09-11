@@ -9,6 +9,10 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
   floorReplicatorExternalMultiplier,
   floorsBuiltPerSecond,
   canPurchaseFloorReplicators,
+  hasBurdenedFoundations,
+  isFloorReplicatorSupportMode,
+  burdenedFoundationsCropProductionMultiplier,
+  onToggleFloorReplicatorMode,
 }) {
   return (
     <>
@@ -67,6 +71,51 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
         />{' '}
         Floor Replicators.
       </p>
+      {hasBurdenedFoundations ? (
+        <div className="replicator-mode-control">
+          <p className="eyebrow">Operating mode</p>
+          <div
+            className="hire-actions"
+            role="group"
+            aria-label="Floor Replicator mode"
+          >
+            <button
+              type="button"
+              className={
+                isFloorReplicatorSupportMode
+                  ? 'secondary-button'
+                  : 'primary-button'
+              }
+              onClick={onToggleFloorReplicatorMode}
+              disabled={!isFloorReplicatorSupportMode}
+            >
+              Construction
+            </button>
+            <button
+              type="button"
+              className={
+                isFloorReplicatorSupportMode
+                  ? 'primary-button'
+                  : 'secondary-button'
+              }
+              onClick={onToggleFloorReplicatorMode}
+              disabled={!isFloorReplicatorSupportMode}
+            >
+              Support
+            </button>
+          </div>
+          <p className="card-copy">
+            {isFloorReplicatorSupportMode
+              ? <>
+                  Floor construction is paused. Burdened Foundations grants
+                  {' '}×<FormattedNumber
+                    value={burdenedFoundationsCropProductionMultiplier}
+                  />{' '}Crop production after Fortune&apos;s Wrath.
+                </>
+              : 'Floor Replicators are constructing Floors normally.'}
+          </p>
+        </div>
+      ) : null}
       <div className="replicator-summary next-lesson">
         <span>
           {canPurchaseFloorReplicators ? 'Next replicator' : 'Construction'}
@@ -96,8 +145,12 @@ export function FloorReplicatorPurchase({
   floorReplicatorExternalMultiplier,
   floorsBuiltPerSecond,
   canPurchaseFloorReplicators,
+  hasBurdenedFoundations,
+  isFloorReplicatorSupportMode,
+  burdenedFoundationsCropProductionMultiplier,
   onBuyFloorReplicator,
   onBuyMaxFloorReplicators,
+  onToggleFloorReplicatorMode,
 }) {
   const canAfford =
     canPurchaseFloorReplicators && game.crops >= nextFloorReplicatorCost
@@ -115,6 +168,12 @@ export function FloorReplicatorPurchase({
         }
         floorsBuiltPerSecond={floorsBuiltPerSecond}
         canPurchaseFloorReplicators={canPurchaseFloorReplicators}
+        hasBurdenedFoundations={hasBurdenedFoundations}
+        isFloorReplicatorSupportMode={isFloorReplicatorSupportMode}
+        burdenedFoundationsCropProductionMultiplier={
+          burdenedFoundationsCropProductionMultiplier
+        }
+        onToggleFloorReplicatorMode={onToggleFloorReplicatorMode}
       />
       <div className="hire-actions">
         <button

@@ -39,6 +39,7 @@ import {
   MISFORTUNE_AREA_STATE_VERSION,
 } from './gameConfig.js'
 import {
+  FLOOR_REPLICATOR_MODES,
   MISFORTUNE_UPGRADE_IDS,
   normalizeMisfortuneUpgrades,
   RUSHED_START_TOTAL_DURATION_SECONDS,
@@ -400,6 +401,10 @@ export function normalizeGame(rawGame) {
         CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
       ),
     floorReplicators: toNonNegativeInteger(rawGame.floorReplicators, 0),
+    floorReplicatorMode:
+      rawGame.floorReplicatorMode === FLOOR_REPLICATOR_MODES.SUPPORT
+        ? FLOOR_REPLICATOR_MODES.SUPPORT
+        : FLOOR_REPLICATOR_MODES.CONSTRUCTION,
     fortune: normalizeFortuneState(rawGame.fortune),
     capybara,
     seedAugmentations,

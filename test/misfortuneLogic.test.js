@@ -6,18 +6,23 @@ import {
   FLOOR_REPLICATOR_COORDINATION_GROWTH,
   FLOOR_REPLICATOR_COST_GROWTH,
   FLOOR_REPLICATOR_COST_TIER_SIZE,
+  FLOOR_REPLICATOR_MODES,
   FORTUNES_WRATH_CROP_DIVISOR,
   FORTUNES_WRATH_CROP_EXPONENT,
   FORTUNES_WRATH_PASSIVE_MULTIPLIER,
   GAME_AREA_IDS,
   MISFORTUNE_AREA_STATE_VERSION,
   MISFORTUNE_UPGRADE_IDS,
+  MISFORTUNE_UPGRADES,
   AREA_CROP_UNLOCK_FIELDS,
   advanceFortuneState,
   advanceGameByElapsedTime,
+  advanceGameSimulationStep,
   createBlueprint,
   createInitialGame,
   getCapybaraDemonstrationStatus,
+  getBurdenedFoundationsCropProductionMultiplier,
+  getBurdenedFoundationsTierCount,
   getCloverBundleChancePerMinute,
   getCropProductionSnapshotPerSecond,
   getFloorReplicatorCoordinationMultiplier,
@@ -29,8 +34,10 @@ import {
   getNextHamsterCost,
   getNextRowDuplicatorCost,
   hasCompletedCapybaraDemonstration,
+  isFloorReplicatorSupportModeActive,
   purchaseMisfortuneUpgrade,
   switchGameArea,
+  toggleFloorReplicatorMode,
   resetForBlueprintExpansion,
   resetForRowDuplicators,
   wipeMisfortuneAreaProgress,
@@ -315,7 +322,13 @@ test('Unfortunate Row resets both areas and grants one blueprint Row', () => {
   ).total
 
   assert.ok(
-    Math.abs(unfortunateProduction - baseWrathProduction / 4) < 1e-15,
+    Math.abs(
+      unfortunateProduction -
+        baseWrathProduction *
+          MISFORTUNE_UPGRADES[
+            MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW
+          ].cropProductionMultiplier,
+    ) < 1e-15,
   )
 
   const giftedRowCount = upgradedGame.blueprint.rows
@@ -472,6 +485,92 @@ test('Floor Replicators use ten-purchase cost and effectiveness tiers', () => {
   )
   assert.ok(
     Math.abs(advanced.farmland.floors - 3) < 1e-10,
+  )
+})
+
+test('Burdened Foundations trades Floor production for post-Wrath Crops', () => {
+  const upgrade = MISFORTUNE_UPGRADES[
+    MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS
+  ]
+  const blueprint = createBlueprint({ cells: ['leek'] })
+  const farmland = {
+    rows: 1,
+    columns: 100,
+    floors: 5,
+    farms: 1,
+    otherMultiplier: 1,
+  }
+  const game = {
+    ...createInitialGame(),
+    activeArea: GAME_AREA_IDS.MISFORTUNE,
+    crops: upgrade.cost,
+    hasUnlockedFloorReplicators: true,
+    floorReplicators: 30,
+    blueprint,
+    blueprintSlots: [blueprint],
+    farmland,
+  }
+
+  assert.equal(upgrade.cost, 4.44e29)
+  assert.equal(upgrade.cropProductionMultiplierPerTier, 1.24)
+  assert.equal(toggleFloorReplicatorMode(game), null)
+
+  const purchased = purchaseMisfortuneUpgrade(
+    game,
+    MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+  )
+  assert.ok(purchased)
+  assert.equal(purchased.crops, 0)
+  assert.equal(
+    purchased.floorReplicatorMode,
+    FLOOR_REPLICATOR_MODES.CONSTRUCTION,
+  )
+
+  const supportMode = toggleFloorReplicatorMode(purchased)
+  const expectedMultiplier = 1.24 ** 3
+  assert.ok(supportMode)
+  assert.equal(getBurdenedFoundationsTierCount(supportMode), 3)
+  assert.equal(isFloorReplicatorSupportModeActive(supportMode), true)
+  assert.ok(Math.abs(
+    getBurdenedFoundationsCropProductionMultiplier(supportMode) -
+      expectedMultiplier,
+  ) < 1e-12)
+
+  const constructionProduction = getCropProductionSnapshotPerSecond(
+    blueprint,
+    farmland,
+    [],
+    1,
+    0,
+    getFortuneModifiers(purchased),
+  ).total
+  const supportProduction = getCropProductionSnapshotPerSecond(
+    blueprint,
+    farmland,
+    [],
+    1,
+    0,
+    getFortuneModifiers(supportMode),
+  ).total
+  assert.ok(Math.abs(
+    supportProduction / constructionProduction - expectedMultiplier,
+  ) < 1e-12)
+
+  const supportedTick = advanceGameSimulationStep(supportMode, 1)
+  assert.equal(supportedTick.farmland.floors, farmland.floors)
+
+  const constructionMode = toggleFloorReplicatorMode(supportMode)
+  const constructionTick = advanceGameSimulationStep(constructionMode, 1)
+  assert.ok(constructionTick.farmland.floors > farmland.floors)
+
+  const normalized = normalizeGame(supportMode)
+  assert.equal(
+    normalized.floorReplicatorMode,
+    FLOOR_REPLICATOR_MODES.SUPPORT,
+  )
+  assert.equal(
+    wipeMisfortuneAreaProgress(normalized).floorReplicatorMode,
+    FLOOR_REPLICATOR_MODES.CONSTRUCTION,
   )
 })
 

@@ -46,6 +46,10 @@ export function Misfortune({
   hasAdversityGrownTubers,
   canUnlockAdversityGrownTubers,
   onUnlockAdversityGrownTubers,
+  burdenedFoundations,
+  hasBurdenedFoundations,
+  canUnlockBurdenedFoundations,
+  onUnlockBurdenedFoundations,
   onLeave,
 }) {
   return (
@@ -153,6 +157,48 @@ export function Misfortune({
                     <>
                       Need{' '}
                       <FormattedNumber value={adversityGrownTubers.cost} />
+                      {' '}Crops
+                    </>
+                  )}
+          </button>
+        </article>
+        <article className="misfortune-upgrade-card">
+          <div>
+            <h2>{burdenedFoundations.name}</h2>
+            <p>
+              Unlocks Construction and Support modes for Floor Replicators.
+              Support pauses Floor production and multiplies Crop production
+              after Fortune&apos;s Wrath by ×
+              {burdenedFoundations.cropProductionMultiplierPerTier} for every
+              complete tier of {burdenedFoundations.floorReplicatorsPerTier}
+              {' '}Floor Replicators.
+            </p>
+            <p className="misfortune-upgrade-note">
+              Cost: <FormattedNumber value={burdenedFoundations.cost} />
+              {' '}Crops. This choice is permanent until Misfortune progress
+              is wiped.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={
+              hasBurdenedFoundations
+                ? 'secondary-button'
+                : 'primary-button'
+            }
+            onClick={onUnlockBurdenedFoundations}
+            disabled={
+              hasBurdenedFoundations || !canUnlockBurdenedFoundations
+            }
+          >
+            {hasBurdenedFoundations
+              ? 'Accepted'
+              : canUnlockBurdenedFoundations
+                ? 'Burden the foundations'
+                : (
+                    <>
+                      Need{' '}
+                      <FormattedNumber value={burdenedFoundations.cost} />
                       {' '}Crops
                     </>
                   )}

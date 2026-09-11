@@ -1,9 +1,18 @@
-import { GAME_AREA_IDS } from './gameConfig.js'
+import {
+  FLOOR_REPLICATOR_COST_TIER_SIZE,
+  GAME_AREA_IDS,
+} from './gameConfig.js'
+
+export const FLOOR_REPLICATOR_MODES = Object.freeze({
+  CONSTRUCTION: 'construction',
+  SUPPORT: 'support',
+})
 
 export const MISFORTUNE_UPGRADE_IDS = Object.freeze({
   UNFORTUNATE_ROW: 'unfortunateRow',
   RUSHED_START: 'rushedStart',
   ADVERSITY_GROWN_TUBERS: 'adversityGrownTubers',
+  BURDENED_FOUNDATIONS: 'burdenedFoundations',
 })
 
 export const MISFORTUNE_UPGRADES = Object.freeze({
@@ -26,6 +35,13 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
     name: 'Adversity-Grown Tubers',
     cost: 7e22,
+  }),
+  [MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS]: Object.freeze({
+    id: MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+    name: 'Burdened Foundations',
+    cost: 4.44e29,
+    cropProductionMultiplierPerTier: 1.24,
+    floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
   }),
 })
 
@@ -136,4 +152,57 @@ export function getRushedStartExternalMultiplier(game) {
   }
 
   return 1
+}
+
+export function isFloorReplicatorSupportModeActive(game) {
+  return (
+    game?.activeArea === GAME_AREA_IDS.MISFORTUNE &&
+    hasMisfortuneUpgrade(
+      game,
+      MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+    ) &&
+    game.floorReplicatorMode === FLOOR_REPLICATOR_MODES.SUPPORT
+  )
+}
+
+export function getBurdenedFoundationsTierCount(game) {
+  const upgrade = MISFORTUNE_UPGRADES[
+    MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS
+  ]
+
+  return Math.floor(
+    Math.max(0, Math.floor(Number(game?.floorReplicators) || 0)) /
+      upgrade.floorReplicatorsPerTier,
+  )
+}
+
+export function getBurdenedFoundationsCropProductionMultiplier(game) {
+  if (!isFloorReplicatorSupportModeActive(game)) return 1
+
+  const upgrade = MISFORTUNE_UPGRADES[
+    MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS
+  ]
+
+  return upgrade.cropProductionMultiplierPerTier **
+    getBurdenedFoundationsTierCount(game)
+}
+
+export function toggleFloorReplicatorMode(game) {
+  if (
+    game?.activeArea !== GAME_AREA_IDS.MISFORTUNE ||
+    !hasMisfortuneUpgrade(
+      game,
+      MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+    )
+  ) {
+    return null
+  }
+
+  return {
+    ...game,
+    floorReplicatorMode:
+      game.floorReplicatorMode === FLOOR_REPLICATOR_MODES.SUPPORT
+        ? FLOOR_REPLICATOR_MODES.CONSTRUCTION
+        : FLOOR_REPLICATOR_MODES.SUPPORT,
+  }
 }
