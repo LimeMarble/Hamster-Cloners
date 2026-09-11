@@ -60,7 +60,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   [SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES,
     name: 'Loosened Boundaries',
-    baseCost: 1e107,
+    baseCost: 1e105,
     costGrowth: 500,
     maximumLevel: 4,
     crowdingBaseBonusPerLevel: 0.05,
