@@ -168,6 +168,9 @@ export function getBlueprintCropStats(
   const cropProductionExponent = normalizeFortuneMultiplier(
     fortuneModifiers.cropProductionExponent,
   )
+  const cropProductionMultiplier = normalizeFortuneMultiplier(
+    fortuneModifiers.cropProductionMultiplier,
+  )
   const getAugmentedMirrorCornEffectMultiplier = (targetIndex) =>
     getMirrorCornEffectMultiplier(
       blueprint,
@@ -543,6 +546,12 @@ export function getBlueprintCropStats(
       type: 'fortune-production-exponent',
       exponent: cropProductionExponent,
       source: fortuneModifiers.source,
+    })
+  }
+  if (cropProductionMultiplier !== 1) {
+    receivedEffects.push({
+      type: 'misfortune-upgrade-production',
+      multiplier: cropProductionMultiplier,
     })
   }
   if (fortuneHarvestMultiplier !== 1) {

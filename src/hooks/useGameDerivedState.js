@@ -48,8 +48,14 @@ export function useGameDerivedState(game) {
       getFortuneModifiers({
         fortune: game.fortune,
         activeArea: game.activeArea,
+        completedMisfortuneUpgrades:
+          game.completedMisfortuneUpgrades,
       }),
-    [game.activeArea, game.fortune],
+    [
+      game.activeArea,
+      game.completedMisfortuneUpgrades,
+      game.fortune,
+    ],
   )
   const nextHamsterCost = useMemo(
     () =>
@@ -108,6 +114,8 @@ export function useGameDerivedState(game) {
         completedCropPerfections: game.completedCropPerfections,
         fortune: game.fortune,
         activeArea: game.activeArea,
+        completedMisfortuneUpgrades:
+          game.completedMisfortuneUpgrades,
         seedAugmentations: game.seedAugmentations,
         trade: {
           rabbitContractsCompleted:
@@ -120,6 +128,7 @@ export function useGameDerivedState(game) {
       game.blueprint,
       game.activeArea,
       game.completedCropPerfections,
+      game.completedMisfortuneUpgrades,
       game.fortune,
       game.seedAugmentations,
       game.trade?.rabbitContractsCompleted,

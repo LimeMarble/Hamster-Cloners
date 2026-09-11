@@ -666,6 +666,9 @@ function normalizeCropProductionModifiers(modifiers = {}) {
       Number.isFinite(parsedExponent) && parsedExponent > 0
         ? parsedExponent
         : 1,
+    cropProductionMultiplier: getMultiplier(
+      modifiers.cropProductionMultiplier,
+    ),
     harvestMultiplier: getMultiplier(modifiers.harvestMultiplier),
   }
 }
@@ -678,7 +681,10 @@ export function applyCropProductionModifiers(production, modifiers = {}) {
     normalized.harvestMultiplier *
     normalized.cropYieldMultiplier
 
-  return productionBeforeExponent ** normalized.cropProductionExponent
+  return (
+    productionBeforeExponent ** normalized.cropProductionExponent *
+    normalized.cropProductionMultiplier
+  )
 }
 
 export function getCropProductionModifierScale(production, modifiers = {}) {
@@ -744,6 +750,7 @@ export function getCropProductionSnapshotPerSecond(
       modifiers.passiveEffectMultiplier,
       modifiers.cropYieldMultiplier,
       modifiers.cropProductionExponent,
+      modifiers.cropProductionMultiplier,
       modifiers.harvestMultiplier,
       seedAugmentations,
       effectiveFarmland.rows,

@@ -11,6 +11,7 @@ import {
   FORTUNES_WRATH_PASSIVE_MULTIPLIER,
   GAME_AREA_IDS,
   MISFORTUNE_AREA_STATE_VERSION,
+  MISFORTUNE_UPGRADE_IDS,
   AREA_CROP_UNLOCK_FIELDS,
   advanceFortuneState,
   advanceGameByElapsedTime,
@@ -28,7 +29,10 @@ import {
   getNextHamsterCost,
   getNextRowDuplicatorCost,
   hasCompletedCapybaraDemonstration,
+  purchaseMisfortuneUpgrade,
   switchGameArea,
+  resetForBlueprintExpansion,
+  resetForRowDuplicators,
   wipeMisfortuneAreaProgress,
 } from '../src/game/gameLogic.js'
 import { normalizeGame } from '../src/game/storage.js'
@@ -214,6 +218,140 @@ test("Fortune's Wrath applies its division before its exponent", () => {
   )
 })
 
+test('Unfortunate Row resets both areas and grants one blueprint Row', () => {
+  const mainBlueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['leek', 'corn', null, null],
+  })
+  const mainGame = {
+    ...createInitialGame(),
+    crops: 12345,
+    hamsters: 250,
+    rowDuplicators: 75,
+    farmland: {
+      rows: 8.5,
+      columns: 9.5,
+      floors: 3,
+      farms: 2,
+      otherMultiplier: 1,
+    },
+    blueprint: mainBlueprint,
+    blueprintSlots: [mainBlueprint],
+  }
+  const baseGame = {
+    ...switchGameArea(mainGame, GAME_AREA_IDS.MISFORTUNE),
+    crops: 250_000,
+    farmland: {
+      rows: 4.5,
+      columns: 5.5,
+      floors: 2,
+      farms: 3,
+      otherMultiplier: 1,
+    },
+  }
+
+  assert.equal(
+    purchaseMisfortuneUpgrade(
+      { ...baseGame, crops: 249_999 },
+      MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+    ),
+    null,
+  )
+  assert.equal(
+    purchaseMisfortuneUpgrade(
+      { ...baseGame, activeArea: GAME_AREA_IDS.MAIN },
+      MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+    ),
+    null,
+  )
+
+  const upgradedGame = purchaseMisfortuneUpgrade(
+    baseGame,
+    MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+  )
+
+  assert.ok(upgradedGame)
+  assert.equal(upgradedGame.crops, 0)
+  assert.equal(upgradedGame.farmland.rows, 1)
+  assert.equal(upgradedGame.farmland.columns, 0.9)
+  assert.equal(upgradedGame.farmland.floors, 1)
+  assert.equal(upgradedGame.farmland.farms, 1)
+  assert.equal(upgradedGame.blueprint.rows, 2)
+  assert.equal(upgradedGame.blueprint.columns, 1)
+  assert.equal(upgradedGame.areaProgress.main.crops, 0)
+  assert.equal(upgradedGame.areaProgress.main.hamsters, 250)
+  assert.equal(upgradedGame.areaProgress.main.rowDuplicators, 75)
+  assert.equal(upgradedGame.areaProgress.main.farmland.rows, 1)
+  assert.equal(upgradedGame.areaProgress.main.farmland.columns, 0.9)
+  assert.equal(upgradedGame.areaProgress.main.farmland.floors, 1)
+  assert.equal(upgradedGame.areaProgress.main.farmland.farms, 1)
+  assert.equal(upgradedGame.areaProgress.main.blueprint.rows, 3)
+  assert.equal(upgradedGame.areaProgress.main.blueprint.columns, 2)
+
+  const blueprint = createBlueprint({ cells: ['leek'] })
+  const farmland = {
+    rows: 1,
+    columns: 100,
+    floors: 1,
+    farms: 1,
+    otherMultiplier: 1,
+  }
+  const baseWrathProduction = getCropProductionSnapshotPerSecond(
+    blueprint,
+    farmland,
+    [],
+    1,
+    0,
+    getFortuneModifiers(baseGame),
+  ).total
+  const unfortunateProduction = getCropProductionSnapshotPerSecond(
+    blueprint,
+    farmland,
+    [],
+    1,
+    0,
+    getFortuneModifiers(upgradedGame),
+  ).total
+
+  assert.ok(
+    Math.abs(unfortunateProduction - baseWrathProduction / 4) < 1e-15,
+  )
+
+  const giftedRowCount = upgradedGame.blueprint.rows
+  const expansionReset = resetForBlueprintExpansion(
+    { ...upgradedGame, crops: 1e10 },
+    'firstColumn',
+  )
+  assert.ok(expansionReset)
+  assert.equal(expansionReset.blueprint.rows, giftedRowCount)
+  assert.equal(expansionReset.farmland.rows, 1)
+
+  const rowDuplicatorReset = resetForRowDuplicators({
+    ...upgradedGame,
+    crops: 1e30,
+    hasUnlockedRowDuplicators: false,
+  })
+  assert.ok(rowDuplicatorReset)
+  assert.equal(rowDuplicatorReset.blueprint.rows, giftedRowCount)
+  assert.equal(rowDuplicatorReset.farmland.rows, 1)
+
+  const restoredUpgrade = normalizeGame({
+    ...createInitialGame(),
+    blueprintExpansionAxesSwapped: true,
+    blueprint: createBlueprint({ rows: 2, columns: 1 }),
+    blueprintSlots: [createBlueprint({ rows: 2, columns: 1 })],
+    completedMisfortuneUpgrades: [
+      MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+      'notARealUpgrade',
+    ],
+  })
+  assert.deepEqual(restoredUpgrade.completedMisfortuneUpgrades, [
+    MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+  ])
+  assert.deepEqual(restoredUpgrade.completedBlueprintExpansions, [])
+})
+
 test('the Misfortune wipe resets only the area-specific state', () => {
   const mainGame = {
     ...createInitialGame(),
@@ -240,19 +378,25 @@ test('the Misfortune wipe resets only the area-specific state', () => {
   assert.equal(wipedFromMain.crops, 123)
   assert.equal(wipedFromMain.hamsters, 50)
   assert.equal(wipedFromMain.floorReplicators, 0)
+  assert.deepEqual(wipedFromMain.completedMisfortuneUpgrades, [])
   assert.equal(wipedFromMain.areaProgress.misfortune, null)
 
-  const activeMisfortune = switchGameArea(
-    mainGame,
-    GAME_AREA_IDS.MISFORTUNE,
+  const activeMisfortune = {
+    ...switchGameArea(mainGame, GAME_AREA_IDS.MISFORTUNE),
+    crops: 250_000,
+  }
+  const upgradedMisfortune = purchaseMisfortuneUpgrade(
+    activeMisfortune,
+    MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
   )
-  const wipedWhileActive = wipeMisfortuneAreaProgress(activeMisfortune)
+  const wipedWhileActive = wipeMisfortuneAreaProgress(upgradedMisfortune)
 
   assert.equal(wipedWhileActive.activeArea, GAME_AREA_IDS.MISFORTUNE)
   assert.equal(wipedWhileActive.crops, 0)
   assert.equal(wipedWhileActive.hamsters, 1)
   assert.equal(wipedWhileActive.rowDuplicators, 0)
   assert.equal(wipedWhileActive.floorReplicators, 0)
+  assert.deepEqual(wipedWhileActive.completedMisfortuneUpgrades, [])
   assert.equal(wipedWhileActive.farmland.columns, 0.9)
   assert.deepEqual(wipedWhileActive.blueprint.cells, ['leek'])
   assert.equal(wipedWhileActive.areaProgress.misfortune, null)
@@ -261,9 +405,10 @@ test('the Misfortune wipe resets only the area-specific state', () => {
     wipedWhileActive,
     GAME_AREA_IDS.MAIN,
   )
-  assert.equal(restoredMain.crops, 123)
+  assert.equal(restoredMain.crops, 0)
   assert.equal(restoredMain.hamsters, 50)
   assert.equal(restoredMain.floorReplicators, 0)
+  assert.equal(restoredMain.blueprint.rows, mainGame.blueprint.rows)
 })
 
 test('Floor Replicators use ten-purchase cost and effectiveness tiers', () => {

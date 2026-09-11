@@ -103,7 +103,8 @@ function MisfortuneWipeConfirmation({ onCancel, onConfirm }) {
         <h2 id="misfortune-wipe-title">Wipe all Misfortune progress?</h2>
         <p>
           This clears Misfortune&apos;s Crops, Hamsters, Row Duplicators,
-          field growth, paid expansions, Crop unlocks, and blueprints.
+          field growth, paid expansions, Crop unlocks, blueprints, and
+          permanent Misfortune upgrades.
         </p>
         <p>
           Floor Replicators are also removed while they can only be purchased

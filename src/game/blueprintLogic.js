@@ -27,6 +27,9 @@ import {
   normalizeRootTunnelConnections,
   remapRootTunnelConnections,
 } from './rootTunnelLogic.js'
+import {
+  createInitialMisfortuneUpgradeState,
+} from './misfortuneUpgrades.js'
 
 function normalizeUniqueCloverCells(cells) {
   let hasClover = false
@@ -188,6 +191,7 @@ export function createInitialGame() {
       main: null,
       misfortune: null,
     },
+    completedMisfortuneUpgrades: createInitialMisfortuneUpgradeState(),
     farmland: createFarmlandMultipliers({
       columns: FIELD_RESET_STARTING_COLUMNS,
     }),
@@ -279,7 +283,6 @@ export function resetFarmlandUnits(farmland) {
     otherMultiplier: currentFarmland.otherMultiplier,
   })
 }
-
 
 export function getBlueprintExpansion(expansionId) {
   return BLUEPRINT_EXPANSIONS.find(
@@ -613,6 +616,17 @@ function applyBlueprintSpace(game, direction) {
   }
 }
 
+export function grantBlueprintSpace(game, direction) {
+  if (direction !== 'row' && direction !== 'column') {
+    return null
+  }
+
+  return {
+    ...game,
+    ...applyBlueprintSpace(game, direction),
+  }
+}
+
 function applyBlueprintExpansion(game, expansion) {
   return {
     ...applyBlueprintSpace(game, expansion.direction),
@@ -660,18 +674,8 @@ export function grantFreeBlueprintExpansion(game, trackId) {
   }
 }
 
-export function revokeLastBlueprintExpansion(game, trackId) {
-  const track = BLUEPRINT_EXPANSION_TRACKS.find(
-    (candidateTrack) => candidateTrack.id === trackId,
-  )
-  const completedExpansion = [...(track?.stages ?? [])]
-    .reverse()
-    .find((stage) => hasCompletedBlueprintExpansion(game, stage.id))
-
-  if (!completedExpansion) {
-    return null
-  }
-
+function removeBlueprintSpace(game, trackId) {
+  if (trackId !== 'row' && trackId !== 'column') return null
   const shrinkBlueprint =
     trackId === 'row' ? removeBlueprintRow : removeBlueprintColumn
   const requireSplitweedFootprints = hasCropPerfection(
@@ -698,10 +702,38 @@ export function revokeLastBlueprintExpansion(game, trackId) {
   )
 
   return {
-    ...game,
     blueprint: blueprintSlots[activeBlueprintSlot],
     blueprintSlots,
     activeBlueprintSlot,
+  }
+}
+
+export function revokeBlueprintSpace(game, trackId) {
+  const removedSpace = removeBlueprintSpace(game, trackId)
+
+  return removedSpace
+    ? {
+        ...game,
+        ...removedSpace,
+      }
+    : null
+}
+
+export function revokeLastBlueprintExpansion(game, trackId) {
+  const track = BLUEPRINT_EXPANSION_TRACKS.find(
+    (candidateTrack) => candidateTrack.id === trackId,
+  )
+  const completedExpansion = [...(track?.stages ?? [])]
+    .reverse()
+    .find((stage) => hasCompletedBlueprintExpansion(game, stage.id))
+
+  if (!completedExpansion) {
+    return null
+  }
+
+  return {
+    ...game,
+    ...removeBlueprintSpace(game, trackId),
     completedBlueprintExpansions: getCompletedBlueprintExpansions(game).filter(
       (expansionId) => expansionId !== completedExpansion.id,
     ),

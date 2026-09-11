@@ -13,6 +13,7 @@ import {
   FORTUNES_WRATH_PASSIVE_MULTIPLIER,
   GAME_AREA_IDS,
 } from './gameConfig.js'
+import { getMisfortuneCropProductionMultiplier } from './misfortuneUpgrades.js'
 
 export const CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS = 60
 export const CLOVER_BUNDLE_MAX_CHANCE = 0.77
@@ -153,6 +154,8 @@ export function getFortuneModifiers(gameOrFortune) {
       passiveEffectMultiplier: FORTUNES_WRATH_PASSIVE_MULTIPLIER,
       cropYieldMultiplier: 1 / FORTUNES_WRATH_CROP_DIVISOR,
       cropProductionExponent: FORTUNES_WRATH_CROP_EXPONENT,
+      cropProductionMultiplier:
+        getMisfortuneCropProductionMultiplier(gameOrFortune),
       harvestMultiplier: 1,
       source: 'fortunesWrath',
     }
@@ -175,6 +178,7 @@ export function getFortuneModifiers(gameOrFortune) {
         cropYieldMultiplier:
           modifiers.cropYieldMultiplier * (effect.cropYieldMultiplier ?? 1),
         cropProductionExponent: modifiers.cropProductionExponent,
+        cropProductionMultiplier: modifiers.cropProductionMultiplier,
         harvestMultiplier:
           modifiers.harvestMultiplier * (effect.harvestMultiplier ?? 1),
       }
@@ -183,6 +187,7 @@ export function getFortuneModifiers(gameOrFortune) {
       passiveEffectMultiplier: 1,
       cropYieldMultiplier: 1,
       cropProductionExponent: 1,
+      cropProductionMultiplier: 1,
       harvestMultiplier: 1,
     },
   )

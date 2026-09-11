@@ -138,6 +138,7 @@ export function CropHoverInspector({
   revealManateeEffects,
   fortune,
   activeArea,
+  completedMisfortuneUpgrades,
   seedAugmentations,
   cursor,
 }) {
@@ -148,7 +149,11 @@ export function CropHoverInspector({
     rowsProducedPerSecond,
     activeHamsters,
     rabbitContractsCompleted,
-    getFortuneModifiers({ fortune, activeArea }),
+    getFortuneModifiers({
+      fortune,
+      activeArea,
+      completedMisfortuneUpgrades,
+    }),
     seedAugmentations,
     totalRabbitRelationsEarned,
   )
@@ -349,6 +354,14 @@ export function CropHoverInspector({
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
                   Crop production ^<FormattedNumber value={effect.exponent} maximumFractionDigits={2} /> from Fortune&apos;s Wrath
+                </li>
+              )
+            }
+
+            if (effect.type === 'misfortune-upgrade-production') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop production from Unfortunate Row
                 </li>
               )
             }

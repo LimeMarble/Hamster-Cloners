@@ -1,6 +1,9 @@
 import {
   createBlueprint,
   createFarmlandMultipliers,
+  grantBlueprintSpace,
+  revokeBlueprintSpace,
+  resetFarmlandUnits,
 } from './blueprintLogic.js'
 import {
   BLUEPRINT_EXPANSIONS,
@@ -9,6 +12,12 @@ import {
   GAME_AREA_IDS,
   MISFORTUNE_BLUEPRINT_EXPANSION_MODIFIER,
 } from './gameConfig.js'
+import {
+  createInitialMisfortuneUpgradeState,
+  hasMisfortuneUpgrade,
+  MISFORTUNE_UPGRADE_IDS,
+  unlockMisfortuneUpgrade,
+} from './misfortuneUpgrades.js'
 
 const VALID_EXPANSION_IDS = new Set(
   BLUEPRINT_EXPANSIONS.map(({ id }) => id),
@@ -181,20 +190,93 @@ export function getMisfortuneAreaCrops(game) {
   return toNonNegativeNumber(game.areaProgress?.misfortune?.crops)
 }
 
+function resetAreaAndGrantBlueprintRow(game, areaState, areaId) {
+  const scopedGame = {
+    ...game,
+    ...areaState,
+    activeArea: areaId,
+    crops: 0,
+    farmland: resetFarmlandUnits(areaState.farmland),
+  }
+  const expandedGame = grantBlueprintSpace(scopedGame, 'row')
+
+  return captureCurrentAreaState(expandedGame ?? scopedGame)
+}
+
+export function purchaseMisfortuneUpgrade(game, upgradeId) {
+  const purchasedGame = unlockMisfortuneUpgrade(game, upgradeId)
+
+  if (
+    !purchasedGame ||
+    upgradeId !== MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW
+  ) {
+    return null
+  }
+
+  const currentMisfortuneState = captureCurrentAreaState(purchasedGame)
+  const resetMisfortuneState = resetAreaAndGrantBlueprintRow(
+    purchasedGame,
+    currentMisfortuneState,
+    GAME_AREA_IDS.MISFORTUNE,
+  )
+  const storedMainState = purchasedGame.areaProgress?.main
+  const resetMainState = storedMainState
+    ? resetAreaAndGrantBlueprintRow(
+        purchasedGame,
+        normalizeStoredAreaState(storedMainState),
+        GAME_AREA_IDS.MAIN,
+      )
+    : null
+
+  return {
+    ...purchasedGame,
+    ...resetMisfortuneState,
+    activeArea: GAME_AREA_IDS.MISFORTUNE,
+    areaProgress: {
+      main: resetMainState,
+      misfortune: null,
+    },
+  }
+}
+
 export function wipeMisfortuneAreaProgress(game) {
+  const hasUnfortunateRow = hasMisfortuneUpgrade(
+    game,
+    MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+  )
+  const storedMainState = game.areaProgress?.main
+  const cleanedStoredMainState =
+    hasUnfortunateRow && storedMainState
+      ? captureCurrentAreaState(
+          revokeBlueprintSpace(
+            {
+              ...game,
+              ...normalizeStoredAreaState(storedMainState),
+              activeArea: GAME_AREA_IDS.MAIN,
+            },
+            'row',
+          ),
+        )
+      : storedMainState ?? null
   const clearedAreaProgress = {
-    main: game.areaProgress?.main ?? null,
+    main: cleanedStoredMainState,
     misfortune: null,
   }
 
   if (!isMisfortuneAreaActive(game)) {
+    const cleanedCurrentGame = hasUnfortunateRow
+      ? revokeBlueprintSpace(game, 'row')
+      : game
+
     return {
-      ...game,
+      ...cleanedCurrentGame,
       floorReplicators: canPurchaseFloorReplicatorsInArea(
         GAME_AREA_IDS.MAIN,
       )
         ? game.floorReplicators
         : 0,
+      completedMisfortuneUpgrades:
+        createInitialMisfortuneUpgradeState(),
       areaProgress: clearedAreaProgress,
     }
   }
@@ -207,6 +289,8 @@ export function wipeMisfortuneAreaProgress(game) {
     )
       ? game.floorReplicators
       : 0,
+    completedMisfortuneUpgrades:
+      createInitialMisfortuneUpgradeState(),
     areaProgress: clearedAreaProgress,
   }
 }

@@ -46,14 +46,48 @@
   line-height: 1.65;
 }
 
-.misfortune-upgrades-empty {
+.misfortune-upgrades {
   margin: 20px 0;
-  padding: 18px;
-  border: 1px dashed #76343a;
-  background: #1d1113;
 }
 
-.misfortune-upgrades-empty p:last-child {
+.misfortune-upgrade-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px;
+  border: 1px solid #8f516d;
+  background: linear-gradient(135deg, #371c2a, #211823);
+}
+
+.misfortune-upgrade-card h2 {
+  margin: 0;
+  color: #f0b6cf;
+}
+
+.misfortune-upgrade-card p {
+  max-width: 520px;
   margin: 8px 0 0;
   color: var(--text-muted);
+}
+
+.misfortune-upgrade-card .misfortune-upgrade-note {
+  color: #c99bb0;
+  font-size: 0.78rem;
+}
+
+.misfortune-upgrade-card > button {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+@media (max-width: 640px) {
+  .misfortune-upgrade-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .misfortune-upgrade-card > button {
+    width: 100%;
+  }
 }

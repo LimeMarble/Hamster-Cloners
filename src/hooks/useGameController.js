@@ -1,8 +1,12 @@
 import { useRef } from 'react'
 import {
   canPurchaseFloorReplicatorsInArea,
+  canUnlockMisfortuneUpgrade,
   collectCloverBundle,
+  hasMisfortuneUpgrade,
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
+  MISFORTUNE_UPGRADE_IDS,
+  MISFORTUNE_UPGRADES,
 } from '../game/gameLogic.js'
 import { useBlueprintEditor } from './useBlueprintEditor.js'
 import { useGameActions } from './useGameActions.js'
@@ -155,6 +159,18 @@ export function useGameController() {
         ...actions.augmentationActions,
       },
       misfortune: {
+        unfortunateRow: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW
+        ],
+        hasUnfortunateRow: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+        ),
+        canUnlockUnfortunateRow: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+        ),
+        onUnlockUnfortunateRow: actions.onUnlockUnfortunateRow,
         onLeave: actions.onLeaveMisfortuneArea,
       },
       inventions: {

@@ -38,6 +38,10 @@ import {
   GAME_AREA_IDS,
   MISFORTUNE_AREA_STATE_VERSION,
 } from './gameConfig.js'
+import {
+  MISFORTUNE_UPGRADE_IDS,
+  normalizeMisfortuneUpgrades,
+} from './misfortuneUpgrades.js'
 
 export const DEFAULT_SAVE_KEY = 'hamster-cloners-save-v1'
 export const SAVE_KEY =
@@ -162,6 +166,9 @@ export function normalizeGame(rawGame) {
   const activeArea = rawGame.activeArea === GAME_AREA_IDS.MISFORTUNE
     ? GAME_AREA_IDS.MISFORTUNE
     : GAME_AREA_IDS.MAIN
+  const completedMisfortuneUpgrades = normalizeMisfortuneUpgrades(
+    rawGame.completedMisfortuneUpgrades,
+  )
   const shouldResetMisfortuneProgress =
     rawGame.misfortuneAreaStateVersion !== MISFORTUNE_AREA_STATE_VERSION
   const hasSeparatedAreaCropUnlocks =
@@ -330,7 +337,13 @@ export function normalizeGame(rawGame) {
         0,
         (track.id === 'row' ? blueprint.rows : blueprint.columns) -
           1 -
-          rabbitBlueprintExpansions[track.id],
+          rabbitBlueprintExpansions[track.id] -
+          (track.id === 'row' &&
+          completedMisfortuneUpgrades.includes(
+            MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+          )
+            ? 1
+            : 0),
       )
 
       track.stages.forEach((stage, stageIndex) => {
@@ -409,6 +422,7 @@ export function normalizeGame(rawGame) {
     misfortuneAreaStateVersion: MISFORTUNE_AREA_STATE_VERSION,
     activeArea,
     areaProgress,
+    completedMisfortuneUpgrades,
     blueprintExpansionAxesSwapped: true,
     completedBlueprintExpansions: BLUEPRINT_EXPANSIONS.map(
       (expansion) => expansion.id,

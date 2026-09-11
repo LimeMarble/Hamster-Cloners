@@ -31,7 +31,13 @@ export function MisfortuneStatus() {
   )
 }
 
-export function Misfortune({ onLeave }) {
+export function Misfortune({
+  unfortunateRow,
+  hasUnfortunateRow,
+  canUnlockUnfortunateRow,
+  onUnlockUnfortunateRow,
+  onLeave,
+}) {
   return (
     <section className="misfortune-panel" aria-labelledby="misfortune-title">
       <p className="eyebrow">Demonstration 2 challenge area</p>
@@ -46,13 +52,38 @@ export function Misfortune({ onLeave }) {
         Its −1 Row and −1 Column modifiers offset the two Rabbit expansion
         rewards, so the untouched Misfortune blueprint begins at 1×1.
       </p>
-      <div className="misfortune-upgrades-empty">
+      <div className="misfortune-upgrades">
         <p className="eyebrow">Permanent upgrades</p>
-        <h2>Nothing discovered yet</h2>
-        <p>
-          Misfortune upgrades will appear here once their effects and prices
-          have been defined.
-        </p>
+        <article className="misfortune-upgrade-card">
+          <div>
+            <h2>Unfortunate Row</h2>
+            <p>
+              Misfortune Crop production /4. Purchasing resets Crops and
+              field growth in both areas, then gives the blueprints in both
+              areas one permanent Row.
+            </p>
+            <p className="misfortune-upgrade-note">
+              Cost: <FormattedNumber value={unfortunateRow.cost} /> Crops.
+              This choice is permanent until Misfortune progress is wiped.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={hasUnfortunateRow ? 'secondary-button' : 'primary-button'}
+            onClick={onUnlockUnfortunateRow}
+            disabled={hasUnfortunateRow || !canUnlockUnfortunateRow}
+          >
+            {hasUnfortunateRow
+              ? 'Accepted'
+              : canUnlockUnfortunateRow
+                ? 'Accept Unfortunate Row'
+                : (
+                    <>
+                      Need <FormattedNumber value={unfortunateRow.cost} /> Crops
+                    </>
+                  )}
+          </button>
+        </article>
       </div>
       <button type="button" className="secondary-button" onClick={onLeave}>
         Return to main field

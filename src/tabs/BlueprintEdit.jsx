@@ -375,6 +375,9 @@ function BlueprintEditContent({
             revealManateeEffects={revealManateeEffects}
             fortune={game.fortune}
             activeArea={game.activeArea}
+            completedMisfortuneUpgrades={
+              game.completedMisfortuneUpgrades
+            }
             seedAugmentations={game.seedAugmentations}
             cursor={hoveredEditorCrop}
           />

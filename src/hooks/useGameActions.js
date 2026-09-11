@@ -23,11 +23,13 @@ import {
   GAME_AREA_IDS,
   hasCompletedCapybaraDemonstration,
   MANATEE_ZONE_IDS,
+  MISFORTUNE_UPGRADE_IDS,
   resetForBlueprintExpansion,
   resetForRowDuplicators,
   switchGameArea,
   startManateeSurvey,
   purchaseRabbitUnlock,
+  purchaseMisfortuneUpgrade,
   purchaseSeedAugmentation,
   toggleSeedAugmentation,
   toggleWetlandsConnectionObstruction,
@@ -369,6 +371,23 @@ export function useGameActions({
     setActiveTab('field')
   }
 
+  function unlockUnfortunateRow() {
+    const didConfirm = window.confirm(
+      'Accept Unfortunate Row for 250k Crops? This resets Crops and field growth in both the main and Misfortune areas, then grants the blueprints in both areas one permanent Row.',
+    )
+
+    if (!didConfirm) {
+      return
+    }
+
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+      ) ?? currentGame,
+    )
+  }
+
   function startMarshSurvey(surveyId, lengthId, allocatedHamsters) {
     updateGame((currentGame) =>
       startManateeSurvey(
@@ -523,6 +542,7 @@ export function useGameActions({
       : null,
     isRowDuplicatorUnlockPending,
     onLeaveMisfortuneArea: leaveMisfortuneArea,
+    onUnlockUnfortunateRow: unlockUnfortunateRow,
     options: {
       saveCode,
       onSaveCodeChange: setSaveCode,
