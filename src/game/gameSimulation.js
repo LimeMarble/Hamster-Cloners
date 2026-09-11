@@ -36,6 +36,10 @@ import {
   getManateeAssignedHamsterCount,
 } from './manateeLogic.js'
 import { advanceWetlandsConnectionState } from './wetlandsConnectionState.js'
+import {
+  getRushedStartExternalMultiplier,
+  RUSHED_START_TOTAL_DURATION_SECONDS,
+} from './misfortuneUpgrades.js'
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
   SIMULATION_TICK_INTERVAL_MS / 1000
@@ -90,12 +94,18 @@ export function advanceGameSimulationStep(
 
   const nextPlaytimeSeconds =
     (Number(currentGame.playtimeSeconds) || 0) + safeElapsedSeconds
+  const nextSecondsSinceAreaReset = Math.min(
+    RUSHED_START_TOTAL_DURATION_SECONDS,
+    Math.max(0, Number(currentGame.secondsSinceAreaReset) || 0) +
+      safeElapsedSeconds,
+  )
 
   if (isEditingBlueprint) {
     return advanceFortuneState(
       {
         ...currentGame,
         playtimeSeconds: nextPlaytimeSeconds,
+        secondsSinceAreaReset: nextSecondsSinceAreaReset,
       },
       safeElapsedSeconds,
       random,
@@ -103,6 +113,8 @@ export function advanceGameSimulationStep(
   }
 
   const fortuneModifiers = getFortuneModifiers(currentGame)
+  const rushedStartExternalMultiplier =
+    getRushedStartExternalMultiplier(currentGame)
   const manateeSurveyDurationMultiplier =
     getBlazingCarrotSurveyDurationMultiplier(
       currentGame.blueprint,
@@ -143,12 +155,12 @@ export function advanceGameSimulationStep(
         currentGame.rowDuplicators,
         rowDuplicatorEffectivenessMultiplier,
         getRowDuplicatorExternalMultiplier(
-          hasRabbitUnlock(
+          (hasRabbitUnlock(
             currentGame,
             RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
           )
             ? 2
-            : 1,
+            : 1) * rushedStartExternalMultiplier,
         ),
       )
     : 0
@@ -181,12 +193,16 @@ export function advanceGameSimulationStep(
       )
         ? 3
         : 1) *
-      getCapybaraHamsterEfficiencyMultiplier(currentGame),
+      getCapybaraHamsterEfficiencyMultiplier(currentGame) *
+        rushedStartExternalMultiplier,
     currentGame.hamsters,
   )
   const rowsProducedForTick = rowsBuiltPerSecond * safeElapsedSeconds
   const floorsProducedForTick = currentGame.hasUnlockedFloorReplicators
-    ? getFloorsProducedPerSecond(currentGame.floorReplicators) *
+    ? getFloorsProducedPerSecond(
+      currentGame.floorReplicators,
+      rushedStartExternalMultiplier,
+    ) *
       safeElapsedSeconds
     : 0
   const hasUnlockedRootTunnel =
@@ -230,6 +246,7 @@ export function advanceGameSimulationStep(
       (Number(currentGame.totalCropsMade) || 0) +
       Math.max(0, productionForTick),
     playtimeSeconds: nextPlaytimeSeconds,
+    secondsSinceAreaReset: nextSecondsSinceAreaReset,
     hasUnlockedTurnip:
       currentGame.hasUnlockedTurnip ||
       nextCrops >= TURNIP_UNLOCK_CROP_COUNT,

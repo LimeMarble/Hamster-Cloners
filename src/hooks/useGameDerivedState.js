@@ -17,6 +17,7 @@ import {
   getHamsterExternalMultiplier,
   isMisfortuneAreaActive,
   getFloorReplicatorCoordinationMultiplier,
+  getFloorReplicatorExternalMultiplier,
   getFloorsProducedPerSecond,
   getManateeSurveyingHamsterCount,
   getUnlockedManateeCropIds,
@@ -30,6 +31,7 @@ import {
   getRowsProducedPerSecond,
   getRowDuplicatorCoordinationMultiplier,
   getUnlockedBlueprintSlotCount,
+  getRushedStartExternalMultiplier,
   hasReachedMonocropLimit,
   hasRabbitUnlock,
   hasSeedAugmentation,
@@ -43,6 +45,8 @@ import { getMonocropThreshold } from '../game/monocropPenalty.js'
 import { formatWholeNumber } from '../game/numberFormat.js'
 
 export function useGameDerivedState(game) {
+  const rushedStartExternalMultiplier =
+    getRushedStartExternalMultiplier(game)
   const fortuneModifiers = useMemo(
     () =>
       getFortuneModifiers({
@@ -149,7 +153,8 @@ export function useGameDerivedState(game) {
       (hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY)
         ? 3
         : 1) *
-      getCapybaraHamsterEfficiencyMultiplier(game),
+      getCapybaraHamsterEfficiencyMultiplier(game) *
+      rushedStartExternalMultiplier,
   )
   const nextRowDuplicatorCost = useMemo(
     () =>
@@ -172,12 +177,21 @@ export function useGameDerivedState(game) {
       getFloorReplicatorCoordinationMultiplier(game.floorReplicators),
     [game.floorReplicators],
   )
+  const floorReplicatorExternalMultiplier =
+    getFloorReplicatorExternalMultiplier(rushedStartExternalMultiplier)
   const floorsBuiltPerSecond = useMemo(
     () =>
       game.hasUnlockedFloorReplicators
-        ? getFloorsProducedPerSecond(game.floorReplicators)
+        ? getFloorsProducedPerSecond(
+            game.floorReplicators,
+            floorReplicatorExternalMultiplier,
+          )
         : 0,
-    [game.floorReplicators, game.hasUnlockedFloorReplicators],
+    [
+      floorReplicatorExternalMultiplier,
+      game.floorReplicators,
+      game.hasUnlockedFloorReplicators,
+    ],
   )
   const rowDuplicatorEffectivenessMultiplier = useMemo(
     () =>
@@ -202,12 +216,12 @@ export function useGameDerivedState(game) {
   )
   const rowDuplicatorExternalMultiplier =
     getRowDuplicatorExternalMultiplier(
-      hasRabbitUnlock(
+      (hasRabbitUnlock(
         game,
         RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
       )
         ? 2
-        : 1,
+        : 1) * rushedStartExternalMultiplier,
     )
   const rowsBuiltPerSecond = useMemo(
     () =>
@@ -405,6 +419,7 @@ export function useGameDerivedState(game) {
     nextRowDuplicatorCost,
     nextFloorReplicatorCost,
     floorReplicatorCoordinationMultiplier,
+    floorReplicatorExternalMultiplier,
     floorsBuiltPerSecond,
     rowDuplicatorEffectivenessMultiplier,
     rowDuplicatorCoordinationMultiplier,

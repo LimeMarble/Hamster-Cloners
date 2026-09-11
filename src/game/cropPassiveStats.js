@@ -217,6 +217,7 @@ export function getCropPassiveStats({
       blueprint,
       completedCropPerfections,
       passiveEffectMultiplier,
+      seedAugmentations,
     )
 
     if (gourdEffect.multiplier !== 1) {

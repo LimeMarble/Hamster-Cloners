@@ -11,6 +11,7 @@ import {
   getBlueprintCropStats,
   getCropHamsterEfficiencyMultiplier,
   getLeekAugmentationYieldBonus,
+  getLeechingGourdTurnipEffect,
   getMirrorCornEffectMultiplier,
   getMirrorCornMaximumReflections,
   getNextSeedAugmentationCost,
@@ -260,6 +261,84 @@ test('Mirror Corn augmentations use their prices and change each Corn rule', () 
       SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL,
     ),
     null,
+  )
+})
+
+test('Mirror Corn contributes to Leeching Gourd unless debuff removal is active', () => {
+  const blueprint = createBlueprint({
+    rows: 3,
+    columns: 3,
+    cells: [
+      'leechingGourd',
+      'leechingGourdPart',
+      'corn',
+      'leechingGourdPart',
+      'leechingGourdPart',
+      null,
+      null,
+      null,
+      null,
+    ],
+  })
+  const inactiveAugmentation = {
+    mirrorCornDebuffRemovalUnlocked: true,
+    mirrorCornDebuffRemovalEnabled: false,
+  }
+  const activeAugmentation = {
+    ...inactiveAugmentation,
+    mirrorCornDebuffRemovalEnabled: true,
+  }
+
+  assert.equal(
+    getLeechingGourdTurnipEffect(
+      blueprint,
+      ['mirrorCorn', 'leechingGourd'],
+    ).debuffContribution,
+    1,
+  )
+  assert.equal(
+    getLeechingGourdTurnipEffect(
+      blueprint,
+      ['mirrorCorn', 'leechingGourd'],
+      1,
+      inactiveAugmentation,
+    ).debuffContribution,
+    1,
+  )
+  assert.equal(
+    getLeechingGourdTurnipEffect(
+      blueprint,
+      ['mirrorCorn', 'leechingGourd'],
+      1,
+      activeAugmentation,
+    ).debuffContribution,
+    0,
+  )
+  assert.equal(
+    getBlueprintCropStats(
+      blueprint,
+      0,
+      ['mirrorCorn', 'leechingGourd'],
+      0,
+      0,
+      0,
+      {},
+      inactiveAugmentation,
+    ).passiveStats.find(({ id }) => id === 'turnip-effectiveness').value,
+    1.05,
+  )
+  assert.equal(
+    getBlueprintCropStats(
+      blueprint,
+      0,
+      ['mirrorCorn', 'leechingGourd'],
+      0,
+      0,
+      0,
+      {},
+      activeAugmentation,
+    ).passiveStats.some(({ id }) => id === 'turnip-effectiveness'),
+    false,
   )
 })
 

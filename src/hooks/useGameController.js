@@ -136,6 +136,8 @@ export function useGameController() {
               nextFloorReplicatorCost: derived.nextFloorReplicatorCost,
               floorReplicatorCoordinationMultiplier:
                 derived.floorReplicatorCoordinationMultiplier,
+              floorReplicatorExternalMultiplier:
+                derived.floorReplicatorExternalMultiplier,
               floorsBuiltPerSecond: derived.floorsBuiltPerSecond,
               onBuyFloorReplicator:
                 actions.purchaseActions.onBuyFloorReplicator,
@@ -171,6 +173,18 @@ export function useGameController() {
           MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
         ),
         onUnlockUnfortunateRow: actions.onUnlockUnfortunateRow,
+        rushedStart: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.RUSHED_START
+        ],
+        hasRushedStart: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.RUSHED_START,
+        ),
+        canUnlockRushedStart: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.RUSHED_START,
+        ),
+        onUnlockRushedStart: actions.onUnlockRushedStart,
         onLeave: actions.onLeaveMisfortuneArea,
       },
       inventions: {

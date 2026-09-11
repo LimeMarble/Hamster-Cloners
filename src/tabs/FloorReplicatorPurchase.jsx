@@ -6,6 +6,7 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
   floorReplicators,
   nextFloorReplicatorCost,
   floorReplicatorCoordinationMultiplier,
+  floorReplicatorExternalMultiplier,
   floorsBuiltPerSecond,
 }) {
   return (
@@ -44,6 +45,15 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
             />
           </dd>
         </div>
+        <div>
+          <dt>External multipliers</dt>
+          <dd>
+            ×<FormattedNumber
+              value={floorReplicatorExternalMultiplier}
+              maximumFractionDigits={2}
+            />
+          </dd>
+        </div>
       </dl>
       <p className="card-copy">
         Next ×2 tier at{' '}
@@ -74,6 +84,7 @@ export function FloorReplicatorPurchase({
   game,
   nextFloorReplicatorCost,
   floorReplicatorCoordinationMultiplier,
+  floorReplicatorExternalMultiplier,
   floorsBuiltPerSecond,
   onBuyFloorReplicator,
   onBuyMaxFloorReplicators,
@@ -87,6 +98,9 @@ export function FloorReplicatorPurchase({
         nextFloorReplicatorCost={nextFloorReplicatorCost}
         floorReplicatorCoordinationMultiplier={
           floorReplicatorCoordinationMultiplier
+        }
+        floorReplicatorExternalMultiplier={
+          floorReplicatorExternalMultiplier
         }
         floorsBuiltPerSecond={floorsBuiltPerSecond}
       />

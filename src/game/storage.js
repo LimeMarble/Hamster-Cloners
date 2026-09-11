@@ -41,6 +41,7 @@ import {
 import {
   MISFORTUNE_UPGRADE_IDS,
   normalizeMisfortuneUpgrades,
+  RUSHED_START_TOTAL_DURATION_SECONDS,
 } from './misfortuneUpgrades.js'
 
 export const DEFAULT_SAVE_KEY = 'hamster-cloners-save-v1'
@@ -364,6 +365,13 @@ export function normalizeGame(rawGame) {
       toNonNegativeNumber(rawGame.crops, 0),
     ),
     playtimeSeconds: toNonNegativeNumber(rawGame.playtimeSeconds, 0),
+    secondsSinceAreaReset: Math.min(
+      RUSHED_START_TOTAL_DURATION_SECONDS,
+      toNonNegativeNumber(
+        rawGame.secondsSinceAreaReset,
+        RUSHED_START_TOTAL_DURATION_SECONDS,
+      ),
+    ),
     hamsters: toNonNegativeInteger(rawGame.hamsters, initialGame.hamsters),
     totalHamstersHired: toNonNegativeInteger(
       rawGame.totalHamstersHired,

@@ -566,6 +566,10 @@ export function getLeechingGourdTurnipEffect(
       const definition = CROP_DEFINITIONS[crop]
       const perfection = getCropPerfection(crop, completedCropPerfections)
       const effectDefinition = perfection ?? definition
+      const isDebuffedMirrorCorn =
+        crop === 'corn' &&
+        perfection?.id === 'mirrorCorn' &&
+        !isMirrorCornDebuffRemovalEnabled(seedAugmentations)
 
       if (crop === 'shoalGrass' && adjacencyDistance === 0) {
         const networkSize = shoalGrassNetworkSizes.get(index) ?? 1
@@ -581,7 +585,7 @@ export function getLeechingGourdTurnipEffect(
         ]
       }
 
-      if (!effectDefinition?.hasDebuff) {
+      if (!effectDefinition?.hasDebuff && !isDebuffedMirrorCorn) {
         return []
       }
 

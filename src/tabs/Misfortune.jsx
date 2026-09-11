@@ -18,6 +18,8 @@ export function MisfortuneStatus() {
         />
       </span>
       <span>Machinery costs ×100</span>
+      <span>Blueprint Rows −1</span>
+      <span>Blueprint Columns −1</span>
       <span>
         Crop passives −
         <FormattedNumber
@@ -36,6 +38,10 @@ export function Misfortune({
   hasUnfortunateRow,
   canUnlockUnfortunateRow,
   onUnlockUnfortunateRow,
+  rushedStart,
+  hasRushedStart,
+  canUnlockRushedStart,
+  onUnlockRushedStart,
   onLeave,
 }) {
   return (
@@ -48,19 +54,15 @@ export function Misfortune({
         unlocks. Floor Replicators and other permanent progression are shared
         with the main field.
       </p>
-      <p>
-        Its −1 Row and −1 Column modifiers offset the two Rabbit expansion
-        rewards, so the untouched Misfortune blueprint begins at 1×1.
-      </p>
       <div className="misfortune-upgrades">
         <p className="eyebrow">Permanent upgrades</p>
         <article className="misfortune-upgrade-card">
           <div>
             <h2>Unfortunate Row</h2>
             <p>
-              Misfortune Crop production /1.25. Purchasing resets Crops and
-              field growth in both areas, then gives the blueprints in both
-              areas one permanent Row.
+              Crop production /1.25 in both areas. Purchasing resets Crops
+              and field growth in both areas, then gives the blueprints in
+              both areas one permanent Row.
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={unfortunateRow.cost} /> Crops.
@@ -80,6 +82,36 @@ export function Misfortune({
                 : (
                     <>
                       Need <FormattedNumber value={unfortunateRow.cost} /> Crops
+                    </>
+                  )}
+          </button>
+        </article>
+        <article className="misfortune-upgrade-card">
+          <div>
+            <h2>Rushed Start</h2>
+            <p>
+              After every field reset, external Column, Row, and Floor
+              production is ×10 for 60 seconds, then ÷2 for 60 seconds before
+              returning to normal. This applies in both field areas.
+            </p>
+            <p className="misfortune-upgrade-note">
+              Cost: <FormattedNumber value={rushedStart.cost} /> Crops. This
+              choice is permanent until Misfortune progress is wiped.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={hasRushedStart ? 'secondary-button' : 'primary-button'}
+            onClick={onUnlockRushedStart}
+            disabled={hasRushedStart || !canUnlockRushedStart}
+          >
+            {hasRushedStart
+              ? 'Accepted'
+              : canUnlockRushedStart
+                ? 'Accept Rushed Start'
+                : (
+                    <>
+                      Need <FormattedNumber value={rushedStart.cost} /> Crops
                     </>
                   )}
           </button>

@@ -130,6 +130,7 @@ export function createInitialGame() {
     crops: STARTING_CROPS,
     totalCropsMade: 0,
     playtimeSeconds: 0,
+    secondsSinceAreaReset: 0,
     hamsters: 0,
     totalHamstersHired: 0,
     unionized: false,
@@ -421,6 +422,7 @@ export function resetForRowDuplicators(game) {
   return {
     ...game,
     crops: 0,
+    secondsSinceAreaReset: 0,
     hasUnlockedRowDuplicators: true,
     farmland: resetFarmlandUnits(game.farmland),
   }
@@ -753,6 +755,7 @@ export function resetForBlueprintExpansion(game, expansionId) {
     ...game,
     ...applyBlueprintExpansion(game, expansion),
     crops: 0,
+    secondsSinceAreaReset: 0,
     farmland: resetFarmlandUnits(game.farmland),
   }
 }

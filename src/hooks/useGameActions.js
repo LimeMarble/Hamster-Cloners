@@ -388,6 +388,15 @@ export function useGameActions({
     )
   }
 
+  function unlockRushedStart() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.RUSHED_START,
+      ) ?? currentGame,
+    )
+  }
+
   function startMarshSurvey(surveyId, lengthId, allocatedHamsters) {
     updateGame((currentGame) =>
       startManateeSurvey(
@@ -544,6 +553,7 @@ export function useGameActions({
     isRowDuplicatorUnlockPending,
     onLeaveMisfortuneArea: leaveMisfortuneArea,
     onUnlockUnfortunateRow: unlockUnfortunateRow,
+    onUnlockRushedStart: unlockRushedStart,
     options: {
       saveCode,
       onSaveCodeChange: setSaveCode,

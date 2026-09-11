@@ -850,7 +850,10 @@ export function getRowsProducedPerSecond(
   )
 }
 
-export function getFloorsProducedPerSecond(floorReplicators = 0) {
+export function getFloorsProducedPerSecond(
+  floorReplicators = 0,
+  floorReplicatorExternalMultiplier = 1,
+) {
   const safeFloorReplicators = Math.max(
     0,
     Math.floor(Number(floorReplicators) || 0),
@@ -859,7 +862,8 @@ export function getFloorsProducedPerSecond(floorReplicators = 0) {
   return (
     safeFloorReplicators *
     FLOORS_PER_FLOOR_REPLICATOR_PER_SECOND *
-    getFloorReplicatorCoordinationMultiplier(safeFloorReplicators)
+    getFloorReplicatorCoordinationMultiplier(safeFloorReplicators) *
+    getFloorReplicatorExternalMultiplier(floorReplicatorExternalMultiplier)
   )
 }
 
@@ -906,6 +910,11 @@ export function getHamsterExternalMultiplier(multiplier = 1) {
 
 // Future inventions and other global Row construction effects belong here.
 export function getRowDuplicatorExternalMultiplier(multiplier = 1) {
+  return Math.max(0, Number(multiplier) || 0)
+}
+
+// Kept separate so future Floor-only effects do not leak into other machinery.
+export function getFloorReplicatorExternalMultiplier(multiplier = 1) {
   return Math.max(0, Number(multiplier) || 0)
 }
 

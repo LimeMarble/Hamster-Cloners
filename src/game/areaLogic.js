@@ -16,6 +16,7 @@ import {
   createInitialMisfortuneUpgradeState,
   hasMisfortuneUpgrade,
   MISFORTUNE_UPGRADE_IDS,
+  RUSHED_START_TOTAL_DURATION_SECONDS,
   unlockMisfortuneUpgrade,
 } from './misfortuneUpgrades.js'
 
@@ -49,6 +50,16 @@ function toNonNegativeNumber(value, fallback = 0) {
 
 function toNonNegativeInteger(value, fallback = 0) {
   return Math.floor(toNonNegativeNumber(value, fallback))
+}
+
+function normalizeSecondsSinceAreaReset(
+  value,
+  fallback = RUSHED_START_TOTAL_DURATION_SECONDS,
+) {
+  return Math.min(
+    RUSHED_START_TOTAL_DURATION_SECONDS,
+    toNonNegativeNumber(value, fallback),
+  )
 }
 
 function getAreaCropUnlockState(source = {}, fallback = {}) {
@@ -92,6 +103,7 @@ export function createInitialMisfortuneAreaState(
 
   return {
     crops: 0,
+    secondsSinceAreaReset: 0,
     hamsters: 1,
     rowDuplicators: 0,
     ...getAreaCropUnlockState(),
@@ -108,6 +120,10 @@ export function createInitialMisfortuneAreaState(
 export function captureCurrentAreaState(game) {
   return {
     crops: toNonNegativeNumber(game.crops),
+    secondsSinceAreaReset: normalizeSecondsSinceAreaReset(
+      game.secondsSinceAreaReset,
+      RUSHED_START_TOTAL_DURATION_SECONDS,
+    ),
     hamsters: toNonNegativeInteger(game.hamsters),
     rowDuplicators: toNonNegativeInteger(game.rowDuplicators),
     ...getAreaCropUnlockState(game),
@@ -156,6 +172,12 @@ export function normalizeStoredAreaState(rawArea, fallbackArea) {
 
   return {
     crops: toNonNegativeNumber(source.crops, fallback.crops),
+    secondsSinceAreaReset: normalizeSecondsSinceAreaReset(
+      source.secondsSinceAreaReset,
+      rawArea && typeof rawArea === 'object'
+        ? RUSHED_START_TOTAL_DURATION_SECONDS
+        : fallback.secondsSinceAreaReset,
+    ),
     hamsters: toNonNegativeInteger(source.hamsters, fallback.hamsters),
     rowDuplicators: toNonNegativeInteger(
       source.rowDuplicators,
@@ -196,6 +218,7 @@ function resetAreaAndGrantBlueprintRow(game, areaState, areaId) {
     ...areaState,
     activeArea: areaId,
     crops: 0,
+    secondsSinceAreaReset: 0,
     farmland: resetFarmlandUnits(areaState.farmland),
   }
   const expandedGame = grantBlueprintSpace(scopedGame, 'row')
@@ -206,11 +229,12 @@ function resetAreaAndGrantBlueprintRow(game, areaState, areaId) {
 export function purchaseMisfortuneUpgrade(game, upgradeId) {
   const purchasedGame = unlockMisfortuneUpgrade(game, upgradeId)
 
-  if (
-    !purchasedGame ||
-    upgradeId !== MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW
-  ) {
+  if (!purchasedGame) {
     return null
+  }
+
+  if (upgradeId !== MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW) {
+    return purchasedGame
   }
 
   const currentMisfortuneState = captureCurrentAreaState(purchasedGame)
