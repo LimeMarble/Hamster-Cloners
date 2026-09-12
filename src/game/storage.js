@@ -12,6 +12,7 @@ import {
 import { normalizeSeedAugmentationState } from './augmentationLogic.js'
 import { normalizeManateeState } from './manateeLogic.js'
 import { normalizeMangroveSaplingCells } from './mangroveSaplingLogic.js'
+import { normalizeBlueprintBlocks } from './blueprintBlockLogic.js'
 import {
   BLUEPRINT_EXPANSIONS,
   BLUEPRINT_EXPANSION_TRACKS,
@@ -302,6 +303,7 @@ export function normalizeGame(rawGame) {
               cells: rawSlot.cells,
               mirrorCornTargets: rawSlot.mirrorCornTargets,
               rootTunnelConnections: rawSlot.rootTunnelConnections,
+              leechingVines: rawSlot.leechingVines,
               requireSplitweedFootprints:
                 completedCropPerfections.includes('splitweed'),
             }),
@@ -443,6 +445,7 @@ export function normalizeGame(rawGame) {
     rabbitBlueprintExpansions,
     blueprint: activeBlueprint,
     blueprintSlots,
+    blueprintBlocks: normalizeBlueprintBlocks(rawGame.blueprintBlocks),
     activeBlueprintSlot,
     farmland,
   }

@@ -30,6 +30,10 @@ function areTilesOrthogonallyAdjacent(blueprint, leftIndex, rightIndex) {
   return getOrthogonalIndexes(blueprint, leftIndex).includes(rightIndex)
 }
 
+export function canLeechingVineOccupyTile(crop) {
+  return crop === null || crop === 'rootTunnel'
+}
+
 export function getLeechingVineStartIndexes(blueprint) {
   const anchorIndex = blueprint.cells.indexOf('leechingGourd')
   if (anchorIndex < 0) return []
@@ -42,7 +46,8 @@ export function getLeechingVineStartIndexes(blueprint) {
   )]
     .filter(
       (index) =>
-        !footprintIndexes.has(index) && blueprint.cells[index] === null,
+        !footprintIndexes.has(index) &&
+        canLeechingVineOccupyTile(blueprint.cells[index]),
     )
     .sort((left, right) => left - right)
 }
@@ -58,7 +63,7 @@ function normalizeVine(blueprint, rawVine) {
     const previousIndex = path.at(-1)
     const isValidNextTile =
       index !== null &&
-      blueprint.cells[index] === null &&
+      canLeechingVineOccupyTile(blueprint.cells[index]) &&
       !claimedIndexes.has(index) &&
       (path.length === 0
         ? startIndexes.has(index)

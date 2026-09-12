@@ -23,6 +23,7 @@ import {
   exportBlueprint,
   importBlueprint,
 } from '../src/game/blueprintTransfer.js'
+import { exportGame, importGame } from '../src/game/storage.js'
 
 const COMPLETED_PERFECTIONS = [
   'leechingGourd',
@@ -215,4 +216,51 @@ test('blueprint transfer preserves unlocked vines and rejects them while locked'
     path: [27, 33, 34, 35],
     targetIndexes: [26, 32],
   }])
+})
+
+test('game saves preserve vines in every blueprint slot', () => {
+  const blueprint = createVineBlueprint()
+  const game = {
+    ...createInitialGame(),
+    blueprintExpansionAxesSwapped: true,
+    unionized: true,
+    hamsters: 125,
+    hasUnlockedTurnip: true,
+    hasUnlockedAppleTree: true,
+    hasUnlockedKnotweed: true,
+    completedCropPerfections: COMPLETED_PERFECTIONS,
+    seedAugmentations: ACTIVE_AUGMENTATION,
+    blueprint,
+    blueprintSlots: [blueprint, blueprint],
+    activeBlueprintSlot: 1,
+  }
+  const restored = importGame(exportGame(game, 1234))
+
+  assert.equal(restored.activeBlueprintSlot, 1)
+  assert.deepEqual(restored.blueprint.leechingVines, blueprint.leechingVines)
+  assert.deepEqual(
+    restored.blueprintSlots.map((slot) => slot.leechingVines),
+    [blueprint.leechingVines, blueprint.leechingVines],
+  )
+})
+
+test('Root Tunnels can share tiles with a Leeching Vine path', () => {
+  const blueprint = createVineBlueprint()
+  const cells = [...blueprint.cells]
+  cells[31] = 'rootTunnel'
+  const tunnelOnVine = createBlueprint({
+    ...blueprint,
+    cells,
+  })
+
+  assert.equal(tunnelOnVine.cells[31], 'rootTunnel')
+  assert.deepEqual(tunnelOnVine.leechingVines, blueprint.leechingVines)
+  assert.deepEqual(
+    getLeechingVineStatus(
+      tunnelOnVine,
+      COMPLETED_PERFECTIONS,
+      ACTIVE_AUGMENTATION,
+    ).activePath,
+    blueprint.leechingVines[0].path,
+  )
 })

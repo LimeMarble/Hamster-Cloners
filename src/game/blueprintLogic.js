@@ -197,6 +197,7 @@ export function createInitialGame() {
     },
     blueprint,
     blueprintSlots: [blueprint],
+    blueprintBlocks: [],
     activeBlueprintSlot: 0,
     hamstersBuildColumns: true,
     areaCropUnlocksSeparated: true,

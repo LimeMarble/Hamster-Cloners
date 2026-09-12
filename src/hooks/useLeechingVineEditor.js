@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
+  canLeechingVineOccupyTile,
   getLeechingVineStartIndexes,
   getLeechingVineStatus,
 } from '../game/gameLogic.js'
@@ -46,7 +47,9 @@ export function useLeechingVineEditor({
 
     const pathIndexes = new Set(status.vine.path)
     return getOrthogonalIndexes(blueprint, status.vine.path.at(-1)).filter(
-      (index) => blueprint.cells[index] === null && !pathIndexes.has(index),
+      (index) =>
+        canLeechingVineOccupyTile(blueprint.cells[index]) &&
+        !pathIndexes.has(index),
     )
   }, [activeGourdIndex, blueprint, isDrawing, status])
 

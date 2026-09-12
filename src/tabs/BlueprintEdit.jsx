@@ -25,6 +25,7 @@ import {
   LeechingVineEditorPanel,
   LeechingVineLines,
 } from './LeechingVineEditor.jsx'
+import { BlueprintBlocks } from './BlueprintBlocks.jsx'
 
 function BlueprintEditContent({
   game,
@@ -47,6 +48,7 @@ function BlueprintEditContent({
   hasMirrorCorn,
   rootTunnelEditor,
   leechingVineEditor,
+  blueprintBlockEditor,
   getDisplayedCropName,
   onClose,
   onResume,
@@ -223,11 +225,22 @@ function BlueprintEditContent({
                   leechingVineEditor.status.eligibleTargetIndexes.includes(index)
                 const isSelectedVineTarget =
                   leechingVineEditor.status.activeTargetIndexes.includes(index)
+                const isBlockSelectionTile =
+                  blueprintBlockEditor.selectionIndexSet.has(index)
+                const isBlockSelectionAnchor =
+                  blueprintBlockEditor.selectionStartIndex === index
+                const blockPreviewTile =
+                  blueprintBlockEditor.previewTileMap.get(index)
+                const isBlockPlacementAnchor =
+                  blueprintBlockEditor.placementAnchorIndex === index
+                const isInvalidBlockPreview =
+                  Boolean(blockPreviewTile) &&
+                  blueprintBlockEditor.placementPreview?.canPlace === false
 
                 return (
                   <button
                     type="button"
-                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''} ${isSelectedRootTunnel ? 'editor-plot-root-selected' : ''} ${isSelectedRootSender ? 'editor-plot-root-sender-selected' : ''} ${isValidRootSender ? 'editor-plot-root-sender-option' : ''} ${isValidRootRecipient ? 'editor-plot-root-recipient-option' : ''} ${isSelectedVineGourd ? 'editor-plot-vine-gourd-selected' : ''} ${isActiveVinePath ? 'editor-plot-vine-path' : ''} ${isInactiveVinePath ? 'editor-plot-vine-path-inactive' : ''} ${isValidVinePath ? 'editor-plot-vine-path-option' : ''} ${isEligibleVineTarget ? 'editor-plot-vine-target-option' : ''} ${isSelectedVineTarget ? 'editor-plot-vine-target-selected' : ''}`}
+                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''} ${isSelectedRootTunnel ? 'editor-plot-root-selected' : ''} ${isSelectedRootSender ? 'editor-plot-root-sender-selected' : ''} ${isValidRootSender ? 'editor-plot-root-sender-option' : ''} ${isValidRootRecipient ? 'editor-plot-root-recipient-option' : ''} ${isSelectedVineGourd ? 'editor-plot-vine-gourd-selected' : ''} ${isActiveVinePath ? 'editor-plot-vine-path' : ''} ${isInactiveVinePath ? 'editor-plot-vine-path-inactive' : ''} ${isValidVinePath ? 'editor-plot-vine-path-option' : ''} ${isEligibleVineTarget ? 'editor-plot-vine-target-option' : ''} ${isSelectedVineTarget ? 'editor-plot-vine-target-selected' : ''} ${isBlockSelectionTile ? 'editor-plot-block-selection' : ''} ${isBlockSelectionAnchor ? 'editor-plot-block-anchor' : ''} ${blockPreviewTile ? 'editor-plot-block-preview' : ''} ${isBlockPlacementAnchor ? 'editor-plot-block-anchor' : ''} ${isInvalidBlockPreview ? 'editor-plot-block-preview-invalid' : ''}`}
                     key={index}
                     onClick={(event) =>
                       onEditorPlotClick(index, crop, event)
@@ -251,7 +264,13 @@ function BlueprintEditContent({
                     }}
                     onBlur={onClearHoveredEditorCrop}
                     aria-label={
-                      isPendingMirrorCornTarget
+                      blueprintBlockEditor.isSelecting
+                        ? blueprintBlockEditor.selectionStartIndex === null
+                          ? 'Use this tile as the first block corner and placement anchor'
+                          : 'Use this tile as the opposite block corner'
+                        : blueprintBlockEditor.activeBlock
+                          ? 'Position this blueprint block using this tile as its anchor'
+                      : isPendingMirrorCornTarget
                         ? 'Assign this tile as the Mirror Corn target'
                         : isValidVinePath
                           ? 'Extend the Leeching Vine into this tile'
@@ -293,6 +312,24 @@ function BlueprintEditContent({
                     ) : (
                       <span>{selectedCrop ? 'Plant' : 'Empty'}</span>
                     )}
+                    {blockPreviewTile && blockPreviewTile.action !== 'unchanged' ? (
+                      <span
+                        className={`blueprint-block-tile-preview blueprint-block-tile-preview-${blockPreviewTile.action} ${blockPreviewTile.available ? '' : 'blueprint-block-tile-preview-missing'}`}
+                        aria-hidden="true"
+                      >
+                        {blockPreviewTile.crop ? (
+                          <CropVisual
+                            cropId={blockPreviewTile.crop}
+                            completedCropPerfections={
+                              game.completedCropPerfections
+                            }
+                            className="editor-crop-visual"
+                          />
+                        ) : (
+                          <span>Clear</span>
+                        )}
+                      </span>
+                    ) : null}
                   </button>
                 )
               })}
@@ -342,6 +379,8 @@ function BlueprintEditContent({
             </div>
           </div>
         </div>
+
+        <BlueprintBlocks game={game} editor={blueprintBlockEditor} />
 
         <section
           className="blueprint-transfer-card"
@@ -454,6 +493,7 @@ function areBlueprintEditorPropsEqual(previous, next) {
     previousGame.hasUnlockedRootTunnel ===
       nextGame.hasUnlockedRootTunnel &&
     previousGame.activeBlueprintSlot === nextGame.activeBlueprintSlot &&
+    previousGame.blueprintBlocks === nextGame.blueprintBlocks &&
     previousGame.hamsters === nextGame.hamsters &&
     Object.is(previous.fieldIncomePerSecond, next.fieldIncomePerSecond) &&
     Object.is(
@@ -499,6 +539,30 @@ function areBlueprintEditorPropsEqual(previous, next) {
       next.leechingVineEditor.status &&
     previous.leechingVineEditor.validPathIndexes ===
       next.leechingVineEditor.validPathIndexes &&
+    previous.blueprintBlockEditor.selectionName ===
+      next.blueprintBlockEditor.selectionName &&
+    previous.blueprintBlockEditor.selectionStartIndex ===
+      next.blueprintBlockEditor.selectionStartIndex &&
+    previous.blueprintBlockEditor.selectionIndexSet ===
+      next.blueprintBlockEditor.selectionIndexSet &&
+    previous.blueprintBlockEditor.isSelecting ===
+      next.blueprintBlockEditor.isSelecting &&
+    previous.blueprintBlockEditor.activeBlock ===
+      next.blueprintBlockEditor.activeBlock &&
+    previous.blueprintBlockEditor.placementMode ===
+      next.blueprintBlockEditor.placementMode &&
+    previous.blueprintBlockEditor.placementPreview ===
+      next.blueprintBlockEditor.placementPreview &&
+    previous.blueprintBlockEditor.placementAnchorIndex ===
+      next.blueprintBlockEditor.placementAnchorIndex &&
+    previous.blueprintBlockEditor.previewTileMap ===
+      next.blueprintBlockEditor.previewTileMap &&
+    previous.blueprintBlockEditor.blockCode ===
+      next.blueprintBlockEditor.blockCode &&
+    previous.blueprintBlockEditor.status ===
+      next.blueprintBlockEditor.status &&
+    previous.blueprintBlockEditor.libraryEntries ===
+      next.blueprintBlockEditor.libraryEntries &&
     previousTransfer.blueprintCode === nextTransfer.blueprintCode &&
     previousTransfer.blueprintTransferStatus ===
       nextTransfer.blueprintTransferStatus

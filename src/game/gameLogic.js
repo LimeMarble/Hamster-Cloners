@@ -16,6 +16,10 @@ export * from './wetlandsConnectionState.js'
 export * from './rootTunnelLogic.js'
 export * from './sweetPotatoLogic.js'
 export * from './leechingVineLogic.js'
+export * from './blueprintBlockLogic.js'
+export * from './blueprintBlockTransform.js'
+export * from './blueprintBlockPlacement.js'
+export * from './blueprintBlockTransfer.js'
 export {
   canPlaceMangroveSapling,
   canPlaceShoalGrass,
