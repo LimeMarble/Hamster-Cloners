@@ -406,6 +406,80 @@ export function useBlueprintEditor({
     setPlot(index, nextCrop)
   }
 
+  function resetInteractionsForRapidEdit() {
+    setPendingMirrorCornPlacement(null)
+    setHoveredEditorCrop(null)
+    rootTunnelEditor.resetRootTunnelEditor()
+    leechingVineEditor.resetLeechingVineEditor()
+    blueprintTransfer.resetBlueprintTransfer()
+  }
+
+  function rapidlyPlaceCrop(index) {
+    if (
+      selectedCrop === null ||
+      blueprintBlockEditor.isSelecting ||
+      blueprintBlockEditor.activeBlock
+    ) {
+      return false
+    }
+
+    resetInteractionsForRapidEdit()
+    const currentBlueprint = gameRef.current.blueprint
+    const currentCrop = currentBlueprint.cells[index]
+
+    if (
+      currentCrop === 'leechingGourd' ||
+      currentCrop === 'leechingGourdPart' ||
+      (hasSplitweed &&
+        getSplitweedAnchorIndex(currentBlueprint, index) !== null)
+    ) {
+      return true
+    }
+    if (hasLeechingGourd && selectedCrop === 'pumpkin') {
+      placeLeechingGourd(index)
+      return true
+    }
+    if (hasSplitweed && selectedCrop === 'knotweed') {
+      placeSplitweed(index)
+      return true
+    }
+    if (currentCrop !== selectedCrop) {
+      setPlot(index, selectedCrop)
+    }
+    return true
+  }
+
+  function rapidlyEraseCrop(index) {
+    if (blueprintBlockEditor.isSelecting || blueprintBlockEditor.activeBlock) {
+      return false
+    }
+
+    resetInteractionsForRapidEdit()
+    const currentBlueprint = gameRef.current.blueprint
+    const currentCrop = currentBlueprint.cells[index]
+
+    if (!currentCrop || currentCrop === 'rootTunnel') {
+      return true
+    }
+    if (
+      currentCrop === 'leechingGourd' ||
+      currentCrop === 'leechingGourdPart'
+    ) {
+      removeLeechingGourd()
+      return true
+    }
+    if (
+      hasSplitweed &&
+      getSplitweedAnchorIndex(currentBlueprint, index) !== null
+    ) {
+      removeSplitweed(index)
+      return true
+    }
+
+    setPlot(index, null)
+    return true
+  }
+
   const blueprintTransfer = useBlueprintTransfer({
     gameRef,
     commitBlueprint,
@@ -599,6 +673,8 @@ export function useBlueprintEditor({
           onClearBlueprint: clearCurrentBlueprint,
           onEditorPlotClick: handleEditorPlotClick,
           onEditorPlotContextMenu: handleEditorPlotContextMenu,
+          onRapidPlaceCrop: rapidlyPlaceCrop,
+          onRapidEraseCrop: rapidlyEraseCrop,
           blueprintTransfer: {
             ...blueprintTransfer,
             onImportBlueprint: () => {

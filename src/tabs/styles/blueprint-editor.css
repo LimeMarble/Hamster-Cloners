@@ -20,6 +20,16 @@
   width: 100%;
 }
 
+.rapid-edit-mouse-hint {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rapid-edit-mouse-hint {
+    display: inline;
+  }
+}
+
 .crop-palette {
   margin: 0;
 }

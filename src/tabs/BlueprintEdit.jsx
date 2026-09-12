@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import {
   getCropName,
   getCropPlacementEffectDescription,
@@ -55,6 +55,8 @@ function BlueprintEditContent({
   onClearBlueprint,
   onEditorPlotClick,
   onEditorPlotContextMenu,
+  onRapidPlaceCrop,
+  onRapidEraseCrop,
   blueprintTransfer,
   onUpdateHoveredEditorCrop,
   onClearHoveredEditorCrop,
@@ -72,6 +74,65 @@ function BlueprintEditContent({
     Boolean(rootTunnelEditor.connectionState)
   const hasSelectedLeechingVine =
     leechingVineEditor.selectedGourdIndex !== null
+  const rapidEditRef = useRef(false)
+
+  useEffect(() => {
+    let releaseTimer = null
+    const releaseRapidEdit = () => {
+      window.clearTimeout(releaseTimer)
+      releaseTimer = window.setTimeout(() => {
+        rapidEditRef.current = false
+      }, 0)
+    }
+    const cancelRapidEdit = () => {
+      rapidEditRef.current = false
+    }
+
+    window.addEventListener('pointerup', releaseRapidEdit)
+    window.addEventListener('blur', cancelRapidEdit)
+    return () => {
+      window.clearTimeout(releaseTimer)
+      window.removeEventListener('pointerup', releaseRapidEdit)
+      window.removeEventListener('blur', cancelRapidEdit)
+    }
+  }, [])
+
+  function handleRapidPointerEdit(index, event) {
+    if (event.pointerType !== 'mouse' || !event.shiftKey) return false
+
+    const isErasing = (event.buttons & 2) !== 0
+    const isPlacing = (event.buttons & 1) !== 0
+    const handled = isErasing
+      ? onRapidEraseCrop(index)
+      : isPlacing
+        ? onRapidPlaceCrop(index)
+        : false
+
+    if (handled) {
+      event.preventDefault()
+      rapidEditRef.current = true
+      onClearHoveredEditorCrop()
+    }
+    return handled
+  }
+
+  function handlePlotClick(index, crop, event) {
+    if (rapidEditRef.current) {
+      event.preventDefault()
+      rapidEditRef.current = false
+      return
+    }
+    onEditorPlotClick(index, crop, event)
+  }
+
+  function handlePlotContextMenu(index, crop, event) {
+    if (rapidEditRef.current) {
+      event.preventDefault()
+      rapidEditRef.current = false
+      return
+    }
+    onEditorPlotContextMenu(index, crop, event)
+  }
 
   return (
     <div className="modal-backdrop" role="presentation">
@@ -133,6 +194,10 @@ function BlueprintEditContent({
         <p className="editing-notice">
           Harvesting is paused while you modify this blueprint. Right-click a
           planted crop to remove it.
+          <span className="rapid-edit-mouse-hint">
+            {' '}Hold Shift and drag with the left mouse button to paint the
+            selected Crop, or the right mouse button to erase.
+          </span>
           {game.hasUnlockedRootTunnel ? (
             <>
               {' '}Select a Root Tunnel to configure it; tunnels can only be
@@ -242,14 +307,23 @@ function BlueprintEditContent({
                     type="button"
                     className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''} ${isSelectedRootTunnel ? 'editor-plot-root-selected' : ''} ${isSelectedRootSender ? 'editor-plot-root-sender-selected' : ''} ${isValidRootSender ? 'editor-plot-root-sender-option' : ''} ${isValidRootRecipient ? 'editor-plot-root-recipient-option' : ''} ${isSelectedVineGourd ? 'editor-plot-vine-gourd-selected' : ''} ${isActiveVinePath ? 'editor-plot-vine-path' : ''} ${isInactiveVinePath ? 'editor-plot-vine-path-inactive' : ''} ${isValidVinePath ? 'editor-plot-vine-path-option' : ''} ${isEligibleVineTarget ? 'editor-plot-vine-target-option' : ''} ${isSelectedVineTarget ? 'editor-plot-vine-target-selected' : ''} ${isBlockSelectionTile ? 'editor-plot-block-selection' : ''} ${isBlockSelectionAnchor ? 'editor-plot-block-anchor' : ''} ${blockPreviewTile ? 'editor-plot-block-preview' : ''} ${isBlockPlacementAnchor ? 'editor-plot-block-anchor' : ''} ${isInvalidBlockPreview ? 'editor-plot-block-preview-invalid' : ''}`}
                     key={index}
-                    onClick={(event) =>
-                      onEditorPlotClick(index, crop, event)
-                    }
+                    onClick={(event) => handlePlotClick(index, crop, event)}
                     onContextMenu={(event) =>
-                      onEditorPlotContextMenu(index, crop, event)
+                      handlePlotContextMenu(index, crop, event)
                     }
-                    onPointerEnter={(event) => onUpdateHoveredEditorCrop(index, event)}
-                    onPointerMove={(event) => onUpdateHoveredEditorCrop(index, event)}
+                    onPointerDown={(event) =>
+                      handleRapidPointerEdit(index, event)
+                    }
+                    onPointerEnter={(event) => {
+                      if (!handleRapidPointerEdit(index, event)) {
+                        onUpdateHoveredEditorCrop(index, event)
+                      }
+                    }}
+                    onPointerMove={(event) => {
+                      if (!handleRapidPointerEdit(index, event)) {
+                        onUpdateHoveredEditorCrop(index, event)
+                      }
+                    }}
                     onPointerLeave={onClearHoveredEditorCrop}
                     onFocus={(event) => {
                       if (!crop) {
