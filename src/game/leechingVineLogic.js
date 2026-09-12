@@ -4,6 +4,7 @@ import {
 } from './adjacencyLogic.js'
 import {
   getLeechingVineNourishmentVarietyBonus,
+  getSplitweedVineNourishmentStrengthBonus,
   hasLeechingVineAugmentation,
   isMirrorCornDebuffRemovalEnabled,
   SEED_AUGMENTATIONS,
@@ -146,11 +147,14 @@ function getNourishmentSourceDefinition(
     perfection?.id === 'mirrorCorn' &&
     !isMirrorCornDebuffRemovalEnabled(seedAugmentations)
   const definition = perfection ?? CROP_DEFINITIONS[crop]
+  const strengthBonus = perfection?.id === 'splitweed'
+    ? getSplitweedVineNourishmentStrengthBonus(seedAugmentations)
+    : 0
 
   return definition?.hasDebuff || isDebuffedMirrorCorn
     ? {
         cropType: perfection?.id ?? crop,
-        strength: definition?.vineNourishmentStrength ?? 1,
+        strength: (definition?.vineNourishmentStrength ?? 1) + strengthBonus,
       }
     : null
 }

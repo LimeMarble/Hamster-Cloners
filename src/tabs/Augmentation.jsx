@@ -7,6 +7,7 @@ import {
   getNextSeedAugmentationCost,
   getSplitweedMonocropLimitLevel,
   getSplitweedMonocropLimitAugmentationEffect,
+  getSplitweedVineNourishmentStrengthBonus,
   hasMirrorCornDebuffRemovalAugmentation,
   isMirrorCornDebuffRemovalEnabled,
   isSeedAugmentationVisible,
@@ -118,6 +119,19 @@ export function Augmentation({
     game,
     sneakyCrawler.id,
   )
+  const greaterAbsorption =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.GREATER_ABSORPTION]
+  const greaterAbsorptionCost = getNextSeedAugmentationCost(
+    game,
+    greaterAbsorption.id,
+  )
+  const isGreaterAbsorptionVisible = isSeedAugmentationVisible(
+    game,
+    greaterAbsorption.id,
+  )
+  const splitweedVineNourishmentStrength =
+    CROP_PERFECTIONS.splitweed.vineNourishmentStrength +
+    getSplitweedVineNourishmentStrengthBonus(game.seedAugmentations)
 
   return (
     <section className='trade-panel' aria-labelledby='augmentation-title'>
@@ -412,7 +426,8 @@ export function Augmentation({
               Draw one bending vine from Leeching Gourd through empty tiles.
               Adjacent debuff Crops provide nourishment strength: each point
               adds one tile of range and +0.1 to the exponent of the extra
-              Gourd multiplier. Splitweed provides 2 strength. Each unique
+              Gourd multiplier. Splitweed provides{' '}
+              {splitweedVineNourishmentStrength} strength. Each unique
               debuff Crop type lets the vine affect one selected Turnip.
             </p>
             <p>
@@ -496,6 +511,60 @@ export function Augmentation({
                   : <>
                       Augment —{' '}
                       <FormattedNumber value={sneakyCrawlerCost} /> Crops
+                    </>}
+            </button>
+          </article>
+        ) : null}
+
+        {isGreaterAbsorptionVisible ? (
+          <article className='seed-augmentation-card'>
+            <div className='seed-augmentation-heading'>
+              <CropVisual
+                cropId='pumpkin'
+                completedCropPerfections={game.completedCropPerfections}
+                className='seed-augmentation-crop'
+              />
+              <div>
+                <p className='eyebrow'>Leeching Gourd</p>
+                <h2>{greaterAbsorption.name}</h2>
+              </div>
+            </div>
+            <p>
+              Each adjacent Splitweed provides +
+              {greaterAbsorption.splitweedNourishmentStrengthBonus}{' '}
+              additional vine nourishment strength, increasing its
+              contribution from 2 to 3. This also adds one tile of range and
+              +0.1 to the extra Gourd exponent per Splitweed.
+            </p>
+            <dl className='seed-augmentation-stats'>
+              <div>
+                <dt>Status</dt>
+                <dd>{greaterAbsorptionCost === null ? 'Active' : 'Locked'}</dd>
+              </div>
+              <div>
+                <dt>Cost</dt>
+                <dd><FormattedNumber value={greaterAbsorption.cost} /> Crops</dd>
+              </div>
+            </dl>
+            <button
+              type='button'
+              className='trade-primary-button'
+              onClick={() =>
+                onPurchaseSeedAugmentation(greaterAbsorption.id)
+              }
+              disabled={
+                !hasLeechingGourd ||
+                greaterAbsorptionCost === null ||
+                game.crops < greaterAbsorptionCost
+              }
+            >
+              {!hasLeechingGourd
+                ? 'Perfect Pumpkin first'
+                : greaterAbsorptionCost === null
+                  ? 'Augmentation active'
+                  : <>
+                      Augment —{' '}
+                      <FormattedNumber value={greaterAbsorptionCost} /> Crops
                     </>}
             </button>
           </article>

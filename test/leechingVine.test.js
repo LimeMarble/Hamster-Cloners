@@ -179,6 +179,63 @@ test('Sneaky Crawler adds variety without adding nourishment strength', () => {
   )
 })
 
+test('Greater Absorption raises each Splitweed from 2 to 3 nourishment strength', () => {
+  const augmentationId = SEED_AUGMENTATION_IDS.GREATER_ABSORPTION
+  const augmentation = SEED_AUGMENTATIONS[augmentationId]
+  const blueprint = createVineBlueprint()
+  const baseNourishment = getLeechingVineNourishment(
+    blueprint,
+    COMPLETED_PERFECTIONS,
+    ACTIVE_AUGMENTATION,
+  )
+  const eligibleGame = {
+    ...createInitialGame(),
+    crops: augmentation.cost,
+    completedCropPerfections: ['leechingGourd'],
+    completedMisfortuneUpgrades: [
+      MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+    ],
+    capybara: {
+      completedDemonstrations: [CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION],
+      completedSecondaryObjectives: [],
+    },
+    seedAugmentations: ACTIVE_AUGMENTATION,
+  }
+
+  assert.equal(augmentation.cost, 6e137)
+  assert.equal(isSeedAugmentationVisible(eligibleGame, augmentationId), true)
+  assert.equal(getNextSeedAugmentationCost(eligibleGame, augmentationId), 6e137)
+
+  const purchased = purchaseSeedAugmentation(eligibleGame, augmentationId)
+  assert.ok(purchased)
+  assert.equal(purchased.crops, 0)
+  assert.equal(purchased.seedAugmentations.greaterAbsorptionUnlocked, true)
+
+  const improvedNourishment = getLeechingVineNourishment(
+    blueprint,
+    COMPLETED_PERFECTIONS,
+    purchased.seedAugmentations,
+  )
+  const splitweedSource = improvedNourishment.sources.find(
+    ({ cropType }) => cropType === 'splitweed',
+  )
+
+  assert.equal(splitweedSource.strength, 3)
+  assert.equal(improvedNourishment.strength, baseNourishment.strength + 1)
+  assert.equal(
+    improvedNourishment.maximumLength,
+    baseNourishment.maximumLength + 1,
+  )
+  assert.equal(
+    improvedNourishment.bonusExponent,
+    baseNourishment.bonusExponent + 0.1,
+  )
+  assert.equal(improvedNourishment.variety, baseNourishment.variety)
+
+  const restored = importGame(exportGame(purchased))
+  assert.equal(restored.seedAugmentations.greaterAbsorptionUnlocked, true)
+})
+
 test('vine nourishment independently controls range, targets, and exponent', () => {
   const blueprint = createVineBlueprint()
   const nourishment = getLeechingVineNourishment(
