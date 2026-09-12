@@ -64,6 +64,10 @@ export function Misfortune({
   huntForSomethingGreaterMultiplier,
   missingMisfortuneCropTypeCount,
   onUnlockHuntForSomethingGreater,
+  finalSupport,
+  hasFinalSupport,
+  canUnlockFinalSupport,
+  onUnlockFinalSupport,
   onLeave,
 }) {
   return (
@@ -339,6 +343,42 @@ export function Misfortune({
                     <>
                       Need <FormattedNumber value={fortunateColumn.cost} />{' '}
                       Crops
+                    </>
+                  )}
+          </button>
+        </article>
+        <article className="misfortune-upgrade-card">
+          <div>
+            <h2>{finalSupport.name}</h2>
+            <p>
+              Adds +{finalSupport.passiveEffectBonusPerTier * 100}% Crop
+              passive effects per complete tier of{' '}
+              {finalSupport.floorReplicatorsPerTier} Floor Replicators while
+              they operate in Support mode. It unlocks Support mode in the
+              main field, where only this bonus applies. In Misfortune it
+              stacks with Burdened Foundations for +
+              {(finalSupport.passiveEffectBonusPerTier +
+                burdenedFoundations.passiveEffectBonusPerTier) * 100}% per
+              tier.
+            </p>
+            <p className="misfortune-upgrade-note">
+              Cost: <FormattedNumber value={finalSupport.cost} /> Crops. This
+              choice is permanent until Misfortune progress is wiped.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={hasFinalSupport ? 'secondary-button' : 'primary-button'}
+            onClick={onUnlockFinalSupport}
+            disabled={hasFinalSupport || !canUnlockFinalSupport}
+          >
+            {hasFinalSupport
+              ? 'Accepted'
+              : canUnlockFinalSupport
+                ? 'Commit Final Support'
+                : (
+                    <>
+                      Need <FormattedNumber value={finalSupport.cost} /> Crops
                     </>
                   )}
           </button>

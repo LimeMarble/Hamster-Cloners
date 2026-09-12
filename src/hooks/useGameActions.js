@@ -453,6 +453,15 @@ export function useGameActions({
     )
   }
 
+  function unlockFinalSupport() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+      ) ?? currentGame,
+    )
+  }
+
   function buyGreaterBlueprinting() {
     updateGame((currentGame) =>
       unlockGreaterBlueprinting(currentGame) ?? currentGame,
@@ -636,6 +645,7 @@ export function useGameActions({
     onUnlockBurdenedFoundations: unlockBurdenedFoundations,
     onUnlockNourishingMisery: unlockNourishingMisery,
     onUnlockHuntForSomethingGreater: unlockHuntForSomethingGreater,
+    onUnlockFinalSupport: unlockFinalSupport,
     options: {
       saveCode,
       onSaveCodeChange: setSaveCode,

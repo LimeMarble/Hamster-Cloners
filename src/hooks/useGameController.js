@@ -7,6 +7,7 @@ import {
   getHuntForSomethingGreaterMultiplier,
   getMissingMisfortuneCropTypeIds,
   hasMisfortuneUpgrade,
+  isFloorReplicatorSupportModeAvailable,
   isCloverAssemblyReady,
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
   MISFORTUNE_UPGRADE_IDS,
@@ -151,14 +152,10 @@ export function useGameController() {
                 derived.floorReplicatorExternalMultiplier,
               isFloorReplicatorSupportMode:
                 derived.isFloorReplicatorSupportMode,
-              burdenedFoundationsPassiveEffectBonus:
-                derived.burdenedFoundationsPassiveEffectBonus,
-              hasBurdenedFoundations:
-                derived.isMisfortuneAreaActive &&
-                hasMisfortuneUpgrade(
-                  game,
-                  MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
-                ),
+              floorReplicatorSupportPassiveEffectBonus:
+                derived.floorReplicatorSupportPassiveEffectBonus,
+              hasFloorReplicatorSupport:
+                isFloorReplicatorSupportModeAvailable(game),
               floorsBuiltPerSecond: derived.floorsBuiltPerSecond,
               onBuyFloorReplicator:
                 actions.purchaseActions.onBuyFloorReplicator,
@@ -276,6 +273,18 @@ export function useGameController() {
           getMissingMisfortuneCropTypeIds(game).length,
         onUnlockHuntForSomethingGreater:
           actions.onUnlockHuntForSomethingGreater,
+        finalSupport: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT
+        ],
+        hasFinalSupport: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+        ),
+        canUnlockFinalSupport: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+        ),
+        onUnlockFinalSupport: actions.onUnlockFinalSupport,
         onLeave: actions.onLeaveMisfortuneArea,
       },
       inventions: {

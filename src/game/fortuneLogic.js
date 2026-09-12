@@ -14,7 +14,7 @@ import {
   GAME_AREA_IDS,
 } from './gameConfig.js'
 import {
-  getBurdenedFoundationsPassiveEffectBonus,
+  getFloorReplicatorSupportPassiveEffectBonus,
   getMisfortuneUpgradeCropProductionMultiplier,
 } from './misfortuneUpgrades.js'
 
@@ -157,7 +157,7 @@ export function getFortuneModifiers(gameOrFortune) {
     return {
       passiveEffectMultiplier:
         FORTUNES_WRATH_PASSIVE_MULTIPLIER +
-        getBurdenedFoundationsPassiveEffectBonus(gameOrFortune),
+        getFloorReplicatorSupportPassiveEffectBonus(gameOrFortune),
       cropYieldMultiplier: 1 / FORTUNES_WRATH_CROP_DIVISOR,
       cropProductionExponent: FORTUNES_WRATH_CROP_EXPONENT,
       cropProductionMultiplier:
@@ -171,7 +171,7 @@ export function getFortuneModifiers(gameOrFortune) {
     gameOrFortune?.fortune ?? gameOrFortune,
   )
 
-  return fortune.activeEffects.reduce(
+  const modifiers = fortune.activeEffects.reduce(
     (modifiers, activeEffect) => {
       const effect = getFortuneEffect(activeEffect.id)
 
@@ -198,6 +198,13 @@ export function getFortuneModifiers(gameOrFortune) {
       harvestMultiplier: 1,
     },
   )
+
+  return {
+    ...modifiers,
+    passiveEffectMultiplier:
+      modifiers.passiveEffectMultiplier +
+      getFloorReplicatorSupportPassiveEffectBonus(gameOrFortune),
+  }
 }
 
 export function getCloverBundleChancePerMinute(game) {

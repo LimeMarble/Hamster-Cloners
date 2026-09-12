@@ -21,6 +21,7 @@ export const MISFORTUNE_UPGRADE_IDS = Object.freeze({
   BURDENED_FOUNDATIONS: 'burdenedFoundations',
   NOURISHING_MISERY: 'nourishingMisery',
   HUNT_FOR_SOMETHING_GREATER: 'huntForSomethingGreater',
+  FINAL_SUPPORT: 'finalSupport',
 })
 
 export const MISFORTUNE_UPGRADES = Object.freeze({
@@ -68,6 +69,13 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     cost: 7.77e40,
     secondsPerTimeMultiplier: 60,
     maximumTimeMultiplier: 10,
+  }),
+  [MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT]: Object.freeze({
+    id: MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+    name: 'Final Support',
+    cost: 2.5e62,
+    passiveEffectBonusPerTier: 0.002,
+    floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
   }),
 })
 
@@ -280,13 +288,24 @@ export function getHuntForSomethingGreaterMultiplier(game) {
   return (1 + missingCropTypeCount) * timeMultiplier
 }
 
+export function isFloorReplicatorSupportModeAvailable(game) {
+  const hasBurdenedFoundations = hasMisfortuneUpgrade(
+    game,
+    MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+  )
+  const hasFinalSupport = hasMisfortuneUpgrade(
+    game,
+    MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+  )
+
+  return game?.activeArea === GAME_AREA_IDS.MISFORTUNE
+    ? hasBurdenedFoundations || hasFinalSupport
+    : hasFinalSupport
+}
+
 export function isFloorReplicatorSupportModeActive(game) {
   return (
-    game?.activeArea === GAME_AREA_IDS.MISFORTUNE &&
-    hasMisfortuneUpgrade(
-      game,
-      MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
-    ) &&
+    isFloorReplicatorSupportModeAvailable(game) &&
     game.floorReplicatorMode === FLOOR_REPLICATOR_MODES.SUPPORT
   )
 }
@@ -303,23 +322,46 @@ export function getBurdenedFoundationsTierCount(game) {
 }
 
 export function getBurdenedFoundationsPassiveEffectBonus(game) {
-  if (!isFloorReplicatorSupportModeActive(game)) return 0
-
-  const upgrade = MISFORTUNE_UPGRADES[
-    MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS
-  ]
-
-  return upgrade.passiveEffectBonusPerTier *
-    getBurdenedFoundationsTierCount(game)
-}
-
-export function toggleFloorReplicatorMode(game) {
   if (
+    !isFloorReplicatorSupportModeActive(game) ||
     game?.activeArea !== GAME_AREA_IDS.MISFORTUNE ||
     !hasMisfortuneUpgrade(
       game,
       MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
     )
+  ) {
+    return 0
+  }
+
+  return MISFORTUNE_UPGRADES[
+    MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS
+  ].passiveEffectBonusPerTier * getBurdenedFoundationsTierCount(game)
+}
+
+export function getFinalSupportPassiveEffectBonus(game) {
+  if (
+    !isFloorReplicatorSupportModeActive(game) ||
+    !hasMisfortuneUpgrade(
+      game,
+      MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+    )
+  ) {
+    return 0
+  }
+
+  return MISFORTUNE_UPGRADES[
+    MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT
+  ].passiveEffectBonusPerTier * getBurdenedFoundationsTierCount(game)
+}
+
+export function getFloorReplicatorSupportPassiveEffectBonus(game) {
+  return getBurdenedFoundationsPassiveEffectBonus(game) +
+    getFinalSupportPassiveEffectBonus(game)
+}
+
+export function toggleFloorReplicatorMode(game) {
+  if (
+    !isFloorReplicatorSupportModeAvailable(game)
   ) {
     return null
   }

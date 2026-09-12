@@ -10,9 +10,9 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
   floorReplicatorExternalMultiplier,
   floorsBuiltPerSecond,
   canPurchaseFloorReplicators,
-  hasBurdenedFoundations,
+  hasFloorReplicatorSupport,
   isFloorReplicatorSupportMode,
-  burdenedFoundationsPassiveEffectBonus,
+  floorReplicatorSupportPassiveEffectBonus,
   onToggleFloorReplicatorMode,
 }) {
   return (
@@ -82,7 +82,7 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
         />{' '}
         Floor Replicators.
       </p>
-      {hasBurdenedFoundations ? (
+      {hasFloorReplicatorSupport ? (
         <div className="replicator-mode-control">
           <p className="eyebrow">Operating mode</p>
           <div
@@ -118,9 +118,9 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
           <p className="card-copy">
             {isFloorReplicatorSupportMode
               ? <>
-                  Floor construction is paused. Burdened Foundations grants
+                  Floor construction is paused. Support grants
                   {' '}+<FormattedNumber
-                    value={burdenedFoundationsPassiveEffectBonus * 100}
+                    value={floorReplicatorSupportPassiveEffectBonus * 100}
                   />% Crop passive effects.
                 </>
               : 'Floor Replicators are constructing Floors normally.'}
@@ -157,9 +157,9 @@ export function FloorReplicatorPurchase({
   floorReplicatorExternalMultiplier,
   floorsBuiltPerSecond,
   canPurchaseFloorReplicators,
-  hasBurdenedFoundations,
+  hasFloorReplicatorSupport,
   isFloorReplicatorSupportMode,
-  burdenedFoundationsPassiveEffectBonus,
+  floorReplicatorSupportPassiveEffectBonus,
   onBuyFloorReplicator,
   onBuyMaxFloorReplicators,
   onToggleFloorReplicatorMode,
@@ -183,10 +183,10 @@ export function FloorReplicatorPurchase({
         }
         floorsBuiltPerSecond={floorsBuiltPerSecond}
         canPurchaseFloorReplicators={canPurchaseFloorReplicators}
-        hasBurdenedFoundations={hasBurdenedFoundations}
+        hasFloorReplicatorSupport={hasFloorReplicatorSupport}
         isFloorReplicatorSupportMode={isFloorReplicatorSupportMode}
-        burdenedFoundationsPassiveEffectBonus={
-          burdenedFoundationsPassiveEffectBonus
+        floorReplicatorSupportPassiveEffectBonus={
+          floorReplicatorSupportPassiveEffectBonus
         }
         onToggleFloorReplicatorMode={onToggleFloorReplicatorMode}
       />
