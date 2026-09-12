@@ -7,6 +7,7 @@ import {
   getBlueprintCropStats,
   getFloorsProducedPerSecond,
   getGlobalRowProductionMultiplier,
+  getUnlockedBlueprintSlotCount,
   getSoybeanMachineryEffect,
   getSoybeanPatternCounts,
 } from '../src/game/gameLogic.js'
@@ -15,6 +16,7 @@ import {
   SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
   getUnlockedCropIds,
   getVisibleCropIds,
+  hasUnlockedSoybean,
 } from '../src/game/crops.js'
 
 function getUnlockedCrops({
@@ -44,11 +46,17 @@ function getUnlockedCrops({
 test('Soybean appears after Clover, reveals with Carrot, and unlocks at 555 Floor Replicators', () => {
   const lockedCropIds = getUnlockedCrops({ floorReplicators: 554 })
   const unlockedCropIds = getUnlockedCrops({ floorReplicators: 555 })
-  const visibleCropIds = getVisibleCropIds(unlockedCropIds, 1000, true)
+  const visibleCropIds = getVisibleCropIds(
+    unlockedCropIds,
+    1000,
+    true,
+    true,
+  )
   const beforeMisfortuneCarrotIsVisible = getVisibleCropIds(
     getUnlockedCrops({ floorReplicators: 555, rowDuplicators: 499 }),
     1000,
     true,
+    false,
   )
 
   assert.equal(SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT, 555)
@@ -63,6 +71,32 @@ test('Soybean appears after Clover, reveals with Carrot, and unlocks at 555 Floo
   assert.equal(
     visibleCropIds.indexOf('soybean') > visibleCropIds.indexOf('fourLeafClover'),
     true,
+  )
+})
+
+test('unlocking Soybean in Misfortune grants the fourth blueprint slot', () => {
+  const game = {
+    ...createInitialGame(),
+    activeArea: 'misfortune',
+    hasUnlockedSunflower: true,
+    rowDuplicators: 500,
+    floorReplicators: 555,
+    trade: {
+      ...createInitialGame().trade,
+      rabbitUnlocks: ['carrot'],
+    },
+  }
+
+  assert.equal(hasUnlockedSoybean(game), true)
+  assert.equal(getUnlockedBlueprintSlotCount(game), 4)
+  assert.equal(
+    advanceGameSimulationStep(game, 1 / 60, { random: () => 1 })
+      .blueprintSlots.length,
+    4,
+  )
+  assert.equal(
+    getUnlockedBlueprintSlotCount({ ...game, floorReplicators: 554 }),
+    3,
   )
 })
 

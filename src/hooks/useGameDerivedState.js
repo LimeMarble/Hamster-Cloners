@@ -44,7 +44,11 @@ import {
   UNIONIZATION_HAMSTER_COUNT,
   UNION_STATUS_RETIRE_HIRE_COUNT,
 } from '../game/gameLogic.js'
-import { getUnlockedCropIds, getVisibleCropIds } from '../game/crops.js'
+import {
+  getUnlockedCropIds,
+  getVisibleCropIds,
+  hasUnlockedCarrotInMisfortune,
+} from '../game/crops.js'
 import { getMonocropThreshold } from '../game/monocropPenalty.js'
 import { formatWholeNumber } from '../game/numberFormat.js'
 
@@ -324,6 +328,7 @@ export function useGameDerivedState(game) {
     game,
     RABBIT_UNLOCK_IDS.CARROT,
   )
+  const hasMisfortuneCarrot = hasUnlockedCarrotInMisfortune(game)
   const hasUnlockedFourLeafClover = hasRabbitUnlock(
     game,
     RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
@@ -375,11 +380,13 @@ export function useGameDerivedState(game) {
         unlockedCropIds,
         game.totalHamstersHired,
         game.hasUnlockedRowDuplicators,
+        hasMisfortuneCarrot,
       ),
     [
       unlockedCropIds,
       game.totalHamstersHired,
       game.hasUnlockedRowDuplicators,
+      hasMisfortuneCarrot,
     ],
   )
   const visibleUnlockedCropIds = useMemo(

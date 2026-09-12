@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import {
+  BLUEPRINT_SLOT_UNLOCK_HINTS,
   CAPYBARA_DEMONSTRATION_IDS,
   getFieldsPlanted,
   hasCompletedCapybaraDemonstration,
@@ -18,6 +19,7 @@ function BlueprintPanel({
   monocropPenaltyMultiplier,
   blueprintSlots,
   unlockedBlueprintSlotCount,
+  visibleCropIds,
   onSelectBlueprintSlot,
   onOpenEditor,
 }) {
@@ -27,11 +29,17 @@ function BlueprintPanel({
     game,
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
   )
-  const visibleBlueprintSlotIndexes = hasUnlockedManatees
-    ? [0, 1, 2, 3]
-    : game.hasUnlockedKnotweed
-      ? [0, 1, 2]
-      : [0, 1]
+  const visibleBlueprintSlotCount = hasUnlockedManatees
+    ? BLUEPRINT_SLOT_UNLOCK_HINTS.length
+    : visibleCropIds.includes('soybean')
+      ? 4
+      : game.hasUnlockedKnotweed
+        ? 3
+        : 2
+  const visibleBlueprintSlotIndexes = Array.from(
+    { length: visibleBlueprintSlotCount },
+    (_, slotIndex) => slotIndex,
+  )
   const plantedCropDescription =
     plantedCrops.length > 0
       ? plantedCrops
@@ -67,11 +75,7 @@ function BlueprintPanel({
             slotIndex < unlockedBlueprintSlotCount &&
             Boolean(blueprintSlots[slotIndex])
           const active = game.activeBlueprintSlot === slotIndex
-          const unlockHint = slotIndex === 1
-            ? 'Unlocks with Potato'
-            : slotIndex === 2
-              ? 'Unlocks with Sunflower'
-              : 'Unlocks with Mangrove Sapling'
+          const unlockHint = BLUEPRINT_SLOT_UNLOCK_HINTS[slotIndex]
 
           return (
             <button
@@ -209,6 +213,7 @@ function areBlueprintPropsEqual(previous, next) {
     previous.blueprintSlots === next.blueprintSlots &&
     previous.unlockedBlueprintSlotCount ===
       next.unlockedBlueprintSlotCount &&
+    previous.visibleCropIds === next.visibleCropIds &&
     previousGame.blueprint === nextGame.blueprint &&
     previousGame.completedCropPerfections ===
       nextGame.completedCropPerfections &&

@@ -101,6 +101,7 @@ export function useGameController() {
           monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
           blueprintSlots: derived.blueprintSlots,
           unlockedBlueprintSlotCount: derived.unlockedBlueprintSlotCount,
+          visibleCropIds: derived.visibleCropIds,
           onSelectBlueprintSlot: blueprintEditor.onSelectBlueprintSlot,
           onOpenEditor: blueprintEditor.onOpenEditor,
         },
@@ -327,6 +328,8 @@ export function useGameController() {
               derived.cropHamsterEfficiencyMultiplier,
             duplicatorEfficiencyMultiplier:
               derived.rowDuplicatorEffectivenessMultiplier,
+            replicatorEfficiencyMultiplier:
+              derived.floorReplicatorEffectivenessMultiplier,
           }
         : null,
       monocropWarning: blueprintEditor.monocropWarning,

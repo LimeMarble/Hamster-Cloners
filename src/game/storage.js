@@ -21,6 +21,7 @@ import {
   createInitialGame,
   getUnlockedBlueprintSlotCount,
   hasReachedMonocropLimit,
+  MAX_BLUEPRINT_SLOT_COUNT,
 } from './gameLogic.js'
 import {
   APPLE_TREE_UNLOCK_CROP_COUNT,
@@ -283,12 +284,17 @@ export function normalizeGame(rawGame) {
     blueprint,
     unionized: rawGame.unionized === true,
     hamsters: toNonNegativeInteger(rawGame.hamsters, initialGame.hamsters),
+    rowDuplicators: toNonNegativeInteger(rawGame.rowDuplicators),
+    floorReplicators: toNonNegativeInteger(rawGame.floorReplicators),
     hasUnlockedSunflower,
     manatees,
+    activeArea,
+    areaProgress,
+    trade,
   })
   const blueprintSlotCount = Math.max(
     unlockedBlueprintSlotCount,
-    Math.min(4, rawBlueprintSlots.length),
+    Math.min(MAX_BLUEPRINT_SLOT_COUNT, rawBlueprintSlots.length),
   )
   const blueprintSlots = Array.from(
     { length: blueprintSlotCount },

@@ -216,7 +216,7 @@ test('the Submerged Garden is built empty before its first growing stage', () =>
     ['shoalGrass', 'waterLettuce', 'mangroveSapling'],
   )
   assert.equal(getUnlockedBlueprintSlotCount(stageTwoGame), 3)
-  assert.equal(getUnlockedBlueprintSlotCount(stageThreeGame), 4)
+  assert.equal(getUnlockedBlueprintSlotCount(stageThreeGame), 5)
 })
 
 test('Shoal Grass tending always uses 10 hamsters for 300 seconds', () => {

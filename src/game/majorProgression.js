@@ -6,6 +6,7 @@ import {
   KNOTWEED_UNLOCK_CROP_COUNT,
   LENTIL_UNLOCK_CROP_COUNT,
   SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+  hasUnlockedSoybean,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
@@ -269,11 +270,8 @@ export const MAJOR_PROGRESSION_GOALS = [
     target: SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
     unit: 'Floor Replicators',
     description:
-      'After unlocking Carrot, own 555 Floor Replicators to unlock Soybean.',
-    isComplete: (game) =>
-      hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CARROT) &&
-      getSafeProgressValue(game.floorReplicators) >=
-        SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+      'After unlocking Carrot in Misfortune, own 555 Floor Replicators to unlock Soybean.',
+    isComplete: hasUnlockedSoybean,
     getCurrent: (game) => game.floorReplicators,
   },
   {

@@ -1940,7 +1940,7 @@ test('free blueprint space does not advance reset expansion progress', () => {
   assert.equal(getBlueprintExpansionCost(expandedGame, 'firstRow'), null)
 })
 
-test('blueprint slots unlock with Potato and Sunflower and retain separate layouts', () => {
+test('blueprint slots unlock with Potato, Sunflower, and Soybean and retain separate layouts', () => {
   const startingBlueprint = createBlueprint({ cells: ['leek'] })
   const cornBlueprint = createBlueprint({
     rows: 1,
@@ -1981,6 +1981,17 @@ test('blueprint slots unlock with Potato and Sunflower and retain separate layou
       hasUnlockedSunflower: true,
     }),
     3,
+  )
+  assert.equal(
+    getUnlockedBlueprintSlotCount({
+      blueprint: cornBlueprint,
+      activeArea: 'misfortune',
+      hasUnlockedSunflower: true,
+      rowDuplicators: 500,
+      floorReplicators: 555,
+      trade: { rabbitUnlocks: ['carrot'] },
+    }),
+    4,
   )
 
   const firstColumnResult = resetForBlueprintExpansion(

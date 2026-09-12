@@ -186,6 +186,10 @@ test('major progression advances to the earliest unfinished goal', () => {
   game = {
     ...game,
     floorReplicators: 555,
+    areaProgress: {
+      ...game.areaProgress,
+      misfortune: { rowDuplicators: 500 },
+    },
   }
   const capybaraGoal = getNextMajorProgressionGoal(game)
   assert.equal(capybaraGoal.id, 'capybara-contact')

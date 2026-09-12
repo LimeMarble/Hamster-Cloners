@@ -2,7 +2,11 @@ import {
   FLOOR_REPLICATOR_COST_TIER_SIZE,
   GAME_AREA_IDS,
 } from './gameConfig.js'
-import { getUnlockedCropIds, getVisibleCropIds } from './crops.js'
+import {
+  getUnlockedCropIds,
+  getVisibleCropIds,
+  hasUnlockedCarrotInMisfortune,
+} from './crops.js'
 
 export const FLOOR_REPLICATOR_MODES = Object.freeze({
   CONSTRUCTION: 'construction',
@@ -233,6 +237,7 @@ function getAreaUnlockedCropIds(game, areaId) {
     unlockedCropIds,
     game?.totalHamstersHired,
     game?.hasUnlockedRowDuplicators,
+    hasUnlockedCarrotInMisfortune(game),
   ).filter((cropId) => unlockedCropIds.includes(cropId))
 }
 

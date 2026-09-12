@@ -32,6 +32,7 @@ function BlueprintEditContent({
   fieldIncomePerSecond,
   hamsterEfficiencyMultiplier,
   duplicatorEfficiencyMultiplier,
+  replicatorEfficiencyMultiplier,
   selectedCrop,
   onSelectCrop,
   pendingMirrorCornPlacement,
@@ -189,6 +190,19 @@ function BlueprintEditContent({
               </div>
             ) : null}
           </dl>
+          {unlockedCropIds.includes('soybean') ? (
+            <dl className="field-stats blueprint-editor-income">
+              <div>
+                <dt>Replicator efficiency</dt>
+                <dd>
+                  ×<FormattedNumber
+                    value={replicatorEfficiencyMultiplier}
+                    maximumFractionDigits={2}
+                  />
+                </dd>
+              </div>
+            </dl>
+          ) : null}
         </div>
 
         <p className="editing-notice">
@@ -577,6 +591,10 @@ function areBlueprintEditorPropsEqual(previous, next) {
     Object.is(
       previous.duplicatorEfficiencyMultiplier,
       next.duplicatorEfficiencyMultiplier,
+    ) &&
+    Object.is(
+      previous.replicatorEfficiencyMultiplier,
+      next.replicatorEfficiencyMultiplier,
     ) &&
     previous.selectedCrop === next.selectedCrop &&
     previous.pendingMirrorCornPlacement ===

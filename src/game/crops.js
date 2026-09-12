@@ -28,6 +28,28 @@ export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
 export const CORN_REVEAL_HAMSTER_COUNT = 50
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
 
+export function hasUnlockedCarrotInMisfortune(game) {
+  const misfortuneRowDuplicators = game?.activeArea === 'misfortune'
+    ? game?.rowDuplicators
+    : game?.areaProgress?.misfortune?.rowDuplicators
+
+  return (
+    Array.isArray(game?.trade?.rabbitUnlocks) &&
+    game.trade.rabbitUnlocks.includes('carrot') &&
+    Math.max(0, Math.floor(Number(misfortuneRowDuplicators) || 0)) >=
+      CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT
+  )
+}
+
+export function hasUnlockedSoybean(game) {
+  return (
+    Array.isArray(game?.trade?.rabbitUnlocks) &&
+    game.trade.rabbitUnlocks.includes('carrot') &&
+    Math.max(0, Math.floor(Number(game?.floorReplicators) || 0)) >=
+      SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT
+  )
+}
+
 export const CROP_EFFECT_BYPASS_TIERS = Object.freeze({
   STANDARD: 1,
   MONOCROP: 5,
@@ -767,6 +789,7 @@ export function getVisibleCropIds(
   unlockedCropIds,
   totalHamstersHired = 0,
   hasUnlockedRowDuplicators = false,
+  hasMisfortuneCarrot = false,
 ) {
   const visibleCropIds = ['leek']
   const progressionCropIds = CROP_IDS.filter(
@@ -805,6 +828,7 @@ export function getVisibleCropIds(
   }
 
   if (
+    hasMisfortuneCarrot &&
     visibleCropIds.includes('carrot') &&
     !visibleCropIds.includes('soybean')
   ) {

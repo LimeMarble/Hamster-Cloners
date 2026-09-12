@@ -3,6 +3,7 @@ import {
   CROP_PERFECTION_IDS,
   SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
   hasCropPerfection,
+  hasUnlockedSoybean,
   isCropPerfectionTemporarilyUnavailable,
   isKnownCrop,
   normalizeCropId,
@@ -35,6 +36,16 @@ import {
   createInitialMisfortuneUpgradeState,
   FLOOR_REPLICATOR_MODES,
 } from './misfortuneUpgrades.js'
+
+export const BLUEPRINT_SLOT_UNLOCK_HINTS = Object.freeze([
+  null,
+  'Unlocks with Potato',
+  'Unlocks with Sunflower',
+  'Unlocks with Soybean',
+  'Unlocks with Mangrove Sapling',
+])
+
+export const MAX_BLUEPRINT_SLOT_COUNT = BLUEPRINT_SLOT_UNLOCK_HINTS.length
 
 function normalizeUniqueCloverCells(cells) {
   let hasClover = false
@@ -231,6 +242,10 @@ export function getUnlockedBlueprintSlotCount(game) {
     ) === true &&
     submergedGardenStage >= 3
   ) {
+    return 5
+  }
+
+  if (hasUnlockedSoybean(game)) {
     return 4
   }
 
@@ -251,7 +266,7 @@ export function getBlueprintSlots(game) {
     ? game.blueprintSlots
     : []
   const slots = storedSlots
-    .slice(0, 4)
+    .slice(0, MAX_BLUEPRINT_SLOT_COUNT)
     .filter((slot) => slot && typeof slot === 'object')
     .map((slot) => createBlueprint(slot))
 

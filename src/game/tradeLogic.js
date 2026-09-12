@@ -1,5 +1,8 @@
 import { grantFreeBlueprintExpansion } from './blueprintLogic.js'
-import { CROP_DEFINITIONS, getUnlockedCropIds } from './crops.js'
+import {
+  CROP_DEFINITIONS,
+  getUnlockedCropIds,
+} from './crops.js'
 import { getFieldsPlanted } from './cropProduction.js'
 import { getRabbitRelationsMultiplier } from './cropEffects.js'
 import { getFortuneModifiers } from './fortuneLogic.js'
