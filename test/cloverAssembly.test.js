@@ -58,7 +58,7 @@ test('the Clover assembly precursors use their configured main Crop and Rabbit r
   assert.ok(charmed.trade.rabbitUnlocks.includes(RABBIT_UNLOCK_IDS.RABBITS_CHARM))
 })
 
-test('assembly parts track the four requested Crop harvests independently and cap at their requirement', () => {
+test('Clover assembly progress follows the slowest required Crop production and caps at its requirement', () => {
   const progress = advanceCloverAssemblyState(
     createInitialCloverAssemblyState(),
     {
@@ -81,28 +81,44 @@ test('assembly parts track the four requested Crop harvests independently and ca
       ['charmFitting', 'carrot'],
     ],
   )
-  assert.equal(progress.partProgress.resilientStem, 6e58)
-  assert.equal(
-    progress.partProgress.protectiveCoating,
-    CLOVER_ASSEMBLY_PART_REQUIREMENT,
-  )
-  assert.equal(
-    progress.partProgress.rootLubricant,
-    CLOVER_ASSEMBLY_PART_REQUIREMENT,
-  )
-  assert.equal(
-    progress.partProgress.charmFitting,
-    CLOVER_ASSEMBLY_PART_REQUIREMENT,
-  )
+  assert.equal(progress.progress, 6e58)
   assert.equal(isCloverAssemblyReady(progress), false)
+
+  const cappedProgress = advanceCloverAssemblyState(
+    progress,
+    {
+      appleTree: 1e59,
+      canola: 1e59,
+      soybean: 1e59,
+      carrot: 1e59,
+    },
+    1,
+    true,
+  )
+
+  assert.equal(cappedProgress.progress, CLOVER_ASSEMBLY_PART_REQUIREMENT)
+  assert.equal(isCloverAssemblyReady(cappedProgress), true)
 })
 
 test('only Misfortune production advances an unlocked and charmed Clover assembly', () => {
-  const blueprint = createBlueprint({ cells: ['appleTree'] })
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 7,
+    cells: [
+      'appleTree',
+      null,
+      'canola',
+      'leek',
+      null,
+      'soybean',
+      'carrot',
+    ],
+  })
   const initialGame = createInitialGame()
   const baseGame = {
     ...initialGame,
     hasUnlockedGreaterBlueprinting: true,
+    completedCropPerfections: ['enrichingLeek'],
     blueprint,
     blueprintSlots: [blueprint],
     farmland: {
@@ -120,23 +136,17 @@ test('only Misfortune production advances an unlocked and charmed Clover assembl
     1,
   )
 
-  assert.equal(mainResult.cloverAssembly.partProgress.resilientStem, 0)
-  assert.ok(misfortuneResult.cloverAssembly.partProgress.resilientStem > 0)
+  assert.equal(mainResult.cloverAssembly.progress, 0)
+  assert.ok(misfortuneResult.cloverAssembly.progress > 0)
 })
 
 test("Rabbit's Charm is required to finish the 5-Leaf Clover assembly", () => {
-  const completeProgress = Object.fromEntries(
-    CLOVER_ASSEMBLY_PARTS.map(({ id }) => [
-      id,
-      CLOVER_ASSEMBLY_PART_REQUIREMENT,
-    ]),
-  )
   const initialGame = createInitialGame()
   const readyGame = {
     ...initialGame,
     hasUnlockedGreaterBlueprinting: true,
     cloverAssembly: {
-      partProgress: completeProgress,
+      progress: CLOVER_ASSEMBLY_PART_REQUIREMENT,
       assembled: false,
     },
   }
@@ -156,30 +166,35 @@ test("Rabbit's Charm is required to finish the 5-Leaf Clover assembly", () => {
   assert.equal(assembled.cloverAssembly.assembled, true)
 })
 
-test('Clover assembly research and part progress survive save normalization', () => {
+test('Clover assembly research and combined progress survive save normalization', () => {
   const normalized = normalizeGame({
     hasUnlockedGreaterBlueprinting: true,
     cloverAssembly: {
-      partProgress: {
-        resilientStem: 123,
-        protectiveCoating: Number.POSITIVE_INFINITY,
-        rootLubricant: -5,
-        charmFitting: CLOVER_ASSEMBLY_PART_REQUIREMENT * 2,
-      },
+      progress: CLOVER_ASSEMBLY_PART_REQUIREMENT * 2,
       assembled: true,
     },
   })
 
   assert.equal(normalized.hasUnlockedGreaterBlueprinting, true)
   assert.deepEqual(normalized.cloverAssembly, {
-    partProgress: {
-      resilientStem: 123,
-      protectiveCoating: 0,
-      rootLubricant: 0,
-      charmFitting: CLOVER_ASSEMBLY_PART_REQUIREMENT,
-    },
+    progress: CLOVER_ASSEMBLY_PART_REQUIREMENT,
     assembled: true,
   })
+})
+
+test('separate legacy part progress migrates to its least-complete part', () => {
+  const normalized = normalizeGame({
+    cloverAssembly: {
+      partProgress: {
+        resilientStem: 400,
+        protectiveCoating: 100,
+        rootLubricant: 300,
+        charmFitting: 200,
+      },
+    },
+  })
+
+  assert.equal(normalized.cloverAssembly.progress, 100)
 })
 
 test('wiping Misfortune clears assembly work but preserves both precursors', () => {
@@ -188,9 +203,7 @@ test('wiping Misfortune clears assembly work but preserves both precursors', () 
     ...initialGame,
     hasUnlockedGreaterBlueprinting: true,
     cloverAssembly: {
-      partProgress: Object.fromEntries(
-        CLOVER_ASSEMBLY_PARTS.map(({ id }) => [id, 123]),
-      ),
+      progress: 123,
       assembled: false,
     },
     trade: {

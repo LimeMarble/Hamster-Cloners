@@ -11,12 +11,7 @@ import { getCropName } from '../game/crops.js'
 import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber } from './ui.jsx'
 
-function CloverAssemblyPart({ game, part, progress }) {
-  const progressRatio = Math.min(
-    1,
-    progress / CLOVER_ASSEMBLY_PART_REQUIREMENT,
-  )
-
+function CloverAssemblyIngredient({ game, part }) {
   return (
     <article className="clover-assembly-part">
       <div className="clover-assembly-part-heading">
@@ -33,21 +28,6 @@ function CloverAssemblyPart({ game, part, progress }) {
           </p>
         </div>
       </div>
-      <div
-        className="clover-assembly-progress-track"
-        role="progressbar"
-        aria-label={`${part.name} progress`}
-        aria-valuemin="0"
-        aria-valuemax="100"
-        aria-valuenow={Math.round(progressRatio * 1000) / 10}
-      >
-        <span style={{ width: `${progressRatio * 100}%` }} />
-      </div>
-      <p className="clover-assembly-progress-copy">
-        <FormattedNumber value={progress} /> /{' '}
-        <FormattedNumber value={CLOVER_ASSEMBLY_PART_REQUIREMENT} />{' '}
-        {getCropName(part.cropId, game.completedCropPerfections)} harvest
-      </p>
     </article>
   )
 }
@@ -70,6 +50,10 @@ export function CloverAssembly({
   const mainFieldCrops = isInMisfortune
     ? Math.max(0, Number(game.areaProgress?.main?.crops) || 0)
     : Math.max(0, Number(game.crops) || 0)
+  const progressRatio = Math.min(
+    1,
+    assembly.progress / CLOVER_ASSEMBLY_PART_REQUIREMENT,
+  )
 
   return (
     <>
@@ -128,8 +112,9 @@ export function CloverAssembly({
             ) : null}
           </div>
           <p>
-            Fabricate each part from its Crop&apos;s real harvest in Misfortune.
-            Part harvest also remains part of your normal Crop income.
+            Fabricate all four parts together from their real harvest in
+            Misfortune. Progress follows the slowest-producing required Crop,
+            and the harvest also remains part of your normal Crop income.
           </p>
           {!hasRabbitsCharm ? (
             <p className="clover-assembly-lock">
@@ -142,14 +127,28 @@ export function CloverAssembly({
           ) : null}
           <div className="clover-assembly-parts">
             {CLOVER_ASSEMBLY_PARTS.map((part) => (
-              <CloverAssemblyPart
+              <CloverAssemblyIngredient
                 game={game}
                 key={part.id}
                 part={part}
-                progress={assembly.partProgress[part.id]}
               />
             ))}
           </div>
+          <div
+            className="clover-assembly-progress-track"
+            role="progressbar"
+            aria-label="5-Leaf Clover assembly progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow={Math.round(progressRatio * 1000) / 10}
+          >
+            <span style={{ width: `${progressRatio * 100}%` }} />
+          </div>
+          <p className="clover-assembly-progress-copy">
+            <FormattedNumber value={assembly.progress} /> /{' '}
+            <FormattedNumber value={CLOVER_ASSEMBLY_PART_REQUIREMENT} />{' '}
+            of each required Crop
+          </p>
           {assembly.assembled ? (
             <p className="clover-assembly-complete-copy">
               The 5-Leaf Clover is assembled. Its greater fortunes have yet to

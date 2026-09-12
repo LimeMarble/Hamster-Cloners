@@ -34,9 +34,7 @@ function toNonNegativeNumber(value) {
 
 export function createInitialCloverAssemblyState() {
   return {
-    partProgress: Object.fromEntries(
-      CLOVER_ASSEMBLY_PARTS.map(({ id }) => [id, 0]),
-    ),
+    progress: 0,
     assembled: false,
   }
 }
@@ -46,15 +44,21 @@ export function normalizeCloverAssemblyState(rawAssembly) {
 
   if (!rawAssembly || typeof rawAssembly !== 'object') return initial
 
-  return {
-    partProgress: Object.fromEntries(
-      CLOVER_ASSEMBLY_PARTS.map(({ id }) => [
-        id,
-        Math.min(
-          CLOVER_ASSEMBLY_PART_REQUIREMENT,
-          toNonNegativeNumber(rawAssembly.partProgress?.[id]),
+  const legacyPartProgress = rawAssembly.partProgress &&
+    typeof rawAssembly.partProgress === 'object'
+    ? Math.min(
+        ...CLOVER_ASSEMBLY_PARTS.map(({ id }) =>
+          toNonNegativeNumber(rawAssembly.partProgress[id]),
         ),
-      ]),
+      )
+    : 0
+
+  return {
+    progress: Math.min(
+      CLOVER_ASSEMBLY_PART_REQUIREMENT,
+      rawAssembly.progress === undefined
+        ? legacyPartProgress
+        : toNonNegativeNumber(rawAssembly.progress),
     ),
     assembled: rawAssembly.assembled === true,
   }
@@ -91,18 +95,17 @@ export function advanceCloverAssemblyState(
     return assembly
   }
 
+  const limitingProductionPerSecond = Math.min(
+    ...CLOVER_ASSEMBLY_PARTS.map(({ cropId }) =>
+      toNonNegativeNumber(productionPerSecondByCrop?.[cropId]),
+    ),
+  )
+
   return {
     ...assembly,
-    partProgress: Object.fromEntries(
-      CLOVER_ASSEMBLY_PARTS.map(({ id, cropId }) => [
-        id,
-        Math.min(
-          CLOVER_ASSEMBLY_PART_REQUIREMENT,
-          assembly.partProgress[id] +
-            toNonNegativeNumber(productionPerSecondByCrop?.[cropId]) *
-              safeElapsedSeconds,
-        ),
-      ]),
+    progress: Math.min(
+      CLOVER_ASSEMBLY_PART_REQUIREMENT,
+      assembly.progress + limitingProductionPerSecond * safeElapsedSeconds,
     ),
   }
 }
@@ -110,10 +113,7 @@ export function advanceCloverAssemblyState(
 export function isCloverAssemblyReady(rawAssembly) {
   const assembly = normalizeCloverAssemblyState(rawAssembly)
 
-  return CLOVER_ASSEMBLY_PARTS.every(
-    ({ id }) =>
-      assembly.partProgress[id] >= CLOVER_ASSEMBLY_PART_REQUIREMENT,
-  )
+  return assembly.progress >= CLOVER_ASSEMBLY_PART_REQUIREMENT
 }
 
 export function completeCloverAssembly(game) {
