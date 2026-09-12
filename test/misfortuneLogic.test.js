@@ -3,6 +3,8 @@ import test from 'node:test'
 import {
   CAPYBARA_DEMONSTRATION_IDS,
   FLOOR_REPLICATOR_BASE_COST,
+  FLOOR_REPLICATOR_ACCELERATED_COST_GROWTH_STEP,
+  FLOOR_REPLICATOR_ACCELERATED_COST_SCALING_START,
   FLOOR_REPLICATOR_COORDINATION_GROWTH,
   FLOOR_REPLICATOR_COST_GROWTH,
   FLOOR_REPLICATOR_COST_TIER_SIZE,
@@ -26,6 +28,7 @@ import {
   getCloverBundleChancePerMinute,
   getCropProductionSnapshotPerSecond,
   getFloorReplicatorCoordinationMultiplier,
+  getFloorReplicatorCostGrowthForTier,
   getFloorsProducedPerSecond,
   getGameAreaCostMultiplier,
   getFortuneModifiers,
@@ -432,6 +435,8 @@ test('Floor Replicators use ten-purchase cost and effectiveness tiers', () => {
   assert.equal(FLOOR_REPLICATOR_BASE_COST, 0.01)
   assert.equal(FLOOR_REPLICATOR_COST_TIER_SIZE, 10)
   assert.equal(FLOOR_REPLICATOR_COST_GROWTH, 10)
+  assert.equal(FLOOR_REPLICATOR_ACCELERATED_COST_SCALING_START, 500)
+  assert.equal(FLOOR_REPLICATOR_ACCELERATED_COST_GROWTH_STEP, 5)
   assert.equal(misfortuneCostMultiplier, 100)
   assert.equal(getNextHamsterCost(1, false, misfortuneCostMultiplier), 600)
   assert.equal(
@@ -450,6 +455,22 @@ test('Floor Replicators use ten-purchase cost and effectiveness tiers', () => {
     getNextFloorReplicatorCost(10, misfortuneCostMultiplier),
     10,
   )
+  assert.equal(getFloorReplicatorCostGrowthForTier(49), 10)
+  assert.equal(getFloorReplicatorCostGrowthForTier(50), 15)
+  assert.equal(getFloorReplicatorCostGrowthForTier(51), 25)
+  assert.equal(getFloorReplicatorCostGrowthForTier(52), 40)
+  assert.ok(Math.abs(
+    getNextFloorReplicatorCost(500) /
+      getNextFloorReplicatorCost(490) - 15,
+  ) < 1e-12)
+  assert.ok(Math.abs(
+    getNextFloorReplicatorCost(510) /
+      getNextFloorReplicatorCost(500) - 25,
+  ) < 1e-12)
+  assert.ok(Math.abs(
+    getNextFloorReplicatorCost(520) /
+      getNextFloorReplicatorCost(510) - 40,
+  ) < 1e-12)
   assert.equal(FLOOR_REPLICATOR_COORDINATION_GROWTH, 2)
   assert.equal(getFloorReplicatorCoordinationMultiplier(9), 1)
   assert.equal(getFloorReplicatorCoordinationMultiplier(10), 2)

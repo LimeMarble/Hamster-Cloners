@@ -9,6 +9,7 @@ export const SEED_AUGMENTATION_IDS = Object.freeze({
   LOOSENED_BOUNDARIES: 'loosenedBoundaries',
   RESTORED_CONNECTIONS: 'restoredConnections',
   LEECHING_VINE: 'leechingVine',
+  SNEAKY_CRAWLER: 'sneakyCrawler',
 })
 
 export const SEED_AUGMENTATIONS = Object.freeze({
@@ -84,6 +85,13 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     maximumVines: 1,
     requiredMisfortuneUpgradeId: 'nourishingMisery',
   }),
+  [SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER]: Object.freeze({
+    id: SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER,
+    name: 'Sneaky Crawler',
+    cost: 3e136,
+    nourishmentVarietyBonus: 1,
+    requiredMisfortuneUpgradeId: 'huntForSomethingGreater',
+  }),
 })
 
 export function createInitialSeedAugmentationState() {
@@ -99,6 +107,7 @@ export function createInitialSeedAugmentationState() {
     loosenedBoundariesLevel: 0,
     restoredConnectionsUnlocked: false,
     leechingVineUnlocked: false,
+    sneakyCrawlerUnlocked: false,
   }
 }
 
@@ -167,6 +176,7 @@ export function normalizeSeedAugmentationState(rawState) {
     restoredConnectionsUnlocked:
       rawState?.restoredConnectionsUnlocked === true,
     leechingVineUnlocked: rawState?.leechingVineUnlocked === true,
+    sneakyCrawlerUnlocked: rawState?.sneakyCrawlerUnlocked === true,
   }
 }
 
@@ -258,6 +268,18 @@ export function hasLeechingVineAugmentation(seedAugmentations) {
     .leechingVineUnlocked
 }
 
+export function hasSneakyCrawlerAugmentation(seedAugmentations) {
+  return normalizeSeedAugmentationState(seedAugmentations)
+    .sneakyCrawlerUnlocked
+}
+
+export function getLeechingVineNourishmentVarietyBonus(seedAugmentations) {
+  return hasSneakyCrawlerAugmentation(seedAugmentations)
+    ? SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER]
+      .nourishmentVarietyBonus
+    : 0
+}
+
 export function getNextSeedAugmentationCost(game, augmentationId) {
   const state = normalizeSeedAugmentationState(game.seedAugmentations)
 
@@ -317,6 +339,8 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
       'restoredConnectionsUnlocked',
     [SEED_AUGMENTATION_IDS.LEECHING_VINE]:
       'leechingVineUnlocked',
+    [SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER]:
+      'sneakyCrawlerUnlocked',
   }
   const stateKey = oneTimeAugmentationStateKeys[augmentationId]
 
@@ -367,7 +391,8 @@ function canPurchaseSeedAugmentation(game, augmentationId) {
     augmentationId === SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES ||
     augmentationId === SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS
   const isLeechingGourdAugmentation =
-    augmentationId === SEED_AUGMENTATION_IDS.LEECHING_VINE
+    augmentationId === SEED_AUGMENTATION_IDS.LEECHING_VINE ||
+    augmentationId === SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER
 
   return (
     (isLeekAugmentation &&
@@ -449,6 +474,11 @@ export function purchaseSeedAugmentation(game, augmentationId) {
     seedAugmentations = {
       ...state,
       leechingVineUnlocked: true,
+    }
+  } else if (augmentationId === SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER) {
+    seedAugmentations = {
+      ...state,
+      sneakyCrawlerUnlocked: true,
     }
   }
 

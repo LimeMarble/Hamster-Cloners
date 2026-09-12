@@ -77,9 +77,12 @@ test('Hunt counts Crop types present in Main but missing from Misfortune', () =>
   )
   assert.equal(
     getHuntForSomethingGreaterMultiplier(
-      switchGameArea(game, GAME_AREA_IDS.MAIN),
+      {
+        ...switchGameArea(game, GAME_AREA_IDS.MAIN),
+        secondsSinceAreaReset: 90,
+      },
     ),
-    1,
+    1.5,
   )
 })
 
@@ -183,6 +186,30 @@ test('Hunt multiplies Column, Row, and Floor production', () => {
   assert.ok(Math.abs(advanced.farmland.columns - 1.5) < 1e-10)
   assert.ok(Math.abs(advanced.farmland.rows - 1.612) < 1e-10)
   assert.ok(Math.abs(advanced.farmland.floors - 1.6) < 1e-10)
+})
+
+test('Main inherits Hunt time scaling with zero missing Crop types', () => {
+  const game = {
+    ...createInitialGame(),
+    hamsters: 1,
+    hasUnlockedRowDuplicators: true,
+    rowDuplicators: 1,
+    hasUnlockedFloorReplicators: true,
+    floorReplicators: 1,
+    completedMisfortuneUpgrades: [
+      MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+    ],
+    secondsSinceAreaReset: 180,
+  }
+  const advanced = advanceGameSimulationStep(game, 1, {
+    random: () => 1,
+  })
+
+  assert.equal(getMissingMisfortuneCropTypeIds(game).length, 0)
+  assert.equal(getHuntForSomethingGreaterMultiplier(game), 3)
+  assert.ok(Math.abs(advanced.farmland.columns - 1.2) < 1e-10)
+  assert.ok(Math.abs(advanced.farmland.rows - 1.306) < 1e-10)
+  assert.ok(Math.abs(advanced.farmland.floors - 1.3) < 1e-10)
 })
 
 test('the reset timer keeps advancing and preserves values beyond ten minutes', () => {

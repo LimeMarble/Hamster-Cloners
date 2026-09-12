@@ -106,6 +106,79 @@ test('Nourishing Misery unlocks the 1e120 Leeching Vine augmentation', () => {
   assert.equal(getNextSeedAugmentationCost(augmentedGame, augmentationId), null)
 })
 
+test('Hunt for Something Greater reveals Sneaky Crawler', () => {
+  const augmentationId = SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER
+  const augmentation = SEED_AUGMENTATIONS[augmentationId]
+  const hiddenGame = {
+    ...createInitialGame(),
+    crops: augmentation.cost,
+    completedCropPerfections: ['leechingGourd'],
+    capybara: {
+      completedDemonstrations: [CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION],
+      completedSecondaryObjectives: [],
+    },
+  }
+
+  assert.equal(augmentation.cost, 3e136)
+  assert.equal(isSeedAugmentationVisible(hiddenGame, augmentationId), false)
+
+  const revealedGame = {
+    ...hiddenGame,
+    completedMisfortuneUpgrades: [
+      MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+    ],
+  }
+  assert.equal(isSeedAugmentationVisible(revealedGame, augmentationId), true)
+
+  const purchased = purchaseSeedAugmentation(revealedGame, augmentationId)
+  assert.ok(purchased)
+  assert.equal(purchased.crops, 0)
+  assert.equal(purchased.seedAugmentations.sneakyCrawlerUnlocked, true)
+
+  const restored = importGame(exportGame(purchased))
+  assert.equal(restored.seedAugmentations.sneakyCrawlerUnlocked, true)
+})
+
+test('Sneaky Crawler adds variety without adding nourishment strength', () => {
+  const blueprint = createVineBlueprint()
+  const baseAugmentations = { leechingVineUnlocked: true }
+  const crawlerAugmentations = {
+    ...baseAugmentations,
+    sneakyCrawlerUnlocked: true,
+  }
+  const baseNourishment = getLeechingVineNourishment(
+    blueprint,
+    COMPLETED_PERFECTIONS,
+    baseAugmentations,
+  )
+  const crawlerNourishment = getLeechingVineNourishment(
+    blueprint,
+    COMPLETED_PERFECTIONS,
+    crawlerAugmentations,
+  )
+  const baseStatus = getLeechingVineStatus(
+    blueprint,
+    COMPLETED_PERFECTIONS,
+    baseAugmentations,
+  )
+  const crawlerStatus = getLeechingVineStatus(
+    blueprint,
+    COMPLETED_PERFECTIONS,
+    crawlerAugmentations,
+  )
+
+  assert.equal(crawlerNourishment.baseVariety, baseNourishment.variety)
+  assert.equal(crawlerNourishment.varietyBonus, 1)
+  assert.equal(crawlerNourishment.variety, baseNourishment.variety + 1)
+  assert.equal(crawlerNourishment.strength, baseNourishment.strength)
+  assert.equal(crawlerNourishment.maximumLength, baseNourishment.maximumLength)
+  assert.equal(crawlerNourishment.bonusExponent, baseNourishment.bonusExponent)
+  assert.equal(
+    crawlerStatus.activeTargetIndexes.length,
+    baseStatus.activeTargetIndexes.length + 1,
+  )
+})
+
 test('vine nourishment independently controls range, targets, and exponent', () => {
   const blueprint = createVineBlueprint()
   const nourishment = getLeechingVineNourishment(

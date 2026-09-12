@@ -108,6 +108,16 @@ export function Augmentation({
     game,
     leechingVine.id,
   )
+  const sneakyCrawler =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER]
+  const sneakyCrawlerCost = getNextSeedAugmentationCost(
+    game,
+    sneakyCrawler.id,
+  )
+  const isSneakyCrawlerVisible = isSeedAugmentationVisible(
+    game,
+    sneakyCrawler.id,
+  )
 
   return (
     <section className='trade-panel' aria-labelledby='augmentation-title'>
@@ -436,6 +446,56 @@ export function Augmentation({
                   : <>
                       Augment —{' '}
                       <FormattedNumber value={leechingVineCost} /> Crops
+                    </>}
+            </button>
+          </article>
+        ) : null}
+
+        {isSneakyCrawlerVisible ? (
+          <article className='seed-augmentation-card'>
+            <div className='seed-augmentation-heading'>
+              <CropVisual
+                cropId='pumpkin'
+                completedCropPerfections={game.completedCropPerfections}
+                className='seed-augmentation-crop'
+              />
+              <div>
+                <p className='eyebrow'>Leeching Gourd</p>
+                <h2>{sneakyCrawler.name}</h2>
+              </div>
+            </div>
+            <p>
+              Adds +{sneakyCrawler.nourishmentVarietyBonus} nourishment
+              variety to Leeching Vine, allowing it to affect one additional
+              Turnip without adding nourishment strength, range, or exponent.
+            </p>
+            <dl className='seed-augmentation-stats'>
+              <div>
+                <dt>Status</dt>
+                <dd>{sneakyCrawlerCost === null ? 'Active' : 'Locked'}</dd>
+              </div>
+              <div>
+                <dt>Cost</dt>
+                <dd><FormattedNumber value={sneakyCrawler.cost} /> Crops</dd>
+              </div>
+            </dl>
+            <button
+              type='button'
+              className='trade-primary-button'
+              onClick={() => onPurchaseSeedAugmentation(sneakyCrawler.id)}
+              disabled={
+                !hasLeechingGourd ||
+                sneakyCrawlerCost === null ||
+                game.crops < sneakyCrawlerCost
+              }
+            >
+              {!hasLeechingGourd
+                ? 'Perfect Pumpkin first'
+                : sneakyCrawlerCost === null
+                  ? 'Augmentation active'
+                  : <>
+                      Augment —{' '}
+                      <FormattedNumber value={sneakyCrawlerCost} /> Crops
                     </>}
             </button>
           </article>

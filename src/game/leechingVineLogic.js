@@ -3,6 +3,7 @@ import {
   getOrthogonalIndexes,
 } from './adjacencyLogic.js'
 import {
+  getLeechingVineNourishmentVarietyBonus,
   hasLeechingVineAugmentation,
   isMirrorCornDebuffRemovalEnabled,
   SEED_AUGMENTATIONS,
@@ -192,13 +193,20 @@ export function getLeechingVineNourishment(
         (total, source) => total + source.strength,
         0,
       )
-      const variety = new Set(sources.map((source) => source.cropType)).size
+      const baseVariety = new Set(
+        sources.map((source) => source.cropType),
+      ).size
+      const varietyBonus =
+        getLeechingVineNourishmentVarietyBonus(seedAugmentations)
+      const variety = baseVariety + varietyBonus
       const augmentation =
         SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LEECHING_VINE]
 
       return {
         sources,
         strength,
+        baseVariety,
+        varietyBonus,
         variety,
         maximumLength: augmentation.baseVineLength + strength,
         targetCapacity: variety,

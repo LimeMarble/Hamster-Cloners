@@ -255,6 +255,8 @@ export function Misfortune({
               missing from Misfortune, then by the number of minutes since
               the last field reset. The time multiplier starts at ×1 and
               caps at ×{huntForSomethingGreater.maximumTimeMultiplier}.
+              Main progression inherits the time multiplier with zero
+              missing Crop types.
             </p>
             {hasHuntForSomethingGreater ? (
               <p>

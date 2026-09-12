@@ -3,6 +3,8 @@ import {
   HAMSTER_BASE_COST,
   HAMSTER_COST_GROWTH,
   HAMSTER_COST_GROWTH_INCREASE_PER_HAMSTER,
+  FLOOR_REPLICATOR_ACCELERATED_COST_GROWTH_STEP,
+  FLOOR_REPLICATOR_ACCELERATED_COST_SCALING_START,
   FLOOR_REPLICATOR_BASE_COST,
   FLOOR_REPLICATOR_COST_GROWTH,
   FLOOR_REPLICATOR_COST_TIER_SIZE,
@@ -55,6 +57,40 @@ export function getHamsterCostGrowth(hamsters) {
 function normalizeCostMultiplier(value) {
   const multiplier = Number(value)
   return Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1
+}
+
+const floorReplicatorCostByTier = [FLOOR_REPLICATOR_BASE_COST]
+
+export function getFloorReplicatorCostGrowthForTier(tier) {
+  const safeTier = Math.max(0, Math.floor(Number(tier) || 0))
+  const acceleratedStartTier =
+    FLOOR_REPLICATOR_ACCELERATED_COST_SCALING_START /
+    FLOOR_REPLICATOR_COST_TIER_SIZE
+
+  if (safeTier < acceleratedStartTier) {
+    return FLOOR_REPLICATOR_COST_GROWTH
+  }
+
+  const acceleratedTierIndex = safeTier - acceleratedStartTier + 1
+
+  return FLOOR_REPLICATOR_COST_GROWTH +
+    FLOOR_REPLICATOR_ACCELERATED_COST_GROWTH_STEP *
+      acceleratedTierIndex * (acceleratedTierIndex + 1) / 2
+}
+
+function getFloorReplicatorCostForTier(tier) {
+  while (floorReplicatorCostByTier.length <= tier) {
+    const nextTier = floorReplicatorCostByTier.length
+    const nextCost =
+      floorReplicatorCostByTier[nextTier - 1] *
+      getFloorReplicatorCostGrowthForTier(nextTier)
+
+    floorReplicatorCostByTier.push(
+      Number.isFinite(nextCost) ? nextCost : Infinity,
+    )
+  }
+
+  return floorReplicatorCostByTier[tier]
 }
 
 export function getNextHamsterCost(
@@ -116,8 +152,7 @@ export function getNextFloorReplicatorCost(
   )
 
   return (
-    FLOOR_REPLICATOR_BASE_COST *
-    FLOOR_REPLICATOR_COST_GROWTH ** completedTiers *
+    getFloorReplicatorCostForTier(completedTiers) *
     normalizeCostMultiplier(costMultiplier)
   )
 }

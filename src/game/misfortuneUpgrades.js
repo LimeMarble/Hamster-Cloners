@@ -210,6 +210,8 @@ function getAreaUnlockedCropIds(game, areaId) {
 }
 
 export function getMissingMisfortuneCropTypeIds(game) {
+  if (game?.activeArea !== GAME_AREA_IDS.MISFORTUNE) return []
+
   const mainCropIds = getAreaUnlockedCropIds(game, GAME_AREA_IDS.MAIN)
   const misfortuneCropIds = new Set(
     getAreaUnlockedCropIds(game, GAME_AREA_IDS.MISFORTUNE),
@@ -220,7 +222,6 @@ export function getMissingMisfortuneCropTypeIds(game) {
 
 export function getHuntForSomethingGreaterMultiplier(game) {
   if (
-    game?.activeArea !== GAME_AREA_IDS.MISFORTUNE ||
     !hasMisfortuneUpgrade(
       game,
       MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
@@ -239,10 +240,12 @@ export function getHuntForSomethingGreaterMultiplier(game) {
     1,
     Math.min(minutesSinceReset, upgrade.maximumTimeMultiplier),
   )
+  const missingCropTypeCount =
+    game?.activeArea === GAME_AREA_IDS.MISFORTUNE
+      ? getMissingMisfortuneCropTypeIds(game).length
+      : 0
 
-  return (
-    (1 + getMissingMisfortuneCropTypeIds(game).length) * timeMultiplier
-  )
+  return (1 + missingCropTypeCount) * timeMultiplier
 }
 
 export function isFloorReplicatorSupportModeActive(game) {
