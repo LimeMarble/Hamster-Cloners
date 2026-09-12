@@ -84,7 +84,7 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={unfortunateRow.cost} /> Crops.
-              This choice is permanent until Misfortune progress is wiped.
+              This choice is permanent.
             </p>
           </div>
           <button
@@ -114,7 +114,7 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={rushedStart.cost} /> Crops. This
-              choice is permanent until Misfortune progress is wiped.
+              choice is permanent.
             </p>
           </div>
           <button
@@ -143,8 +143,7 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={adversityGrownTubers.cost} />
-              {' '}Crops. This choice is permanent until Misfortune progress
-              is wiped.
+              {' '}Crops. This choice is permanent.
             </p>
           </div>
           <button
@@ -184,8 +183,7 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={burdenedFoundations.cost} />
-              {' '}Crops. This choice is permanent until Misfortune progress
-              is wiped.
+              {' '}Crops. This choice is permanent.
             </p>
           </div>
           <button
@@ -223,7 +221,7 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={nourishingMisery.cost} /> Crops.
-              This choice is permanent until Misfortune progress is wiped.
+              This choice is permanent.
             </p>
           </div>
           <button
@@ -275,8 +273,7 @@ export function Misfortune({
             ) : null}
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={huntForSomethingGreater.cost} />{' '}
-              Crops. This choice is permanent until Misfortune progress is
-              wiped.
+              Crops. This choice is permanent.
             </p>
           </div>
           <button

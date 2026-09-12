@@ -23,6 +23,7 @@ function createMisfortuneGame(overrides = {}) {
   })
   const mainGame = {
     ...createInitialGame(),
+    totalHamstersHired: 1_000,
     hasUnlockedTurnip: true,
     blueprint: mainBlueprint,
     blueprintSlots: [mainBlueprint],
@@ -64,15 +65,15 @@ test('Hunt counts Crop types present in Main but missing from Misfortune', () =>
 
   assert.deepEqual(
     getMissingMisfortuneCropTypeIds(game),
-    ['corn', 'turnip'],
+    ['corn'],
   )
-  assert.equal(getHuntForSomethingGreaterMultiplier(game), 4.5)
+  assert.equal(getHuntForSomethingGreaterMultiplier(game), 3)
   assert.equal(
     getHuntForSomethingGreaterMultiplier({
       ...game,
       secondsSinceAreaReset: 600,
     }),
-    30,
+    20,
   )
   assert.equal(
     getHuntForSomethingGreaterMultiplier(
@@ -80,6 +81,54 @@ test('Hunt counts Crop types present in Main but missing from Misfortune', () =>
     ),
     1,
   )
+})
+
+test('Hunt counts Trade crops hidden behind missing Misfortune crops', () => {
+  const mainBlueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['leek', 'corn'],
+  })
+  const mainGame = {
+    ...createInitialGame(),
+    unionized: true,
+    totalHamstersHired: 1_000,
+    hamsters: 500,
+    hasUnlockedRowDuplicators: true,
+    rowDuplicators: 500,
+    hasUnlockedTurnip: true,
+    hasUnlockedAppleTree: true,
+    hasUnlockedLentil: true,
+    hasUnlockedKnotweed: true,
+    hasUnlockedWheat: true,
+    hasUnlockedSunflower: true,
+    trade: {
+      ...createInitialGame().trade,
+      rabbitUnlocks: ['carrot', 'fourLeafClover'],
+    },
+    blueprint: mainBlueprint,
+    blueprintSlots: [mainBlueprint],
+  }
+  const game = {
+    ...switchGameArea(mainGame, GAME_AREA_IDS.MISFORTUNE),
+    hamsters: 500,
+    rowDuplicators: 499,
+    hasUnlockedTurnip: true,
+    hasUnlockedAppleTree: true,
+    hasUnlockedLentil: true,
+    hasUnlockedKnotweed: true,
+    hasUnlockedWheat: true,
+    hasUnlockedSunflower: false,
+    blueprint: mainBlueprint,
+    blueprintSlots: [mainBlueprint],
+  }
+
+  assert.deepEqual(getMissingMisfortuneCropTypeIds(game), [
+    'sunflower',
+    'canola',
+    'carrot',
+    'fourLeafClover',
+  ])
 })
 
 test('Hunt extends Rushed Start so only its second minute is negative', () => {
@@ -131,9 +180,9 @@ test('Hunt multiplies Column, Row, and Floor production', () => {
     random: () => 1,
   })
 
-  assert.ok(Math.abs(advanced.farmland.columns - 1.8) < 1e-10)
-  assert.ok(Math.abs(advanced.farmland.rows - 1.918) < 1e-10)
-  assert.ok(Math.abs(advanced.farmland.floors - 1.9) < 1e-10)
+  assert.ok(Math.abs(advanced.farmland.columns - 1.5) < 1e-10)
+  assert.ok(Math.abs(advanced.farmland.rows - 1.612) < 1e-10)
+  assert.ok(Math.abs(advanced.farmland.floors - 1.6) < 1e-10)
 })
 
 test('the reset timer keeps advancing and preserves values beyond ten minutes', () => {

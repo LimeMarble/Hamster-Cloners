@@ -2,7 +2,7 @@ import {
   FLOOR_REPLICATOR_COST_TIER_SIZE,
   GAME_AREA_IDS,
 } from './gameConfig.js'
-import { getUnlockedCropIds } from './crops.js'
+import { getUnlockedCropIds, getVisibleCropIds } from './crops.js'
 
 export const FLOOR_REPLICATOR_MODES = Object.freeze({
   CONSTRUCTION: 'construction',
@@ -186,7 +186,7 @@ function getAreaUnlockedCropIds(game, areaId) {
   const rabbitUnlocks = new Set(game?.trade?.rabbitUnlocks ?? [])
   const isMisfortune = areaId === GAME_AREA_IDS.MISFORTUNE
 
-  return getUnlockedCropIds(
+  const unlockedCropIds = getUnlockedCropIds(
     area.blueprint,
     game?.unionized === true,
     area.hamsters,
@@ -201,6 +201,12 @@ function getAreaUnlockedCropIds(game, areaId) {
     rabbitUnlocks.has('fourLeafClover') && !isMisfortune,
     area.hasUnlockedWheat,
   )
+
+  return getVisibleCropIds(
+    unlockedCropIds,
+    game?.totalHamstersHired,
+    game?.hasUnlockedRowDuplicators,
+  ).filter((cropId) => unlockedCropIds.includes(cropId))
 }
 
 export function getMissingMisfortuneCropTypeIds(game) {
