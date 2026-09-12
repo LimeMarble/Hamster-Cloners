@@ -191,6 +191,18 @@ export function useGameController() {
           MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
         ),
         onUnlockUnfortunateRow: actions.onUnlockUnfortunateRow,
+        fortunateColumn: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN
+        ],
+        hasFortunateColumn: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+        ),
+        canUnlockFortunateColumn: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+        ),
+        onUnlockFortunateColumn: actions.onUnlockFortunateColumn,
         rushedStart: MISFORTUNE_UPGRADES[
           MISFORTUNE_UPGRADE_IDS.RUSHED_START
         ],

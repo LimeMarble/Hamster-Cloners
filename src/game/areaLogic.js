@@ -211,7 +211,17 @@ export function getMisfortuneAreaCrops(game) {
   return toNonNegativeNumber(game.areaProgress?.misfortune?.crops)
 }
 
-function resetAreaAndGrantBlueprintRow(game, areaState, areaId) {
+const RESET_UPGRADE_BLUEPRINT_TRACKS = Object.freeze({
+  [MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW]: 'row',
+  [MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN]: 'column',
+})
+
+function resetAreaAndGrantBlueprintSpace(
+  game,
+  areaState,
+  areaId,
+  trackId,
+) {
   const scopedGame = {
     ...game,
     ...areaState,
@@ -220,7 +230,7 @@ function resetAreaAndGrantBlueprintRow(game, areaState, areaId) {
     secondsSinceAreaReset: 0,
     farmland: resetFarmlandUnits(areaState.farmland),
   }
-  const expandedGame = grantBlueprintSpace(scopedGame, 'row')
+  const expandedGame = grantBlueprintSpace(scopedGame, trackId)
 
   return captureCurrentAreaState(expandedGame ?? scopedGame)
 }
@@ -232,22 +242,25 @@ export function purchaseMisfortuneUpgrade(game, upgradeId) {
     return null
   }
 
-  if (upgradeId !== MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW) {
+  const blueprintTrackId = RESET_UPGRADE_BLUEPRINT_TRACKS[upgradeId]
+  if (!blueprintTrackId) {
     return purchasedGame
   }
 
   const currentMisfortuneState = captureCurrentAreaState(purchasedGame)
-  const resetMisfortuneState = resetAreaAndGrantBlueprintRow(
+  const resetMisfortuneState = resetAreaAndGrantBlueprintSpace(
     purchasedGame,
     currentMisfortuneState,
     GAME_AREA_IDS.MISFORTUNE,
+    blueprintTrackId,
   )
   const storedMainState = purchasedGame.areaProgress?.main
   const resetMainState = storedMainState
-    ? resetAreaAndGrantBlueprintRow(
+    ? resetAreaAndGrantBlueprintSpace(
         purchasedGame,
         normalizeStoredAreaState(storedMainState),
         GAME_AREA_IDS.MAIN,
+        blueprintTrackId,
       )
     : null
 
@@ -267,18 +280,31 @@ export function wipeMisfortuneAreaProgress(game) {
     game,
     MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
   )
+  const hasFortunateColumn = hasMisfortuneUpgrade(
+    game,
+    MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+  )
+  const revokeGiftedBlueprintSpace = (areaGame) => {
+    let cleanedGame = areaGame
+
+    if (hasUnfortunateRow) {
+      cleanedGame = revokeBlueprintSpace(cleanedGame, 'row') ?? cleanedGame
+    }
+    if (hasFortunateColumn) {
+      cleanedGame = revokeBlueprintSpace(cleanedGame, 'column') ?? cleanedGame
+    }
+
+    return cleanedGame
+  }
   const storedMainState = game.areaProgress?.main
   const cleanedStoredMainState =
-    hasUnfortunateRow && storedMainState
+    (hasUnfortunateRow || hasFortunateColumn) && storedMainState
       ? captureCurrentAreaState(
-          revokeBlueprintSpace(
-            {
-              ...game,
-              ...normalizeStoredAreaState(storedMainState),
-              activeArea: GAME_AREA_IDS.MAIN,
-            },
-            'row',
-          ),
+          revokeGiftedBlueprintSpace({
+            ...game,
+            ...normalizeStoredAreaState(storedMainState),
+            activeArea: GAME_AREA_IDS.MAIN,
+          }),
         )
       : storedMainState ?? null
   const clearedAreaProgress = {
@@ -287,9 +313,7 @@ export function wipeMisfortuneAreaProgress(game) {
   }
 
   if (!isMisfortuneAreaActive(game)) {
-    const cleanedCurrentGame = hasUnfortunateRow
-      ? revokeBlueprintSpace(game, 'row')
-      : game
+    const cleanedCurrentGame = revokeGiftedBlueprintSpace(game)
 
     return {
       ...cleanedCurrentGame,

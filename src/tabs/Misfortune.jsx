@@ -38,6 +38,10 @@ export function Misfortune({
   hasUnfortunateRow,
   canUnlockUnfortunateRow,
   onUnlockUnfortunateRow,
+  fortunateColumn,
+  hasFortunateColumn,
+  canUnlockFortunateColumn,
+  onUnlockFortunateColumn,
   rushedStart,
   hasRushedStart,
   canUnlockRushedStart,
@@ -301,6 +305,39 @@ export function Misfortune({
                       <FormattedNumber
                         value={huntForSomethingGreater.cost}
                       />{' '}
+                      Crops
+                    </>
+                  )}
+          </button>
+        </article>
+        <article className="misfortune-upgrade-card">
+          <div>
+            <h2>{fortunateColumn.name}</h2>
+            <p>
+              Crop production ×1.25 in both areas. Purchasing resets Crops
+              and field growth in both areas, then gives the blueprints in
+              both areas one permanent Column.
+            </p>
+            <p className="misfortune-upgrade-note">
+              Cost: <FormattedNumber value={fortunateColumn.cost} /> Crops.
+              This choice is permanent until Misfortune progress is wiped.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={
+              hasFortunateColumn ? 'secondary-button' : 'primary-button'
+            }
+            onClick={onUnlockFortunateColumn}
+            disabled={hasFortunateColumn || !canUnlockFortunateColumn}
+          >
+            {hasFortunateColumn
+              ? 'Accepted'
+              : canUnlockFortunateColumn
+                ? 'Accept Fortunate Column'
+                : (
+                    <>
+                      Need <FormattedNumber value={fortunateColumn.cost} />{' '}
                       Crops
                     </>
                   )}

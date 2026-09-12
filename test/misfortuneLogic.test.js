@@ -368,6 +368,96 @@ test('Unfortunate Row resets both areas and grants one blueprint Row', () => {
   assert.deepEqual(restoredUpgrade.completedBlueprintExpansions, [])
 })
 
+test('Fortunate Column resets both areas and grants one blueprint Column', () => {
+  const mainBlueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: ['leek', 'corn', null, null],
+  })
+  const mainGame = {
+    ...createInitialGame(),
+    crops: 123,
+    hamsters: 250,
+    rowDuplicators: 75,
+    farmland: {
+      rows: 8,
+      columns: 9,
+      floors: 3,
+      farms: 2,
+      otherMultiplier: 1,
+    },
+    blueprint: mainBlueprint,
+    blueprintSlots: [mainBlueprint],
+  }
+  const upgrade = MISFORTUNE_UPGRADES[
+    MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN
+  ]
+  const baseGame = {
+    ...switchGameArea(mainGame, GAME_AREA_IDS.MISFORTUNE),
+    crops: upgrade.cost,
+    farmland: {
+      rows: 4,
+      columns: 5,
+      floors: 2,
+      farms: 3,
+      otherMultiplier: 1,
+    },
+  }
+  const upgradedGame = purchaseMisfortuneUpgrade(
+    baseGame,
+    MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+  )
+
+  assert.ok(upgradedGame)
+  assert.equal(upgrade.cost, 7.77e50)
+  assert.equal(upgradedGame.crops, 0)
+  assert.equal(upgradedGame.farmland.columns, 0.9)
+  assert.equal(upgradedGame.farmland.rows, 1)
+  assert.equal(upgradedGame.blueprint.rows, 1)
+  assert.equal(upgradedGame.blueprint.columns, 2)
+  assert.equal(upgradedGame.areaProgress.main.crops, 0)
+  assert.equal(upgradedGame.areaProgress.main.farmland.columns, 0.9)
+  assert.equal(upgradedGame.areaProgress.main.farmland.rows, 1)
+  assert.equal(upgradedGame.areaProgress.main.blueprint.rows, 2)
+  assert.equal(upgradedGame.areaProgress.main.blueprint.columns, 3)
+
+  const restoredUpgrade = normalizeGame({
+    ...createInitialGame(),
+    blueprintExpansionAxesSwapped: true,
+    blueprint: createBlueprint({ rows: 1, columns: 2 }),
+    blueprintSlots: [createBlueprint({ rows: 1, columns: 2 })],
+    completedMisfortuneUpgrades: [
+      MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+    ],
+  })
+  assert.deepEqual(restoredUpgrade.completedMisfortuneUpgrades, [
+    MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+  ])
+  assert.deepEqual(restoredUpgrade.completedBlueprintExpansions, [])
+})
+
+test('wiping Misfortune removes the Column granted by Fortunate Column', () => {
+  const giftedBlueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['leek', 'corn'],
+  })
+  const upgradedGame = {
+    ...createInitialGame(),
+    blueprint: giftedBlueprint,
+    blueprintSlots: [giftedBlueprint],
+    completedMisfortuneUpgrades: [
+      MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+    ],
+  }
+  const wipedGame = wipeMisfortuneAreaProgress(upgradedGame)
+
+  assert.deepEqual(wipedGame.completedMisfortuneUpgrades, [])
+  assert.equal(wipedGame.blueprint.rows, 1)
+  assert.equal(wipedGame.blueprint.columns, 1)
+  assert.deepEqual(wipedGame.blueprint.cells, ['leek'])
+})
+
 test('the Misfortune wipe resets only the area-specific state', () => {
   const mainGame = {
     ...createInitialGame(),

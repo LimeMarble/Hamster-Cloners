@@ -15,7 +15,7 @@ import {
 } from './gameConfig.js'
 import {
   getBurdenedFoundationsPassiveEffectBonus,
-  getUnfortunateRowCropProductionMultiplier,
+  getMisfortuneUpgradeCropProductionMultiplier,
 } from './misfortuneUpgrades.js'
 
 export const CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS = 60
@@ -160,7 +160,7 @@ export function getFortuneModifiers(gameOrFortune) {
       cropYieldMultiplier: 1 / FORTUNES_WRATH_CROP_DIVISOR,
       cropProductionExponent: FORTUNES_WRATH_CROP_EXPONENT,
       cropProductionMultiplier:
-        getUnfortunateRowCropProductionMultiplier(gameOrFortune),
+        getMisfortuneUpgradeCropProductionMultiplier(gameOrFortune),
       harvestMultiplier: 1,
       source: 'fortunesWrath',
     }
@@ -193,7 +193,7 @@ export function getFortuneModifiers(gameOrFortune) {
       cropYieldMultiplier: 1,
       cropProductionExponent: 1,
       cropProductionMultiplier:
-        getUnfortunateRowCropProductionMultiplier(gameOrFortune),
+        getMisfortuneUpgradeCropProductionMultiplier(gameOrFortune),
       harvestMultiplier: 1,
     },
   )

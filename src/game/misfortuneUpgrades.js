@@ -11,6 +11,7 @@ export const FLOOR_REPLICATOR_MODES = Object.freeze({
 
 export const MISFORTUNE_UPGRADE_IDS = Object.freeze({
   UNFORTUNATE_ROW: 'unfortunateRow',
+  FORTUNATE_COLUMN: 'fortunateColumn',
   RUSHED_START: 'rushedStart',
   ADVERSITY_GROWN_TUBERS: 'adversityGrownTubers',
   BURDENED_FOUNDATIONS: 'burdenedFoundations',
@@ -24,6 +25,12 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     name: 'Unfortunate Row',
     cost: 250_000,
     cropProductionMultiplier: 0.8,
+  }),
+  [MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN]: Object.freeze({
+    id: MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+    name: 'Fortunate Column',
+    cost: 7.77e50,
+    cropProductionMultiplier: 1.25,
   }),
   [MISFORTUNE_UPGRADE_IDS.RUSHED_START]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.RUSHED_START,
@@ -142,6 +149,24 @@ export function getUnfortunateRowCropProductionMultiplier(game) {
   return MISFORTUNE_UPGRADES[
     MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW
   ].cropProductionMultiplier
+}
+
+export function getFortunateColumnCropProductionMultiplier(game) {
+  if (!hasMisfortuneUpgrade(
+    game,
+    MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+  )) {
+    return 1
+  }
+
+  return MISFORTUNE_UPGRADES[
+    MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN
+  ].cropProductionMultiplier
+}
+
+export function getMisfortuneUpgradeCropProductionMultiplier(game) {
+  return getUnfortunateRowCropProductionMultiplier(game) *
+    getFortunateColumnCropProductionMultiplier(game)
 }
 
 export function getRushedStartExternalMultiplier(game) {

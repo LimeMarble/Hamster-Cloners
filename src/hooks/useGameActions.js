@@ -389,6 +389,23 @@ export function useGameActions({
     )
   }
 
+  function unlockFortunateColumn() {
+    const didConfirm = window.confirm(
+      'Accept Fortunate Column for 7.77e50 Crops? This resets Crops and field growth in both the main and Misfortune areas, then grants the blueprints in both areas one permanent Column.',
+    )
+
+    if (!didConfirm) {
+      return
+    }
+
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+      ) ?? currentGame,
+    )
+  }
+
   function unlockRushedStart() {
     updateGame((currentGame) =>
       purchaseMisfortuneUpgrade(
@@ -597,6 +614,7 @@ export function useGameActions({
     isRowDuplicatorUnlockPending,
     onLeaveMisfortuneArea: leaveMisfortuneArea,
     onUnlockUnfortunateRow: unlockUnfortunateRow,
+    onUnlockFortunateColumn: unlockFortunateColumn,
     onUnlockRushedStart: unlockRushedStart,
     onUnlockAdversityGrownTubers: unlockAdversityGrownTubers,
     onUnlockBurdenedFoundations: unlockBurdenedFoundations,

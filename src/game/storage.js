@@ -343,11 +343,17 @@ export function normalizeGame(rawGame) {
           1 -
           rabbitBlueprintExpansions[track.id] -
           (track.id === 'row' &&
-          completedMisfortuneUpgrades.includes(
-            MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
-          )
-            ? 1
-            : 0),
+            completedMisfortuneUpgrades.includes(
+              MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+            )
+              ? 1
+              : 0) -
+          (track.id === 'column' &&
+            completedMisfortuneUpgrades.includes(
+              MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+            )
+              ? 1
+              : 0),
       )
 
       track.stages.forEach((stage, stageIndex) => {
