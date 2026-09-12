@@ -36,6 +36,7 @@ import {
   createInitialMisfortuneUpgradeState,
   FLOOR_REPLICATOR_MODES,
 } from './misfortuneUpgrades.js'
+import { createInitialCloverAssemblyState } from './cloverAssemblyLogic.js'
 
 export const BLUEPRINT_SLOT_UNLOCK_HINTS = Object.freeze([
   null,
@@ -200,6 +201,8 @@ export function createInitialGame() {
       oneSecondManateeSurveysEnabled: false,
     },
     completedCropPerfections: [],
+    hasUnlockedGreaterBlueprinting: false,
+    cloverAssembly: createInitialCloverAssemblyState(),
     blueprintExpansionAxesSwapped: true,
     completedBlueprintExpansions: [],
     rabbitBlueprintExpansions: {

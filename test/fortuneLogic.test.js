@@ -181,8 +181,8 @@ test("Fortune's Split replaces the collected bundle with two collectable bundles
   const split = collectCloverBundle(game, 0, () => randomValues.shift())
 
   assert.deepEqual(split.fortune.bundles, [
-    { x: 18, y: 25.6 },
-    { x: 34, y: 39.2 },
+    { x: 18, y: 25.6, splitBlocked: true },
+    { x: 34, y: 39.2, splitBlocked: true },
   ])
   assert.deepEqual(split.fortune.activeEffects, [])
   assert.deepEqual(split.fortune.notice, {
@@ -190,6 +190,36 @@ test("Fortune's Split replaces the collected bundle with two collectable bundles
     remainingSeconds: 6,
   })
   assert.equal(split.fortune.secondsTowardBundleRoll, 17)
+})
+
+test("Clover Bundles made by Fortune's Split cannot split again", () => {
+  const game = {
+    ...createCloverGame(),
+    fortune: {
+      bundles: [{ x: 50, y: 50, splitBlocked: true }],
+      secondsTowardBundleRoll: 17,
+      activeEffects: [],
+      notice: null,
+    },
+  }
+  const collected = collectCloverBundle(game, 0, () => 0.7)
+
+  assert.deepEqual(collected.fortune.bundles, [])
+  assert.equal(collected.fortune.notice.effectId, FORTUNE_EFFECT_IDS.BOUNTY)
+})
+
+test("the non-splitting marker survives Fortune state normalization", () => {
+  const normalized = normalizeFortuneState({
+    bundles: [
+      { x: 20, y: 30, splitBlocked: true },
+      { x: 40, y: 50 },
+    ],
+  })
+
+  assert.deepEqual(normalized.bundles, [
+    { x: 20, y: 30, splitBlocked: true },
+    { x: 40, y: 50 },
+  ])
 })
 
 test('collecting one of several Clover Bundles leaves the others on screen', () => {

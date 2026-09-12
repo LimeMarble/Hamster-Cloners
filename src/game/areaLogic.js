@@ -20,6 +20,7 @@ import {
   RUSHED_START_TOTAL_DURATION_SECONDS,
   unlockMisfortuneUpgrade,
 } from './misfortuneUpgrades.js'
+import { createInitialCloverAssemblyState } from './cloverAssemblyLogic.js'
 
 const VALID_EXPANSION_IDS = new Set(
   BLUEPRINT_EXPANSIONS.map(({ id }) => id),
@@ -324,6 +325,7 @@ export function wipeMisfortuneAreaProgress(game) {
         : 0,
       completedMisfortuneUpgrades:
         createInitialMisfortuneUpgradeState(),
+      cloverAssembly: createInitialCloverAssemblyState(),
       floorReplicatorMode: FLOOR_REPLICATOR_MODES.CONSTRUCTION,
       areaProgress: clearedAreaProgress,
     }
@@ -339,6 +341,7 @@ export function wipeMisfortuneAreaProgress(game) {
       : 0,
     completedMisfortuneUpgrades:
       createInitialMisfortuneUpgradeState(),
+    cloverAssembly: createInitialCloverAssemblyState(),
     floorReplicatorMode: FLOOR_REPLICATOR_MODES.CONSTRUCTION,
     areaProgress: clearedAreaProgress,
   }

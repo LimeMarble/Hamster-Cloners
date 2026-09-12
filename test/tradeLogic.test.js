@@ -664,6 +664,7 @@ test('Rabbit relation expansions appear before efficiency upgrades and grant blu
       RABBIT_UNLOCK_IDS.CONTRACTOR,
       RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
       RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
+      RABBIT_UNLOCK_IDS.RABBITS_CHARM,
     ],
   )
 

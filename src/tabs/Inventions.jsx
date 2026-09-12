@@ -1,6 +1,7 @@
 import { CROP_PERFECTIONS } from '../game/crops.js'
 import { ROW_DUPLICATORS_UNLOCK_CROP_COUNT } from '../game/gameLogic.js'
 import { CropPerfectionPurchase } from './CropPerfectionPurchase.jsx'
+import { CloverAssembly } from './CloverAssembly.jsx'
 import { FormattedNumber } from './ui.jsx'
 
 export function Inventions({
@@ -14,6 +15,8 @@ export function Inventions({
   canUnlockSweetPotato,
   canUnlockSamplingLentil,
   canUnlockSplitweed,
+  canUnlockGreaterBlueprinting,
+  isCloverAssemblyReady,
   canUnlockRows,
   hasEnrichingLeek,
   hasMirrorCorn,
@@ -27,6 +30,8 @@ export function Inventions({
   onUnlockSweetPotato,
   onUnlockSamplingLentil,
   onUnlockSplitweed,
+  onUnlockGreaterBlueprinting,
+  onCompleteCloverAssembly,
   onRequestRowDuplicatorUnlock,
   onRequestBlueprintExpansion,
   pendingBlueprintExpansion,
@@ -258,6 +263,13 @@ export function Inventions({
                 onUnlock={onUnlockSamplingLentil}
               />
             ) : null}
+            <CloverAssembly
+              game={game}
+              canUnlockGreaterBlueprinting={canUnlockGreaterBlueprinting}
+              isCloverAssemblyReady={isCloverAssemblyReady}
+              onUnlockGreaterBlueprinting={onUnlockGreaterBlueprinting}
+              onCompleteCloverAssembly={onCompleteCloverAssembly}
+            />
           </section>
         ) : (
           <>

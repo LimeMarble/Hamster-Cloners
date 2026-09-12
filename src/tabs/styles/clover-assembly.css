@@ -1,0 +1,90 @@
+.clover-assembly {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid #7d9f72;
+  background: var(--panel-raised);
+}
+
+.clover-assembly > p {
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.clover-assembly-lock {
+  padding: 10px 12px;
+  border-left: 3px solid var(--crop-gold);
+  background: #31260f;
+}
+
+.clover-assembly-parts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.clover-assembly-part {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.clover-assembly-part-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clover-assembly-part-heading h3,
+.clover-assembly-part-heading p {
+  margin: 0;
+}
+
+.clover-assembly-part-heading p,
+.clover-assembly-progress-copy {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.clover-assembly-crop-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  font-size: 1.45rem;
+}
+
+.clover-assembly-progress-track {
+  height: 8px;
+  margin-top: 13px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #171b17;
+}
+
+.clover-assembly-progress-track span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #618c54, #9fc779);
+}
+
+.clover-assembly-progress-copy {
+  margin: 8px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.clover-assembly-complete-button {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.clover-assembly-complete-copy {
+  margin: 16px 0 0;
+  color: var(--field-green) !important;
+}
+
+@media (max-width: 680px) {
+  .clover-assembly-parts {
+    grid-template-columns: 1fr;
+  }
+}

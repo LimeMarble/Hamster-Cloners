@@ -118,6 +118,7 @@ export function normalizeFortuneState(rawFortune) {
       ? [{
           x: Math.min(90, Math.max(10, Number(bundle.x) || 50)),
           y: Math.min(80, Math.max(12, Number(bundle.y) || 45)),
+          ...(bundle.splitBlocked === true ? { splitBlocked: true } : {}),
         }]
       : [],
   )
@@ -259,20 +260,30 @@ export function getCloverBundleChancePerMinute(game) {
   )
 }
 
-function chooseFortuneEffect(randomValue) {
-  const roll = clampRandomValue(randomValue)
+function chooseFortuneEffect(randomValue, allowSplit = true) {
+  const eligibleEffects = allowSplit
+    ? FORTUNE_EFFECTS
+    : FORTUNE_EFFECTS.filter(
+        (effect) => effect.id !== FORTUNE_EFFECT_IDS.SPLIT,
+      )
+  const totalWeight = eligibleEffects.reduce(
+    (total, effect) => total + effect.weight,
+    0,
+  )
+  const roll = clampRandomValue(randomValue) * totalWeight
   let cumulativeWeight = 0
 
-  return FORTUNE_EFFECTS.find((effect) => {
+  return eligibleEffects.find((effect) => {
     cumulativeWeight += effect.weight
     return roll < cumulativeWeight
-  }) ?? FORTUNE_EFFECTS.at(-1)
+  }) ?? eligibleEffects.at(-1)
 }
 
-function createCloverBundle(random) {
+function createCloverBundle(random, splitBlocked = false) {
   return {
     x: 10 + clampRandomValue(random()) * 80,
     y: 12 + clampRandomValue(random()) * 68,
+    ...(splitBlocked ? { splitBlocked: true } : {}),
   }
 }
 
@@ -328,11 +339,15 @@ export function advanceFortuneState(
   }
 }
 
-export function addRandomFortuneEffect(game, random = Math.random) {
+export function addRandomFortuneEffect(
+  game,
+  random = Math.random,
+  { allowSplit = true } = {},
+) {
   if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return game
 
   const fortune = normalizeFortuneState(game.fortune)
-  const effect = chooseFortuneEffect(random())
+  const effect = chooseFortuneEffect(random(), allowSplit)
   const matchingEffect = fortune.activeEffects.some(
     (activeEffect) => activeEffect.id === effect.id,
   )
@@ -354,7 +369,7 @@ export function addRandomFortuneEffect(game, random = Math.random) {
         ]
   const spawnedBundles = Array.from(
     { length: effect.bundleSpawnCount ?? 0 },
-    () => createCloverBundle(random),
+    () => createCloverBundle(random, true),
   )
 
   return {
@@ -387,6 +402,7 @@ export function collectCloverBundle(
     return game
   }
 
+  const collectedBundle = fortune.bundles[bundleIndex]
   const gameAfterCollection = {
     ...game,
     fortune: {
@@ -395,7 +411,9 @@ export function collectCloverBundle(
     },
   }
 
-  return addRandomFortuneEffect(gameAfterCollection, random)
+  return addRandomFortuneEffect(gameAfterCollection, random, {
+    allowSplit: collectedBundle.splitBlocked !== true,
+  })
 }
 export function spawnCloverBundle(game, random = Math.random) {
   if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return game

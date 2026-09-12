@@ -5,6 +5,7 @@ import {
   claimRabbitContract,
   clearWetlandsConnectionObstructions,
   collectManateeFind,
+  completeCloverAssembly,
   completeManateeDevelopmentGoal,
   constructManateeBuilding,
   completeCapybaraDemonstration,
@@ -36,6 +37,7 @@ import {
   toggleWetlandsConnectionObstruction,
   UNIONIZATION_HAMSTER_COUNT,
   unlockCropPerfection,
+  unlockGreaterBlueprinting,
   upgradeManateeBuilding,
 } from '../game/gameLogic.js'
 import { exportGame, importGame } from '../game/storage.js'
@@ -451,6 +453,18 @@ export function useGameActions({
     )
   }
 
+  function buyGreaterBlueprinting() {
+    updateGame((currentGame) =>
+      unlockGreaterBlueprinting(currentGame) ?? currentGame,
+    )
+  }
+
+  function assembleFiveLeafClover() {
+    updateGame((currentGame) =>
+      completeCloverAssembly(currentGame) ?? currentGame,
+    )
+  }
+
   function switchFloorReplicatorMode() {
     updateGame((currentGame) =>
       toggleFloorReplicatorMode(currentGame) ?? currentGame,
@@ -598,6 +612,8 @@ export function useGameActions({
       onUnlockSweetPotato: () => unlockPerfection('sweetPotato'),
       onUnlockSamplingLentil: () => unlockPerfection('samplingLentil'),
       onUnlockSplitweed: () => unlockPerfection('splitweed'),
+      onUnlockGreaterBlueprinting: buyGreaterBlueprinting,
+      onCompleteCloverAssembly: assembleFiveLeafClover,
       onRequestRowDuplicatorUnlock: () =>
         setIsRowDuplicatorUnlockPending(true),
       onRequestBlueprintExpansion: setPendingBlueprintExpansionId,

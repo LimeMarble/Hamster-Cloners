@@ -20,7 +20,10 @@ import {
   WHEAT_UNLOCK_CROP_COUNT,
 } from './crops.js'
 import { advanceFortuneState, getFortuneModifiers } from './fortuneLogic.js'
-import { SIMULATION_TICK_INTERVAL_MS } from './gameConfig.js'
+import {
+  GAME_AREA_IDS,
+  SIMULATION_TICK_INTERVAL_MS,
+} from './gameConfig.js'
 import {
   advanceRabbitContract,
   hasRabbitUnlock,
@@ -42,6 +45,7 @@ import {
   getRushedStartExternalMultiplier,
   isFloorReplicatorSupportModeActive,
 } from './misfortuneUpgrades.js'
+import { advanceCloverAssemblyState } from './cloverAssemblyLogic.js'
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
   SIMULATION_TICK_INTERVAL_MS / 1000
@@ -297,6 +301,14 @@ export function advanceGameSimulationStep(
       random,
       safeElapsedSeconds,
       true,
+    ),
+    cloverAssembly: advanceCloverAssemblyState(
+      currentGame.cloverAssembly,
+      productionSnapshotPerSecond.byCrop,
+      safeElapsedSeconds,
+      currentGame.activeArea === GAME_AREA_IDS.MISFORTUNE &&
+        currentGame.hasUnlockedGreaterBlueprinting === true &&
+        hasRabbitUnlock(currentGame, RABBIT_UNLOCK_IDS.RABBITS_CHARM),
     ),
     farmland: {
       ...currentGame.farmland,

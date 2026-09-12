@@ -1,11 +1,13 @@
 import { useRef } from 'react'
 import {
+  canUnlockGreaterBlueprinting,
   canPurchaseFloorReplicatorsInArea,
   canUnlockMisfortuneUpgrade,
   collectCloverBundle,
   getHuntForSomethingGreaterMultiplier,
   getMissingMisfortuneCropTypeIds,
   hasMisfortuneUpgrade,
+  isCloverAssemblyReady,
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
   MISFORTUNE_UPGRADE_IDS,
   MISFORTUNE_UPGRADES,
@@ -287,6 +289,8 @@ export function useGameController() {
         canUnlockSweetPotato: derived.canUnlockSweetPotato,
         canUnlockSamplingLentil: derived.canUnlockSamplingLentil,
         canUnlockSplitweed: derived.canUnlockSplitweed,
+        canUnlockGreaterBlueprinting: canUnlockGreaterBlueprinting(game),
+        isCloverAssemblyReady: isCloverAssemblyReady(game.cloverAssembly),
         canUnlockRows: derived.canUnlockRows,
         hasEnrichingLeek: derived.hasEnrichingLeek,
         hasMirrorCorn: derived.hasMirrorCorn,

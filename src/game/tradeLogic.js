@@ -6,6 +6,7 @@ import {
 import { getFieldsPlanted } from './cropProduction.js'
 import { getRabbitRelationsMultiplier } from './cropEffects.js'
 import { getFortuneModifiers } from './fortuneLogic.js'
+import { CLOVER_ASSEMBLY_RABBIT_UNLOCK_ID } from './cloverAssemblyLogic.js'
 
 export const TRADE_ESTABLISHMENT_COST = 1e57
 export const RABBIT_CONTRACT_MIN_FACTOR = 1e7
@@ -28,6 +29,7 @@ export const RABBIT_UNLOCK_IDS = Object.freeze({
   CONTRACTOR: 'contractor',
   CAPYBARA_CONTACT: 'capybaraContact',
   FOUR_LEAF_CLOVER: 'fourLeafClover',
+  RABBITS_CHARM: CLOVER_ASSEMBLY_RABBIT_UNLOCK_ID,
 })
 
 export const RABBIT_UNLOCKS = Object.freeze([
@@ -81,6 +83,13 @@ export const RABBIT_UNLOCKS = Object.freeze([
     cost: 40000,
     description:
       'Unlocks Capybara demonstrations of agricultural and technical prowess.',
+  },
+  {
+    id: RABBIT_UNLOCK_IDS.RABBITS_CHARM,
+    name: "Rabbit's Charm",
+    cost: 7.77e18,
+    description:
+      'Provides the precision fitting needed to assemble a perfected Clover.',
   },
 ])
 

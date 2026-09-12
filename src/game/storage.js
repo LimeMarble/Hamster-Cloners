@@ -46,6 +46,7 @@ import {
   normalizeMisfortuneUpgrades,
   RUSHED_START_TOTAL_DURATION_SECONDS,
 } from './misfortuneUpgrades.js'
+import { normalizeCloverAssemblyState } from './cloverAssemblyLogic.js'
 
 export const DEFAULT_SAVE_KEY = 'hamster-cloners-save-v1'
 export const SAVE_KEY =
@@ -441,6 +442,9 @@ export function normalizeGame(rawGame) {
         rawGame.testingCheats?.oneSecondManateeSurveysEnabled === true,
     },
     completedCropPerfections,
+    hasUnlockedGreaterBlueprinting:
+      rawGame.hasUnlockedGreaterBlueprinting === true,
+    cloverAssembly: normalizeCloverAssemblyState(rawGame.cloverAssembly),
     hamstersBuildColumns: true,
     areaCropUnlocksSeparated: true,
     misfortuneAreaStateVersion: MISFORTUNE_AREA_STATE_VERSION,
