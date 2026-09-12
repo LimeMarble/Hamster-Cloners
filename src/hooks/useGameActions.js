@@ -425,6 +425,15 @@ export function useGameActions({
     )
   }
 
+  function unlockHuntForSomethingGreater() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+      ) ?? currentGame,
+    )
+  }
+
   function switchFloorReplicatorMode() {
     updateGame((currentGame) =>
       toggleFloorReplicatorMode(currentGame) ?? currentGame,
@@ -592,6 +601,7 @@ export function useGameActions({
     onUnlockAdversityGrownTubers: unlockAdversityGrownTubers,
     onUnlockBurdenedFoundations: unlockBurdenedFoundations,
     onUnlockNourishingMisery: unlockNourishingMisery,
+    onUnlockHuntForSomethingGreater: unlockHuntForSomethingGreater,
     options: {
       saveCode,
       onSaveCodeChange: setSaveCode,

@@ -57,10 +57,7 @@ function normalizeSecondsSinceAreaReset(
   value,
   fallback = RUSHED_START_TOTAL_DURATION_SECONDS,
 ) {
-  return Math.min(
-    RUSHED_START_TOTAL_DURATION_SECONDS,
-    toNonNegativeNumber(value, fallback),
-  )
+  return toNonNegativeNumber(value, fallback)
 }
 
 function getAreaCropUnlockState(source = {}, fallback = {}) {

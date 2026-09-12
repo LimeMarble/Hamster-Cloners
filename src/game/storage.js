@@ -368,12 +368,9 @@ export function normalizeGame(rawGame) {
       toNonNegativeNumber(rawGame.crops, 0),
     ),
     playtimeSeconds: toNonNegativeNumber(rawGame.playtimeSeconds, 0),
-    secondsSinceAreaReset: Math.min(
+    secondsSinceAreaReset: toNonNegativeNumber(
+      rawGame.secondsSinceAreaReset,
       RUSHED_START_TOTAL_DURATION_SECONDS,
-      toNonNegativeNumber(
-        rawGame.secondsSinceAreaReset,
-        RUSHED_START_TOTAL_DURATION_SECONDS,
-      ),
     ),
     hamsters: toNonNegativeInteger(rawGame.hamsters, initialGame.hamsters),
     totalHamstersHired: toNonNegativeInteger(

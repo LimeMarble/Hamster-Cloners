@@ -380,7 +380,7 @@ export const CROP_PERFECTIONS = {
     id: 'blazingCarrot',
     cropId: 'carrot',
     name: 'Blazing Carrot',
-    cost: 2.5e16,
+    cost: 2.5e15,
     costCurrency: 'rabbitRelations',
     requiresCapybaraDemonstration: 'introduction',
     rabbitRelationsBonusAtZero: 0.1,

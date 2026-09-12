@@ -37,9 +37,9 @@ import {
 } from './manateeLogic.js'
 import { advanceWetlandsConnectionState } from './wetlandsConnectionState.js'
 import {
+  getHuntForSomethingGreaterMultiplier,
   getRushedStartExternalMultiplier,
   isFloorReplicatorSupportModeActive,
-  RUSHED_START_TOTAL_DURATION_SECONDS,
 } from './misfortuneUpgrades.js'
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
@@ -95,11 +95,9 @@ export function advanceGameSimulationStep(
 
   const nextPlaytimeSeconds =
     (Number(currentGame.playtimeSeconds) || 0) + safeElapsedSeconds
-  const nextSecondsSinceAreaReset = Math.min(
-    RUSHED_START_TOTAL_DURATION_SECONDS,
+  const nextSecondsSinceAreaReset =
     Math.max(0, Number(currentGame.secondsSinceAreaReset) || 0) +
-      safeElapsedSeconds,
-  )
+    safeElapsedSeconds
 
   if (isEditingBlueprint) {
     return advanceFortuneState(
@@ -116,6 +114,8 @@ export function advanceGameSimulationStep(
   const fortuneModifiers = getFortuneModifiers(currentGame)
   const rushedStartExternalMultiplier =
     getRushedStartExternalMultiplier(currentGame)
+  const huntForSomethingGreaterMultiplier =
+    getHuntForSomethingGreaterMultiplier(currentGame)
   const manateeSurveyDurationMultiplier =
     getBlazingCarrotSurveyDurationMultiplier(
       currentGame.blueprint,
@@ -161,7 +161,8 @@ export function advanceGameSimulationStep(
             RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
           )
             ? 2
-            : 1) * rushedStartExternalMultiplier,
+            : 1) * rushedStartExternalMultiplier *
+          huntForSomethingGreaterMultiplier,
         ),
       )
     : 0
@@ -195,7 +196,8 @@ export function advanceGameSimulationStep(
         ? 3
         : 1) *
       getCapybaraHamsterEfficiencyMultiplier(currentGame) *
-        rushedStartExternalMultiplier,
+        rushedStartExternalMultiplier *
+          huntForSomethingGreaterMultiplier,
     currentGame.hamsters,
   )
   const rowsProducedForTick = rowsBuiltPerSecond * safeElapsedSeconds
@@ -203,7 +205,8 @@ export function advanceGameSimulationStep(
     && !isFloorReplicatorSupportModeActive(currentGame)
     ? getFloorsProducedPerSecond(
       currentGame.floorReplicators,
-      rushedStartExternalMultiplier,
+      rushedStartExternalMultiplier *
+        huntForSomethingGreaterMultiplier,
     ) *
       safeElapsedSeconds
     : 0

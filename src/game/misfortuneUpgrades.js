@@ -2,6 +2,7 @@ import {
   FLOOR_REPLICATOR_COST_TIER_SIZE,
   GAME_AREA_IDS,
 } from './gameConfig.js'
+import { getUnlockedCropIds } from './crops.js'
 
 export const FLOOR_REPLICATOR_MODES = Object.freeze({
   CONSTRUCTION: 'construction',
@@ -14,6 +15,7 @@ export const MISFORTUNE_UPGRADE_IDS = Object.freeze({
   ADVERSITY_GROWN_TUBERS: 'adversityGrownTubers',
   BURDENED_FOUNDATIONS: 'burdenedFoundations',
   NOURISHING_MISERY: 'nourishingMisery',
+  HUNT_FOR_SOMETHING_GREATER: 'huntForSomethingGreater',
 })
 
 export const MISFORTUNE_UPGRADES = Object.freeze({
@@ -48,6 +50,13 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
     name: 'Nourishing Misery',
     cost: 2e37,
+  }),
+  [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER]: Object.freeze({
+    id: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+    name: 'Hunt for Something Greater',
+    cost: 7.77e40,
+    secondsPerTimeMultiplier: 60,
+    maximumTimeMultiplier: 10,
   }),
 })
 
@@ -158,6 +167,76 @@ export function getRushedStartExternalMultiplier(game) {
   }
 
   return 1
+}
+
+function getAreaState(game, areaId) {
+  const activeAreaId = game?.activeArea === GAME_AREA_IDS.MISFORTUNE
+    ? GAME_AREA_IDS.MISFORTUNE
+    : GAME_AREA_IDS.MAIN
+
+  return activeAreaId === areaId
+    ? game
+    : game?.areaProgress?.[areaId]
+}
+
+function getAreaUnlockedCropIds(game, areaId) {
+  const area = getAreaState(game, areaId)
+  if (!area) return []
+
+  const rabbitUnlocks = new Set(game?.trade?.rabbitUnlocks ?? [])
+  const isMisfortune = areaId === GAME_AREA_IDS.MISFORTUNE
+
+  return getUnlockedCropIds(
+    area.blueprint,
+    game?.unionized === true,
+    area.hamsters,
+    area.hasUnlockedTurnip,
+    area.hasUnlockedAppleTree,
+    area.hasUnlockedLentil,
+    area.hasUnlockedKnotweed,
+    game?.hasUnlockedRootTunnel,
+    area.hasUnlockedSunflower,
+    area.rowDuplicators,
+    rabbitUnlocks.has('carrot'),
+    rabbitUnlocks.has('fourLeafClover') && !isMisfortune,
+    area.hasUnlockedWheat,
+  )
+}
+
+export function getMissingMisfortuneCropTypeIds(game) {
+  const mainCropIds = getAreaUnlockedCropIds(game, GAME_AREA_IDS.MAIN)
+  const misfortuneCropIds = new Set(
+    getAreaUnlockedCropIds(game, GAME_AREA_IDS.MISFORTUNE),
+  )
+
+  return mainCropIds.filter((cropId) => !misfortuneCropIds.has(cropId))
+}
+
+export function getHuntForSomethingGreaterMultiplier(game) {
+  if (
+    game?.activeArea !== GAME_AREA_IDS.MISFORTUNE ||
+    !hasMisfortuneUpgrade(
+      game,
+      MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+    )
+  ) {
+    return 1
+  }
+
+  const upgrade = MISFORTUNE_UPGRADES[
+    MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER
+  ]
+  const minutesSinceReset =
+    Math.max(0, Number(game?.secondsSinceAreaReset) || 0) /
+    upgrade.secondsPerTimeMultiplier
+  const timeMultiplier = Math.max(
+    1,
+    Math.min(minutesSinceReset, upgrade.maximumTimeMultiplier),
+  )
+
+  return (
+    (1 + getMissingMisfortuneCropTypeIds(game).length) * timeMultiplier
+  )
 }
 
 export function isFloorReplicatorSupportModeActive(game) {

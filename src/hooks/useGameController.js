@@ -3,6 +3,8 @@ import {
   canPurchaseFloorReplicatorsInArea,
   canUnlockMisfortuneUpgrade,
   collectCloverBundle,
+  getHuntForSomethingGreaterMultiplier,
+  getMissingMisfortuneCropTypeIds,
   hasMisfortuneUpgrade,
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
   MISFORTUNE_UPGRADE_IDS,
@@ -240,6 +242,23 @@ export function useGameController() {
         ),
         onUnlockNourishingMisery:
           actions.onUnlockNourishingMisery,
+        huntForSomethingGreater: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER
+        ],
+        hasHuntForSomethingGreater: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+        ),
+        canUnlockHuntForSomethingGreater: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+        ),
+        huntForSomethingGreaterMultiplier:
+          getHuntForSomethingGreaterMultiplier(game),
+        missingMisfortuneCropTypeCount:
+          getMissingMisfortuneCropTypeIds(game).length,
+        onUnlockHuntForSomethingGreater:
+          actions.onUnlockHuntForSomethingGreater,
         onLeave: actions.onLeaveMisfortuneArea,
       },
       inventions: {

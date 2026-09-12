@@ -58,6 +58,10 @@ export function Statistics({
           <dt>Playtime</dt>
           <dd>{formatPlaytime(game.playtimeSeconds)}</dd>
         </div>
+        <div>
+          <dt>Time since current field reset</dt>
+          <dd>{formatPlaytime(game.secondsSinceAreaReset)}</dd>
+        </div>
       </dl>
     </section>
   )

@@ -54,6 +54,12 @@ export function Misfortune({
   hasNourishingMisery,
   canUnlockNourishingMisery,
   onUnlockNourishingMisery,
+  huntForSomethingGreater,
+  hasHuntForSomethingGreater,
+  canUnlockHuntForSomethingGreater,
+  huntForSomethingGreaterMultiplier,
+  missingMisfortuneCropTypeCount,
+  onUnlockHuntForSomethingGreater,
   onLeave,
 }) {
   return (
@@ -238,6 +244,65 @@ export function Misfortune({
                     <>
                       Need{' '}
                       <FormattedNumber value={nourishingMisery.cost} /> Crops
+                    </>
+                  )}
+          </button>
+        </article>
+        <article className="misfortune-upgrade-card">
+          <div>
+            <h2>{huntForSomethingGreater.name}</h2>
+            <p>
+              Multiplies Column, Row, and Floor production by 1 plus the
+              number of Crop types available in the main field but still
+              missing from Misfortune, then by the number of minutes since
+              the last field reset. The time multiplier starts at ×1 and
+              caps at ×{huntForSomethingGreater.maximumTimeMultiplier}.
+            </p>
+            {hasHuntForSomethingGreater ? (
+              <p>
+                Current effect: ×
+                <FormattedNumber
+                  value={huntForSomethingGreaterMultiplier}
+                  maximumFractionDigits={2}
+                />{' '}
+                production from{' '}
+                <FormattedNumber
+                  value={missingMisfortuneCropTypeCount}
+                  maximumFractionDigits={0}
+                />{' '}
+                missing Crop types and the current run time.
+              </p>
+            ) : null}
+            <p className="misfortune-upgrade-note">
+              Cost: <FormattedNumber value={huntForSomethingGreater.cost} />{' '}
+              Crops. This choice is permanent until Misfortune progress is
+              wiped.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={
+              hasHuntForSomethingGreater
+                ? 'secondary-button'
+                : 'primary-button'
+            }
+            onClick={onUnlockHuntForSomethingGreater}
+            disabled={
+              hasHuntForSomethingGreater ||
+              !canUnlockHuntForSomethingGreater
+            }
+          >
+            {hasHuntForSomethingGreater
+              ? 'Accepted'
+              : canUnlockHuntForSomethingGreater
+                ? 'Begin the hunt'
+                : (
+                    <>
+                      Need{' '}
+                      <FormattedNumber
+                        value={huntForSomethingGreater.cost}
+                      />{' '}
+                      Crops
                     </>
                   )}
           </button>

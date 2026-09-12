@@ -20,6 +20,7 @@ import {
   getFloorReplicatorCoordinationMultiplier,
   getFloorReplicatorExternalMultiplier,
   getFloorsProducedPerSecond,
+  getHuntForSomethingGreaterMultiplier,
   getManateeSurveyingHamsterCount,
   getUnlockedManateeCropIds,
   getNextHamsterCost,
@@ -49,6 +50,8 @@ import { formatWholeNumber } from '../game/numberFormat.js'
 export function useGameDerivedState(game) {
   const rushedStartExternalMultiplier =
     getRushedStartExternalMultiplier(game)
+  const huntForSomethingGreaterMultiplier =
+    getHuntForSomethingGreaterMultiplier(game)
   const fortuneModifiers = useMemo(
     () =>
       getFortuneModifiers({
@@ -164,7 +167,8 @@ export function useGameDerivedState(game) {
         ? 3
         : 1) *
       getCapybaraHamsterEfficiencyMultiplier(game) *
-      rushedStartExternalMultiplier,
+      rushedStartExternalMultiplier *
+      huntForSomethingGreaterMultiplier,
   )
   const nextRowDuplicatorCost = useMemo(
     () =>
@@ -188,7 +192,9 @@ export function useGameDerivedState(game) {
     [game.floorReplicators],
   )
   const floorReplicatorExternalMultiplier =
-    getFloorReplicatorExternalMultiplier(rushedStartExternalMultiplier)
+    getFloorReplicatorExternalMultiplier(
+      rushedStartExternalMultiplier * huntForSomethingGreaterMultiplier,
+    )
   const isFloorReplicatorSupportMode =
     isFloorReplicatorSupportModeActive(game)
   const burdenedFoundationsPassiveEffectBonus =
@@ -237,7 +243,8 @@ export function useGameDerivedState(game) {
         RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
       )
         ? 2
-        : 1) * rushedStartExternalMultiplier,
+        : 1) * rushedStartExternalMultiplier *
+      huntForSomethingGreaterMultiplier,
     )
   const rowsBuiltPerSecond = useMemo(
     () =>
