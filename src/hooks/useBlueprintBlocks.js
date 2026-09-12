@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   BLUEPRINT_BLOCK_PLACEMENT_MODES,
   BLUEPRINT_BLOCK_TRANSFORMS,
@@ -7,6 +7,7 @@ import {
   exportBlueprintBlock,
   exportBlueprintBlockLibrary,
   getBlueprintBlockAvailability,
+  getBlueprintBlockHotkeyTransform,
   getBlueprintBlockPlacementPreview,
   getBlueprintSelectionIndexes,
   importBlueprintBlock,
@@ -71,6 +72,7 @@ export function useBlueprintBlocks({
   const [pinnedAnchorIndex, setPinnedAnchorIndex] = useState(null)
   const [blockCode, setBlockCode] = useState('')
   const [status, setStatus] = useState(null)
+  const isPlacingBlock = activeBlock !== null
   const blocks = Array.isArray(game.blueprintBlocks)
     ? game.blueprintBlocks
     : EMPTY_BLUEPRINT_BLOCKS
@@ -145,6 +147,45 @@ export function useBlueprintBlocks({
       unlockedCropIds,
     ],
   )
+
+  useEffect(() => {
+    if (!isPlacingBlock) return undefined
+
+    function handleTransformHotkey(event) {
+      const target = event.target
+      const isTyping =
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.matches('input, textarea, select'))
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        isTyping
+      ) {
+        return
+      }
+
+      const transform = getBlueprintBlockHotkeyTransform(event.key)
+      if (!transform) return
+
+      event.preventDefault()
+      setActiveBlock((block) =>
+        block ? transformBlueprintBlock(block, transform) : block,
+      )
+      setPinnedAnchorIndex(null)
+      setHoverAnchorIndex(null)
+      setStatus({
+        type: 'info',
+        message: 'Block transformed. Choose its position.',
+      })
+    }
+
+    window.addEventListener('keydown', handleTransformHotkey)
+    return () => window.removeEventListener('keydown', handleTransformHotkey)
+  }, [isPlacingBlock])
 
   function commitBlockLibrary(updater) {
     updateGame((currentGame) => {

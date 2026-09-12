@@ -9,6 +9,7 @@ import {
   exportBlueprintBlock,
   exportBlueprintBlockLibrary,
   getBlueprintBlockAvailability,
+  getBlueprintBlockHotkeyTransform,
   getBlueprintBlockPlacementPreview,
   importBlueprintBlock,
   importBlueprintBlockLibrary,
@@ -140,6 +141,26 @@ test('horizontal and vertical flips preserve internal block metadata', () => {
   assert.deepEqual(vertical.rootTunnelConnections, [
     { tunnelIndex: 1, senderIndex: 2, recipientIndex: 0 },
   ])
+})
+
+test('block transform hotkeys map case-insensitively to every transform', () => {
+  assert.equal(
+    getBlueprintBlockHotkeyTransform('e'),
+    BLUEPRINT_BLOCK_TRANSFORMS.ROTATE_CLOCKWISE,
+  )
+  assert.equal(
+    getBlueprintBlockHotkeyTransform('Q'),
+    BLUEPRINT_BLOCK_TRANSFORMS.ROTATE_COUNTERCLOCKWISE,
+  )
+  assert.equal(
+    getBlueprintBlockHotkeyTransform('f'),
+    BLUEPRINT_BLOCK_TRANSFORMS.FLIP_HORIZONTAL,
+  )
+  assert.equal(
+    getBlueprintBlockHotkeyTransform('G'),
+    BLUEPRINT_BLOCK_TRANSFORMS.FLIP_VERTICAL,
+  )
+  assert.equal(getBlueprintBlockHotkeyTransform('x'), null)
 })
 
 test('missing Crops are omitted by Stamp and cleared by Replace without disabling placement', () => {

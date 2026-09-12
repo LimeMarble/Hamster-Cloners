@@ -9,6 +9,19 @@ import {
 import { remapRootTunnelConnections } from './rootTunnelLogic.js'
 import { remapLeechingVines } from './leechingVineLogic.js'
 
+const BLUEPRINT_BLOCK_HOTKEY_TRANSFORMS = Object.freeze({
+  e: BLUEPRINT_BLOCK_TRANSFORMS.ROTATE_CLOCKWISE,
+  q: BLUEPRINT_BLOCK_TRANSFORMS.ROTATE_COUNTERCLOCKWISE,
+  f: BLUEPRINT_BLOCK_TRANSFORMS.FLIP_HORIZONTAL,
+  g: BLUEPRINT_BLOCK_TRANSFORMS.FLIP_VERTICAL,
+})
+
+export function getBlueprintBlockHotkeyTransform(key) {
+  return (
+    BLUEPRINT_BLOCK_HOTKEY_TRANSFORMS[String(key ?? '').toLowerCase()] ?? null
+  )
+}
+
 function getTransformGeometry(block, transform) {
   if (transform === BLUEPRINT_BLOCK_TRANSFORMS.ROTATE_CLOCKWISE) {
     return {

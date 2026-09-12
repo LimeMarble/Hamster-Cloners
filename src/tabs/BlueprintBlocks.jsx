@@ -137,10 +137,36 @@ export function BlueprintBlocks({ game, editor }) {
           </div>
 
           <div className="blueprint-block-transform-row" role="group" aria-label="Transform block">
-            <button type="button" className="secondary-button" onClick={editor.onRotateCounterclockwise} aria-label="Rotate block counterclockwise">↺ Rotate</button>
-            <button type="button" className="secondary-button" onClick={editor.onRotateClockwise} aria-label="Rotate block clockwise">↻ Rotate</button>
-            <button type="button" className="secondary-button" onClick={editor.onFlipHorizontal}>⇋ Flip</button>
-            <button type="button" className="secondary-button" onClick={editor.onFlipVertical}>⇵ Flip</button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={editor.onRotateCounterclockwise}
+              aria-label="Rotate block counterclockwise, shortcut Q"
+            >
+              ↺ Rotate (Q)
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={editor.onRotateClockwise}
+              aria-label="Rotate block clockwise, shortcut E"
+            >
+              ↻ Rotate (E)
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={editor.onFlipHorizontal}
+            >
+              ⇋ Flip (F)
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={editor.onFlipVertical}
+            >
+              ⇵ Flip (G)
+            </button>
           </div>
 
           <RequirementList
