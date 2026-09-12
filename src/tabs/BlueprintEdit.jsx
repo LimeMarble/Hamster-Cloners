@@ -445,7 +445,7 @@ function BlueprintEditContent({
                             game.seedAugmentations,
                             revealManateeEffects,
                           )
-                        : getCropUnlockDescription(cropId)}
+                        : getCropUnlockDescription(cropId, game.activeArea)}
                     </small>
                   </button>
                 )

@@ -30,6 +30,7 @@ import { getCapybaraHamsterEfficiencyMultiplier } from './capybaraLogic.js'
 import {
   getBlazingCarrotSurveyDurationMultiplier,
   getMangroveNurseryEffect,
+  getSoybeanMachineryEffect,
 } from './cropEffects.js'
 import {
   advanceManateeSurveyState,
@@ -201,12 +202,20 @@ export function advanceGameSimulationStep(
     currentGame.hamsters,
   )
   const rowsProducedForTick = rowsBuiltPerSecond * safeElapsedSeconds
+  const floorReplicatorEffectivenessMultiplier =
+    getSoybeanMachineryEffect(
+      currentGame.blueprint,
+      currentGame.completedCropPerfections,
+      fortuneModifiers.passiveEffectMultiplier,
+      currentGame.seedAugmentations,
+    ).floorProductionMultiplier
   const floorsProducedForTick = currentGame.hasUnlockedFloorReplicators
     && !isFloorReplicatorSupportModeActive(currentGame)
     ? getFloorsProducedPerSecond(
       currentGame.floorReplicators,
       rushedStartExternalMultiplier *
         huntForSomethingGreaterMultiplier,
+      floorReplicatorEffectivenessMultiplier,
     ) *
       safeElapsedSeconds
     : 0

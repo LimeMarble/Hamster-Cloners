@@ -828,6 +828,7 @@ export function getRowsProducedPerSecond(
 export function getFloorsProducedPerSecond(
   floorReplicators = 0,
   floorReplicatorExternalMultiplier = 1,
+  floorReplicatorEffectivenessMultiplier = 1,
 ) {
   const safeFloorReplicators = Math.max(
     0,
@@ -838,6 +839,7 @@ export function getFloorsProducedPerSecond(
     safeFloorReplicators *
     FLOORS_PER_FLOOR_REPLICATOR_PER_SECOND *
     getFloorReplicatorCoordinationMultiplier(safeFloorReplicators) *
+    Math.max(0, Number(floorReplicatorEffectivenessMultiplier) || 0) *
     getFloorReplicatorExternalMultiplier(floorReplicatorExternalMultiplier)
   )
 }

@@ -142,6 +142,8 @@ export function useGameController() {
               nextFloorReplicatorCost: derived.nextFloorReplicatorCost,
               floorReplicatorCoordinationMultiplier:
                 derived.floorReplicatorCoordinationMultiplier,
+              floorReplicatorEffectivenessMultiplier:
+                derived.floorReplicatorEffectivenessMultiplier,
               floorReplicatorExternalMultiplier:
                 derived.floorReplicatorExternalMultiplier,
               isFloorReplicatorSupportMode:

@@ -20,6 +20,7 @@ export * from './blueprintBlockLogic.js'
 export * from './blueprintBlockTransform.js'
 export * from './blueprintBlockPlacement.js'
 export * from './blueprintBlockTransfer.js'
+export * from './soybeanLogic.js'
 export {
   canPlaceMangroveSapling,
   canPlaceShoalGrass,
@@ -50,6 +51,7 @@ export {
   getSplitweedMonocropLimitAugmentationEffect,
   getSweetPotatoBedEffect,
   getSweetPotatoBedEffects,
+  getSoybeanMachineryEffect,
   getWaterLettucePassiveEffect,
   getMonocropCropCount,
   getMonocropThresholdBonus,

@@ -390,11 +390,26 @@ export function CropHoverInspector({
             }
 
             if (effect.type === 'global-row-production') {
+              if (effect.pattern === 'horizontal-connections') {
+                return (
+                  <li key={`${effect.type}-${effectIndex}`}>
+                    ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Row production from <FormattedNumber value={effect.count} maximumFractionDigits={0} /> horizontal Soybean connection{effect.count === 1 ? '' : 's'}
+                  </li>
+                )
+              }
+
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
                   ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Row production from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
                   {effect.count === 1 ? '' : 's'} (cannot be boosted)
+                </li>
+              )
+            }
+            if (effect.type === 'global-floor-production') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Floor production from <FormattedNumber value={effect.count} maximumFractionDigits={0} /> complete 2×2 Soybean square{effect.count === 1 ? '' : 's'}
                 </li>
               )
             }

@@ -225,6 +225,8 @@ function getAreaUnlockedCropIds(game, areaId) {
     rabbitUnlocks.has('carrot'),
     rabbitUnlocks.has('fourLeafClover') && !isMisfortune,
     area.hasUnlockedWheat,
+    [],
+    game?.floorReplicators,
   )
 
   return getVisibleCropIds(

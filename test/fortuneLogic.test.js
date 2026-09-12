@@ -19,7 +19,21 @@ import {
   spawnCloverBundle,
   wipeActiveFortuneEffects,
 } from '../src/game/gameLogic.js'
-import { getUnlockedCropIds } from '../src/game/crops.js'
+import {
+  getCropUnlockDescription,
+  getUnlockedCropIds,
+} from '../src/game/crops.js'
+
+test('4-Leaf Clover explains its Misfortune restriction in the Crop palette', () => {
+  assert.equal(
+    getCropUnlockDescription('fourLeafClover', 'misfortune'),
+    'This clover is too fragile to stand against misfortune, try to find a way to perfect it',
+  )
+  assert.match(
+    getCropUnlockDescription('fourLeafClover', 'main'),
+    /Rabbit relations/,
+  )
+})
 
 function createCloverGame(fieldsPlanted = 1) {
   return {

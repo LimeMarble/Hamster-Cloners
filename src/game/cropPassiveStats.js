@@ -146,7 +146,31 @@ export function getCropPassiveStats({
   const ownGlobalRowEffect = globalRowProductionEffects.find(
     (effect) => effect.sourceCropId === crop,
   )
-  if (ownGlobalRowEffect) {
+  if (crop === 'soybean') {
+    const soybeanEffect = cropEffects.getSoybeanMachineryEffect(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    )
+
+    passiveStats.push({
+      id: 'soybean-row-production',
+      label:
+        `Row production (${soybeanEffect.horizontalConnectionCount} ` +
+        `horizontal connection${soybeanEffect.horizontalConnectionCount === 1 ? '' : 's'})`,
+      format: 'percentage',
+      value: soybeanEffect.rowProductionBonus,
+    })
+    passiveStats.push({
+      id: 'soybean-floor-production',
+      label:
+        `Floor production (${soybeanEffect.squareCount} complete ` +
+        `square${soybeanEffect.squareCount === 1 ? '' : 's'})`,
+      format: 'percentage',
+      value: soybeanEffect.floorProductionBonus,
+    })
+  } else if (ownGlobalRowEffect) {
     passiveStats.push({
       id: 'global-row-production',
       label: 'Global Row production',

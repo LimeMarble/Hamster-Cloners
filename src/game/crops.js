@@ -23,6 +23,7 @@ export const KNOTWEED_UNLOCK_CROP_COUNT = 2e19
 export const WHEAT_UNLOCK_CROP_COUNT = 1.25e32
 export const SUNFLOWER_UNLOCK_CROP_COUNT = 1.42e44
 export const CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT = 500
+export const SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT = 555
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
 export const CORN_REVEAL_HAMSTER_COUNT = 50
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
@@ -190,6 +191,16 @@ export const CROP_DEFINITIONS = {
     effectDescription:
       'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · only one can be planted per blueprint',
     unlockDescription: 'Unlock with 77,777 Rabbit relations',
+  },
+  soybean: {
+    name: 'Soybean',
+    icon: '🌱',
+    baseYield: 1,
+    hamsterEfficiencyBonus: 0,
+    machineryPatternBonus: 4.44,
+    effectDescription:
+      '1 Crop per slot · +444% global Row production per horizontal Soybean connection · +444% global Floor production per complete 2×2 Soybean square',
+    unlockDescription: `Unlocks at ${SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT.toLocaleString()} Floor Replicators`,
   },
   shoalGrass: {
     name: 'Shoal Grass',
@@ -402,7 +413,7 @@ export const CROP_PERFECTIONS = {
 
 export const CROP_PERFECTION_IDS = Object.keys(CROP_PERFECTIONS)
 
-export function getCropUnlockDescription(cropId) {
+export function getCropUnlockDescription(cropId, activeArea = 'main') {
   const format = (value) => getCachedFormattedNumber(value, 0)
   const formatCounter = (value) => formatWholeNumber(value)
 
@@ -428,7 +439,12 @@ export function getCropUnlockDescription(cropId) {
     case 'carrot':
       return `Unlock with ${format(500)} Rabbit relations`
     case 'fourLeafClover':
+      if (activeArea === 'misfortune') {
+        return 'This clover is too fragile to stand against misfortune, try to find a way to perfect it'
+      }
       return `Unlock with ${format(27777)} Rabbit relations`
+    case 'soybean':
+      return `Unlocks at ${formatCounter(SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT)} Floor Replicators`
     default:
       return CROP_DEFINITIONS[cropId]?.unlockDescription ?? ''
   }
@@ -689,6 +705,7 @@ export function getUnlockedCropIds(
   hasUnlockedFourLeafClover = false,
   hasUnlockedWheat = false,
   unlockedManateeCropIds = [],
+  floorReplicators = 0,
 ) {
   const unlockedCrops = ['leek']
 
@@ -730,6 +747,12 @@ export function getUnlockedCropIds(
   }
   if (hasUnlockedFourLeafClover) {
     unlockedCrops.push('fourLeafClover')
+  }
+  if (
+    hasUnlockedCarrot &&
+    floorReplicators >= SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT
+  ) {
+    unlockedCrops.push('soybean')
   }
   unlockedManateeCropIds.forEach((cropId) => {
     if (CROP_DEFINITIONS[cropId]?.isManateeCrop && !unlockedCrops.includes(cropId)) {
@@ -779,6 +802,13 @@ export function getVisibleCropIds(
     }
 
     visibleCropIds.push(cropId)
+  }
+
+  if (
+    visibleCropIds.includes('carrot') &&
+    !visibleCropIds.includes('soybean')
+  ) {
+    visibleCropIds.push('soybean')
   }
 
   CROP_IDS.filter(

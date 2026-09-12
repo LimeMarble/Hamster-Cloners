@@ -27,6 +27,7 @@ import {
   getLeechingGourdTurnipEffect,
   getMangroveNurseryEffect,
   getShoalGrassNetworkSize,
+  getSoybeanMachineryEffect,
   getSweetPotatoBedEffect,
   getMirrorCornEffectBlueprint,
   getMirrorCornEffectMultiplier,
@@ -506,6 +507,12 @@ export function getBlueprintCropStats(
     passiveEffectMultiplier,
     seedAugmentations,
   )
+  const soybeanMachineryEffect = getSoybeanMachineryEffect(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
   const globalHamsterEfficiencyEffects =
     getGlobalHamsterEfficiencyEffects(
       blueprint,
@@ -588,6 +595,16 @@ export function getBlueprintCropStats(
   globalRowProductionEffects.forEach((effect) => {
     receivedEffects.push({ type: 'global-row-production', ...effect })
   })
+  if (soybeanMachineryEffect.squareCount > 0) {
+    receivedEffects.push({
+      type: 'global-floor-production',
+      sourceCropId: 'soybean',
+      count: soybeanMachineryEffect.squareCount,
+      bonus: soybeanMachineryEffect.floorProductionBonus,
+      multiplier: soybeanMachineryEffect.floorProductionMultiplier,
+      pattern: 'squares',
+    })
+  }
   globalHamsterEfficiencyEffects.forEach((effect) => {
     receivedEffects.push({ type: 'global-hamster-efficiency', ...effect })
   })

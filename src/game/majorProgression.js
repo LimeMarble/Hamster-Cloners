@@ -5,6 +5,7 @@ import {
   CROP_PERFECTIONS,
   KNOTWEED_UNLOCK_CROP_COUNT,
   LENTIL_UNLOCK_CROP_COUNT,
+  SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
@@ -260,6 +261,20 @@ export const MAJOR_PROGRESSION_GOALS = [
       hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER),
     getCurrent: (game) => game.trade?.rabbitRelations,
     requiresAction: true,
+  },
+  {
+    id: 'crop-soybean',
+    category: 'Crop unlock',
+    title: 'Unlock Soybean',
+    target: SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+    unit: 'Floor Replicators',
+    description:
+      'After unlocking Carrot, own 555 Floor Replicators to unlock Soybean.',
+    isComplete: (game) =>
+      hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CARROT) &&
+      getSafeProgressValue(game.floorReplicators) >=
+        SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+    getCurrent: (game) => game.floorReplicators,
   },
   {
     id: 'capybara-contact',

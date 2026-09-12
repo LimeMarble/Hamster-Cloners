@@ -54,6 +54,7 @@ import {
   getSweetPotatoBedTurnipConnections,
 } from './sweetPotatoLogic.js'
 import { getLeechingVineTurnipMultiplier } from './leechingVineLogic.js'
+import { getSoybeanPatternCounts } from './soybeanLogic.js'
 
 const getCachedRabbitRelationsMultiplier = createBlueprintCalculationCache()
 const getCachedBlazingCarrotSurveyTimeEffect =
@@ -62,6 +63,7 @@ const getCachedGlobalPassiveEffectMultiplier =
   createBlueprintCalculationCache()
 const getCachedMangroveNurseryEffect = createBlueprintCalculationCache()
 const getCachedSweetPotatoBedEffects = createBlueprintCalculationCache()
+const getCachedSoybeanMachineryEffect = createBlueprintCalculationCache()
 
 export {
   getAdjacentCropConnections,
@@ -1290,6 +1292,7 @@ export function getGlobalRowProductionEffects(
   passiveEffectMultiplier = 1,
   seedAugmentations = {},
 ) {
+  const effects = []
   const sourceCropId = 'canola'
   const definition = CROP_DEFINITIONS[sourceCropId]
   const count = getPlantedCropCount(blueprint, sourceCropId)
@@ -1299,38 +1302,120 @@ export function getGlobalRowProductionEffects(
   )
 
   if (
-    definition?.hasUnboostableActiveHamsterRowMultiplier !== true ||
-    count === 0 ||
-    safeActiveHamsters === 0
+    definition?.hasUnboostableActiveHamsterRowMultiplier === true &&
+    count > 0 &&
+    safeActiveHamsters > 0
   ) {
-    return []
-  }
+    const bonus =
+      getMonocropAdjustedCropBonus(
+        blueprint,
+        sourceCropId,
+        count *
+          safeActiveHamsters *
+          definition.globalRowProductionBonusPerHamster,
+        completedCropPerfections,
+        seedAugmentations,
+      ) *
+      getGlobalPassiveEffectMultiplier(
+        blueprint,
+        completedCropPerfections,
+        passiveEffectMultiplier,
+        seedAugmentations,
+      )
 
-  const bonus =
-    getMonocropAdjustedCropBonus(
-      blueprint,
-      sourceCropId,
-      count *
-        safeActiveHamsters *
-        definition.globalRowProductionBonusPerHamster,
-      completedCropPerfections,
-      seedAugmentations,
-    ) *
-    getGlobalPassiveEffectMultiplier(
-      blueprint,
-      completedCropPerfections,
-      passiveEffectMultiplier,
-      seedAugmentations,
-    )
-
-  return [
-    {
+    effects.push({
       sourceCropId,
       count,
       bonus,
       multiplier: 1 + bonus,
+    })
+  }
+
+  const soybeanEffect = getSoybeanMachineryEffect(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  )
+
+  if (soybeanEffect.horizontalConnectionCount > 0) {
+    effects.push({
+      sourceCropId: 'soybean',
+      count: soybeanEffect.horizontalConnectionCount,
+      bonus: soybeanEffect.rowProductionBonus,
+      multiplier: soybeanEffect.rowProductionMultiplier,
+      pattern: 'horizontal-connections',
+    })
+  }
+
+  return effects
+}
+
+export function getSoybeanMachineryEffect(
+  sourceBlueprint,
+  completedCropPerfections = [],
+  passiveEffectMultiplier = 1,
+  seedAugmentations = {},
+) {
+  return getCachedSoybeanMachineryEffect(
+    sourceBlueprint,
+    [completedCropPerfections, passiveEffectMultiplier, seedAugmentations],
+    () => {
+      const blueprint = getMirrorCornEffectBlueprint(
+        sourceBlueprint,
+        completedCropPerfections,
+        seedAugmentations,
+      )
+      const soybeanCount = getPlantedCropCount(blueprint, 'soybean')
+      const {
+        horizontalConnectionCount,
+        squareCount,
+      } = getSoybeanPatternCounts(blueprint)
+
+      if (soybeanCount === 0) {
+        return {
+          soybeanCount: 0,
+          horizontalConnectionCount: 0,
+          squareCount: 0,
+          bonusPerPattern: 0,
+          rowProductionBonus: 0,
+          rowProductionMultiplier: 1,
+          floorProductionBonus: 0,
+          floorProductionMultiplier: 1,
+        }
+      }
+
+      const definition = CROP_DEFINITIONS.soybean
+      const bonusPerPattern =
+        getMonocropAdjustedCropBonus(
+          blueprint,
+          'soybean',
+          definition.machineryPatternBonus,
+          completedCropPerfections,
+          seedAugmentations,
+        ) *
+        getGlobalPassiveEffectMultiplier(
+          blueprint,
+          completedCropPerfections,
+          passiveEffectMultiplier,
+          seedAugmentations,
+        )
+      const rowProductionBonus =
+        horizontalConnectionCount * bonusPerPattern
+      const floorProductionBonus = squareCount * bonusPerPattern
+
+      return {
+        soybeanCount,
+        horizontalConnectionCount,
+        squareCount,
+        bonusPerPattern,
+        rowProductionBonus,
+        rowProductionMultiplier: 1 + rowProductionBonus,
+        floorProductionBonus,
+        floorProductionMultiplier: 1 + floorProductionBonus,
+      }
     },
-  ]
+  )
 }
 
 export function getGlobalRowProductionMultiplier(

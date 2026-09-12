@@ -32,6 +32,7 @@ import {
   getRowDuplicatorExternalMultiplier,
   getRowsProducedPerSecond,
   getRowDuplicatorCoordinationMultiplier,
+  getSoybeanMachineryEffect,
   getUnlockedBlueprintSlotCount,
   getRushedStartExternalMultiplier,
   isFloorReplicatorSupportModeActive,
@@ -191,6 +192,21 @@ export function useGameDerivedState(game) {
       getFloorReplicatorCoordinationMultiplier(game.floorReplicators),
     [game.floorReplicators],
   )
+  const floorReplicatorEffectivenessMultiplier = useMemo(
+    () =>
+      getSoybeanMachineryEffect(
+        game.blueprint,
+        game.completedCropPerfections,
+        fortuneModifiers.passiveEffectMultiplier,
+        game.seedAugmentations,
+      ).floorProductionMultiplier,
+    [
+      game.blueprint,
+      game.completedCropPerfections,
+      fortuneModifiers.passiveEffectMultiplier,
+      game.seedAugmentations,
+    ],
+  )
   const floorReplicatorExternalMultiplier =
     getFloorReplicatorExternalMultiplier(
       rushedStartExternalMultiplier * huntForSomethingGreaterMultiplier,
@@ -203,13 +219,15 @@ export function useGameDerivedState(game) {
     () =>
       game.hasUnlockedFloorReplicators
         && !isFloorReplicatorSupportMode
-        ? getFloorsProducedPerSecond(
+          ? getFloorsProducedPerSecond(
             game.floorReplicators,
             floorReplicatorExternalMultiplier,
+            floorReplicatorEffectivenessMultiplier,
           )
         : 0,
     [
       floorReplicatorExternalMultiplier,
+      floorReplicatorEffectivenessMultiplier,
       game.floorReplicators,
       game.hasUnlockedFloorReplicators,
       isFloorReplicatorSupportMode,
@@ -331,6 +349,7 @@ export function useGameDerivedState(game) {
         hasUnlockedFourLeafClover,
         game.hasUnlockedWheat,
         unlockedManateeCropIds,
+        game.floorReplicators,
       ),
     [
       game.blueprint,
@@ -347,6 +366,7 @@ export function useGameDerivedState(game) {
       hasUnlockedFourLeafClover,
       game.hasUnlockedWheat,
       unlockedManateeCropIds,
+      game.floorReplicators,
     ],
   )
   const visibleCropIds = useMemo(
@@ -442,6 +462,7 @@ export function useGameDerivedState(game) {
     nextRowDuplicatorCost,
     nextFloorReplicatorCost,
     floorReplicatorCoordinationMultiplier,
+    floorReplicatorEffectivenessMultiplier,
     floorReplicatorExternalMultiplier,
     isFloorReplicatorSupportMode,
     burdenedFoundationsPassiveEffectBonus,
