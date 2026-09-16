@@ -13,6 +13,7 @@ import {
   createBlueprint,
   createInitialCloverAssemblyState,
   createInitialGame,
+  getCloverAssemblyProductionPerSecond,
   isCloverAssemblyReady,
   purchaseRabbitUnlock,
   unlockGreaterBlueprinting,
@@ -59,15 +60,16 @@ test('the Clover assembly precursors use their configured main Crop and Rabbit r
 })
 
 test('Clover assembly progress follows the slowest required Crop production and caps at its requirement', () => {
+  const productionPerSecondByCrop = {
+    appleTree: 3e58,
+    canola: 4e58,
+    soybean: 5e58,
+    carrot: 6e58,
+    leek: 1e200,
+  }
   const progress = advanceCloverAssemblyState(
     createInitialCloverAssemblyState(),
-    {
-      appleTree: 3e58,
-      canola: 4e58,
-      soybean: 5e58,
-      carrot: 6e58,
-      leek: 1e200,
-    },
+    productionPerSecondByCrop,
     2,
     true,
   )
@@ -82,6 +84,10 @@ test('Clover assembly progress follows the slowest required Crop production and 
     ],
   )
   assert.equal(progress.progress, 6e58)
+  assert.equal(
+    getCloverAssemblyProductionPerSecond(productionPerSecondByCrop),
+    3e58,
+  )
   assert.equal(isCloverAssemblyReady(progress), false)
 
   const cappedProgress = advanceCloverAssemblyState(

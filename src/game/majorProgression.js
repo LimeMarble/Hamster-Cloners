@@ -14,10 +14,16 @@ import {
 } from './crops.js'
 import {
   BLUEPRINT_EXPANSIONS,
+  GAME_AREA_IDS,
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   UNIONIZATION_HAMSTER_COUNT,
 } from './gameConfig.js'
+import {
+  MISFORTUNE_UPGRADE_IDS,
+  MISFORTUNE_UPGRADES,
+  hasMisfortuneUpgrade,
+} from './misfortuneUpgrades.js'
 import {
   RABBIT_UNLOCK_IDS,
   TRADE_ESTABLISHMENT_COST,
@@ -32,6 +38,11 @@ import {
 } from './capybaraLogic.js'
 import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
 import { getMisfortuneAreaCrops } from './areaLogic.js'
+import {
+  CLOVER_ASSEMBLY_PART_REQUIREMENT,
+  CLOVER_ASSEMBLY_RABBIT_UNLOCK_ID,
+  normalizeCloverAssemblyState,
+} from './cloverAssemblyLogic.js'
 
 const FIRST_COLUMN_EXPANSION_COST =
   BLUEPRINT_EXPANSIONS.find((expansion) => expansion.id === 'firstColumn')
@@ -96,6 +107,47 @@ function createPerfectionGoal(perfectionId) {
   }
 }
 
+function createMisfortuneUpgradeGoal(upgradeId, description) {
+  const upgrade = MISFORTUNE_UPGRADES[upgradeId]
+
+  return {
+    id: 'misfortune-upgrade-' + upgradeId,
+    category: 'Misfortune upgrade',
+    title: 'Unlock ' + upgrade.name,
+    target: upgrade.cost,
+    unit: 'Misfortune Crops',
+    description,
+    isApplicable: (game) =>
+      game.activeArea === GAME_AREA_IDS.MISFORTUNE,
+    isComplete: (game) => hasMisfortuneUpgrade(game, upgradeId),
+    getCurrent: (game) => game.crops,
+    requiresAction: true,
+  }
+}
+
+const CLOVER_PERFECTION_GOAL = {
+  id: 'perfection-five-leaf-clover',
+  category: 'Crop perfection',
+  title: 'Assemble 5-Leaf Clover',
+  target: CLOVER_ASSEMBLY_PART_REQUIREMENT,
+  unit: 'of each required Crop',
+  description:
+    'Fabricate its four parts together from Apple Sapling, Canola, Soybean, and Carrot production in Misfortune.',
+  isComplete: (game) => game.cloverAssembly?.assembled === true,
+  getCurrent: (game) =>
+    normalizeCloverAssemblyState(game.cloverAssembly).progress,
+  getProgressPerSecond: (_game, context) =>
+    getSafeProgressValue(context.cloverAssemblyProductionPerSecond),
+  getProgressLabel: (game) =>
+    game.hasUnlockedGreaterBlueprinting === true &&
+    game.trade?.rabbitUnlocks?.includes(
+      CLOVER_ASSEMBLY_RABBIT_UNLOCK_ID,
+    ) === true
+      ? null
+      : 'Unlock prerequisites to reveal...',
+  requiresAction: true,
+}
+
 export const MAJOR_PROGRESSION_GOALS = [
   {
     id: 'inventions',
@@ -121,6 +173,14 @@ export const MAJOR_PROGRESSION_GOALS = [
       hasCompletedExpansion(game, 'firstColumn') ||
       getSafeProgressValue(game.blueprint?.columns) > 1,
   }),
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+    'Purchase Unfortunate Row from the Misfortune tab.',
+  ),
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.RUSHED_START,
+    'Purchase Rushed Start from the Misfortune tab.',
+  ),
   createCropGoal({
     id: 'crop-pumpkin',
     title: 'Unionize and unlock Pumpkin',
@@ -186,7 +246,15 @@ export const MAJOR_PROGRESSION_GOALS = [
     description: 'Reach the Crop threshold to permanently unlock Knotweed.',
     isComplete: (game) => game.hasUnlockedKnotweed === true,
   }),
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
+    'Purchase Adversity-Grown Tubers from the Misfortune tab.',
+  ),
   createPerfectionGoal('leechingGourd'),
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+    'Purchase Burdened Foundations from the Misfortune tab.',
+  ),
   {
     id: 'row-duplicators',
     category: 'Milestone',
@@ -207,6 +275,14 @@ export const MAJOR_PROGRESSION_GOALS = [
       'After unlocking Row Duplicators, reach the Crop threshold to permanently unlock Wheat.',
     isComplete: (game) => game.hasUnlockedWheat === true,
   }),
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+    'Purchase Nourishing Misery from the Misfortune tab.',
+  ),
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+    'Purchase Hunt for Something Greater from the Misfortune tab.',
+  ),
   createPerfectionGoal('splitweed'),
   createCropGoal({
     id: 'crop-sunflower',
@@ -215,6 +291,10 @@ export const MAJOR_PROGRESSION_GOALS = [
     description: 'Reach the Crop threshold to permanently unlock Sunflower.',
     isComplete: (game) => game.hasUnlockedSunflower === true,
   }),
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+    'Purchase Fortunate Column from the Misfortune tab.',
+  ),
   createCropGoal({
     id: 'crop-canola',
     title: 'Unlock Canola',
@@ -274,6 +354,11 @@ export const MAJOR_PROGRESSION_GOALS = [
     isComplete: hasUnlockedSoybean,
     getCurrent: (game) => game.floorReplicators,
   },
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+    'Purchase Final Support from the Misfortune tab.',
+  ),
+  CLOVER_PERFECTION_GOAL,
   {
     id: 'capybara-contact',
     category: 'Milestone',
@@ -360,9 +445,11 @@ export const MAJOR_PROGRESSION_GOALS = [
   },
 ]
 
-export function getNextMajorProgressionGoal(game) {
+export function getNextMajorProgressionGoal(game, context = {}) {
   const goal = MAJOR_PROGRESSION_GOALS.find(
-    (candidateGoal) => !candidateGoal.isComplete(game),
+    (candidateGoal) =>
+      candidateGoal.isApplicable?.(game) !== false &&
+      !candidateGoal.isComplete(game),
   )
 
   if (!goal) {
@@ -384,15 +471,19 @@ export function getNextMajorProgressionGoal(game) {
   const demonstrationStatus = goal.demonstrationId
     ? getCapybaraDemonstrationStatus(game, goal.demonstrationId)
     : null
+  const progressLabel = goal.getProgressLabel?.(game) ?? null
   const displayProgressAsDash =
     demonstrationStatus?.number >= 1 &&
     demonstrationStatus.requiresNoClover === true &&
     demonstrationStatus.restrictionsMet === false
-  const current = displayProgressAsDash
+  const current = displayProgressAsDash || progressLabel
     ? 0
     : getSafeProgressValue(goal.getCurrent(game))
   const target = getSafeProgressValue(goal.target)
   const progress = target > 0 ? Math.min(1, current / target) : 0
+  const progressPerSecond = progressLabel
+    ? null
+    : goal.getProgressPerSecond?.(game, context) ?? null
 
   return {
     id: goal.id,
@@ -403,9 +494,12 @@ export function getNextMajorProgressionGoal(game) {
     target,
     unit: goal.unit,
     progress,
+    progressPerSecond,
+    progressLabel,
     displayProgressAsDash,
     isReady:
       goal.requiresAction === true &&
+      !progressLabel &&
       (demonstrationStatus
         ? demonstrationStatus.canComplete
         : current >= target),

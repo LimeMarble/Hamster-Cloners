@@ -17,6 +17,7 @@ export function Inventions({
   canUnlockSplitweed,
   canUnlockGreaterBlueprinting,
   isCloverAssemblyReady,
+  cloverAssemblyProductionPerSecond,
   canUnlockRows,
   hasEnrichingLeek,
   hasMirrorCorn,
@@ -267,6 +268,7 @@ export function Inventions({
               game={game}
               canUnlockGreaterBlueprinting={canUnlockGreaterBlueprinting}
               isCloverAssemblyReady={isCloverAssemblyReady}
+              productionPerSecond={cloverAssemblyProductionPerSecond}
               onUnlockGreaterBlueprinting={onUnlockGreaterBlueprinting}
               onCompleteCloverAssembly={onCompleteCloverAssembly}
             />

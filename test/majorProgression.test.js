@@ -4,6 +4,7 @@ import {
   createInitialGame,
   getNextMajorProgressionGoal,
   MAJOR_PROGRESSION_GOALS,
+  MISFORTUNE_UPGRADE_IDS,
 } from '../src/game/gameLogic.js'
 import { CROP_PERFECTION_IDS } from '../src/game/crops.js'
 
@@ -13,6 +14,8 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
     [
       'inventions',
       'crop-corn',
+      'misfortune-upgrade-unfortunateRow',
+      'misfortune-upgrade-rushedStart',
       'crop-pumpkin',
       'crop-potato',
       'crop-turnip',
@@ -22,16 +25,23 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'crop-apple-tree',
       'crop-lentil',
       'crop-knotweed',
+      'misfortune-upgrade-adversityGrownTubers',
       'perfection-leechingGourd',
+      'misfortune-upgrade-burdenedFoundations',
       'row-duplicators',
       'crop-wheat',
+      'misfortune-upgrade-nourishingMisery',
+      'misfortune-upgrade-huntForSomethingGreater',
       'perfection-splitweed',
       'crop-sunflower',
+      'misfortune-upgrade-fortunateColumn',
       'crop-canola',
       'trade-relations',
       'crop-carrot',
       'crop-four-leaf-clover',
       'crop-soybean',
+      'misfortune-upgrade-finalSupport',
+      'perfection-five-leaf-clover',
       'capybara-contact',
       'capybara-demonstration-introduction',
       'capybara-demonstration-one',
@@ -191,6 +201,42 @@ test('major progression advances to the earliest unfinished goal', () => {
       misfortune: { rowDuplicators: 500 },
     },
   }
+  const fiveLeafCloverGoal = getNextMajorProgressionGoal(game)
+  assert.equal(fiveLeafCloverGoal.id, 'perfection-five-leaf-clover')
+  assert.equal(
+    fiveLeafCloverGoal.progressLabel,
+    'Unlock prerequisites to reveal...',
+  )
+  assert.equal(fiveLeafCloverGoal.progress, 0)
+  assert.equal(fiveLeafCloverGoal.isReady, false)
+
+  game = {
+    ...game,
+    hasUnlockedGreaterBlueprinting: true,
+    trade: {
+      ...game.trade,
+      rabbitUnlocks: [
+        ...game.trade.rabbitUnlocks,
+        'rabbitsCharm',
+      ],
+    },
+    cloverAssembly: { progress: 3.885e58, assembled: false },
+  }
+  const revealedFiveLeafCloverGoal = getNextMajorProgressionGoal(game, {
+    cloverAssemblyProductionPerSecond: 1.25e55,
+  })
+  assert.equal(
+    revealedFiveLeafCloverGoal.id,
+    'perfection-five-leaf-clover',
+  )
+  assert.equal(revealedFiveLeafCloverGoal.progressLabel, null)
+  assert.equal(revealedFiveLeafCloverGoal.progress, 0.5)
+  assert.equal(revealedFiveLeafCloverGoal.progressPerSecond, 1.25e55)
+
+  game = {
+    ...game,
+    cloverAssembly: { progress: 7.77e58, assembled: true },
+  }
   const capybaraGoal = getNextMajorProgressionGoal(game)
   assert.equal(capybaraGoal.id, 'capybara-contact')
 
@@ -310,4 +356,62 @@ test('action goals show ready only after their cost is affordable', () => {
   assert.equal(waitingGoal.isReady, false)
   assert.equal(readyGoal.id, 'perfection-enrichingLeek')
   assert.equal(readyGoal.isReady, true)
+})
+
+test('Misfortune progress includes every permanent Misfortune upgrade', () => {
+  const upgradeOrder = [
+    MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+    MISFORTUNE_UPGRADE_IDS.RUSHED_START,
+    MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
+    MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+    MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+    MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+    MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+    MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+  ]
+  let game = {
+    ...createInitialGame(),
+    activeArea: 'misfortune',
+    crops: 1e200,
+    totalHamstersHired: 1000,
+    unionized: true,
+    hamsters: 125,
+    completedBlueprintExpansions: ['firstColumn'],
+    hasUnlockedTurnip: true,
+    hasUnlockedCropPerfection: true,
+    completedCropPerfections: CROP_PERFECTION_IDS,
+    hasUnlockedAppleTree: true,
+    hasUnlockedLentil: true,
+    hasUnlockedKnotweed: true,
+    hasUnlockedRowDuplicators: true,
+    hasUnlockedWheat: true,
+    hasUnlockedSunflower: true,
+    rowDuplicators: 500,
+    floorReplicators: 555,
+    trade: {
+      established: true,
+      rabbitRelations: 1e30,
+      rabbitUnlocks: ['carrot', 'fourLeafClover'],
+    },
+  }
+
+  for (const upgradeId of upgradeOrder) {
+    const goal = getNextMajorProgressionGoal(game)
+    assert.equal(goal.id, 'misfortune-upgrade-' + upgradeId)
+    assert.equal(goal.category, 'Misfortune upgrade')
+    assert.equal(goal.unit, 'Misfortune Crops')
+
+    game = {
+      ...game,
+      completedMisfortuneUpgrades: [
+        ...game.completedMisfortuneUpgrades,
+        upgradeId,
+      ],
+    }
+  }
+
+  assert.equal(
+    getNextMajorProgressionGoal(game).id,
+    'perfection-five-leaf-clover',
+  )
 })

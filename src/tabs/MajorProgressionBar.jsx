@@ -54,6 +54,8 @@ function MajorProgressionBarContent({ goal }) {
                 'Complete'
               ) : goal.isReady ? (
                 'Ready to unlock'
+              ) : goal.progressLabel ? (
+                goal.progressLabel
               ) : goal.displayProgressAsDash ? (
                 '-'
               ) : (
@@ -70,6 +72,14 @@ function MajorProgressionBarContent({ goal }) {
                     <FormattedNumber value={goal.target} />
                   )}{' '}
                   {goal.unit}
+                  {goal.progressPerSecond !== null &&
+                  goal.progressPerSecond !== undefined ? (
+                    <>
+                      {' · '}
+                      <FormattedNumber value={goal.progressPerSecond} />{' '}
+                      Crops/second
+                    </>
+                  ) : null}
                 </>
               )}
             </span>
@@ -98,12 +108,14 @@ const GOAL_DISPLAY_KEYS = [
   'title',
   'isComplete',
   'isReady',
+  'progressLabel',
   'displayProgressAsDash',
   'current',
   'target',
   'unit',
   'description',
   'progress',
+  'progressPerSecond',
 ]
 
 function areMajorProgressionPropsEqual(previous, next) {

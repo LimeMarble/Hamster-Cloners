@@ -95,11 +95,8 @@ export function advanceCloverAssemblyState(
     return assembly
   }
 
-  const limitingProductionPerSecond = Math.min(
-    ...CLOVER_ASSEMBLY_PARTS.map(({ cropId }) =>
-      toNonNegativeNumber(productionPerSecondByCrop?.[cropId]),
-    ),
-  )
+  const limitingProductionPerSecond =
+    getCloverAssemblyProductionPerSecond(productionPerSecondByCrop)
 
   return {
     ...assembly,
@@ -108,6 +105,16 @@ export function advanceCloverAssemblyState(
       assembly.progress + limitingProductionPerSecond * safeElapsedSeconds,
     ),
   }
+}
+
+export function getCloverAssemblyProductionPerSecond(
+  productionPerSecondByCrop,
+) {
+  return Math.min(
+    ...CLOVER_ASSEMBLY_PARTS.map(({ cropId }) =>
+      toNonNegativeNumber(productionPerSecondByCrop?.[cropId]),
+    ),
+  )
 }
 
 export function isCloverAssemblyReady(rawAssembly) {

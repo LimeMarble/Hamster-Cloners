@@ -36,6 +36,7 @@ export function CloverAssembly({
   game,
   canUnlockGreaterBlueprinting,
   isCloverAssemblyReady,
+  productionPerSecond,
   onUnlockGreaterBlueprinting,
   onCompleteCloverAssembly,
 }) {
@@ -148,6 +149,10 @@ export function CloverAssembly({
             <FormattedNumber value={assembly.progress} /> /{' '}
             <FormattedNumber value={CLOVER_ASSEMBLY_PART_REQUIREMENT} />{' '}
             of each required Crop
+          </p>
+          <p className="clover-assembly-progress-copy">
+            Assembly rate: <FormattedNumber value={productionPerSecond} />{' '}
+            Crops/second
           </p>
           {assembly.assembled ? (
             <p className="clover-assembly-complete-copy">

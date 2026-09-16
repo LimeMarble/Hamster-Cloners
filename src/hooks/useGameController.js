@@ -300,6 +300,8 @@ export function useGameController() {
         canUnlockSplitweed: derived.canUnlockSplitweed,
         canUnlockGreaterBlueprinting: canUnlockGreaterBlueprinting(game),
         isCloverAssemblyReady: isCloverAssemblyReady(game.cloverAssembly),
+        cloverAssemblyProductionPerSecond:
+          derived.cloverAssemblyProductionPerSecond,
         canUnlockRows: derived.canUnlockRows,
         hasEnrichingLeek: derived.hasEnrichingLeek,
         hasMirrorCorn: derived.hasMirrorCorn,

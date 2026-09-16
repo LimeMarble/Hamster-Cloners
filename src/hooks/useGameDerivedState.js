@@ -11,6 +11,7 @@ import {
   getColumnsProducedPerSecond,
   getCropHamsterEfficiencyMultiplier,
   getCropProductionSnapshotPerSecond,
+  getCloverAssemblyProductionPerSecond,
   getCloverBundleChancePerMinute,
   getFortuneModifiers,
   getGameAreaCostMultiplier,
@@ -108,6 +109,13 @@ export function useGameDerivedState(game) {
     ],
   )
   const productionPerSecond = cropProductionSnapshot.total
+  const cloverAssemblyProductionPerSecond =
+    isMisfortuneAreaActive(game) &&
+    game.hasUnlockedGreaterBlueprinting === true &&
+    hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.RABBITS_CHARM) &&
+    game.cloverAssembly?.assembled !== true
+      ? getCloverAssemblyProductionPerSecond(cropProductionSnapshot.byCrop)
+      : 0
   const cloverBundleChancePerMinute = useMemo(
     () =>
       getCloverBundleChancePerMinute({
@@ -448,14 +456,18 @@ export function useGameDerivedState(game) {
   )
   const completedCropPerfections = game.completedCropPerfections
   const majorProgressionGoal = useMemo(
-    () => getNextMajorProgressionGoal(game),
-    [game],
+    () =>
+      getNextMajorProgressionGoal(game, {
+        cloverAssemblyProductionPerSecond,
+      }),
+    [cloverAssemblyProductionPerSecond, game],
   )
 
   return {
     isMisfortuneAreaActive: isMisfortuneAreaActive(game),
     nextHamsterCost,
     majorProgressionGoal,
+    cloverAssemblyProductionPerSecond,
     productionPerSecond,
     cloverBundleChancePerMinute,
     rabbitContractProductionPerSecondByCrop: cropProductionSnapshot.byCrop,
