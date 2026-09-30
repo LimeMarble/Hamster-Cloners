@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   FIVE_LEAF_FORTUNES,
   getFiveLeafLoadoutCost,
@@ -10,104 +9,155 @@ import { getFortuneEffect } from '../game/fortuneLogic.js'
 import { FormattedNumber } from './ui.jsx'
 
 export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
-  const [activeSection, setActiveSection] = useState('loadouts')
   const state = normalizeFiveLeafState(game.fortune?.fiveLeaf)
   const pointBudget = getFiveLeafPointBudget(game)
   const loadout = state.loadouts[state.activeLoadoutIndex]
   const spent = getFiveLeafLoadoutCost(loadout)
   const schedule = getFiveLeafSchedule(loadout, pointBudget)
   const allocated = Object.values(loadout.allocations).reduce(
-    (total, percent) => total + percent, 0,
+    (total, percent) => total + percent,
+    0,
   )
 
   return (
     <section className="five-leaf-panel" aria-labelledby="five-leaf-title">
-      <div className="section-heading">
+      <div className="section-heading five-leaf-heading">
         <div>
           <p className="eyebrow">Clover perfection</p>
           <h1 id="five-leaf-title">5-Leaf Clover</h1>
         </div>
-        <span className="invention-complete">Fortunes awakened</span>
+        <span className="invention-complete">Assembled</span>
       </div>
-      <p>
-        Your clover now survives Misfortune. Choose the fortunes it can grant
-        and how many bundles arrive together. Unassigned chance becomes
-        Fortune&apos;s Mirage.
+      <p className="five-leaf-intro">
+        Configure the fortunes granted by your Clover Bundles. The perfected
+        clover can also be planted in Misfortune.
       </p>
-      <nav className="invention-tabs" aria-label="5-Leaf Clover sections">
-        <button type="button" className={`invention-tab ${activeSection === 'loadouts' ? 'invention-tab-active' : ''}`} onClick={() => setActiveSection('loadouts')}>Loadouts</button>
-        <button type="button" className={`invention-tab ${activeSection === 'rabbits' ? 'invention-tab-active' : ''}`} onClick={() => setActiveSection('rabbits')}>Rabbit&apos;s Fortune</button>
-        <button type="button" className={`invention-tab ${activeSection === 'cookies' ? 'invention-tab-active' : ''}`} onClick={() => setActiveSection('cookies')}>Fortune Cookies</button>
-      </nav>
-      {activeSection === 'loadouts' ? (
-        <>
-          <div className="five-leaf-loadouts" aria-label="Clover loadouts">
-            {state.loadouts.map((option, index) => (
-              <button
-                key={index}
-                type="button"
-                className={`invention-tab ${index === state.activeLoadoutIndex ? 'invention-tab-active' : ''}`}
-                onClick={() => onSelectLoadout(index)}
-              >
-                {option.name}
-              </button>
-            ))}
-          </div>
-          <p className="five-leaf-points">
-            Fortune points: <FormattedNumber value={spent} maximumFractionDigits={0} /> /{' '}
-            <FormattedNumber value={pointBudget} maximumFractionDigits={0} />
-            <small>Earn 50 per completed demonstration and 25 per distinct fortune used.</small>
-            {schedule.overloadFactor > 1 ? (
-              <small>Overloaded: appearances take ×{schedule.overloadFactor.toFixed(2)} longer.</small>
-            ) : null}
-          </p>
-          <div className="five-leaf-settings">
-            <label>
-              <span>Spawn chance: {loadout.chancePercent}%</span>
-              <input
-                type="range"
-                min="10"
-                max="100"
-                step="1"
-                value={loadout.chancePercent}
-                onChange={(event) => onUpdateLoadout(state.activeLoadoutIndex, {
-                  chancePercent: Number(event.target.value),
-                })}
-              />
-            </label>
-            <label>
-              <span>Bundles per appearance</span>
-              <select
-                value={loadout.batchSize}
-                onChange={(event) => onUpdateLoadout(state.activeLoadoutIndex, {
-                  batchSize: Number(event.target.value),
-                })}
-              >
-                {[1, 2, 3, 4, 5].map((count) => (
-                  <option key={count} value={count}>{count}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <p className="five-leaf-note">
-            Lower spawn chance means more frequent attempts. Larger batches
-            take longer to arrive. Changing an active loadout or switching
-            loadouts clears its current bundles, effects, and spawn progress.
-          </p>
-          <div className="five-leaf-fortunes">
-            {FIVE_LEAF_FORTUNES.map(({ id, pointCost }) => {
-              const effect = getFortuneEffect(id)
-              const percentage = loadout.allocations[id]
-              const otherPercent = allocated - percentage
-              const maximum = 100 - otherPercent
 
-              return (
-                <label className="five-leaf-fortune" key={id}>
-                  <span className="five-leaf-fortune-heading">
-                    <strong>{effect.icon} {effect.name}</strong>
-                    <span>{percentage}%</span>
-                  </span>
-                  <small>{effect.description} · {pointCost} {pointCost === 1 ? 'point' : 'points'} per 1%</small>
+      <section className="five-leaf-section" aria-labelledby="five-leaf-loadouts-title">
+        <div className="five-leaf-section-heading">
+          <div>
+            <p className="eyebrow">Saved configurations</p>
+            <h2 id="five-leaf-loadouts-title">Loadouts</h2>
+          </div>
+        </div>
+        <div className="five-leaf-loadouts" aria-label="Clover loadouts">
+          {state.loadouts.map((option, index) => (
+            <button
+              key={index}
+              type="button"
+              className={`five-leaf-loadout ${index === state.activeLoadoutIndex ? 'five-leaf-loadout-active' : ''}`}
+              onClick={() => onSelectLoadout(index)}
+              aria-pressed={index === state.activeLoadoutIndex}
+            >
+              {option.name}
+            </button>
+          ))}
+        </div>
+        <p className="five-leaf-help">
+          Switching loadouts clears pending bundles, active effects, and spawn progress.
+        </p>
+      </section>
+
+      <dl className="five-leaf-summary">
+        <div>
+          <dt>Fortune points</dt>
+          <dd>
+            <FormattedNumber value={spent} maximumFractionDigits={0} /> /{' '}
+            <FormattedNumber value={pointBudget} maximumFractionDigits={0} />
+          </dd>
+        </div>
+        <div>
+          <dt>Unassigned chance</dt>
+          <dd>{100 - allocated}%</dd>
+        </div>
+        <div>
+          <dt>Loadout overload</dt>
+          <dd>
+            {schedule.overloadFactor > 1
+              ? `×${schedule.overloadFactor.toFixed(2)} time`
+              : 'None'}
+          </dd>
+        </div>
+      </dl>
+      <p className="five-leaf-help five-leaf-point-help">
+        Earn 50 Fortune points per completed demonstration and 25 per distinct
+        fortune used. Spending beyond your points makes bundles take longer to appear.
+      </p>
+
+      <section className="five-leaf-section" aria-labelledby="five-leaf-appearance-title">
+        <div className="five-leaf-section-heading">
+          <div>
+            <p className="eyebrow">Active loadout</p>
+            <h2 id="five-leaf-appearance-title">Appearance</h2>
+          </div>
+        </div>
+        <div className="five-leaf-settings">
+          <label className="five-leaf-control">
+            <span className="five-leaf-control-heading">
+              <strong>Spawn chance</strong>
+              <strong>{loadout.chancePercent}%</strong>
+            </span>
+            <input
+              type="range"
+              min="10"
+              max="100"
+              step="1"
+              value={loadout.chancePercent}
+              onChange={(event) => onUpdateLoadout(state.activeLoadoutIndex, {
+                chancePercent: Number(event.target.value),
+              })}
+            />
+            <small>Lower chance means more frequent attempts.</small>
+          </label>
+          <label className="five-leaf-control">
+            <span className="five-leaf-control-heading">
+              <strong>Bundles per appearance</strong>
+            </span>
+            <select
+              value={loadout.batchSize}
+              onChange={(event) => onUpdateLoadout(state.activeLoadoutIndex, {
+                batchSize: Number(event.target.value),
+              })}
+            >
+              {[1, 2, 3, 4, 5].map((count) => (
+                <option key={count} value={count}>{count}</option>
+              ))}
+            </select>
+            <small>Larger groups take longer to arrive.</small>
+          </label>
+        </div>
+      </section>
+
+      <section className="five-leaf-section" aria-labelledby="five-leaf-effects-title">
+        <div className="five-leaf-section-heading">
+          <div>
+            <p className="eyebrow">Active loadout</p>
+            <h2 id="five-leaf-effects-title">Fortune effects</h2>
+          </div>
+          <span className="five-leaf-allocation">{allocated}% allocated</span>
+        </div>
+        <p className="five-leaf-help">
+          Assign chance to each effect. Any chance left over becomes Fortune&apos;s
+          Mirage at no point cost.
+        </p>
+        <div className="five-leaf-fortunes">
+          {FIVE_LEAF_FORTUNES.map(({ id, pointCost }) => {
+            const effect = getFortuneEffect(id)
+            const percentage = loadout.allocations[id]
+            const maximum = 100 - (allocated - percentage)
+
+            return (
+              <label className="five-leaf-fortune" key={id}>
+                <span className="five-leaf-fortune-icon" aria-hidden="true">
+                  {effect.icon}
+                </span>
+                <span className="five-leaf-fortune-copy">
+                  <strong>{effect.name}</strong>
+                  <small>{effect.description}</small>
+                  <small>{pointCost} {pointCost === 1 ? 'point' : 'points'} per 1%</small>
+                </span>
+                <span className="five-leaf-fortune-control">
+                  <strong>{percentage}%</strong>
                   <input
                     type="range"
                     min="0"
@@ -118,22 +168,24 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
                       allocations: { [id]: Number(event.target.value) },
                     })}
                   />
-                </label>
-              )
-            })}
-            <div className="five-leaf-fortune five-leaf-mirage">
-              <strong>… Fortune&apos;s Mirage</strong>
-              <span>{100 - allocated}% · free</span>
-            </div>
+                </span>
+              </label>
+            )
+          })}
+          <div className="five-leaf-fortune five-leaf-mirage">
+            <span className="five-leaf-fortune-icon" aria-hidden="true">…</span>
+            <span className="five-leaf-fortune-copy">
+              <strong>Fortune&apos;s Mirage</strong>
+              <small>Nothing happens · free</small>
+            </span>
+            <strong className="five-leaf-mirage-chance">{100 - allocated}%</strong>
           </div>
-        </>
-      ) : (
-        <p className="five-leaf-note">
-          {activeSection === 'rabbits'
-            ? 'Rabbit\'s Fortune is not available yet.'
-            : 'Crop-themed Fortune Cookies are not available yet.'}
+        </div>
+        <p className="five-leaf-help five-leaf-future-note">
+          Rabbit&apos;s Fortune and crop-themed Fortune Cookies will join this
+          effect list when available.
         </p>
-      )}
+      </section>
     </section>
   )
 }

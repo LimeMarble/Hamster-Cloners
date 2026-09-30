@@ -1,23 +1,262 @@
 .five-leaf-panel {
-  margin-top: 1rem;
-  padding: 1.15rem;
-  border: 1px solid #5f9b65;
-  background: #101c13;
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  background: var(--panel);
 }
 
-.five-leaf-panel h1 { margin: 0.25rem 0 0; }
-.five-leaf-panel .invention-tabs { margin: 1rem 0; }
-.five-leaf-loadouts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.five-leaf-points { color: #a9e6ad; font-weight: 700; }
-.five-leaf-points small { display: block; margin-top: 0.2rem; color: #aab5aa; font-weight: 400; }
-.five-leaf-settings { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0; }
-.five-leaf-settings label { display: grid; gap: 0.45rem; min-width: min(15rem, 100%); }
-.five-leaf-settings input { accent-color: #64ca79; }
-.five-leaf-settings select { padding: 0.35rem; background: #142318; color: inherit; border: 1px solid #6a8870; }
-.five-leaf-note { color: #c7d4c8; }
-.five-leaf-fortunes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); gap: 0.65rem; margin-top: 1rem; }
-.five-leaf-fortune { display: grid; gap: 0.5rem; padding: 0.8rem; border: 1px solid #405e43; background: #16251a; }
-.five-leaf-fortune-heading { display: flex; justify-content: space-between; gap: 0.5rem; }
-.five-leaf-fortune small { color: #b8c5b9; }
-.five-leaf-fortune input { width: 100%; accent-color: #64ca79; }
-.five-leaf-mirage { align-content: center; }
+.five-leaf-heading {
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+
+.five-leaf-heading h1 {
+  margin-bottom: 0;
+  font-size: 1.8rem;
+}
+
+.five-leaf-intro,
+.five-leaf-help {
+  max-width: 720px;
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.five-leaf-intro {
+  font-size: 0.88rem;
+}
+
+.five-leaf-help {
+  font-size: 0.76rem;
+}
+
+.five-leaf-section {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
+}
+
+.five-leaf-section-heading,
+.five-leaf-control-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.five-leaf-section-heading {
+  margin-bottom: 14px;
+}
+
+.five-leaf-section-heading h2 {
+  margin: 0;
+}
+
+.five-leaf-loadouts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.five-leaf-loadout {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  background: var(--panel);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.five-leaf-loadout-active {
+  border-color: var(--field-green);
+  color: var(--field-green);
+  background: var(--field-green-muted);
+}
+
+.five-leaf-section > .five-leaf-help:last-child {
+  margin-top: 12px;
+}
+
+.five-leaf-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.five-leaf-summary div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
+}
+
+.five-leaf-summary dd {
+  margin: 0;
+  color: var(--crop-gold);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.five-leaf-point-help {
+  margin-top: -4px;
+}
+
+.five-leaf-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.five-leaf-control {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.five-leaf-control-heading {
+  color: var(--text-strong);
+  font-size: 0.78rem;
+}
+
+.five-leaf-control-heading strong:last-child {
+  color: var(--crop-gold);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.five-leaf-control input,
+.five-leaf-fortune input {
+  width: 100%;
+  accent-color: var(--field-green);
+}
+
+.five-leaf-control select {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  color: var(--text-strong);
+  background: var(--panel-raised);
+  font: inherit;
+}
+
+.five-leaf-control small,
+.five-leaf-fortune small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.five-leaf-allocation {
+  color: var(--crop-gold);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.five-leaf-fortunes {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.five-leaf-fortune {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 170px;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.five-leaf-fortune-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #67562f;
+  color: var(--crop-gold);
+  background: #211b0d;
+  font-size: 1.2rem;
+}
+
+.five-leaf-fortune-copy,
+.five-leaf-fortune-control {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.five-leaf-fortune-copy strong {
+  color: var(--text-strong);
+  font-size: 0.83rem;
+}
+
+.five-leaf-fortune-control strong,
+.five-leaf-mirage-chance {
+  color: var(--crop-gold);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.94rem;
+  text-align: right;
+}
+
+.five-leaf-mirage-chance {
+  align-self: center;
+}
+
+.five-leaf-future-note {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.five-leaf-panel input:focus-visible,
+.five-leaf-panel select:focus-visible,
+.five-leaf-loadout:focus-visible {
+  outline: 2px solid var(--field-green);
+  outline-offset: 2px;
+}
+
+@media (max-width: 680px) {
+  .five-leaf-panel {
+    padding: 16px;
+  }
+
+  .five-leaf-settings {
+    grid-template-columns: 1fr;
+  }
+
+  .five-leaf-fortune {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .five-leaf-fortune-control,
+  .five-leaf-mirage-chance {
+    grid-column: 2;
+    width: 100%;
+  }
+
+  .five-leaf-fortune-control strong {
+    text-align: left;
+  }
+}
+
+@media (max-width: 440px) {
+  .five-leaf-loadouts,
+  .five-leaf-summary {
+    grid-template-columns: 1fr;
+  }
+}
