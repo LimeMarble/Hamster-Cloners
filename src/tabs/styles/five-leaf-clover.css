@@ -5,7 +5,7 @@
   background: #101c13;
 }
 
-.five-leaf-panel h3 { margin: 0.25rem 0 0; }
+.five-leaf-panel h1 { margin: 0.25rem 0 0; }
 .five-leaf-panel .invention-tabs { margin: 1rem 0; }
 .five-leaf-loadouts { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .five-leaf-points { color: #a9e6ad; font-weight: 700; }

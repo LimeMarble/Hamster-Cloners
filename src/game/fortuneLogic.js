@@ -20,6 +20,7 @@ import {
 import {
   chooseFiveLeafEffect,
   createInitialFiveLeafState,
+  DEFAULT_CLOVER_FORTUNE_PERCENTAGES,
   getFiveLeafPointBudget,
   getFiveLeafSchedule,
   normalizeFiveLeafState,
@@ -41,7 +42,7 @@ export const FORTUNE_EFFECTS = Object.freeze([
     id: FORTUNE_EFFECT_IDS.DEMONSTRATION,
     name: "Fortune's Demonstration",
     icon: '✦',
-    weight: 0.17,
+    weight: DEFAULT_CLOVER_FORTUNE_PERCENTAGES.opus / 100,
     durationSeconds: 37,
     description: '+10% Crop passive effects',
     passiveEffectMultiplier: 1.1,
@@ -50,7 +51,7 @@ export const FORTUNE_EFFECTS = Object.freeze([
     id: FORTUNE_EFFECT_IDS.BOUNTY,
     name: "Fortune's Bounty",
     icon: '×',
-    weight: 0.52,
+    weight: DEFAULT_CLOVER_FORTUNE_PERCENTAGES.bounty / 100,
     durationSeconds: 117,
     description: 'Crop yields ×17.77',
     cropYieldMultiplier: 17.77,
@@ -59,7 +60,7 @@ export const FORTUNE_EFFECTS = Object.freeze([
     id: FORTUNE_EFFECT_IDS.SPLIT,
     name: "Fortune's Split",
     icon: '◇',
-    weight: 0.2,
+    weight: DEFAULT_CLOVER_FORTUNE_PERCENTAGES.mirage / 100,
     durationSeconds: 0,
     description: 'Spawns 2 Clover Bundles',
     bundleSpawnCount: 2,
@@ -68,7 +69,7 @@ export const FORTUNE_EFFECTS = Object.freeze([
     id: FORTUNE_EFFECT_IDS.OPUS,
     name: "Fortune's Opus",
     icon: '★',
-    weight: 0.11,
+    weight: DEFAULT_CLOVER_FORTUNE_PERCENTAGES.fortuneOpus / 100,
     durationSeconds: 27,
     description: 'Crop yields ×7.77 and +7.77% Crop passive effects',
     cropYieldMultiplier: 7.77,
@@ -379,7 +380,7 @@ export function advanceFortuneState(
             clampRandomValue(random()) < loadout.chancePercent / 100) {
           bundles = Array.from(
             { length: loadout.batchSize },
-            () => createCloverBundle(random, true),
+            () => createCloverBundle(random),
           )
           secondsTowardBundleRoll = 0
           nextRollSeconds = schedule.firstRollSeconds
@@ -391,7 +392,7 @@ export function advanceFortuneState(
           secondsTowardBundleRoll >= schedule.maximumSeconds) {
         bundles = Array.from(
           { length: loadout.batchSize },
-          () => createCloverBundle(random, true),
+          () => createCloverBundle(random),
         )
         secondsTowardBundleRoll = 0
         nextRollSeconds = schedule.firstRollSeconds
@@ -436,8 +437,15 @@ export function addRandomFortuneEffect(
   const loadout = fortune.fiveLeaf.loadouts[
     fortune.fiveLeaf.activeLoadoutIndex
   ]
+  const selectedFiveLeafEffectId = isFiveLeaf
+    ? chooseFiveLeafEffect(loadout, random())
+    : null
   const effect = isFiveLeaf
-    ? getFortuneEffect(chooseFiveLeafEffect(loadout, random()))
+    ? getFortuneEffect(
+        !allowSplit && selectedFiveLeafEffectId === FORTUNE_EFFECT_IDS.SPLIT
+          ? FORTUNE_EFFECT_IDS.MIRAGE
+          : selectedFiveLeafEffectId,
+      )
     : chooseFortuneEffect(random(), allowSplit)
   const matchingEffect = fortune.activeEffects.some(
     (activeEffect) => activeEffect.id === effect.id,

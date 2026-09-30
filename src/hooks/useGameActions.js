@@ -52,6 +52,7 @@ export function useGameActions({
   areInventionsUnlocked,
   isTradeTabVisible,
   isAugmentationTabVisible,
+  isCloverTabVisible,
   resetBlueprintEditor,
 }) {
   const [activeTab, setActiveTab] = useState('field')
@@ -579,12 +580,19 @@ export function useGameActions({
     setActiveTab('inventions')
   }
 
+  function openClover() {
+    if (isCloverTabVisible) {
+      setActiveTab('clover')
+    }
+  }
+
   return {
     activeTab,
     activeInventionsTab,
     setActiveInventionsTab,
     navigationActions: {
       onShowField: () => setActiveTab('field'),
+      onShowClover: openClover,
       onShowTrade: openTrade,
       onShowAugmentation: openAugmentation,
       onShowMisfortune: () => setActiveTab('misfortune'),
@@ -635,8 +643,7 @@ export function useGameActions({
       onUnlockSplitweed: () => unlockPerfection('splitweed'),
       onUnlockGreaterBlueprinting: buyGreaterBlueprinting,
       onCompleteCloverAssembly: assembleFiveLeafClover,
-      onSelectFiveLeafLoadout: selectCloverLoadout,
-      onUpdateFiveLeafLoadout: updateCloverLoadout,
+      onOpenClover: openClover,
       onRequestRowDuplicatorUnlock: () =>
         setIsRowDuplicatorUnlockPending(true),
       onRequestBlueprintExpansion: setPendingBlueprintExpansionId,
@@ -646,6 +653,10 @@ export function useGameActions({
       onCancelRowDuplicatorUnlock: () =>
         setIsRowDuplicatorUnlockPending(false),
       onConfirmRowDuplicatorUnlock: confirmRowDuplicatorReset,
+    },
+    cloverActions: {
+      onSelectLoadout: selectCloverLoadout,
+      onUpdateLoadout: updateCloverLoadout,
     },
     pendingBlueprintExpansion: pendingBlueprintExpansionId
       ? getBlueprintExpansion(pendingBlueprintExpansionId)

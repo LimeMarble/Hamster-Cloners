@@ -2,10 +2,19 @@ export const FIVE_LEAF_LOADOUT_COUNT = 3
 export const FIVE_LEAF_MIN_CHANCE_PERCENT = 10
 export const FIVE_LEAF_MAX_BATCH_SIZE = 5
 export const FIVE_LEAF_BASE_INTERVAL_SECONDS = 30
+export const FIVE_LEAF_LOADOUT_VERSION = 2
+
+export const DEFAULT_CLOVER_FORTUNE_PERCENTAGES = Object.freeze({
+  opus: 17,
+  bounty: 52,
+  mirage: 20,
+  fortuneOpus: 11,
+})
 
 export const FIVE_LEAF_FORTUNES = Object.freeze([
   Object.freeze({ id: 'opus', pointCost: 1 }),
   Object.freeze({ id: 'bounty', pointCost: 1 }),
+  Object.freeze({ id: 'mirage', pointCost: 2 }),
   Object.freeze({ id: 'fortuneOpus', pointCost: 2 }),
 ])
 
@@ -24,13 +33,14 @@ function createLoadout(index) {
   return {
     name: `Loadout ${index + 1}`,
     chancePercent: 100,
-    batchSize: 2,
-    allocations: { opus: 50, bounty: 0, fortuneOpus: 50 },
+    batchSize: 1,
+    allocations: { ...DEFAULT_CLOVER_FORTUNE_PERCENTAGES },
   }
 }
 
 export function createInitialFiveLeafState() {
   return {
+    version: FIVE_LEAF_LOADOUT_VERSION,
     activeLoadoutIndex: 0,
     loadouts: Array.from(
       { length: FIVE_LEAF_LOADOUT_COUNT },
@@ -44,8 +54,31 @@ export function normalizeFiveLeafState(rawState) {
   const rawLoadouts = Array.isArray(rawState?.loadouts)
     ? rawState.loadouts
     : []
+  const hasUntouchedLegacyLoadouts =
+    rawState?.version !== FIVE_LEAF_LOADOUT_VERSION &&
+    rawLoadouts.length === FIVE_LEAF_LOADOUT_COUNT &&
+    rawLoadouts.every((loadout) =>
+      loadout?.chancePercent === 100 &&
+      loadout?.batchSize === 2 &&
+      loadout?.allocations?.opus === 50 &&
+      loadout?.allocations?.bounty === 0 &&
+      loadout?.allocations?.fortuneOpus === 50 &&
+      (loadout?.allocations?.mirage ?? 0) === 0,
+    )
+
+  if (hasUntouchedLegacyLoadouts) {
+    return {
+      ...initial,
+      activeLoadoutIndex: clampInteger(
+        rawState.activeLoadoutIndex,
+        0,
+        FIVE_LEAF_LOADOUT_COUNT - 1,
+      ),
+    }
+  }
 
   return {
+    version: FIVE_LEAF_LOADOUT_VERSION,
     activeLoadoutIndex: clampInteger(
       rawState?.activeLoadoutIndex,
       0,

@@ -10,7 +10,6 @@ import {
 import { getCropName } from '../game/crops.js'
 import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber } from './ui.jsx'
-import { FiveLeafClover } from './FiveLeafClover.jsx'
 
 function CloverAssemblyIngredient({ game, part }) {
   return (
@@ -40,8 +39,7 @@ export function CloverAssembly({
   productionPerSecond,
   onUnlockGreaterBlueprinting,
   onCompleteCloverAssembly,
-  onSelectFiveLeafLoadout,
-  onUpdateFiveLeafLoadout,
+  onOpenClover,
 }) {
   const hasGreaterBlueprinting =
     game.hasUnlockedGreaterBlueprinting === true
@@ -158,11 +156,13 @@ export function CloverAssembly({
             Crops/second
           </p>
           {assembly.assembled ? (
-            <FiveLeafClover
-              game={game}
-              onSelectLoadout={onSelectFiveLeafLoadout}
-              onUpdateLoadout={onUpdateFiveLeafLoadout}
-            />
+            <button
+              type="button"
+              className="primary-button clover-assembly-complete-button"
+              onClick={onOpenClover}
+            >
+              Configure 5-Leaf Clover
+            </button>
           ) : (
             <button
               type="button"

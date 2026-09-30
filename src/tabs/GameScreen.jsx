@@ -9,6 +9,7 @@ import { Trade } from './Trade.jsx'
 import { Augmentation } from './Augmentation.jsx'
 import { FormattedNumber } from './ui.jsx'
 import { Misfortune } from './Misfortune.jsx'
+import { FiveLeafClover } from './FiveLeafClover.jsx'
 
 function FieldScreen({
   game,
@@ -49,6 +50,7 @@ function FieldScreen({
 export function GameScreen({
   activeTab,
   field,
+  clover,
   inventions,
   trade,
   augmentation,
@@ -62,6 +64,12 @@ export function GameScreen({
 
   if (activeTab === 'inventions') {
     return <Inventions {...inventions} />
+  }
+
+  if (activeTab === 'clover') {
+    return clover.game.cloverAssembly?.assembled === true
+      ? <FiveLeafClover {...clover} />
+      : <FieldScreen {...field} />
   }
 
   if (activeTab === 'trade') {

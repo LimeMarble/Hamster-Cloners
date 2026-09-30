@@ -61,6 +61,7 @@ export function useGameController() {
     areInventionsUnlocked: derived.areInventionsUnlocked,
     isTradeTabVisible: derived.isTradeTabVisible,
     isAugmentationTabVisible: derived.isAugmentationTabVisible,
+    isCloverTabVisible: game.cloverAssembly?.assembled === true,
     resetBlueprintEditor: blueprintEditor.resetBlueprintEditor,
   })
   const testing = useTestingCheats({
@@ -73,6 +74,10 @@ export function useGameController() {
   const shouldShowFloorReplicators =
     game.hasUnlockedFloorReplicators &&
     (canPurchaseFloorReplicators || game.floorReplicators >= 1)
+  const activeTab = actions.activeTab === 'clover' &&
+    game.cloverAssembly?.assembled !== true
+      ? 'field'
+      : actions.activeTab
 
   return {
     isGameReady,
@@ -82,8 +87,9 @@ export function useGameController() {
       suffixScientificExponent: game.suffixScientificExponent,
     },
     navigation: {
-      activeTab: actions.activeTab,
+      activeTab,
       areInventionsUnlocked: derived.areInventionsUnlocked,
+      isCloverTabVisible: game.cloverAssembly?.assembled === true,
       isTradeTabVisible: derived.isTradeTabVisible,
       isAugmentationTabVisible: derived.isAugmentationTabVisible,
       isMisfortuneTabVisible: derived.isMisfortuneAreaActive,
@@ -92,7 +98,7 @@ export function useGameController() {
       ...actions.navigationActions,
     },
     screen: {
-      activeTab: actions.activeTab,
+      activeTab,
       field: {
         game,
         productionPerSecond: derived.productionPerSecond,
@@ -165,6 +171,10 @@ export function useGameController() {
                 actions.purchaseActions.onToggleFloorReplicatorMode,
             }
           : null,
+      },
+      clover: {
+        game,
+        ...actions.cloverActions,
       },
       trade: {
         game,

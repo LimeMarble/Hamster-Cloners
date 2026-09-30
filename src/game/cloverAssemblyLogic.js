@@ -1,5 +1,6 @@
 import { GAME_AREA_IDS } from './gameConfig.js'
 import { normalizeFortuneState } from './fortuneLogic.js'
+import { createInitialFiveLeafState } from './fiveLeafCloverLogic.js'
 
 export const GREATER_BLUEPRINTING_COST = 1e146
 export const CLOVER_ASSEMBLY_PART_REQUIREMENT = 7.77e58
@@ -140,6 +141,7 @@ export function completeCloverAssembly(game) {
     ...game,
     fortune: {
       ...normalizeFortuneState(game.fortune),
+      fiveLeaf: createInitialFiveLeafState(),
       bundles: [],
       activeEffects: [],
       notice: null,

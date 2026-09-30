@@ -14,12 +14,14 @@ function GameHeaderContent() {
 function GameNavigationContent({
   activeTab,
   areInventionsUnlocked,
+  isCloverTabVisible,
   showInventionsUnlockPrompt,
   inventionsUnlockCount,
   isTradeTabVisible,
   isAugmentationTabVisible,
   isMisfortuneTabVisible,
   onShowField,
+  onShowClover,
   onOpenInventions,
   onShowTrade,
   onShowAugmentation,
@@ -36,6 +38,15 @@ function GameNavigationContent({
       >
         Field
       </button>
+      {isCloverTabVisible ? (
+        <button
+          type="button"
+          className={`game-tab ${activeTab === 'clover' ? 'game-tab-active' : ''}`}
+          onClick={onShowClover}
+        >
+          Clover
+        </button>
+      ) : null}
       <div className="inventions-tab-wrap">
         <button
           type="button"
@@ -109,6 +120,7 @@ function GameNavigationContent({
 const NAVIGATION_DISPLAY_KEYS = [
   'activeTab',
   'areInventionsUnlocked',
+  'isCloverTabVisible',
   'showInventionsUnlockPrompt',
   'inventionsUnlockCount',
   'isTradeTabVisible',

@@ -25,7 +25,7 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
       <div className="section-heading">
         <div>
           <p className="eyebrow">Clover perfection</p>
-          <h3 id="five-leaf-title">5-Leaf Clover</h3>
+          <h1 id="five-leaf-title">5-Leaf Clover</h1>
         </div>
         <span className="invention-complete">Fortunes awakened</span>
       </div>
