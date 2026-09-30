@@ -28,6 +28,7 @@ import {
   resetForBlueprintExpansion,
   resetForRowDuplicators,
   switchGameArea,
+  selectFiveLeafLoadout,
   startManateeSurvey,
   purchaseRabbitUnlock,
   purchaseMisfortuneUpgrade,
@@ -38,6 +39,7 @@ import {
   UNIONIZATION_HAMSTER_COUNT,
   unlockCropPerfection,
   unlockGreaterBlueprinting,
+  updateFiveLeafLoadout,
   upgradeManateeBuilding,
 } from '../game/gameLogic.js'
 import { exportGame, importGame } from '../game/storage.js'
@@ -474,6 +476,16 @@ export function useGameActions({
     )
   }
 
+  function selectCloverLoadout(index) {
+    updateGame((currentGame) => selectFiveLeafLoadout(currentGame, index))
+  }
+
+  function updateCloverLoadout(index, changes) {
+    updateGame((currentGame) =>
+      updateFiveLeafLoadout(currentGame, index, changes),
+    )
+  }
+
   function switchFloorReplicatorMode() {
     updateGame((currentGame) =>
       toggleFloorReplicatorMode(currentGame) ?? currentGame,
@@ -623,6 +635,8 @@ export function useGameActions({
       onUnlockSplitweed: () => unlockPerfection('splitweed'),
       onUnlockGreaterBlueprinting: buyGreaterBlueprinting,
       onCompleteCloverAssembly: assembleFiveLeafClover,
+      onSelectFiveLeafLoadout: selectCloverLoadout,
+      onUpdateFiveLeafLoadout: updateCloverLoadout,
       onRequestRowDuplicatorUnlock: () =>
         setIsRowDuplicatorUnlockPending(true),
       onRequestBlueprintExpansion: setPendingBlueprintExpansionId,

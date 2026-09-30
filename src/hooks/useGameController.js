@@ -359,7 +359,8 @@ export function useGameController() {
       testingPanel: testing.testingPanel,
       fortune: {
         fortune: game.fortune,
-        isDisabled: derived.isMisfortuneAreaActive,
+        isDisabled: derived.isMisfortuneAreaActive &&
+          game.cloverAssembly?.assembled !== true,
         numberNotation: game.numberNotation,
         suffixScientificExponent: game.suffixScientificExponent,
         onCollect: (bundleIndex) =>

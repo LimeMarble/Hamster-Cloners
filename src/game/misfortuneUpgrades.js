@@ -235,7 +235,8 @@ function getAreaUnlockedCropIds(game, areaId) {
     area.hasUnlockedSunflower,
     area.rowDuplicators,
     rabbitUnlocks.has('carrot'),
-    rabbitUnlocks.has('fourLeafClover') && !isMisfortune,
+    rabbitUnlocks.has('fourLeafClover') &&
+      (!isMisfortune || game?.cloverAssembly?.assembled === true),
     area.hasUnlockedWheat,
     [],
     game?.floorReplicators,

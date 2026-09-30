@@ -45,7 +45,9 @@ function BlueprintPanel({
       ? plantedCrops
           .map(
             ({ cropId, count }) =>
-              `${getCropName(cropId, game.completedCropPerfections)}: ${count}`,
+              `${cropId === 'fourLeafClover' && game.cloverAssembly?.assembled === true
+                ? '5-Leaf Clover'
+                : getCropName(cropId, game.completedCropPerfections)}: ${count}`,
           )
           .join(', ')
       : 'empty blueprint'
@@ -107,10 +109,10 @@ function BlueprintPanel({
         <span className="blueprint-crop-summary">
           {plantedCrops.length > 0 ? (
             plantedCrops.map(({ cropId, count }) => {
-              const cropName = getCropName(
-                cropId,
-                game.completedCropPerfections,
-              )
+              const cropName = cropId === 'fourLeafClover' &&
+                game.cloverAssembly?.assembled === true
+                  ? '5-Leaf Clover'
+                  : getCropName(cropId, game.completedCropPerfections)
 
               return (
                 <span

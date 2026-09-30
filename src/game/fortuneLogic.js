@@ -17,6 +17,13 @@ import {
   getFloorReplicatorSupportPassiveEffectBonus,
   getMisfortuneUpgradeCropProductionMultiplier,
 } from './misfortuneUpgrades.js'
+import {
+  chooseFiveLeafEffect,
+  createInitialFiveLeafState,
+  getFiveLeafPointBudget,
+  getFiveLeafSchedule,
+  normalizeFiveLeafState,
+} from './fiveLeafCloverLogic.js'
 
 export const CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS = 60
 export const CLOVER_BUNDLE_MAX_CHANCE = 0.77
@@ -25,6 +32,7 @@ export const FORTUNE_EFFECT_IDS = Object.freeze({
   DEMONSTRATION: 'opus',
   BOUNTY: 'bounty',
   SPLIT: 'mirage',
+  MIRAGE: 'fortuneMirage',
   OPUS: 'fortuneOpus',
 })
 
@@ -68,7 +76,20 @@ export const FORTUNE_EFFECTS = Object.freeze([
   },
 ])
 const FORTUNE_EFFECT_BY_ID = new Map(
-  FORTUNE_EFFECTS.map((effect) => [effect.id, effect]),
+  [
+    ...FORTUNE_EFFECTS.map((effect) => [effect.id, effect]),
+    [
+      FORTUNE_EFFECT_IDS.MIRAGE,
+      {
+        id: FORTUNE_EFFECT_IDS.MIRAGE,
+        name: "Fortune's Mirage",
+        icon: '…',
+        weight: 0,
+        durationSeconds: 0,
+        description: 'Nothing happens',
+      },
+    ],
+  ],
 )
 
 function clampRandomValue(value) {
@@ -92,7 +113,10 @@ export function createInitialFortuneState() {
   return {
     bundles: [],
     secondsTowardBundleRoll: 0,
+    nextRollSeconds: 0,
     activeEffects: [],
+    discoveredEffects: [],
+    fiveLeaf: createInitialFiveLeafState(),
     notice: null,
   }
 }
@@ -141,11 +165,16 @@ export function normalizeFortuneState(rawFortune) {
 
   return {
     bundles,
-    secondsTowardBundleRoll: Math.min(
-      CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS,
-      toNonNegativeNumber(rawFortune.secondsTowardBundleRoll),
-    ),
+    secondsTowardBundleRoll: toNonNegativeNumber(rawFortune.secondsTowardBundleRoll),
+    nextRollSeconds: toNonNegativeNumber(rawFortune.nextRollSeconds),
     activeEffects,
+    discoveredEffects: [...new Set(
+      Array.isArray(rawFortune.discoveredEffects)
+        ? rawFortune.discoveredEffects.filter((id) =>
+            FORTUNE_EFFECTS.some((effect) => effect.id === id))
+        : [],
+    )],
+    fiveLeaf: normalizeFiveLeafState(rawFortune.fiveLeaf),
     notice: noticeEffect && noticeSeconds > 0
       ? { effectId: noticeEffect.id, remainingSeconds: noticeSeconds }
       : null,
@@ -154,11 +183,19 @@ export function normalizeFortuneState(rawFortune) {
 
 export function getFortuneModifiers(gameOrFortune) {
   if (gameOrFortune?.activeArea === GAME_AREA_IDS.MISFORTUNE) {
+    const fortune = normalizeFortuneState(gameOrFortune.fortune)
+    const activeEffects = gameOrFortune.cloverAssembly?.assembled === true
+      ? fortune.activeEffects
+      : []
     return {
       passiveEffectMultiplier:
-        FORTUNES_WRATH_PASSIVE_MULTIPLIER +
-        getFloorReplicatorSupportPassiveEffectBonus(gameOrFortune),
-      cropYieldMultiplier: 1 / FORTUNES_WRATH_CROP_DIVISOR,
+        (FORTUNES_WRATH_PASSIVE_MULTIPLIER +
+          getFloorReplicatorSupportPassiveEffectBonus(gameOrFortune)) *
+        activeEffects.reduce((product, active) =>
+          product * (getFortuneEffect(active.id)?.passiveEffectMultiplier ?? 1), 1),
+      cropYieldMultiplier: activeEffects.reduce((product, active) =>
+        product * (getFortuneEffect(active.id)?.cropYieldMultiplier ?? 1),
+      1 / FORTUNES_WRATH_CROP_DIVISOR),
       cropProductionExponent: FORTUNES_WRATH_CROP_EXPONENT,
       cropProductionMultiplier:
         getMisfortuneUpgradeCropProductionMultiplier(gameOrFortune),
@@ -208,7 +245,13 @@ export function getFortuneModifiers(gameOrFortune) {
 }
 
 export function getCloverBundleChancePerMinute(game) {
-  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return 0
+  if (game.cloverAssembly?.assembled === true) {
+    if (!game.blueprint?.cells?.includes('fourLeafClover')) return 0
+    const state = normalizeFiveLeafState(game.fortune?.fiveLeaf)
+    return state.loadouts[state.activeLoadoutIndex].chancePercent / 100
+  }
+  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
+      game.cloverAssembly?.assembled !== true) return 0
 
   const completedCropPerfections = game.completedCropPerfections ?? []
   const blueprint = getMirrorCornEffectBlueprint(
@@ -268,22 +311,21 @@ export function getCloverBundleChancePerMinute(game) {
 }
 
 function chooseFortuneEffect(randomValue, allowSplit = true) {
-  const eligibleEffects = allowSplit
-    ? FORTUNE_EFFECTS
-    : FORTUNE_EFFECTS.filter(
-        (effect) => effect.id !== FORTUNE_EFFECT_IDS.SPLIT,
-      )
-  const totalWeight = eligibleEffects.reduce(
+  const totalWeight = FORTUNE_EFFECTS.reduce(
     (total, effect) => total + effect.weight,
     0,
   )
   const roll = clampRandomValue(randomValue) * totalWeight
   let cumulativeWeight = 0
 
-  return eligibleEffects.find((effect) => {
+  const rolledEffect = FORTUNE_EFFECTS.find((effect) => {
     cumulativeWeight += effect.weight
     return roll < cumulativeWeight
-  }) ?? eligibleEffects.at(-1)
+  }) ?? FORTUNE_EFFECTS.at(-1)
+
+  return !allowSplit && rolledEffect.id === FORTUNE_EFFECT_IDS.SPLIT
+    ? getFortuneEffect(FORTUNE_EFFECT_IDS.MIRAGE)
+    : rolledEffect
 }
 
 function createCloverBundle(random, splitBlocked = false) {
@@ -299,7 +341,8 @@ export function advanceFortuneState(
   elapsedSeconds,
   random = Math.random,
 ) {
-  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return game
+  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
+      game.cloverAssembly?.assembled !== true) return game
 
   const fortune = normalizeFortuneState(game.fortune)
   const safeElapsedSeconds = toNonNegativeNumber(elapsedSeconds)
@@ -315,22 +358,54 @@ export function advanceFortuneState(
     ? { ...fortune.notice, remainingSeconds: noticeRemainingSeconds }
     : null
   const hasClover = game.blueprint?.cells?.includes('fourLeafClover') === true
+  const isFiveLeaf = game.cloverAssembly?.assembled === true
   let bundles = fortune.bundles
   let secondsTowardBundleRoll = hasClover
     ? fortune.secondsTowardBundleRoll
     : 0
+  let nextRollSeconds = hasClover ? fortune.nextRollSeconds : 0
 
   if (hasClover && bundles.length === 0) {
     secondsTowardBundleRoll += safeElapsedSeconds
+    if (isFiveLeaf) {
+      const state = fortune.fiveLeaf
+      const loadout = state.loadouts[state.activeLoadoutIndex]
+      const schedule = getFiveLeafSchedule(loadout, getFiveLeafPointBudget(game))
+      if (nextRollSeconds === 0) nextRollSeconds = schedule.firstRollSeconds
 
-    while (
-      bundles.length === 0 &&
-      secondsTowardBundleRoll >= CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS
-    ) {
-      secondsTowardBundleRoll -= CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS
+      while (bundles.length === 0 &&
+          secondsTowardBundleRoll >= nextRollSeconds) {
+        if (nextRollSeconds >= schedule.maximumSeconds ||
+            clampRandomValue(random()) < loadout.chancePercent / 100) {
+          bundles = Array.from(
+            { length: loadout.batchSize },
+            () => createCloverBundle(random, true),
+          )
+          secondsTowardBundleRoll = 0
+          nextRollSeconds = schedule.firstRollSeconds
+        } else {
+          nextRollSeconds += schedule.rollIntervalSeconds
+        }
+      }
+      if (bundles.length === 0 &&
+          secondsTowardBundleRoll >= schedule.maximumSeconds) {
+        bundles = Array.from(
+          { length: loadout.batchSize },
+          () => createCloverBundle(random, true),
+        )
+        secondsTowardBundleRoll = 0
+        nextRollSeconds = schedule.firstRollSeconds
+      }
+    } else {
+      while (
+        bundles.length === 0 &&
+        secondsTowardBundleRoll >= CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS
+      ) {
+        secondsTowardBundleRoll -= CLOVER_BUNDLE_ROLL_INTERVAL_SECONDS
 
-      if (clampRandomValue(random()) < getCloverBundleChancePerMinute(game)) {
-        bundles = [createCloverBundle(random)]
+        if (clampRandomValue(random()) < getCloverBundleChancePerMinute(game)) {
+          bundles = [createCloverBundle(random)]
+        }
       }
     }
   }
@@ -338,8 +413,10 @@ export function advanceFortuneState(
   return {
     ...game,
     fortune: {
+      ...fortune,
       bundles,
       secondsTowardBundleRoll,
+      nextRollSeconds,
       activeEffects,
       notice,
     },
@@ -351,10 +428,17 @@ export function addRandomFortuneEffect(
   random = Math.random,
   { allowSplit = true } = {},
 ) {
-  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return game
+  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
+      game.cloverAssembly?.assembled !== true) return game
 
   const fortune = normalizeFortuneState(game.fortune)
-  const effect = chooseFortuneEffect(random(), allowSplit)
+  const isFiveLeaf = game.cloverAssembly?.assembled === true
+  const loadout = fortune.fiveLeaf.loadouts[
+    fortune.fiveLeaf.activeLoadoutIndex
+  ]
+  const effect = isFiveLeaf
+    ? getFortuneEffect(chooseFiveLeafEffect(loadout, random()))
+    : chooseFortuneEffect(random(), allowSplit)
   const matchingEffect = fortune.activeEffects.some(
     (activeEffect) => activeEffect.id === effect.id,
   )
@@ -385,6 +469,10 @@ export function addRandomFortuneEffect(
       ...fortune,
       bundles: [...fortune.bundles, ...spawnedBundles],
       activeEffects,
+      discoveredEffects: effect.id === FORTUNE_EFFECT_IDS.MIRAGE ||
+        fortune.discoveredEffects.includes(effect.id)
+        ? fortune.discoveredEffects
+        : [...fortune.discoveredEffects, effect.id],
       notice: { effectId: effect.id, remainingSeconds: 6 },
     },
   }
@@ -395,7 +483,8 @@ export function collectCloverBundle(
   bundleIndexOrRandom = 0,
   suppliedRandom = Math.random,
 ) {
-  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return game
+  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
+      game.cloverAssembly?.assembled !== true) return game
 
   const fortune = normalizeFortuneState(game.fortune)
   const bundleIndex = typeof bundleIndexOrRandom === 'function'
@@ -423,7 +512,8 @@ export function collectCloverBundle(
   })
 }
 export function spawnCloverBundle(game, random = Math.random) {
-  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE) return game
+  if (game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
+      game.cloverAssembly?.assembled !== true) return game
 
   const fortune = normalizeFortuneState(game.fortune)
 

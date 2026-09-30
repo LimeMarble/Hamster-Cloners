@@ -1,4 +1,5 @@
 import { GAME_AREA_IDS } from './gameConfig.js'
+import { normalizeFortuneState } from './fortuneLogic.js'
 
 export const GREATER_BLUEPRINTING_COST = 1e146
 export const CLOVER_ASSEMBLY_PART_REQUIREMENT = 7.77e58
@@ -137,6 +138,14 @@ export function completeCloverAssembly(game) {
 
   return {
     ...game,
+    fortune: {
+      ...normalizeFortuneState(game.fortune),
+      bundles: [],
+      activeEffects: [],
+      notice: null,
+      secondsTowardBundleRoll: 0,
+      nextRollSeconds: 0,
+    },
     cloverAssembly: {
       ...normalizeCloverAssemblyState(game.cloverAssembly),
       assembled: true,

@@ -45,7 +45,7 @@ export function Statistics({
           </dd>
         </div>
         <div>
-          <dt>Clover Bundle chance per minute</dt>
+          <dt>Clover Bundle chance {game.cloverAssembly?.assembled ? 'per attempt' : 'per minute'}</dt>
           <dd>
             <FormattedNumber
               value={cloverBundleChancePerMinute * 100}

@@ -120,6 +120,8 @@ export function useGameDerivedState(game) {
     () =>
       getCloverBundleChancePerMinute({
         blueprint: game.blueprint,
+        activeArea: game.activeArea,
+        cloverAssembly: game.cloverAssembly,
         completedCropPerfections: game.completedCropPerfections,
         farmland: game.farmland,
         fortune: game.fortune,
@@ -127,6 +129,8 @@ export function useGameDerivedState(game) {
       }),
     [
       game.blueprint,
+      game.activeArea,
+      game.cloverAssembly,
       game.completedCropPerfections,
       game.farmland,
       game.fortune,
@@ -340,7 +344,7 @@ export function useGameDerivedState(game) {
   const hasUnlockedFourLeafClover = hasRabbitUnlock(
     game,
     RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
-  ) && !isMisfortuneAreaActive(game)
+  ) && (!isMisfortuneAreaActive(game) || game.cloverAssembly?.assembled === true)
   const unlockedManateeCropIds = useMemo(
     () => getUnlockedManateeCropIds({ manatees: game.manatees }),
     [game.manatees],

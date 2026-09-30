@@ -22,6 +22,7 @@ export * from './blueprintBlockPlacement.js'
 export * from './blueprintBlockTransfer.js'
 export * from './soybeanLogic.js'
 export * from './cloverAssemblyLogic.js'
+export * from './fiveLeafCloverLogic.js'
 export {
   canPlaceMangroveSapling,
   canPlaceShoalGrass,

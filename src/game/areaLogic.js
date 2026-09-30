@@ -21,6 +21,8 @@ import {
   unlockMisfortuneUpgrade,
 } from './misfortuneUpgrades.js'
 import { createInitialCloverAssemblyState } from './cloverAssemblyLogic.js'
+import { normalizeFortuneState } from './fortuneLogic.js'
+import { createInitialFiveLeafState } from './fiveLeafCloverLogic.js'
 
 const VALID_EXPANSION_IDS = new Set(
   BLUEPRINT_EXPANSIONS.map(({ id }) => id),
@@ -277,6 +279,15 @@ export function purchaseMisfortuneUpgrade(game, upgradeId) {
 }
 
 export function wipeMisfortuneAreaProgress(game) {
+  const clearedFortune = {
+    ...normalizeFortuneState(game.fortune),
+    bundles: [],
+    activeEffects: [],
+    notice: null,
+    secondsTowardBundleRoll: 0,
+    nextRollSeconds: 0,
+    fiveLeaf: createInitialFiveLeafState(),
+  }
   const hasUnfortunateRow = hasMisfortuneUpgrade(
     game,
     MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
@@ -326,6 +337,7 @@ export function wipeMisfortuneAreaProgress(game) {
       completedMisfortuneUpgrades:
         createInitialMisfortuneUpgradeState(),
       cloverAssembly: createInitialCloverAssemblyState(),
+      fortune: clearedFortune,
       floorReplicatorMode: FLOOR_REPLICATOR_MODES.CONSTRUCTION,
       areaProgress: clearedAreaProgress,
     }
@@ -342,6 +354,7 @@ export function wipeMisfortuneAreaProgress(game) {
     completedMisfortuneUpgrades:
       createInitialMisfortuneUpgradeState(),
     cloverAssembly: createInitialCloverAssemblyState(),
+    fortune: clearedFortune,
     floorReplicatorMode: FLOOR_REPLICATOR_MODES.CONSTRUCTION,
     areaProgress: clearedAreaProgress,
   }

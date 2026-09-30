@@ -435,7 +435,11 @@ export const CROP_PERFECTIONS = {
 
 export const CROP_PERFECTION_IDS = Object.keys(CROP_PERFECTIONS)
 
-export function getCropUnlockDescription(cropId, activeArea = 'main') {
+export function getCropUnlockDescription(
+  cropId,
+  activeArea = 'main',
+  hasFiveLeafClover = false,
+) {
   const format = (value) => getCachedFormattedNumber(value, 0)
   const formatCounter = (value) => formatWholeNumber(value)
 
@@ -461,7 +465,7 @@ export function getCropUnlockDescription(cropId, activeArea = 'main') {
     case 'carrot':
       return `Unlock with ${format(500)} Rabbit relations`
     case 'fourLeafClover':
-      if (activeArea === 'misfortune') {
+      if (activeArea === 'misfortune' && !hasFiveLeafClover) {
         return 'This clover is too fragile to stand against misfortune, try to find a way to perfect it'
       }
       return `Unlock with ${format(27777)} Rabbit relations`

@@ -169,7 +169,10 @@ export function CropHoverInspector({
           completedCropPerfections={completedCropPerfections}
           className="crop-hover-visual"
         />{' '}
-        {getCropName(stats.crop, completedCropPerfections)}
+        {stats.crop === 'fourLeafClover' &&
+        game.cloverAssembly?.assembled === true
+          ? '5-Leaf Clover'
+          : getCropName(stats.crop, completedCropPerfections)}
       </h3>
       <dl className="crop-hover-stats">
         <div>
@@ -203,7 +206,10 @@ export function CropHoverInspector({
         ) : null}
       </dl>
       <p className="crop-hover-own-effect">
-        {getCropEffectDescription(
+        {stats.crop === 'fourLeafClover' &&
+        game.cloverAssembly?.assembled === true
+          ? 'Brings the fortunes chosen in the active 5-Leaf Clover loadout.'
+          : getCropEffectDescription(
           stats.crop,
           completedCropPerfections,
           seedAugmentations,

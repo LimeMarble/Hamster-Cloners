@@ -417,7 +417,16 @@ export function normalizeGame(rawGame) {
       rawGame.floorReplicatorMode === FLOOR_REPLICATOR_MODES.SUPPORT
         ? FLOOR_REPLICATOR_MODES.SUPPORT
         : FLOOR_REPLICATOR_MODES.CONSTRUCTION,
-    fortune: normalizeFortuneState(rawGame.fortune),
+    fortune: normalizeFortuneState(
+      rawGame.fortune?.discoveredEffects === undefined &&
+      trade.rabbitUnlocks.includes(RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER)
+        ? {
+            ...rawGame.fortune,
+            // Existing saves could not record which fortunes were used.
+            discoveredEffects: ['opus', 'bounty', 'mirage', 'fortuneOpus'],
+          }
+        : rawGame.fortune,
+    ),
     capybara,
     seedAugmentations,
     manatees,

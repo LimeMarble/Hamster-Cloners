@@ -453,13 +453,20 @@ function BlueprintEditContent({
                     </span>
                     <small>
                       {unlocked
-                        ? getCropPlacementEffectDescription(
+                        ? cropId === 'fourLeafClover' &&
+                          game.cloverAssembly?.assembled === true
+                          ? 'Destroys its own harvest · brings your chosen 5-Leaf Clover fortunes, including in Misfortune · one per blueprint'
+                          : getCropPlacementEffectDescription(
                             cropId,
                             game.completedCropPerfections,
                             game.seedAugmentations,
                             revealManateeEffects,
                           )
-                        : getCropUnlockDescription(cropId, game.activeArea)}
+                        : getCropUnlockDescription(
+                            cropId,
+                            game.activeArea,
+                            game.cloverAssembly?.assembled === true,
+                          )}
                     </small>
                   </button>
                 )

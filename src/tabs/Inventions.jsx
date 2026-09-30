@@ -33,6 +33,8 @@ export function Inventions({
   onUnlockSplitweed,
   onUnlockGreaterBlueprinting,
   onCompleteCloverAssembly,
+  onSelectFiveLeafLoadout,
+  onUpdateFiveLeafLoadout,
   onRequestRowDuplicatorUnlock,
   onRequestBlueprintExpansion,
   pendingBlueprintExpansion,
@@ -271,6 +273,8 @@ export function Inventions({
               productionPerSecond={cloverAssemblyProductionPerSecond}
               onUnlockGreaterBlueprinting={onUnlockGreaterBlueprinting}
               onCompleteCloverAssembly={onCompleteCloverAssembly}
+              onSelectFiveLeafLoadout={onSelectFiveLeafLoadout}
+              onUpdateFiveLeafLoadout={onUpdateFiveLeafLoadout}
             />
           </section>
         ) : (

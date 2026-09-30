@@ -192,7 +192,7 @@ test("Fortune's Split replaces the collected bundle with two collectable bundles
   assert.equal(split.fortune.secondsTowardBundleRoll, 17)
 })
 
-test("Clover Bundles made by Fortune's Split cannot split again", () => {
+test("Clover Bundles made by Fortune's Split turn another Split roll into Mirage", () => {
   const game = {
     ...createCloverGame(),
     fortune: {
@@ -205,7 +205,8 @@ test("Clover Bundles made by Fortune's Split cannot split again", () => {
   const collected = collectCloverBundle(game, 0, () => 0.7)
 
   assert.deepEqual(collected.fortune.bundles, [])
-  assert.equal(collected.fortune.notice.effectId, FORTUNE_EFFECT_IDS.BOUNTY)
+  assert.equal(collected.fortune.notice.effectId, FORTUNE_EFFECT_IDS.MIRAGE)
+  assert.deepEqual(collected.fortune.activeEffects, [])
 })
 
 test("the non-splitting marker survives Fortune state normalization", () => {

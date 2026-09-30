@@ -568,7 +568,9 @@ export function useBlueprintEditor({
   }
 
   const getDisplayedCropName = (cropId) =>
-    getCropPlacementName(cropId, game.completedCropPerfections)
+    cropId === 'fourLeafClover' && game.cloverAssembly?.assembled === true
+      ? '5-Leaf Clover'
+      : getCropPlacementName(cropId, game.completedCropPerfections)
   const mirrorCornLinks = useMemo(
     () =>
       hasMirrorCorn
