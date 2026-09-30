@@ -1,4 +1,6 @@
 import {
+  FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR,
+  FIVE_LEAF_MINIMUM_INTERVAL_FACTOR,
   FIVE_LEAF_FORTUNES,
   getFiveLeafLoadoutCost,
   getFiveLeafPointBudget,
@@ -7,6 +9,17 @@ import {
 } from '../game/fiveLeafCloverLogic.js'
 import { getFortuneEffect } from '../game/fortuneLogic.js'
 import { FormattedNumber } from './ui.jsx'
+
+const durationFormatter = new Intl.NumberFormat(undefined, {
+  maximumSignificantDigits: 3,
+})
+
+function formatDuration(seconds) {
+  if (seconds >= 86400) return `${durationFormatter.format(seconds / 86400)}d`
+  if (seconds >= 3600) return `${durationFormatter.format(seconds / 3600)}h`
+  if (seconds >= 60) return `${durationFormatter.format(seconds / 60)}min`
+  return `${durationFormatter.format(seconds)}s`
+}
 
 export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
   const state = normalizeFiveLeafState(game.fortune?.fiveLeaf)
@@ -126,6 +139,26 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
             <small>Larger groups take longer to arrive.</small>
           </label>
         </div>
+        <dl className="five-leaf-timing">
+          <div>
+            <dt>Attempt frequency</dt>
+            <dd>Every {formatDuration(schedule.rollIntervalSeconds)}</dd>
+          </div>
+          <div>
+            <dt>First attempt</dt>
+            <dd>After {formatDuration(schedule.firstRollSeconds)}</dd>
+          </div>
+          <div>
+            <dt>Guaranteed appearance</dt>
+            <dd>By {formatDuration(schedule.maximumSeconds)}</dd>
+          </div>
+        </dl>
+        <p className="five-leaf-help five-leaf-timing-help">
+          The first attempt cannot happen before {FIVE_LEAF_MINIMUM_INTERVAL_FACTOR}×
+          the {formatDuration(schedule.baseSeconds)} base interval. A bundle is
+          guaranteed by {FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR}× that interval.
+          Attempts pause while a bundle is on screen.
+        </p>
       </section>
 
       <section className="five-leaf-section" aria-labelledby="five-leaf-effects-title">

@@ -59,17 +59,17 @@ export function useGameDerivedState(game) {
   const huntForSomethingGreaterMultiplier =
     getHuntForSomethingGreaterMultiplier(game)
   const fortuneModifiers = useMemo(
-    () =>
-      getFortuneModifiers({
-        fortune: game.fortune,
-        activeArea: game.activeArea,
-        completedMisfortuneUpgrades:
-          game.completedMisfortuneUpgrades,
-        floorReplicators: game.floorReplicators,
-        floorReplicatorMode: game.floorReplicatorMode,
-      }),
+    () => getFortuneModifiers({
+      fortune: game.fortune,
+      activeArea: game.activeArea,
+      cloverAssembly: game.cloverAssembly,
+      completedMisfortuneUpgrades: game.completedMisfortuneUpgrades,
+      floorReplicators: game.floorReplicators,
+      floorReplicatorMode: game.floorReplicatorMode,
+    }),
     [
       game.activeArea,
+      game.cloverAssembly,
       game.completedMisfortuneUpgrades,
       game.floorReplicatorMode,
       game.floorReplicators,

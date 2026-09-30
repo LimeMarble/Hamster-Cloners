@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import {
   advanceFortuneState,
   advanceGameSimulationStep,
@@ -21,6 +23,7 @@ import {
 } from '../src/game/gameLogic.js'
 import { normalizeGame } from '../src/game/storage.js'
 import { getUnlockedCropIds } from '../src/game/crops.js'
+import { useGameDerivedState } from '../src/hooks/useGameDerivedState.js'
 
 function createPerfectedCloverGame() {
   const initial = createInitialGame()
@@ -101,15 +104,22 @@ test('5-Leaf Clover starts with one bundle and the 4-Leaf fortune weights', () =
   assert.equal(advanceGameSimulationStep(game, 30, { random: () => 0 }).fortune.bundles.length, 1)
 })
 
-test('5-Leaf chance attempts have a minimum, a forced maximum, and no 49-to-50 percent cliff', () => {
+test('5-Leaf attempts start no earlier than 0.25× and force a bundle by 2×', () => {
   const game = createPerfectedCloverGame()
+  const frequent = updateFiveLeafLoadout(game, 0, { chancePercent: 10 })
   const slower = updateFiveLeafLoadout(game, 0, { chancePercent: 49 })
   const faster = updateFiveLeafLoadout(game, 0, { chancePercent: 50 })
+  const frequentSchedule = getFiveLeafSchedule(frequent.fortune.fiveLeaf.loadouts[0], 200)
   const slowSchedule = getFiveLeafSchedule(slower.fortune.fiveLeaf.loadouts[0], 200)
   const fastSchedule = getFiveLeafSchedule(faster.fortune.fiveLeaf.loadouts[0], 200)
 
-  assert.equal(slowSchedule.firstRollSeconds, 15)
+  assert.equal(frequentSchedule.minimumSeconds, 7.5)
+  assert.equal(frequentSchedule.firstRollSeconds, 7.5)
+  assert.equal(frequentSchedule.rollIntervalSeconds, 3)
+  assert.equal(frequentSchedule.maximumSeconds, 60)
+  assert.equal(slowSchedule.firstRollSeconds, 14.7)
   assert.equal(fastSchedule.firstRollSeconds, 15)
+  assert.ok(fastSchedule.firstRollSeconds - slowSchedule.firstRollSeconds < 1)
   const missed = advanceFortuneState(slower, 59, () => 0.99)
   assert.equal(missed.fortune.bundles.length, 0)
   assert.equal(advanceFortuneState(missed, 1, () => 0.99).fortune.bundles.length, 1)
@@ -138,6 +148,44 @@ test('5-Leaf Breezes function in Misfortune and keep their stackable timers', ()
   assert.equal(opus.fortune.activeEffects.length, 2)
   assert.ok(Math.abs(modifiers.passiveEffectMultiplier - 0.63 * 1.1 * 1.0777) < 1e-10)
   assert.ok(Math.abs(modifiers.cropYieldMultiplier - 7.77 / 1777) < 1e-10)
+})
+
+test('Misfortune crops per second display includes active 5-Leaf effects', () => {
+  const initial = createPerfectedCloverGame()
+  const baseGame = {
+    ...initial,
+    blueprint: createBlueprint({
+      rows: 1,
+      columns: 2,
+      cells: ['leek', 'fourLeafClover'],
+    }),
+    farmland: { rows: 1, columns: 1, floors: 1, farms: 1, otherMultiplier: 1 },
+  }
+  const boostedGame = {
+    ...baseGame,
+    fortune: {
+      ...baseGame.fortune,
+      activeEffects: [{ id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 60 }],
+    },
+  }
+  function displayedRate(game) {
+    let productionPerSecond = 0
+    function RateProbe() {
+      productionPerSecond = useGameDerivedState(game).productionPerSecond
+      return null
+    }
+    renderToStaticMarkup(createElement(RateProbe))
+    return productionPerSecond
+  }
+
+  const baseRate = displayedRate(baseGame)
+  const boostedRate = displayedRate(boostedGame)
+  const actualProduction =
+    advanceGameSimulationStep(boostedGame, 1).crops - boostedGame.crops
+
+  assert.ok(baseRate > 0)
+  assert.ok(boostedRate > baseRate)
+  assert.ok(Math.abs(boostedRate - actualProduction) < 1e-10)
 })
 
 test('switching 5-Leaf loadouts despawns bundles, clears effects, and restarts the timer', () => {

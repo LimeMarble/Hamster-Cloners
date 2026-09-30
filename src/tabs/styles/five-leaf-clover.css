@@ -116,6 +116,32 @@
   gap: 10px;
 }
 
+.five-leaf-timing {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.five-leaf-timing div {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.five-leaf-timing dd {
+  margin: 0;
+  color: var(--crop-gold);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.five-leaf-timing-help {
+  margin-top: 12px;
+}
+
 .five-leaf-control {
   display: grid;
   align-content: start;
@@ -236,6 +262,10 @@
   }
 
   .five-leaf-settings {
+    grid-template-columns: 1fr;
+  }
+
+  .five-leaf-timing {
     grid-template-columns: 1fr;
   }
 

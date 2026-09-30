@@ -2,6 +2,8 @@ export const FIVE_LEAF_LOADOUT_COUNT = 3
 export const FIVE_LEAF_MIN_CHANCE_PERCENT = 10
 export const FIVE_LEAF_MAX_BATCH_SIZE = 5
 export const FIVE_LEAF_BASE_INTERVAL_SECONDS = 30
+export const FIVE_LEAF_MINIMUM_INTERVAL_FACTOR = 0.25
+export const FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR = 2
 export const FIVE_LEAF_LOADOUT_VERSION = 2
 
 export const DEFAULT_CLOVER_FORTUNE_PERCENTAGES = Object.freeze({
@@ -144,14 +146,15 @@ export function getFiveLeafSchedule(loadout, pointBudget = Infinity) {
   const baseSeconds = FIVE_LEAF_BASE_INTERVAL_SECONDS * batchFactor * overloadFactor
   const rollIntervalSeconds =
     baseSeconds * loadout.chancePercent / 100
+  const minimumSeconds = baseSeconds * FIVE_LEAF_MINIMUM_INTERVAL_FACTOR
 
   return {
     baseSeconds,
     overloadFactor,
-    minimumSeconds: baseSeconds / 2,
-    maximumSeconds: baseSeconds * 2,
+    minimumSeconds,
+    maximumSeconds: baseSeconds * FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR,
     rollIntervalSeconds,
-    firstRollSeconds: Math.max(baseSeconds / 2, rollIntervalSeconds),
+    firstRollSeconds: Math.max(minimumSeconds, rollIntervalSeconds),
   }
 }
 
