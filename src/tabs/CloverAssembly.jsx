@@ -5,6 +5,7 @@ import {
   GREATER_BLUEPRINTING_COST,
   RABBIT_UNLOCK_IDS,
   hasRabbitUnlock,
+  isGreaterBlueprintingVisible,
   normalizeCloverAssemblyState,
 } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
@@ -41,6 +42,8 @@ export function CloverAssembly({
   onCompleteCloverAssembly,
   onOpenClover,
 }) {
+  if (!isGreaterBlueprintingVisible(game)) return null
+
   const hasGreaterBlueprinting =
     game.hasUnlockedGreaterBlueprinting === true
   const hasRabbitsCharm = hasRabbitUnlock(

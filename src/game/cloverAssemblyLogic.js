@@ -1,6 +1,7 @@
 import { GAME_AREA_IDS } from './gameConfig.js'
 import { normalizeFortuneState } from './fortuneLogic.js'
 import { createInitialFiveLeafState } from './fiveLeafCloverLogic.js'
+import { hasMisfortuneUpgrade, MISFORTUNE_UPGRADE_IDS } from './misfortuneUpgrades.js'
 
 export const GREATER_BLUEPRINTING_COST = 1e146
 export const CLOVER_ASSEMBLY_PART_REQUIREMENT = 7.77e58
@@ -66,8 +67,16 @@ export function normalizeCloverAssemblyState(rawAssembly) {
   }
 }
 
+export function isGreaterBlueprintingVisible(game) {
+  return (
+    game?.hasUnlockedGreaterBlueprinting === true ||
+    hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER)
+  )
+}
+
 export function canUnlockGreaterBlueprinting(game) {
   return (
+    isGreaterBlueprintingVisible(game) &&
     game?.activeArea === GAME_AREA_IDS.MAIN &&
     game?.hasUnlockedGreaterBlueprinting !== true &&
     toNonNegativeNumber(game?.crops) >= GREATER_BLUEPRINTING_COST
