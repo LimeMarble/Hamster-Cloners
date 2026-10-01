@@ -14,6 +14,7 @@ function OptionsContent({
   saveTransferStatus,
   hardResetClicks,
   onExportSave,
+  onExportSaveToFile,
   onImportSave,
   onHardReset,
   codeEntry,
@@ -171,10 +172,21 @@ function OptionsContent({
             before changing browsers or devices; importing replaces this
             browser&apos;s current progress.
           </p>
+          <p>
+            Export to file downloads a timestamped .txt snapshot containing
+            the same save code. To restore it, paste the file&apos;s contents below.
+          </p>
         </div>
         <div className="save-transfer-controls">
           <button type="button" className="primary-button" onClick={onExportSave}>
             Export save
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onExportSaveToFile}
+          >
+            Export to file
           </button>
           <button
             type="button"

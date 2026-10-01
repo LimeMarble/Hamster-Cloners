@@ -161,7 +161,7 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
         </dl>
         <p className="five-leaf-help five-leaf-timing-help">
           The first attempt cannot happen before {FIVE_LEAF_MINIMUM_INTERVAL_FACTOR}×
-          the adjusted {formatDuration(schedule.baseSeconds)} base interval or
+          the adjusted {formatDuration(schedule.baseSeconds)} base interval or{' '}
           {FIVE_LEAF_MINIMUM_SPAWN_SECONDS}s, whichever is later. A bundle is
           guaranteed by {FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR}× that interval,
           never sooner than {FIVE_LEAF_MINIMUM_SPAWN_SECONDS}s. Attempts are at

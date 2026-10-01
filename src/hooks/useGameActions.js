@@ -43,6 +43,7 @@ import {
   upgradeManateeBuilding,
 } from '../game/gameLogic.js'
 import { exportGame, importGame } from '../game/storage.js'
+import { createGameSaveFile, downloadSaveFile } from '../game/saveFile.js'
 
 export function useGameActions({
   gameRef,
@@ -290,6 +291,24 @@ export function useGameActions({
       setSaveTransferStatus({
         type: 'success',
         message: 'Save code is ready below. Copy it somewhere safe.',
+      })
+    }
+  }
+
+  function exportSaveToFile() {
+    const saveFile = createGameSaveFile(gameRef.current)
+    setSaveCode(saveFile.contents)
+
+    try {
+      downloadSaveFile(saveFile)
+      setSaveTransferStatus({
+        type: 'success',
+        message: 'Save file download started.',
+      })
+    } catch {
+      setSaveTransferStatus({
+        type: 'error',
+        message: 'The file could not be downloaded. Copy the save code below instead.',
       })
     }
   }
@@ -707,6 +726,7 @@ export function useGameActions({
             : 303,
         })),
       onExportSave: exportSave,
+      onExportSaveToFile: exportSaveToFile,
       onImportSave: importSave,
       onHardReset: handleHardReset,
     },
