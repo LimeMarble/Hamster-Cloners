@@ -458,6 +458,23 @@
   margin: 0;
 }
 
+.field-stats {
+  flex-wrap: wrap;
+}
+
+.field-stats > div {
+  min-width: min(145px, 100%);
+}
+
+.percentage-gain {
+  display: block;
+  margin-top: 4px;
+  color: var(--field-green);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .field-stats div,
 .replicator-stats div {
   flex: 1;

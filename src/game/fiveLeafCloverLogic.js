@@ -1,9 +1,14 @@
+import { hasRichSoilAugmentation } from './augmentationLogic.js'
+
 export const FIVE_LEAF_LOADOUT_COUNT = 3
 export const FIVE_LEAF_MIN_CHANCE_PERCENT = 10
 export const FIVE_LEAF_MAX_BATCH_SIZE = 5
 export const FIVE_LEAF_BASE_INTERVAL_SECONDS = 30
 export const FIVE_LEAF_MINIMUM_INTERVAL_FACTOR = 0.25
 export const FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR = 2
+export const FIVE_LEAF_MINIMUM_SPAWN_SECONDS = 5
+export const FIVE_LEAF_MINIMUM_ATTEMPT_SECONDS = 1
+export const FIVE_LEAF_MINIMUM_POINT_TIME_FACTOR = 0.25
 export const FIVE_LEAF_LOADOUT_VERSION = 2
 
 export const DEFAULT_CLOVER_FORTUNE_PERCENTAGES = Object.freeze({
@@ -11,6 +16,7 @@ export const DEFAULT_CLOVER_FORTUNE_PERCENTAGES = Object.freeze({
   bounty: 52,
   mirage: 20,
   fortuneOpus: 11,
+  leekFortuneCookie: 0,
 })
 
 export const FIVE_LEAF_FORTUNES = Object.freeze([
@@ -18,7 +24,14 @@ export const FIVE_LEAF_FORTUNES = Object.freeze([
   Object.freeze({ id: 'bounty', pointCost: 1 }),
   Object.freeze({ id: 'mirage', pointCost: 2 }),
   Object.freeze({ id: 'fortuneOpus', pointCost: 2 }),
+  Object.freeze({ id: 'leekFortuneCookie', pointCost: 3 }),
 ])
+
+export function getAvailableFiveLeafFortunes(game) {
+  return FIVE_LEAF_FORTUNES.filter(({ id }) =>
+    id !== 'leekFortuneCookie' || hasRichSoilAugmentation(game?.seedAugmentations),
+  )
+}
 
 const FORTUNE_COSTS = Object.fromEntries(
   FIVE_LEAF_FORTUNES.map(({ id, pointCost }) => [id, pointCost]),
@@ -51,7 +64,7 @@ export function createInitialFiveLeafState() {
   }
 }
 
-export function normalizeFiveLeafState(rawState) {
+export function normalizeFiveLeafState(rawState, game) {
   const initial = createInitialFiveLeafState()
   const rawLoadouts = Array.isArray(rawState?.loadouts)
     ? rawState.loadouts
@@ -96,6 +109,12 @@ export function normalizeFiveLeafState(rawState) {
           clampInteger(raw.allocations?.[id], 0, 100),
         ]),
       )
+      if (game !== undefined) {
+        const availableIds = new Set(getAvailableFiveLeafFortunes(game).map(({ id }) => id))
+        for (const { id } of FIVE_LEAF_FORTUNES) {
+          if (!availableIds.has(id)) allocations[id] = 0
+        }
+      }
       // A malformed imported loadout cannot create more than 100% chance.
       let available = 100
       for (const { id } of FIVE_LEAF_FORTUNES) {
@@ -140,28 +159,45 @@ export function getFiveLeafLoadoutCost(loadout) {
 export function getFiveLeafSchedule(loadout, pointBudget = Infinity) {
   const batchFactor = 2 ** (loadout.batchSize - 1)
   const pointCost = getFiveLeafLoadoutCost(loadout)
-  const overloadFactor = Number.isFinite(pointBudget)
-    ? Math.max(1, pointCost / Math.max(1, pointBudget)) ** 2
+  const pointRatio = Number.isFinite(pointBudget)
+    ? pointCost / Math.max(1, pointBudget)
     : 1
-  const baseSeconds = FIVE_LEAF_BASE_INTERVAL_SECONDS * batchFactor * overloadFactor
-  const rollIntervalSeconds =
-    baseSeconds * loadout.chancePercent / 100
-  const minimumSeconds = baseSeconds * FIVE_LEAF_MINIMUM_INTERVAL_FACTOR
+  const pointTimeFactor = Math.max(
+    FIVE_LEAF_MINIMUM_POINT_TIME_FACTOR,
+    Math.min(1, pointRatio),
+  )
+  const overloadFactor = Number.isFinite(pointBudget)
+    ? Math.max(1, pointRatio) ** 2
+    : 1
+  const baseSeconds = FIVE_LEAF_BASE_INTERVAL_SECONDS * batchFactor *
+    pointTimeFactor * overloadFactor
+  const rollIntervalSeconds = Math.max(
+    FIVE_LEAF_MINIMUM_ATTEMPT_SECONDS,
+    baseSeconds * loadout.chancePercent / 100,
+  )
+  const minimumSeconds = Math.max(
+    FIVE_LEAF_MINIMUM_SPAWN_SECONDS,
+    baseSeconds * FIVE_LEAF_MINIMUM_INTERVAL_FACTOR,
+  )
 
   return {
     baseSeconds,
+    pointTimeFactor,
     overloadFactor,
     minimumSeconds,
-    maximumSeconds: baseSeconds * FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR,
+    maximumSeconds: Math.max(
+      FIVE_LEAF_MINIMUM_SPAWN_SECONDS,
+      baseSeconds * FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR,
+    ),
     rollIntervalSeconds,
     firstRollSeconds: Math.max(minimumSeconds, rollIntervalSeconds),
   }
 }
 
-export function chooseFiveLeafEffect(loadout, randomValue) {
+export function chooseFiveLeafEffect(loadout, randomValue, game) {
   const roll = Math.max(0, Math.min(0.9999999999999999, Number(randomValue) || 0)) * 100
   let cumulative = 0
-  for (const { id } of FIVE_LEAF_FORTUNES) {
+  for (const { id } of getAvailableFiveLeafFortunes(game)) {
     cumulative += loadout.allocations[id] ?? 0
     if (roll < cumulative) return id
   }
@@ -170,7 +206,7 @@ export function chooseFiveLeafEffect(loadout, randomValue) {
 
 export function updateFiveLeafLoadout(game, loadoutIndex, changes) {
   if (game?.cloverAssembly?.assembled !== true) return game
-  const state = normalizeFiveLeafState(game.fortune?.fiveLeaf)
+  const state = normalizeFiveLeafState(game.fortune?.fiveLeaf, game)
   if (!Number.isInteger(loadoutIndex) || !state.loadouts[loadoutIndex]) return game
   const previous = state.loadouts[loadoutIndex]
   const next = {
@@ -186,7 +222,7 @@ export function updateFiveLeafLoadout(game, loadoutIndex, changes) {
     loadouts: state.loadouts.map((loadout, index) =>
       index === loadoutIndex ? next : loadout,
     ),
-  })
+  }, game)
   return {
     ...game,
     fortune: {
@@ -202,7 +238,7 @@ export function updateFiveLeafLoadout(game, loadoutIndex, changes) {
 
 export function selectFiveLeafLoadout(game, loadoutIndex) {
   if (game?.cloverAssembly?.assembled !== true) return game
-  const state = normalizeFiveLeafState(game.fortune?.fiveLeaf)
+  const state = normalizeFiveLeafState(game.fortune?.fiveLeaf, game)
   if (!Number.isInteger(loadoutIndex) || !state.loadouts[loadoutIndex] ||
       loadoutIndex === state.activeLoadoutIndex) return game
 

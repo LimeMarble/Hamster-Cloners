@@ -16,12 +16,13 @@ import {
 } from './gameConfig.js'
 import { createFarmlandMultipliers } from './blueprintLogic.js'
 import { createBlueprintCalculationCache } from './blueprintCalculationCache.js'
+import { getRichSoilYieldMultiplier } from './augmentationLogic.js'
 import {
   doesNotHarvest,
   getAdjacentCropEffectMultiplier,
   getAdjacentHarvestDestructionMultiplier,
-  getAdjacentHarvestModifier,
   getCropBaseYield,
+  getCropHarvestEffectStrength,
   getCropHamsterEfficiencyBonus,
   getExternalCropBuffMultiplier,
   getGlobalHamsterEfficiencyMultiplier,
@@ -382,6 +383,8 @@ export function getBaseFieldProductionSnapshot(
   passiveEffectMultiplier = 1,
   seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
   totalRabbitRelationsEarned = 0,
+  activeArea = 'main',
+  leekEnrichmentExponent = 1,
 ) {
   const hasCarrot = blueprint.cells.includes('carrot')
   const rabbitContractDependency = hasCarrot
@@ -399,6 +402,8 @@ export function getBaseFieldProductionSnapshot(
       rabbitRelationDependency,
       passiveEffectMultiplier,
       seedAugmentations,
+      activeArea,
+      leekEnrichmentExponent,
     ],
     () => calculateBaseFieldProductionSnapshot(
       blueprint,
@@ -407,6 +412,8 @@ export function getBaseFieldProductionSnapshot(
       passiveEffectMultiplier,
       seedAugmentations,
       totalRabbitRelationsEarned,
+      activeArea,
+      leekEnrichmentExponent,
     ),
   )
 }
@@ -418,6 +425,8 @@ function calculateBaseFieldProductionSnapshot(
   passiveEffectMultiplier,
   seedAugmentations,
   totalRabbitRelationsEarned,
+  activeArea,
+  leekEnrichmentExponent,
 ) {
   const effectBlueprint = getMirrorCornEffectBlueprint(
     blueprint,
@@ -472,39 +481,31 @@ function calculateBaseFieldProductionSnapshot(
         passiveEffectMultiplier,
         seedAugmentations,
       )
+    const baseHarvest = getCropBaseYield(crop, completedCropPerfections)
     const adjacentYieldBonus = adjacentConnections.reduce(
       (totalBonus, { index: neighborIndex, adjacencyDistance }) => {
         const neighborCrop = effectBlueprint.cells[neighborIndex]
-        const baseCropYieldBonus = getAdjacentHarvestModifier(
+        const cropYieldBonus = getCropHarvestEffectStrength(
           effectBlueprint,
-          neighborCrop,
+          neighborIndex,
           completedCropPerfections,
           passiveEffectMultiplier,
           seedAugmentations,
+          leekEnrichmentExponent,
         )
         const adjacencyStrength =
           getRootTunnelAdjacencyStrength(adjacencyDistance)
 
         return (
           totalBonus +
-          baseCropYieldBonus *
-            adjacencyStrength *
-            getAdjacentCropEffectMultiplier(
-              effectBlueprint,
-              neighborIndex,
+          cropYieldBonus *
+            getRichSoilYieldMultiplier(
               neighborCrop,
-              baseCropYieldBonus < 0,
-              completedCropPerfections,
-              passiveEffectMultiplier,
+              baseHarvest,
               seedAugmentations,
+              activeArea,
             ) *
-            getMirrorCornEffectMultiplier(
-              effectBlueprint,
-              neighborIndex,
-              completedCropPerfections,
-              passiveEffectMultiplier,
-              seedAugmentations,
-            )
+            adjacencyStrength
         )
       },
       0,
@@ -526,7 +527,7 @@ function calculateBaseFieldProductionSnapshot(
     return {
       cropId: crop,
       amount:
-        (getCropBaseYield(crop, completedCropPerfections) +
+        (baseHarvest +
           adjacentYieldBonus * externalCropBuffMultiplier) *
         BASE_CROP_YIELD_PER_PLOT *
         monocropMultiplier *
@@ -579,6 +580,8 @@ export function getBaseFieldIncome(
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
   seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
+  activeArea = 'main',
+  leekEnrichmentExponent = 1,
 ) {
   return getBaseFieldProductionSnapshot(
     blueprint,
@@ -586,6 +589,9 @@ export function getBaseFieldIncome(
     rabbitContractsCompleted,
     passiveEffectMultiplier,
     seedAugmentations,
+    0,
+    activeArea,
+    leekEnrichmentExponent,
   ).total
 }
 
@@ -595,6 +601,8 @@ export function getBaseFieldIncomeByCrop(
   rabbitContractsCompleted = 0,
   passiveEffectMultiplier = 1,
   seedAugmentations = EMPTY_SEED_AUGMENTATIONS,
+  activeArea = 'main',
+  leekEnrichmentExponent = 1,
 ) {
   return getBaseFieldProductionSnapshot(
     blueprint,
@@ -602,6 +610,9 @@ export function getBaseFieldIncomeByCrop(
     rabbitContractsCompleted,
     passiveEffectMultiplier,
     seedAugmentations,
+    0,
+    activeArea,
+    leekEnrichmentExponent,
   ).byCrop
 }
 export function getIncomeMultiplier(farmland) {
@@ -644,6 +655,7 @@ function normalizeCropProductionModifiers(modifiers = {}) {
 
   return {
     passiveEffectMultiplier: getMultiplier(modifiers.passiveEffectMultiplier),
+    leekEnrichmentExponent: getMultiplier(modifiers.leekEnrichmentExponent),
     cropYieldMultiplier: getMultiplier(modifiers.cropYieldMultiplier),
     cropProductionExponent:
       Number.isFinite(parsedExponent) && parsedExponent > 0
@@ -711,6 +723,7 @@ export function getCropProductionSnapshotPerSecond(
   totalRabbitRelationsEarned = 0,
 ) {
   const modifiers = normalizeCropProductionModifiers(fortuneModifiers)
+  const activeArea = fortuneModifiers.activeArea ?? 'main'
   const effectiveFarmland = getEffectiveFarmlandMultipliers(farmland)
   const safeExternalCropMultiplier = Math.max(
     0,
@@ -731,11 +744,13 @@ export function getCropProductionSnapshotPerSecond(
       rabbitContractDependency,
       rabbitRelationDependency,
       modifiers.passiveEffectMultiplier,
+      modifiers.leekEnrichmentExponent,
       modifiers.cropYieldMultiplier,
       modifiers.cropProductionExponent,
       modifiers.cropProductionMultiplier,
       modifiers.harvestMultiplier,
       seedAugmentations,
+      activeArea,
       effectiveFarmland.rows,
       effectiveFarmland.columns,
       effectiveFarmland.floors,
@@ -751,6 +766,8 @@ export function getCropProductionSnapshotPerSecond(
         modifiers.passiveEffectMultiplier,
         seedAugmentations,
         totalRabbitRelationsEarned,
+        activeArea,
+        modifiers.leekEnrichmentExponent,
       )
       const preFortuneMultiplier =
         effectiveFarmland.rows *

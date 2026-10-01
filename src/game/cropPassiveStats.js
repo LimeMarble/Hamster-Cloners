@@ -17,6 +17,7 @@ export function getCropPassiveStats({
   globalHamsterEfficiencyEffects,
   baseGlobalPassiveEffectMultiplier,
   seedAugmentations,
+  leekEnrichmentExponent = 1,
 }) {
   const adjustForMonocrop = (bonus) =>
     bonus > 0 ? bonus * monocropMultiplier : bonus / monocropMultiplier
@@ -76,36 +77,20 @@ export function getCropPassiveStats({
       ),
     })
   }
-  const ownBaseAdjacentHarvestBonus = cropEffects.getAdjacentHarvestModifier(
+  const ownAdjacentHarvestBonus = cropEffects.getCropHarvestEffectStrength(
     blueprint,
-    crop,
+    index,
     completedCropPerfections,
     passiveEffectMultiplier,
     seedAugmentations,
+    leekEnrichmentExponent,
   )
-  if (ownBaseAdjacentHarvestBonus !== 0) {
+  if (ownAdjacentHarvestBonus !== 0) {
     passiveStats.push({
       id: 'adjacent-crop-yield',
       label: 'Adjacent Crop yield',
       format: 'crop-yield',
-      value:
-        ownBaseAdjacentHarvestBonus *
-        cropEffects.getAdjacentCropEffectMultiplier(
-          blueprint,
-          index,
-          crop,
-          ownBaseAdjacentHarvestBonus < 0,
-          completedCropPerfections,
-          passiveEffectMultiplier,
-          seedAugmentations,
-        ) *
-        cropEffects.getMirrorCornEffectMultiplier(
-          blueprint,
-          index,
-          completedCropPerfections,
-          passiveEffectMultiplier,
-          seedAugmentations,
-        ),
+      value: ownAdjacentHarvestBonus,
     })
   }
   const ownGlobalHarvestEffect = cropEffects.getGlobalHarvestEffects(

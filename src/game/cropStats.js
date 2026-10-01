@@ -15,8 +15,8 @@ import {
   getAdjacentCropEffectMultiplier,
   getAdjacentHarvestDestructionEffects,
   getAdjacentHarvestDestructionMultiplier,
-  getAdjacentHarvestModifier,
   getCropBaseYield,
+  getCropHarvestEffectStrength,
   getCropHamsterEfficiencyBonus,
   getExternalCropBuffMultiplier,
   getGlobalHamsterEfficiencyEffects,
@@ -43,6 +43,7 @@ import {
 } from './cropEffects.js'
 import { getCropPassiveStats } from './cropPassiveStats.js'
 import { getLeechingVineStatus } from './leechingVineLogic.js'
+import { getRichSoilYieldMultiplier } from './augmentationLogic.js'
 function normalizeFortuneMultiplier(value) {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1
@@ -65,6 +66,13 @@ export function getBlueprintCropStats(
   if (!definition) {
     return null
   }
+
+  const richSoilMultiplier = getRichSoilYieldMultiplier(
+    'leek',
+    getCropBaseYield(crop, completedCropPerfections),
+    seedAugmentations,
+    fortuneModifiers.activeArea,
+  )
 
   const mangroveNurseryEffect = crop === 'mangroveSapling'
     ? getMangroveNurseryEffect(
@@ -134,6 +142,9 @@ export function getBlueprintCropStats(
   )
   const passiveEffectMultiplier = normalizeFortuneMultiplier(
     fortuneModifiers.passiveEffectMultiplier,
+  )
+  const leekEnrichmentExponent = normalizeFortuneMultiplier(
+    fortuneModifiers.leekEnrichmentExponent,
   )
   const allPassiveEffectMultiplier = getGlobalPassiveEffectMultiplier(
     blueprint,
@@ -347,27 +358,19 @@ export function getBlueprintCropStats(
   harvestBonusConnections.forEach(
     ({ index: neighborIndex, adjacencyDistance }) => {
       const sourceCropId = blueprint.cells[neighborIndex]
-      const baseCropYieldBonus = getAdjacentHarvestModifier(
+      const sourceYieldBonus = getCropHarvestEffectStrength(
         blueprint,
-        sourceCropId,
+        neighborIndex,
         completedCropPerfections,
         passiveEffectMultiplier,
         seedAugmentations,
+        leekEnrichmentExponent,
       )
       const adjacencyStrength = getRootTunnelAdjacencyStrength(adjacencyDistance)
       const cropYieldBonus =
-        baseCropYieldBonus *
-        adjacencyStrength *
-        getAdjacentCropEffectMultiplier(
-          blueprint,
-          neighborIndex,
-          sourceCropId,
-          baseCropYieldBonus < 0,
-          completedCropPerfections,
-          passiveEffectMultiplier,
-          seedAugmentations,
-        ) *
-        getAugmentedMirrorCornEffectMultiplier(neighborIndex)
+        sourceYieldBonus *
+        (sourceCropId === 'leek' ? richSoilMultiplier : 1) *
+        adjacencyStrength
 
       if (cropYieldBonus !== 0) {
         const currentBonus = cropYieldBonusesByCrop.get(sourceCropId) ?? {
@@ -406,6 +409,14 @@ export function getBlueprintCropStats(
     },
   )
 
+  if (richSoilMultiplier > 1 && cropYieldBonusesByCrop.has('leek')) {
+    receivedEffects.push({ type: 'rich-soil', multiplier: richSoilMultiplier })
+  }
+  if (leekEnrichmentExponent !== 1 &&
+      (crop === 'leek' || cropYieldBonusesByCrop.has('leek'))) {
+    receivedEffects.push({ type: 'leek-fortune-cookie', exponent: leekEnrichmentExponent })
+  }
+
   const harvestDestructionEffects =
     getAdjacentHarvestDestructionEffects(
       blueprint,
@@ -424,34 +435,8 @@ export function getBlueprintCropStats(
     )
   const harvestDestroyedByAppleTree =
     harvestDestructionMultiplier === 0 || fortuneHarvestMultiplier === 0
-  const adjacentYieldBonus = harvestBonusConnections.reduce(
-    (totalBonus, { index: neighborIndex, adjacencyDistance }) => {
-      const sourceCropId = blueprint.cells[neighborIndex]
-      const baseCropYieldBonus = getAdjacentHarvestModifier(
-        blueprint,
-        sourceCropId,
-        completedCropPerfections,
-        passiveEffectMultiplier,
-        seedAugmentations,
-      )
-      const adjacencyStrength = getRootTunnelAdjacencyStrength(adjacencyDistance)
-
-      return (
-        totalBonus +
-        baseCropYieldBonus *
-          adjacencyStrength *
-          getAdjacentCropEffectMultiplier(
-            blueprint,
-            neighborIndex,
-            sourceCropId,
-            baseCropYieldBonus < 0,
-            completedCropPerfections,
-            passiveEffectMultiplier,
-            seedAugmentations,
-          ) *
-          getAugmentedMirrorCornEffectMultiplier(neighborIndex)
-      )
-    },
+  const adjacentYieldBonus = [...cropYieldBonusesByCrop.values()].reduce(
+    (totalBonus, effect) => totalBonus + effect.bonus,
     0,
   )
   const externalCropBuffMultiplier = definition.externalCropBuffMultiplier
@@ -528,6 +513,8 @@ export function getBlueprintCropStats(
     passiveEffectMultiplier,
     seedAugmentations,
     totalRabbitRelationsEarned,
+    fortuneModifiers.activeArea,
+    leekEnrichmentExponent,
   )
   const globalHarvestMultiplier = fieldProductionSnapshot.globalHarvestMultiplier
   const fortuneProductionScale = getCropProductionModifierScale(
@@ -649,6 +636,7 @@ export function getBlueprintCropStats(
     globalHamsterEfficiencyEffects,
     baseGlobalPassiveEffectMultiplier,
     seedAugmentations,
+    leekEnrichmentExponent,
   })
 
   if (sweetPotatoBedEffect) {

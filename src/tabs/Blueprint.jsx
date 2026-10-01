@@ -7,13 +7,36 @@ import {
   isWaterLettuceFieldInfested,
 } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
+import {
+  getPercentageGainPerSecond,
+  getProductPercentageGainPerSecond,
+} from '../game/fieldGrowth.js'
 import { CropVisual } from './CropVisual.jsx'
-import { FormattedNumber, MonocropStatus } from './ui.jsx'
+import { FormattedNumber, MonocropStatus, PercentageGain } from './ui.jsx'
 import { getBlueprintCropSummary } from './uiHelpers.js'
+
+const FIELD_UNIT_KEYS = ['rows', 'columns', 'floors', 'farms']
+
+function FieldUnitStat({ label, value, producedPerSecond }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>
+        <FormattedNumber value={value} maximumFractionDigits={0} />
+        <PercentageGain
+          value={getPercentageGainPerSecond(value, producedPerSecond)}
+        />
+      </dd>
+    </div>
+  )
+}
 
 function BlueprintPanel({
   game,
   fieldIncomePerSecond,
+  columnsBuiltPerSecond,
+  rowsBuiltPerSecond,
+  floorsBuiltPerSecond,
   showMonocropLimit,
   monocropLimit,
   monocropPenaltyMultiplier,
@@ -23,6 +46,23 @@ function BlueprintPanel({
   onSelectBlueprintSlot,
   onOpenEditor,
 }) {
+  const unitRates = {
+    columns: columnsBuiltPerSecond,
+    rows: rowsBuiltPerSecond,
+    floors: floorsBuiltPerSecond,
+    farms: 0,
+  }
+  const fieldsGainPerSecond = getProductPercentageGainPerSecond(
+    FIELD_UNIT_KEYS.map((key) => ({
+      current: getFlooredFarmlandValue(game, key),
+      producedPerSecond: unitRates[key],
+    })),
+  )
+  const visibleFieldUnits = [
+    { key: 'columns', label: 'Columns built', visible: game.hasUnlockedRowDuplicators },
+    { key: 'rows', label: 'Rows built', visible: game.hasUnlockedRowDuplicators },
+    { key: 'floors', label: 'Floors built', visible: game.hasUnlockedFloorReplicators },
+  ]
   const plantedCrops = getBlueprintCropSummary(game.blueprint.cells)
   const fieldInfested = isWaterLettuceFieldInfested(game.blueprint)
   const hasUnlockedManatees = hasCompletedCapybaraDemonstration(
@@ -161,35 +201,17 @@ function BlueprintPanel({
           <dt>Fields planted</dt>
           <dd>
             <FormattedNumber value={getFieldsPlanted(game.farmland)} maximumFractionDigits={0} />
+            <PercentageGain value={fieldsGainPerSecond} />
           </dd>
         </div>
-        {game.hasUnlockedRowDuplicators ? (
-          <>
-            <div>
-              <dt>Columns built</dt>
-              <dd>
-                <FormattedNumber value={Math.floor(game.farmland.columns)} maximumFractionDigits={0} />
-              </dd>
-            </div>
-            <div>
-              <dt>Rows built</dt>
-              <dd>
-                <FormattedNumber value={Math.floor(game.farmland.rows)} maximumFractionDigits={0} />
-              </dd>
-            </div>
-          </>
-        ) : null}
-        {game.hasUnlockedFloorReplicators ? (
-          <div>
-            <dt>Floors built</dt>
-            <dd>
-              <FormattedNumber
-                value={Math.floor(game.farmland.floors)}
-                maximumFractionDigits={0}
-              />
-            </dd>
-          </div>
-        ) : null}
+        {visibleFieldUnits.filter(({ visible }) => visible).map(({ key, label }) => (
+          <FieldUnitStat
+            key={key}
+            label={label}
+            value={getFlooredFarmlandValue(game, key)}
+            producedPerSecond={unitRates[key]}
+          />
+        ))}
       </dl>
 
     </article>
@@ -206,6 +228,9 @@ function areBlueprintPropsEqual(previous, next) {
 
   return (
     Object.is(previous.fieldIncomePerSecond, next.fieldIncomePerSecond) &&
+    Object.is(previous.columnsBuiltPerSecond, next.columnsBuiltPerSecond) &&
+    Object.is(previous.rowsBuiltPerSecond, next.rowsBuiltPerSecond) &&
+    Object.is(previous.floorsBuiltPerSecond, next.floorsBuiltPerSecond) &&
     previous.showMonocropLimit === next.showMonocropLimit &&
     Object.is(previous.monocropLimit, next.monocropLimit) &&
     Object.is(

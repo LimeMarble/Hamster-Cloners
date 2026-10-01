@@ -39,6 +39,11 @@ import {
 import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
 import { getMisfortuneAreaCrops } from './areaLogic.js'
 import {
+  hasRichSoilAugmentation,
+  SEED_AUGMENTATIONS,
+  SEED_AUGMENTATION_IDS,
+} from './augmentationLogic.js'
+import {
   CLOVER_ASSEMBLY_PART_REQUIREMENT,
   CLOVER_ASSEMBLY_RABBIT_UNLOCK_ID,
   normalizeCloverAssemblyState,
@@ -359,6 +364,24 @@ export const MAJOR_PROGRESSION_GOALS = [
     'Purchase Final Support from the Misfortune tab.',
   ),
   CLOVER_PERFECTION_GOAL,
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
+    'Purchase Not-So-Final Support from the Misfortune tab to unlock Misfortune-only Seed Augmentations.',
+  ),
+  {
+    id: 'augmentation-rich-soil',
+    category: 'Seed augmentation',
+    title: 'Unlock Rich Soil',
+    target: SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RICH_SOIL].cost,
+    unit: 'Misfortune Crops',
+    description: 'Purchase Rich Soil for Enriching Leek in the Augmentation tab.',
+    isApplicable: (game) =>
+      game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
+      hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT),
+    isComplete: (game) => hasRichSoilAugmentation(game.seedAugmentations),
+    getCurrent: (game) => game.crops,
+    requiresAction: true,
+  },
   {
     id: 'capybara-contact',
     category: 'Milestone',

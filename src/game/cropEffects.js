@@ -1992,6 +1992,32 @@ export function getAdjacentHarvestModifier(
   )
 }
 
+// Source strength excludes tunnel attenuation and recipient-specific bonuses.
+// The cookie exponent therefore boosts the Leek, not Rich Soil or Apple absorption.
+export function getCropHarvestEffectStrength(
+  blueprint,
+  index,
+  completedCropPerfections = [],
+  passiveEffectMultiplier = 1,
+  seedAugmentations = {},
+  leekEnrichmentExponent = 1,
+) {
+  const crop = blueprint.cells[index]
+  const baseBonus = getAdjacentHarvestModifier(
+    blueprint, crop, completedCropPerfections, passiveEffectMultiplier, seedAugmentations,
+  )
+  const strength = baseBonus * getAdjacentCropEffectMultiplier(
+    blueprint, index, crop, baseBonus < 0, completedCropPerfections,
+    passiveEffectMultiplier, seedAugmentations,
+  ) * getMirrorCornEffectMultiplier(
+    blueprint, index, completedCropPerfections, passiveEffectMultiplier, seedAugmentations,
+  )
+
+  return crop === 'leek' && strength > 0
+    ? strength ** leekEnrichmentExponent
+    : strength
+}
+
 export function getExternalCropBuffMultiplier(
   blueprint,
   index,

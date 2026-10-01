@@ -35,6 +35,7 @@ export const FORTUNE_EFFECT_IDS = Object.freeze({
   SPLIT: 'mirage',
   MIRAGE: 'fortuneMirage',
   OPUS: 'fortuneOpus',
+  LEEK_COOKIE: 'leekFortuneCookie',
 })
 
 export const FORTUNE_EFFECTS = Object.freeze([
@@ -74,6 +75,15 @@ export const FORTUNE_EFFECTS = Object.freeze([
     description: 'Crop yields ×7.77 and +7.77% Crop passive effects',
     cropYieldMultiplier: 7.77,
     passiveEffectMultiplier: 1.0777,
+  },
+  {
+    id: FORTUNE_EFFECT_IDS.LEEK_COOKIE,
+    name: 'Leek Fortune Cookie',
+    icon: '♧',
+    weight: 0,
+    durationSeconds: 55,
+    description: 'Fully buffed Leek enrichment ^1.2, before Rich Soil and recipient buffs',
+    leekEnrichmentExponent: 1.2,
   },
 ])
 const FORTUNE_EFFECT_BY_ID = new Map(
@@ -163,11 +173,25 @@ export function normalizeFortuneState(rawFortune) {
   const noticeSeconds = toNonNegativeNumber(
     rawFortune.notice?.remainingSeconds,
   )
+  const savedFirstRollSeconds = toNonNegativeNumber(
+    rawFortune.rollSchedule?.firstSeconds,
+  )
+  const savedRollIntervalSeconds = toNonNegativeNumber(
+    rawFortune.rollSchedule?.intervalSeconds,
+  )
+  const rollSchedule = savedFirstRollSeconds > 0 &&
+    savedRollIntervalSeconds > 0
+    ? {
+        firstSeconds: savedFirstRollSeconds,
+        intervalSeconds: savedRollIntervalSeconds,
+      }
+    : null
 
   return {
     bundles,
     secondsTowardBundleRoll: toNonNegativeNumber(rawFortune.secondsTowardBundleRoll),
     nextRollSeconds: toNonNegativeNumber(rawFortune.nextRollSeconds),
+    ...(rollSchedule ? { rollSchedule } : {}),
     activeEffects,
     discoveredEffects: [...new Set(
       Array.isArray(rawFortune.discoveredEffects)
@@ -201,7 +225,10 @@ export function getFortuneModifiers(gameOrFortune) {
       cropProductionMultiplier:
         getMisfortuneUpgradeCropProductionMultiplier(gameOrFortune),
       harvestMultiplier: 1,
+      leekEnrichmentExponent: activeEffects.reduce((exponent, active) =>
+        Math.max(exponent, getFortuneEffect(active.id)?.leekEnrichmentExponent ?? 1), 1),
       source: 'fortunesWrath',
+      activeArea: GAME_AREA_IDS.MISFORTUNE,
     }
   }
 
@@ -225,6 +252,10 @@ export function getFortuneModifiers(gameOrFortune) {
         cropProductionMultiplier: modifiers.cropProductionMultiplier,
         harvestMultiplier:
           modifiers.harvestMultiplier * (effect.harvestMultiplier ?? 1),
+        leekEnrichmentExponent: Math.max(
+          modifiers.leekEnrichmentExponent,
+          effect.leekEnrichmentExponent ?? 1,
+        ),
       }
     },
     {
@@ -234,11 +265,13 @@ export function getFortuneModifiers(gameOrFortune) {
       cropProductionMultiplier:
         getMisfortuneUpgradeCropProductionMultiplier(gameOrFortune),
       harvestMultiplier: 1,
+      leekEnrichmentExponent: 1,
     },
   )
 
   return {
     ...modifiers,
+    activeArea: GAME_AREA_IDS.MAIN,
     passiveEffectMultiplier:
       modifiers.passiveEffectMultiplier +
       getFloorReplicatorSupportPassiveEffectBonus(gameOrFortune),
@@ -248,7 +281,7 @@ export function getFortuneModifiers(gameOrFortune) {
 export function getCloverBundleChancePerMinute(game) {
   if (game.cloverAssembly?.assembled === true) {
     if (!game.blueprint?.cells?.includes('fourLeafClover')) return 0
-    const state = normalizeFiveLeafState(game.fortune?.fiveLeaf)
+    const state = normalizeFiveLeafState(game.fortune?.fiveLeaf, game)
     return state.loadouts[state.activeLoadoutIndex].chancePercent / 100
   }
   if (game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
@@ -312,17 +345,18 @@ export function getCloverBundleChancePerMinute(game) {
 }
 
 function chooseFortuneEffect(randomValue, allowSplit = true) {
-  const totalWeight = FORTUNE_EFFECTS.reduce(
+  const defaultEffects = FORTUNE_EFFECTS.filter((effect) => effect.weight > 0)
+  const totalWeight = defaultEffects.reduce(
     (total, effect) => total + effect.weight,
     0,
   )
   const roll = clampRandomValue(randomValue) * totalWeight
   let cumulativeWeight = 0
 
-  const rolledEffect = FORTUNE_EFFECTS.find((effect) => {
+  const rolledEffect = defaultEffects.find((effect) => {
     cumulativeWeight += effect.weight
     return roll < cumulativeWeight
-  }) ?? FORTUNE_EFFECTS.at(-1)
+  }) ?? defaultEffects.at(-1)
 
   return !allowSplit && rolledEffect.id === FORTUNE_EFFECT_IDS.SPLIT
     ? getFortuneEffect(FORTUNE_EFFECT_IDS.MIRAGE)
@@ -365,14 +399,31 @@ export function advanceFortuneState(
     ? fortune.secondsTowardBundleRoll
     : 0
   let nextRollSeconds = hasClover ? fortune.nextRollSeconds : 0
+  let rollSchedule = fortune.rollSchedule
 
   if (hasClover && bundles.length === 0) {
     secondsTowardBundleRoll += safeElapsedSeconds
     if (isFiveLeaf) {
-      const state = fortune.fiveLeaf
+      const state = normalizeFiveLeafState(fortune.fiveLeaf, game)
       const loadout = state.loadouts[state.activeLoadoutIndex]
       const schedule = getFiveLeafSchedule(loadout, getFiveLeafPointBudget(game))
-      if (nextRollSeconds === 0) nextRollSeconds = schedule.firstRollSeconds
+      if (nextRollSeconds > 0 && rollSchedule &&
+          (rollSchedule.firstSeconds !== schedule.firstRollSeconds ||
+            rollSchedule.intervalSeconds !== schedule.rollIntervalSeconds)) {
+        const failedAttempts = Math.max(0, Math.round(
+          (nextRollSeconds - rollSchedule.firstSeconds) /
+            rollSchedule.intervalSeconds,
+        ))
+        nextRollSeconds = schedule.firstRollSeconds +
+          failedAttempts * schedule.rollIntervalSeconds
+      }
+      nextRollSeconds = nextRollSeconds === 0
+        ? schedule.firstRollSeconds
+        : Math.max(nextRollSeconds, schedule.minimumSeconds)
+      rollSchedule = {
+        firstSeconds: schedule.firstRollSeconds,
+        intervalSeconds: schedule.rollIntervalSeconds,
+      }
 
       while (bundles.length === 0 &&
           secondsTowardBundleRoll >= nextRollSeconds) {
@@ -418,6 +469,7 @@ export function advanceFortuneState(
       bundles,
       secondsTowardBundleRoll,
       nextRollSeconds,
+      ...(rollSchedule ? { rollSchedule } : {}),
       activeEffects,
       notice,
     },
@@ -434,11 +486,12 @@ export function addRandomFortuneEffect(
 
   const fortune = normalizeFortuneState(game.fortune)
   const isFiveLeaf = game.cloverAssembly?.assembled === true
-  const loadout = fortune.fiveLeaf.loadouts[
-    fortune.fiveLeaf.activeLoadoutIndex
+  const fiveLeaf = normalizeFiveLeafState(fortune.fiveLeaf, game)
+  const loadout = fiveLeaf.loadouts[
+    fiveLeaf.activeLoadoutIndex
   ]
   const selectedFiveLeafEffectId = isFiveLeaf
-    ? chooseFiveLeafEffect(loadout, random())
+    ? chooseFiveLeafEffect(loadout, random(), game)
     : null
   const effect = isFiveLeaf
     ? getFortuneEffect(

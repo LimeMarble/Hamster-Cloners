@@ -98,10 +98,11 @@ test('5-Leaf Clover starts with one bundle and the 4-Leaf fortune weights', () =
 
   assert.equal(getFiveLeafPointBudget(game), 200)
   assert.equal(getFiveLeafLoadoutCost(loadout), 131)
-  assert.equal(getFiveLeafSchedule(loadout, 200).firstRollSeconds, 30)
-  assert.equal(advanceFortuneState(game, 29, () => 0).fortune.bundles.length, 0)
-  assert.equal(advanceFortuneState(game, 30, () => 0).fortune.bundles.length, 1)
-  assert.equal(advanceGameSimulationStep(game, 30, { random: () => 0 }).fortune.bundles.length, 1)
+  const firstRoll = getFiveLeafSchedule(loadout, 200).firstRollSeconds
+  assert.ok(Math.abs(firstRoll - 19.65) < 1e-10)
+  assert.equal(advanceFortuneState(game, firstRoll - 0.1, () => 0).fortune.bundles.length, 0)
+  assert.equal(advanceFortuneState(game, firstRoll, () => 0).fortune.bundles.length, 1)
+  assert.equal(advanceGameSimulationStep(game, firstRoll, { random: () => 0 }).fortune.bundles.length, 1)
 })
 
 test('5-Leaf attempts start no earlier than 0.25× and force a bundle by 2×', () => {
@@ -113,16 +114,69 @@ test('5-Leaf attempts start no earlier than 0.25× and force a bundle by 2×', (
   const slowSchedule = getFiveLeafSchedule(slower.fortune.fiveLeaf.loadouts[0], 200)
   const fastSchedule = getFiveLeafSchedule(faster.fortune.fiveLeaf.loadouts[0], 200)
 
-  assert.equal(frequentSchedule.minimumSeconds, 7.5)
-  assert.equal(frequentSchedule.firstRollSeconds, 7.5)
-  assert.equal(frequentSchedule.rollIntervalSeconds, 3)
-  assert.equal(frequentSchedule.maximumSeconds, 60)
-  assert.equal(slowSchedule.firstRollSeconds, 14.7)
-  assert.equal(fastSchedule.firstRollSeconds, 15)
+  assert.equal(frequentSchedule.minimumSeconds, 5)
+  assert.equal(frequentSchedule.firstRollSeconds, 5)
+  assert.ok(Math.abs(frequentSchedule.rollIntervalSeconds - 1.965) < 1e-10)
+  assert.ok(Math.abs(frequentSchedule.maximumSeconds - 39.3) < 1e-10)
+  assert.ok(Math.abs(slowSchedule.firstRollSeconds - 9.6285) < 1e-10)
+  assert.ok(Math.abs(fastSchedule.firstRollSeconds - 9.825) < 1e-10)
   assert.ok(fastSchedule.firstRollSeconds - slowSchedule.firstRollSeconds < 1)
-  const missed = advanceFortuneState(slower, 59, () => 0.99)
+  const missed = advanceFortuneState(
+    slower, slowSchedule.maximumSeconds - 1, () => 0.99,
+  )
   assert.equal(missed.fortune.bundles.length, 0)
   assert.equal(advanceFortuneState(missed, 1, () => 0.99).fortune.bundles.length, 1)
+})
+
+test('used point fraction speeds under-budget loadouts without normalizing Mirage', () => {
+  const game = createPerfectedCloverGame()
+  const mixed = updateFiveLeafLoadout(game, 0, {
+    allocations: { opus: 50, bounty: 0, mirage: 0, fortuneOpus: 50 },
+  }).fortune.fiveLeaf.loadouts[0]
+  const halfMirage = updateFiveLeafLoadout(game, 0, {
+    allocations: { opus: 50, bounty: 0, mirage: 0, fortuneOpus: 0 },
+  }).fortune.fiveLeaf.loadouts[0]
+  const empty = updateFiveLeafLoadout(game, 0, {
+    chancePercent: 10,
+    allocations: { opus: 0, bounty: 0, mirage: 0, fortuneOpus: 0 },
+  })
+
+  assert.equal(getFiveLeafSchedule(mixed, 300).pointTimeFactor, 0.5)
+  assert.equal(getFiveLeafSchedule(mixed, 300).baseSeconds, 15)
+  assert.equal(getFiveLeafSchedule(mixed, 150).baseSeconds, 30)
+  assert.equal(getFiveLeafSchedule(halfMirage, 200).pointTimeFactor, 0.25)
+
+  const fastest = getFiveLeafSchedule(empty.fortune.fiveLeaf.loadouts[0], 200)
+  assert.equal(fastest.baseSeconds, 7.5)
+  assert.equal(fastest.rollIntervalSeconds, 1)
+  assert.equal(fastest.firstRollSeconds, 5)
+  assert.equal(fastest.maximumSeconds, 15)
+  assert.equal(advanceFortuneState(empty, 4.9, () => 0).fortune.bundles.length, 0)
+  assert.equal(advanceFortuneState(empty, 5, () => 0).fortune.bundles.length, 1)
+})
+
+test('earning more points reschedules an in-progress 5-Leaf attempt', () => {
+  const game = updateFiveLeafLoadout(createPerfectedCloverGame(), 0, {
+    allocations: { opus: 50, bounty: 0, mirage: 0, fortuneOpus: 50 },
+  })
+  const waiting = advanceFortuneState(game, 10, () => 0)
+  assert.equal(waiting.fortune.nextRollSeconds, 22.5)
+
+  const morePoints = {
+    ...waiting,
+    capybara: {
+      ...waiting.capybara,
+      completedDemonstrations: [
+        ...waiting.capybara.completedDemonstrations,
+        'misfortuneTrial',
+      ],
+    },
+  }
+  const rescheduled = advanceFortuneState(morePoints, 0.1, () => 0)
+  assert.equal(getFiveLeafPointBudget(rescheduled), 250)
+  assert.equal(rescheduled.fortune.nextRollSeconds, 18)
+  assert.equal(rescheduled.fortune.bundles.length, 0)
+  assert.equal(advanceFortuneState(rescheduled, 7.9, () => 0).fortune.bundles.length, 1)
 })
 
 test('overloaded 5-Leaf allocations slow appearances by the square of their point ratio', () => {
@@ -221,8 +275,11 @@ test('Misfortune can plant clover after perfection and loadouts survive save nor
     false, true, 500, true, true,
   )
   const changed = updateFiveLeafLoadout(game, 0, { chancePercent: 40 })
-  const restored = normalizeGame(changed)
+  const waiting = advanceFortuneState(changed, 5, () => 0.99)
+  const restored = normalizeGame(waiting)
 
   assert.ok(unlocked.includes('fourLeafClover'))
   assert.equal(restored.fortune.fiveLeaf.loadouts[0].chancePercent, 40)
+  assert.equal(restored.fortune.nextRollSeconds, waiting.fortune.nextRollSeconds)
+  assert.deepEqual(restored.fortune.rollSchedule, waiting.fortune.rollSchedule)
 })

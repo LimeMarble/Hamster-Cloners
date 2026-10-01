@@ -1,7 +1,10 @@
 import {
   FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR,
+  FIVE_LEAF_MINIMUM_ATTEMPT_SECONDS,
   FIVE_LEAF_MINIMUM_INTERVAL_FACTOR,
-  FIVE_LEAF_FORTUNES,
+  FIVE_LEAF_MINIMUM_POINT_TIME_FACTOR,
+  FIVE_LEAF_MINIMUM_SPAWN_SECONDS,
+  getAvailableFiveLeafFortunes,
   getFiveLeafLoadoutCost,
   getFiveLeafPointBudget,
   getFiveLeafSchedule,
@@ -22,7 +25,7 @@ function formatDuration(seconds) {
 }
 
 export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
-  const state = normalizeFiveLeafState(game.fortune?.fiveLeaf)
+  const state = normalizeFiveLeafState(game.fortune?.fiveLeaf, game)
   const pointBudget = getFiveLeafPointBudget(game)
   const loadout = state.loadouts[state.activeLoadoutIndex]
   const spent = getFiveLeafLoadoutCost(loadout)
@@ -94,7 +97,10 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
       </dl>
       <p className="five-leaf-help five-leaf-point-help">
         Earn 50 Fortune points per completed demonstration and 25 per distinct
-        fortune used. Spending beyond your points makes bundles take longer to appear.
+        fortune used. Used points set appearance time linearly, down to ×
+        {FIVE_LEAF_MINIMUM_POINT_TIME_FACTOR}; this loadout is at ×
+        <FormattedNumber value={schedule.pointTimeFactor} maximumFractionDigits={3} />.
+        Spending beyond your points adds overload separately.
       </p>
 
       <section className="five-leaf-section" aria-labelledby="five-leaf-appearance-title">
@@ -155,9 +161,12 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
         </dl>
         <p className="five-leaf-help five-leaf-timing-help">
           The first attempt cannot happen before {FIVE_LEAF_MINIMUM_INTERVAL_FACTOR}×
-          the {formatDuration(schedule.baseSeconds)} base interval. A bundle is
-          guaranteed by {FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR}× that interval.
-          Attempts pause while a bundle is on screen.
+          the adjusted {formatDuration(schedule.baseSeconds)} base interval or
+          {FIVE_LEAF_MINIMUM_SPAWN_SECONDS}s, whichever is later. A bundle is
+          guaranteed by {FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR}× that interval,
+          never sooner than {FIVE_LEAF_MINIMUM_SPAWN_SECONDS}s. Attempts are at
+          least {FIVE_LEAF_MINIMUM_ATTEMPT_SECONDS}s apart and pause while a
+          bundle is on screen.
         </p>
       </section>
 
@@ -174,7 +183,7 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
           Mirage at no point cost.
         </p>
         <div className="five-leaf-fortunes">
-          {FIVE_LEAF_FORTUNES.map(({ id, pointCost }) => {
+          {getAvailableFiveLeafFortunes(game).map(({ id, pointCost }) => {
             const effect = getFortuneEffect(id)
             const percentage = loadout.allocations[id]
             const maximum = 100 - (allocated - percentage)
@@ -187,6 +196,9 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
                 <span className="five-leaf-fortune-copy">
                   <strong>{effect.name}</strong>
                   <small>{effect.description}</small>
+                  {effect.durationSeconds > 0 ? (
+                    <small>Lasts {formatDuration(effect.durationSeconds)} · repeat rolls extend the timer</small>
+                  ) : null}
                   <small>{pointCost} {pointCost === 1 ? 'point' : 'points'} per 1%</small>
                 </span>
                 <span className="five-leaf-fortune-control">
@@ -215,7 +227,7 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
           </div>
         </div>
         <p className="five-leaf-help five-leaf-future-note">
-          Rabbit&apos;s Fortune and crop-themed Fortune Cookies will join this
+          Rabbit&apos;s Fortune and further crop-themed Fortune Cookies will join this
           effect list when available.
         </p>
       </section>

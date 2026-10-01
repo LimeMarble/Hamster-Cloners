@@ -57,6 +57,7 @@ export function useGameActions({
 }) {
   const [activeTab, setActiveTab] = useState('field')
   const [activeInventionsTab, setActiveInventionsTab] = useState('blueprint')
+  const [activeAugmentationCrop, setActiveAugmentationCrop] = useState('leek')
   const [activeTradeRelation, setActiveTradeRelation] = useState('rabbits')
   const [activeManateeZone, setActiveManateeZone] = useState(
     MANATEE_ZONE_IDS.MARSH,
@@ -477,6 +478,15 @@ export function useGameActions({
     )
   }
 
+  function unlockNotSoFinalSupport() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
+      ) ?? currentGame,
+    )
+  }
+
   function selectCloverLoadout(index) {
     updateGame((currentGame) => selectFiveLeafLoadout(currentGame, index))
   }
@@ -631,6 +641,8 @@ export function useGameActions({
       onClearWetlandsObstructions: clearWetlandsObstructions,
     },
     augmentationActions: {
+      activeCropId: activeAugmentationCrop,
+      onActiveCropChange: setActiveAugmentationCrop,
       onPurchaseSeedAugmentation: buySeedAugmentation,
       onToggleSeedAugmentation: togglePurchasedSeedAugmentation,
     },
@@ -671,6 +683,7 @@ export function useGameActions({
     onUnlockNourishingMisery: unlockNourishingMisery,
     onUnlockHuntForSomethingGreater: unlockHuntForSomethingGreater,
     onUnlockFinalSupport: unlockFinalSupport,
+    onUnlockNotSoFinalSupport: unlockNotSoFinalSupport,
     options: {
       saveCode,
       onSaveCodeChange: setSaveCode,

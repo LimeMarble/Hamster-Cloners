@@ -1,6 +1,12 @@
+import {
+  GAME_AREA_IDS,
+  MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
+} from './gameConfig.js'
+
 export const SEED_AUGMENTATION_IDS = Object.freeze({
   LEEK_ENRICHMENT: 'leekEnrichment',
   LEEK_DIAGONAL: 'leekDiagonal',
+  RICH_SOIL: 'richSoil',
   MIRROR_CORN_DEBUFF_REMOVAL: 'mirrorCornDebuffRemoval',
   MIRROR_CORN_EFFECTIVENESS: 'mirrorCornEffectiveness',
   MIRROR_CORN_REFLECTION_LIMIT: 'mirrorCornReflectionLimit',
@@ -16,6 +22,7 @@ export const SEED_AUGMENTATION_IDS = Object.freeze({
 export const SEED_AUGMENTATIONS = Object.freeze({
   [SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT,
+    cropId: 'leek',
     name: 'Layered Enrichment',
     baseCost: 1e66,
     costGrowth: 2,
@@ -23,16 +30,27 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   }),
   [SEED_AUGMENTATION_IDS.LEEK_DIAGONAL]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.LEEK_DIAGONAL,
+    cropId: 'leek',
     name: 'Diagonal Enrichment',
     cost: 1e68,
   }),
+  [SEED_AUGMENTATION_IDS.RICH_SOIL]: Object.freeze({
+    id: SEED_AUGMENTATION_IDS.RICH_SOIL,
+    cropId: 'leek',
+    name: 'Rich Soil',
+    cost: 5e70,
+    purchaseArea: GAME_AREA_IDS.MISFORTUNE,
+    effectArea: GAME_AREA_IDS.MISFORTUNE,
+  }),
   [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL,
+    cropId: 'corn',
     name: 'Safe Handling',
     cost: 2.5e72,
   }),
   [SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS,
+    cropId: 'corn',
     name: 'Brighter Reflection',
     baseCost: 4e73,
     costGrowth: 10,
@@ -40,11 +58,13 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     }),
   [SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.MIRROR_CORN_REFLECTION_LIMIT,
+    cropId: 'corn',
     name: 'Heat-Resistant Crops',
     cost: 1e78,
   }),
   [SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT,
+    cropId: 'knotweed',
     name: 'Sterile Symbiosis',
     baseCost: 1e180,
     costGrowth: 50,
@@ -54,6 +74,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   }),
   [SEED_AUGMENTATION_IDS.SWEETER_BOND]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.SWEETER_BOND,
+    cropId: 'sweetPotato',
     name: 'Sweeter Bond',
     baseCost: 7e99,
     costGrowth: 1000,
@@ -63,6 +84,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   }),
   [SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES,
+    cropId: 'sweetPotato',
     name: 'Loosened Boundaries',
     baseCost: 1e105,
     costGrowth: 500,
@@ -72,6 +94,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   }),
   [SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS,
+    cropId: 'sweetPotato',
     name: 'Restored Connections',
     cost: 1e109,
     buffDecayDelay: 3,
@@ -79,6 +102,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   }),
   [SEED_AUGMENTATION_IDS.LEECHING_VINE]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.LEECHING_VINE,
+    cropId: 'pumpkin',
     name: 'Leeching Vine',
     cost: 1e120,
     nourishmentExponentPerStrength: 0.1,
@@ -88,6 +112,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   }),
   [SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER,
+    cropId: 'pumpkin',
     name: 'Sneaky Crawler',
     cost: 3e136,
     nourishmentVarietyBonus: 1,
@@ -95,6 +120,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   }),
   [SEED_AUGMENTATION_IDS.GREATER_ABSORPTION]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.GREATER_ABSORPTION,
+    cropId: 'pumpkin',
     name: 'Greater Absorption',
     cost: 6e137,
     splitweedNourishmentStrengthBonus: 1,
@@ -106,6 +132,7 @@ export function createInitialSeedAugmentationState() {
   return {
     leekEnrichmentLevel: 0,
     leekDiagonalUnlocked: false,
+    richSoilUnlocked: false,
     mirrorCornDebuffRemovalUnlocked: false,
     mirrorCornDebuffRemovalEnabled: false,
     mirrorCornEffectivenessLevel: 0,
@@ -157,6 +184,7 @@ export function normalizeSeedAugmentationState(rawState) {
   return {
     leekEnrichmentLevel: Math.min(maximumLevel, Math.max(0, parsedLevel)),
     leekDiagonalUnlocked: rawState?.leekDiagonalUnlocked === true,
+    richSoilUnlocked: rawState?.richSoilUnlocked === true,
     mirrorCornDebuffRemovalUnlocked,
     mirrorCornDebuffRemovalEnabled:
       mirrorCornDebuffRemovalUnlocked &&
@@ -203,6 +231,28 @@ export function getLeekAugmentationYieldBonus(seedAugmentations) {
 export function hasLeekDiagonalAugmentation(seedAugmentations) {
   return normalizeSeedAugmentationState(seedAugmentations)
     .leekDiagonalUnlocked
+}
+
+export function hasRichSoilAugmentation(seedAugmentations) {
+  return seedAugmentations?.richSoilUnlocked === true
+}
+
+export function getRichSoilYieldMultiplier(
+  sourceCropId,
+  recipientBaseHarvest,
+  seedAugmentations = {},
+  activeArea = GAME_AREA_IDS.MAIN,
+) {
+  if (
+    sourceCropId !== 'leek' ||
+    !hasRichSoilAugmentation(seedAugmentations) ||
+    activeArea !== SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RICH_SOIL].effectArea
+  ) {
+    return 1
+  }
+
+  const baseHarvest = Number(recipientBaseHarvest)
+  return Number.isFinite(baseHarvest) ? Math.max(1, baseHarvest) : 1
 }
 
 export function hasMirrorCornDebuffRemovalAugmentation(seedAugmentations) {
@@ -353,6 +403,7 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
   }
 
   const oneTimeAugmentationStateKeys = {
+    [SEED_AUGMENTATION_IDS.RICH_SOIL]: 'richSoilUnlocked',
     [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]:
       'mirrorCornDebuffRemovalUnlocked',
 
@@ -378,11 +429,26 @@ export function isSeedAugmentationVisible(game, augmentationId) {
   const augmentation = SEED_AUGMENTATIONS[augmentationId]
   if (!augmentation) return false
 
+  if (
+    augmentation.purchaseArea &&
+    game.activeArea !== augmentation.purchaseArea &&
+    !(augmentationId === SEED_AUGMENTATION_IDS.RICH_SOIL &&
+      hasRichSoilAugmentation(game.seedAugmentations))
+  ) {
+    return false
+  }
+
   const requiredDemonstrationId = augmentation.requiredDemonstrationId
   const requiredMisfortuneUpgradeId =
     augmentation.requiredMisfortuneUpgradeId
+  const hasMisfortuneAugmentationAccess =
+    augmentation.purchaseArea !== GAME_AREA_IDS.MISFORTUNE ||
+    game.completedMisfortuneUpgrades?.includes(
+      MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
+    ) === true
 
   return (
+    hasMisfortuneAugmentationAccess &&
     (!requiredDemonstrationId ||
       game.capybara?.completedDemonstrations?.includes(
         requiredDemonstrationId,
@@ -395,16 +461,20 @@ export function isSeedAugmentationVisible(game, augmentationId) {
 }
 
 function canPurchaseSeedAugmentation(game, augmentationId) {
+  const augmentation = SEED_AUGMENTATIONS[augmentationId]
   if (
     game.capybara?.completedDemonstrations?.includes('introduction') !== true ||
-    !isSeedAugmentationVisible(game, augmentationId)
+    !isSeedAugmentationVisible(game, augmentationId) ||
+    (augmentation?.purchaseArea &&
+      game.activeArea !== augmentation.purchaseArea)
   ) {
     return false
   }
 
   const isLeekAugmentation =
     augmentationId === SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT ||
-    augmentationId === SEED_AUGMENTATION_IDS.LEEK_DIAGONAL
+    augmentationId === SEED_AUGMENTATION_IDS.LEEK_DIAGONAL ||
+    augmentationId === SEED_AUGMENTATION_IDS.RICH_SOIL
   const isCornAugmentation =
     augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL ||
     augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS ||
@@ -450,6 +520,8 @@ export function purchaseSeedAugmentation(game, augmentationId) {
     }
   } else if (augmentationId === SEED_AUGMENTATION_IDS.LEEK_DIAGONAL) {
     seedAugmentations = { ...state, leekDiagonalUnlocked: true }
+  } else if (augmentationId === SEED_AUGMENTATION_IDS.RICH_SOIL) {
+    seedAugmentations = { ...state, richSoilUnlocked: true }
   } else if (
     augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL
   ) {

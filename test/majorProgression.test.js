@@ -42,6 +42,8 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'crop-soybean',
       'misfortune-upgrade-finalSupport',
       'perfection-five-leaf-clover',
+      'misfortune-upgrade-notSoFinalSupport',
+      'augmentation-rich-soil',
       'capybara-contact',
       'capybara-demonstration-introduction',
       'capybara-demonstration-one',
@@ -368,6 +370,7 @@ test('Misfortune progress includes every permanent Misfortune upgrade', () => {
     MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
     MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
     MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+    MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
   ]
   let game = {
     ...createInitialGame(),
@@ -396,6 +399,10 @@ test('Misfortune progress includes every permanent Misfortune upgrade', () => {
   }
 
   for (const upgradeId of upgradeOrder) {
+    if (upgradeId === MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT) {
+      assert.equal(getNextMajorProgressionGoal(game).id, 'perfection-five-leaf-clover')
+      game = { ...game, cloverAssembly: { progress: 7.77e58, assembled: true } }
+    }
     const goal = getNextMajorProgressionGoal(game)
     assert.equal(goal.id, 'misfortune-upgrade-' + upgradeId)
     assert.equal(goal.category, 'Misfortune upgrade')
@@ -412,6 +419,6 @@ test('Misfortune progress includes every permanent Misfortune upgrade', () => {
 
   assert.equal(
     getNextMajorProgressionGoal(game).id,
-    'perfection-five-leaf-clover',
+    'augmentation-rich-soil',
   )
 })

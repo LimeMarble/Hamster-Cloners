@@ -105,6 +105,9 @@ export function useGameController() {
         blueprint: {
           game,
           fieldIncomePerSecond: derived.capybaraBlueprintCropYield,
+          columnsBuiltPerSecond: derived.columnsBuiltPerSecond,
+          rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
+          floorsBuiltPerSecond: derived.floorsBuiltPerSecond,
           showMonocropLimit: derived.showMonocropLimit,
           monocropLimit: derived.monocropLimit,
           monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
@@ -295,6 +298,18 @@ export function useGameController() {
           MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
         ),
         onUnlockFinalSupport: actions.onUnlockFinalSupport,
+        notSoFinalSupport: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT
+        ],
+        hasNotSoFinalSupport: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
+        ),
+        canUnlockNotSoFinalSupport: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
+        ),
+        onUnlockNotSoFinalSupport: actions.onUnlockNotSoFinalSupport,
         onLeave: actions.onLeaveMisfortuneArea,
       },
       inventions: {

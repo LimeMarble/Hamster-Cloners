@@ -143,6 +143,7 @@ test('Clover Bundle outcome weights and durations match the configured Breezes',
       { id: FORTUNE_EFFECT_IDS.BOUNTY, weight: 0.52, durationSeconds: 117 },
       { id: FORTUNE_EFFECT_IDS.SPLIT, weight: 0.2, durationSeconds: 0 },
       { id: FORTUNE_EFFECT_IDS.OPUS, weight: 0.11, durationSeconds: 27 },
+      { id: FORTUNE_EFFECT_IDS.LEEK_COOKIE, weight: 0, durationSeconds: 55 },
     ],
   )
 

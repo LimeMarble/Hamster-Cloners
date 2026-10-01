@@ -428,6 +428,49 @@
   gap: 12px;
 }
 
+.augmentation-crop-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.augmentation-crop-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.augmentation-crop-tab:focus-visible {
+  outline: 2px solid #ffe0a6;
+  outline-offset: 3px;
+}
+
+.augmentation-crop-icon {
+  flex: 0 0 auto;
+  width: 25px;
+  height: 25px;
+}
+
+.augmentation-crop-count {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.augmentation-crop-panel {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.augmentation-crop-panel h2 {
+  margin: 0;
+}
+
 .seed-augmentation-card {
   display: grid;
   align-content: start;

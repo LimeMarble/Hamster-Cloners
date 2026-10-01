@@ -205,6 +205,8 @@ export function getCapybaraBlueprintCropYield(game) {
     fortuneModifiers.passiveEffectMultiplier,
     game.seedAugmentations,
     game.trade?.totalRabbitRelationsEarned ?? 0,
+    game.activeArea,
+    fortuneModifiers.leekEnrichmentExponent,
   )
 
   return applyCropProductionModifiers(snapshot.total, fortuneModifiers)

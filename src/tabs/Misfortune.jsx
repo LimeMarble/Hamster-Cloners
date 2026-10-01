@@ -68,6 +68,10 @@ export function Misfortune({
   hasFinalSupport,
   canUnlockFinalSupport,
   onUnlockFinalSupport,
+  notSoFinalSupport,
+  hasNotSoFinalSupport,
+  canUnlockNotSoFinalSupport,
+  onUnlockNotSoFinalSupport,
   onLeave,
 }) {
   return (
@@ -381,6 +385,36 @@ export function Misfortune({
                       Need <FormattedNumber value={finalSupport.cost} /> Crops
                     </>
                   )}
+          </button>
+        </article>
+        <article className="misfortune-upgrade-card">
+          <div>
+            <h2>{notSoFinalSupport.name}</h2>
+            <p>
+              Unlocks Misfortune-only Seed Augmentations, beginning with
+              Rich Soil for Enriching Leek. This research does not change
+              Crop effects or Floor Replicator support by itself.
+            </p>
+            <p className="misfortune-upgrade-note">
+              Cost: <FormattedNumber value={notSoFinalSupport.cost} />{' '}
+              Misfortune Crops. This choice is permanent until Misfortune
+              progress is wiped.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={hasNotSoFinalSupport ? 'secondary-button' : 'primary-button'}
+            onClick={onUnlockNotSoFinalSupport}
+            disabled={hasNotSoFinalSupport || !canUnlockNotSoFinalSupport}
+          >
+            {hasNotSoFinalSupport
+              ? 'Accepted'
+              : canUnlockNotSoFinalSupport
+                ? 'Unlock Misfortune augments'
+                : <>
+                    Need <FormattedNumber value={notSoFinalSupport.cost} />{' '}
+                    Misfortune Crops
+                  </>}
           </button>
         </article>
       </div>

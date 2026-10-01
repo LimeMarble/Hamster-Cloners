@@ -279,6 +279,10 @@ export function purchaseMisfortuneUpgrade(game, upgradeId) {
 }
 
 export function wipeMisfortuneAreaProgress(game) {
+  const seedAugmentations = {
+    ...game.seedAugmentations,
+    richSoilUnlocked: false,
+  }
   const clearedFortune = {
     ...normalizeFortuneState(game.fortune),
     bundles: [],
@@ -337,6 +341,7 @@ export function wipeMisfortuneAreaProgress(game) {
       completedMisfortuneUpgrades:
         createInitialMisfortuneUpgradeState(),
       cloverAssembly: createInitialCloverAssemblyState(),
+      seedAugmentations,
       fortune: clearedFortune,
       floorReplicatorMode: FLOOR_REPLICATOR_MODES.CONSTRUCTION,
       areaProgress: clearedAreaProgress,
@@ -354,6 +359,7 @@ export function wipeMisfortuneAreaProgress(game) {
     completedMisfortuneUpgrades:
       createInitialMisfortuneUpgradeState(),
     cloverAssembly: createInitialCloverAssemblyState(),
+    seedAugmentations,
     fortune: clearedFortune,
     floorReplicatorMode: FLOOR_REPLICATOR_MODES.CONSTRUCTION,
     areaProgress: clearedAreaProgress,

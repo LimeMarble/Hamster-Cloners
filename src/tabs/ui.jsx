@@ -2,6 +2,7 @@ import {
   formatWholeNumber,
   getCachedFormattedNumber,
 } from '../game/numberFormat.js'
+import { shouldShowPercentageGain } from '../game/fieldGrowth.js'
 import {
   getCropEffectDescription,
   getCropName,
@@ -18,6 +19,16 @@ export function FormattedNumber({ value, maximumFractionDigits = 1 }) {
 
 export function WholeNumber({ value }) {
   return formatWholeNumber(value)
+}
+
+export function PercentageGain({ value }) {
+  if (!shouldShowPercentageGain(value)) return null
+
+  return (
+    <small className="percentage-gain" title="Estimated gain at current production rates">
+      +<FormattedNumber value={value} maximumFractionDigits={4} />%/s
+    </small>
+  )
 }
 
 export function MonocropStatus({ limit, multiplier }) {
@@ -240,6 +251,25 @@ export function CropHoverInspector({
                   <FormattedNumber value={effect.turnipCount} maximumFractionDigits={0} /> Turnips,{' '}
                   <FormattedNumber value={effect.mirrorCornCount} maximumFractionDigits={0} /> Mirror Corns)
                   apply ×<FormattedNumber value={effect.buffMultiplier} maximumFractionDigits={3} />, followed by a ×<FormattedNumber value={effect.crowdingMultiplier} maximumFractionDigits={3} /> crowding penalty.
+                </li>
+              )
+            }
+
+            if (effect.type === 'rich-soil') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Rich Soil: ×<FormattedNumber value={effect.multiplier} />
+                  {' '}Leek enrichment from this Crop's base harvest.
+                </li>
+              )
+            }
+
+            if (effect.type === 'leek-fortune-cookie') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Leek Fortune Cookie: fully buffed Leek enrichment
+                  {' '}^<FormattedNumber value={effect.exponent} /> before
+                  Rich Soil and recipient buffs.
                 </li>
               )
             }
