@@ -97,6 +97,7 @@ test('Rich Soil unlocks the cookie directly, leaving every existing loadout at 0
     assert.equal(loadout.allocations[cookieId], 0)
   }
   assert.equal(getFortuneEffect(cookieId).durationSeconds, 55)
+  assert.equal(getFortuneEffect(cookieId).description, 'Leek Enrichment ^1.2')
   assert.equal(getFortuneEffect(cookieId).leekEnrichmentExponent, 1.2)
 })
 

@@ -39,7 +39,7 @@ export function RichSoilAugmentation({ game, onPurchaseSeedAugmentation }) {
       <p>Purchased with Misfortune Crops and active only in Misfortune.</p>
       <p>
         Also unlocks Leek Fortune Cookie in the 5-Leaf Clover loadout pool:
-        fully buffed Leek enrichment ^1.2 for 55 seconds, costing 3 Fortune
+        Leek Enrichment ^1.2 for 55 seconds, costing 3 Fortune
         points per 1% chance. The cookie is usable in both areas and starts
         at 0% in every loadout.
       </p>

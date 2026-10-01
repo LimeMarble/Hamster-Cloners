@@ -82,7 +82,7 @@ export const FORTUNE_EFFECTS = Object.freeze([
     icon: '♧',
     weight: 0,
     durationSeconds: 55,
-    description: 'Fully buffed Leek enrichment ^1.2, before Rich Soil and recipient buffs',
+    description: 'Leek Enrichment ^1.2',
     leekEnrichmentExponent: 1.2,
   },
 ])

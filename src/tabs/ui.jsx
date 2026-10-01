@@ -267,9 +267,8 @@ export function CropHoverInspector({
             if (effect.type === 'leek-fortune-cookie') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  Leek Fortune Cookie: fully buffed Leek enrichment
-                  {' '}^<FormattedNumber value={effect.exponent} /> before
-                  Rich Soil and recipient buffs.
+                  Leek Fortune Cookie: Leek Enrichment
+                  {' '}^<FormattedNumber value={effect.exponent} />
                 </li>
               )
             }
