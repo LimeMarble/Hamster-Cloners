@@ -137,6 +137,8 @@ export function Misfortune({
               After every field reset, external Column, Row, and Floor
               production is ×10 for 60 seconds, then ÷2 for 60 seconds before
               returning to normal. This applies in both field areas.
+              {' '}Also unlocks Restart Fields on the Field tab, so you can
+              restart field growth without purchasing another expansion.
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={rushedStart.cost} /> Crops.

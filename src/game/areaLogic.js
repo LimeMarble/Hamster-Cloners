@@ -3,7 +3,7 @@ import {
   createFarmlandMultipliers,
   grantBlueprintSpace,
   revokeBlueprintSpace,
-  resetFarmlandUnits,
+  resetFieldProgress,
 } from './blueprintLogic.js'
 import {
   BLUEPRINT_EXPANSIONS,
@@ -107,6 +107,7 @@ export function createInitialMisfortuneAreaState(
   return {
     crops: 0,
     secondsSinceAreaReset: 0,
+    falseStartEligible: false,
     hamsters: 1,
     rowDuplicators: 0,
     ...getAreaCropUnlockState(),
@@ -127,6 +128,7 @@ export function captureCurrentAreaState(game) {
       game.secondsSinceAreaReset,
       RUSHED_START_TOTAL_DURATION_SECONDS,
     ),
+    falseStartEligible: game.falseStartEligible === true,
     hamsters: toNonNegativeInteger(game.hamsters),
     rowDuplicators: toNonNegativeInteger(game.rowDuplicators),
     ...getAreaCropUnlockState(game),
@@ -184,6 +186,7 @@ export function normalizeStoredAreaState(rawArea, fallbackArea, areaId = GAME_AR
         ? RUSHED_START_TOTAL_DURATION_SECONDS
         : fallback.secondsSinceAreaReset,
     ),
+    falseStartEligible: source.falseStartEligible === true,
     hamsters: toNonNegativeInteger(source.hamsters, fallback.hamsters),
     rowDuplicators: toNonNegativeInteger(
       source.rowDuplicators,
@@ -229,14 +232,11 @@ function resetAreaAndGrantBlueprintSpace(
   areaId,
   trackId,
 ) {
-  const scopedGame = {
+  const scopedGame = resetFieldProgress({
     ...game,
     ...areaState,
     activeArea: areaId,
-    crops: 0,
-    secondsSinceAreaReset: 0,
-    farmland: resetFarmlandUnits(areaState.farmland),
-  }
+  })
   const expandedGame = grantBlueprintSpace(scopedGame, trackId)
 
   return captureCurrentAreaState(expandedGame ?? scopedGame)

@@ -46,7 +46,7 @@ import {
 } from './misfortuneUpgrades.js'
 import { advanceCloverAssemblyState } from './cloverAssemblyLogic.js'
 import { getCropRequirementMultiplier } from './cropRequirements.js'
-import { awardAchievements } from './achievementLogic.js'
+import { advanceFalseStartProgress, awardAchievements } from './achievementLogic.js'
 import { getAchievementHamsterMultiplier, getOilyTreatsFloorMultiplier } from './achievementState.js'
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
@@ -110,11 +110,11 @@ export function advanceGameSimulationStep(
 
   if (isEditingBlueprint) {
     return advanceFortuneState(
-      {
+      advanceFalseStartProgress(currentGame, {
         ...currentGame,
         playtimeSeconds: nextPlaytimeSeconds,
         secondsSinceAreaReset: nextSecondsSinceAreaReset,
-      },
+      }),
       safeElapsedSeconds,
       random,
     )
@@ -329,7 +329,7 @@ export function advanceGameSimulationStep(
   }
 
   return advanceFortuneState(
-    nextGame,
+    advanceFalseStartProgress(currentGame, nextGame, columnsProducedForTick),
     safeElapsedSeconds,
     random,
   )

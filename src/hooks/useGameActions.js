@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   CAPYBARA_DEMONSTRATION_IDS,
+  canRestartFields,
   cancelManateeSurvey,
   claimRabbitContract,
   clearWetlandsConnectionObstructions,
@@ -28,6 +29,7 @@ import {
   MISFORTUNE_UPGRADE_IDS,
   resetForBlueprintExpansion,
   resetForRowDuplicators,
+  restartFields,
   switchGameArea,
   selectFiveLeafLoadout,
   startManateeSurvey,
@@ -235,6 +237,18 @@ export function useGameActions({
       return resetGame ?? currentGame
     })
     setIsRowDuplicatorUnlockPending(false)
+    setActiveTab('field')
+  }
+
+  function restartCurrentFields() {
+    if (!canRestartFields(gameRef.current)) return
+    const didConfirm = window.confirm(
+      'Restart Fields? This resets the current area’s Crops and accumulated Columns, Rows, Floors and Farms. Your machinery, blueprints, expansions and unlocks stay. Rushed Start begins again.',
+    )
+    if (!didConfirm) return
+
+    updateGame((currentGame) => restartFields(currentGame) ?? currentGame)
+    resetBlueprintEditor()
     setActiveTab('field')
   }
 
@@ -653,6 +667,7 @@ export function useGameActions({
 
   return {
     activeTab,
+    onRestartFields: restartCurrentFields,
     activeInventionsTab,
     setActiveInventionsTab,
     navigationActions: {

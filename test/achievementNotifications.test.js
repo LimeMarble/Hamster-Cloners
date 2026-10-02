@@ -25,6 +25,13 @@ test('new awards queue in order and repeated snapshots never duplicate notificat
   assert.deepEqual(appended.pendingIds, ['firstExpansion', 'inventions', 'unionized'])
 })
 
+test('the queued Misfortune achievements use normal achievement popups', () => {
+  const ids = ['cmonDoSomething', 'supportingCast']
+  const state = observeAchievementNotifications(createAchievementNotificationState(), ids)
+  assert.deepEqual(getVisibleAchievementNotificationIds(state), ids)
+  assert.deepEqual(observeAchievementNotifications(state, [...ids]).pendingIds, ids)
+})
+
 test('up to three awards are visible together and only excess awards wait', () => {
   const ids = ['cropRotation', 'firstExpansion', 'inventions', 'unionized', 'trade']
   for (let count = 1; count <= 3; count++) {

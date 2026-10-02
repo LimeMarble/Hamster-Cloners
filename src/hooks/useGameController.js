@@ -120,6 +120,7 @@ export function useGameController() {
           visibleCropIds: derived.visibleCropIds,
           onSelectBlueprintSlot: blueprintEditor.onSelectBlueprintSlot,
           onOpenEditor: blueprintEditor.onOpenEditor,
+          onRestartFields: actions.onRestartFields,
         },
         hamsterPurchase: {
           game,

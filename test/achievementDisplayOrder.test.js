@@ -25,6 +25,14 @@ test('crop thresholds follow crop order and later side mechanics appear later', 
 test('milestones follow the current unlock order and phase shifts remain linear', () => {
   assert.deepEqual(getAchievementsForTier(2).map(({ id }) => id), [
     'inventions', 'firstExpansion', 'unionized', 'firstPerfection', 'rowDuplicators', 'seedAugmentation',
+    'supportingCast',
   ])
   assert.deepEqual(getAchievementsForTier(3).map(({ id }) => id), ['trade', 'misfortune', 'manatees'])
+})
+
+test('perfecting Sweet Potato is listed before forming a Sweet Potato bed', () => {
+  const ids = getAchievementsForTier(1).map(({ id }) => id)
+  assert.ok(ids.indexOf('challengeContest') >= 0)
+  assert.equal(ids.indexOf('sweetDreams'), ids.indexOf('challengeContest') + 1)
+  assert.ok(ids.indexOf('cmonDoSomething') > ids.indexOf('sweetDreams'))
 })

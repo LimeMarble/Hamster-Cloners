@@ -37,6 +37,8 @@ import {
 import {
   createInitialMisfortuneUpgradeState,
   FLOOR_REPLICATOR_MODES,
+  hasMisfortuneUpgrade,
+  MISFORTUNE_UPGRADE_IDS,
 } from './misfortuneUpgrades.js'
 import { createInitialCloverAssemblyState } from './cloverAssemblyLogic.js'
 
@@ -159,6 +161,7 @@ export function createInitialGame() {
     earnedAchievementIds: [],
     playtimeSeconds: 0,
     secondsSinceAreaReset: 0,
+    falseStartEligible: false,
     hamsters: 0,
     totalHamstersHired: 0,
     unionized: false,
@@ -320,6 +323,24 @@ export function resetFarmlandUnits(farmland) {
     ...FIELD_RESET_UNIT_OVERRIDES,
     otherMultiplier: currentFarmland.otherMultiplier,
   })
+}
+
+export function resetFieldProgress(game) {
+  return {
+    ...game,
+    crops: 0,
+    secondsSinceAreaReset: 0,
+    falseStartEligible: canRestartFields(game),
+    farmland: resetFarmlandUnits(game.farmland),
+  }
+}
+
+export function canRestartFields(game) {
+  return hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.RUSHED_START)
+}
+
+export function restartFields(game) {
+  return canRestartFields(game) ? resetFieldProgress(game) : null
 }
 
 export function getBlueprintExpansion(expansionId) {
@@ -487,11 +508,8 @@ export function resetForRowDuplicators(game) {
   }
 
   return {
-    ...game,
-    crops: 0,
-    secondsSinceAreaReset: 0,
+    ...resetFieldProgress(game),
     hasUnlockedRowDuplicators: true,
-    farmland: resetFarmlandUnits(game.farmland),
   }
 }
 
@@ -829,10 +847,7 @@ export function resetForBlueprintExpansion(game, expansionId) {
   }
 
   return {
-    ...game,
+    ...resetFieldProgress(game),
     ...applyBlueprintExpansion(game, expansion),
-    crops: 0,
-    secondsSinceAreaReset: 0,
-    farmland: resetFarmlandUnits(game.farmland),
   }
 }

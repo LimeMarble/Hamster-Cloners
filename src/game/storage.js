@@ -400,6 +400,7 @@ export function normalizeGame(rawGame) {
       rawGame.secondsSinceAreaReset,
       RUSHED_START_TOTAL_DURATION_SECONDS,
     ),
+    falseStartEligible: rawGame.falseStartEligible === true,
     hamsters: toNonNegativeInteger(rawGame.hamsters, initialGame.hamsters),
     totalHamstersHired: toNonNegativeInteger(
       rawGame.totalHamstersHired,

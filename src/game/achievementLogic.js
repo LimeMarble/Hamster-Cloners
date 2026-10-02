@@ -1,10 +1,14 @@
-import { ACHIEVEMENTS } from './achievementDefinitions.js'
+import { ACHIEVEMENTS, FALSE_START_DURATION_SECONDS } from './achievementDefinitions.js'
+import { grantAchievement } from './achievementState.js'
+import { isMirrorCornDebuffRemovalEnabled } from './augmentationLogic.js'
 import { createBlueprintCalculationCache } from './blueprintCalculationCache.js'
 import { CROP_DEFINITIONS } from './crops.js'
 import { getBlueprintCropStats } from './cropStats.js'
 import {
   getBlueprintMonocropMultiplier,
   getGlobalRowProductionEffects,
+  getLeechingGourdDebuffMultiplier,
+  getMirrorCornEffectBlueprint,
   getMonocropCropCount,
   getMonocropThresholdBonus,
   isMirrorCornOverloaded,
@@ -16,6 +20,7 @@ import {
 } from './cropProduction.js'
 import { getFortuneModifiers } from './fortuneLogic.js'
 import { getMonocropThreshold } from './monocropPenalty.js'
+import { getSweetPotatoBeds } from './sweetPotatoLogic.js'
 
 const cacheMetrics = createBlueprintCalculationCache({ structuralFallback: false })
 const cacheStructure = createBlueprintCalculationCache({ structuralFallback: false })
@@ -27,17 +32,34 @@ const metricCropIds = new Map([
   ['sunflower', ['sunflower', 'row-duplicator-efficiency']],
 ])
 
+export function advanceFalseStartProgress(currentGame, nextGame, columnsBuilt = 0) {
+  if (currentGame.falseStartEligible !== true) return nextGame
+
+  const firstMinute = (Number(currentGame.secondsSinceAreaReset) || 0) <
+    FALSE_START_DURATION_SECONDS
+  if (!nextGame.completedMisfortuneUpgrades?.includes('rushedStart') ||
+      (firstMinute && columnsBuilt > 0)) {
+    return { ...nextGame, falseStartEligible: false }
+  }
+
+  return nextGame.secondsSinceAreaReset >= FALSE_START_DURATION_SECONDS
+    ? grantAchievement(nextGame, 'falseStart')
+    : nextGame
+}
+
 function getBlueprintStructure(blueprint) {
   return cacheStructure(blueprint, [], () => {
     const types = new Set()
     const indicesByCrop = new Map()
+    let hasGourd = false
     blueprint.cells.forEach((id, index) => {
+      if (id === 'leechingGourd') hasGourd = true
       if (!CROP_DEFINITIONS[id] || CROP_DEFINITIONS[id].internalOnly || id === 'rootTunnel') return
       types.add(id)
       if (!indicesByCrop.has(id)) indicesByCrop.set(id, [])
       indicesByCrop.get(id).push(index)
     })
-    return { types, indicesByCrop, infested: isWaterLettuceFieldInfested(blueprint) }
+    return { types, indicesByCrop, hasGourd, infested: isWaterLettuceFieldInfested(blueprint) }
   })
 }
 
@@ -61,6 +83,23 @@ function getBlueprintMetrics(game, blueprint, fortune, pendingIds) {
     const monocrop = getBlueprintMonocropMultiplier(blueprint, perfections, seeds)
     metrics.diverseUnpenalized = structure.types.size >= 6 && monocrop >= 1
     metrics.infested = structure.infested
+    if (pendingIds.has('sweetDreams') && perfections.includes('sweetPotato') &&
+        structure.types.has('sweetPotato')) {
+      metrics.sweetPotatoBedSize = getSweetPotatoBeds(blueprint).reduce(
+        (largest, bed) => Math.max(largest, bed.indexes.length), 0,
+      )
+    }
+    if (pendingIds.has('cmonDoSomething') && !structure.infested &&
+        perfections.includes('mirrorCorn') && perfections.includes('leechingGourd') &&
+        structure.hasGourd &&
+        !isMirrorCornDebuffRemovalEnabled(seeds)) {
+      // Use the active crops, so burnt Corn or a burnt Gourd cannot qualify.
+      // Check Gourd specifically: Shoal Grass is a different way to remove debuffs.
+      const effectBlueprint = getMirrorCornEffectBlueprint(blueprint, perfections, seeds)
+      metrics.neutralizedMirrorCorn = (structure.indicesByCrop.get('corn') ?? [])
+        .some((index) => effectBlueprint.cells[index] === 'corn' &&
+          getLeechingGourdDebuffMultiplier(effectBlueprint, index) === 0)
+    }
     if (pendingIds.has('palmOilPlantation')) {
       const threshold = getMonocropThreshold(blueprint.rows * blueprint.columns,
         getMonocropThresholdBonus(blueprint, perfections, seeds))

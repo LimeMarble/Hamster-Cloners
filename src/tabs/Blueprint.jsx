@@ -2,6 +2,7 @@ import { memo } from 'react'
 import {
   BLUEPRINT_SLOT_UNLOCK_HINTS,
   CAPYBARA_DEMONSTRATION_IDS,
+  canRestartFields,
   getFieldsPlanted,
   hasCompletedCapybaraDemonstration,
   isWaterLettuceFieldInfested,
@@ -45,6 +46,7 @@ function BlueprintPanel({
   visibleCropIds,
   onSelectBlueprintSlot,
   onOpenEditor,
+  onRestartFields,
 }) {
   const unitRates = {
     columns: columnsBuiltPerSecond,
@@ -215,7 +217,17 @@ function BlueprintPanel({
           />
         ))}
       </dl>
-
+      {canRestartFields(game) ? (
+        <div className="field-restart-controls">
+          <button type="button" className="secondary-button" onClick={onRestartFields}>
+            Restart Fields
+          </button>
+          <p>
+            Reset this area&apos;s Crops and field growth. Keep machinery,
+            blueprints and unlocks; restart Rushed Start.
+          </p>
+        </div>
+      ) : null}
     </article>
   )
 }
@@ -251,6 +263,7 @@ function areBlueprintPropsEqual(previous, next) {
       nextGame.suffixScientificExponent &&
     previousGame.activeBlueprintSlot === nextGame.activeBlueprintSlot &&
     previousGame.hasUnlockedKnotweed === nextGame.hasUnlockedKnotweed &&
+    canRestartFields(previousGame) === canRestartFields(nextGame) &&
     hasVisitedMisfortune(previousGame) === hasVisitedMisfortune(nextGame) &&
     hasCompletedCapybaraDemonstration(
       previousGame,

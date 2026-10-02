@@ -24,8 +24,8 @@ test('the roster keeps the whimsical achievements, Making Peanuts, and six crop 
   ])
   const sideIds = ACHIEVEMENTS.filter((a) => a.tier === 1 && !a.metric).map((a) => a.id)
   assert.deepEqual(sideIds, ['cropRotation', 'backUnderControl', 'agriculturalDiversity',
-    'controlledBurn', 'thisIsFine', 'absolutelyNothing', 'youGetNothing', 'makingPeanuts',
-    'palmOilPlantation'])
+    'controlledBurn', 'thisIsFine', 'absolutelyNothing', 'youGetNothing', 'makingPeanuts', 'falseStart',
+    'palmOilPlantation', 'challengeContest', 'sweetDreams', 'cmonDoSomething'])
   assert.equal(ACHIEVEMENTS.find((a) => a.id === 'agriculturalDiversity').treats, 10)
   assert.ok(ACHIEVEMENTS.filter((a) => a.tier === 1 && a.id !== 'agriculturalDiversity')
     .every((a) => a.treats === 5))

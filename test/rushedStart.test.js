@@ -5,6 +5,7 @@ import {
   MISFORTUNE_UPGRADE_IDS,
   MISFORTUNE_UPGRADES,
   advanceGameSimulationStep,
+  awardAchievements,
   createInitialGame,
   getRushedStartExternalMultiplier,
   purchaseMisfortuneUpgrade,
@@ -21,7 +22,7 @@ function createRushedStartGame(overrides = {}) {
   }
 }
 
-test('Rushed Start can be purchased in Misfortune for 25M Crops', () => {
+test('Rushed Start can be purchased in Misfortune for its current 250M Crop cost', () => {
   const upgrade = MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.RUSHED_START]
   const baseGame = {
     ...createInitialGame(),
@@ -35,7 +36,7 @@ test('Rushed Start can be purchased in Misfortune for 25M Crops', () => {
   )
 
   assert.ok(purchased)
-  assert.equal(upgrade.cost, 25_000_000)
+  assert.equal(upgrade.cost, 250_000_000)
   assert.equal(purchased.crops, 0)
   assert.equal(purchased.secondsSinceAreaReset, 120)
   assert.deepEqual(purchased.completedMisfortuneUpgrades, [
@@ -81,21 +82,25 @@ test('Rushed Start follows its 60-second boost and penalty windows', () => {
 })
 
 test('Rushed Start multiplies Column, Row, and Floor production', () => {
-  const game = createRushedStartGame({
+  const game = awardAchievements(createRushedStartGame({
     hamsters: 1,
     hasUnlockedRowDuplicators: true,
     rowDuplicators: 1,
     hasUnlockedFloorReplicators: true,
     floorReplicators: 1,
     secondsSinceAreaReset: 0,
-  })
+  }))
+  const baseline = advanceGameSimulationStep({ ...game,
+    completedMisfortuneUpgrades: [] }, 1, { random: () => 1 })
   const advanced = advanceGameSimulationStep(game, 1, {
     random: () => 1,
   })
 
-  assert.ok(Math.abs(advanced.farmland.columns - 1.9) < 1e-10)
-  assert.ok(Math.abs(advanced.farmland.rows - 2.02) < 1e-10)
-  assert.ok(Math.abs(advanced.farmland.floors - 2) < 1e-10)
+  for (const unit of ['columns', 'rows', 'floors']) {
+    const normalGain = baseline.farmland[unit] - game.farmland[unit]
+    const boostedGain = advanced.farmland[unit] - game.farmland[unit]
+    assert.ok(Math.abs(boostedGain / normalGain - 10) < 1e-10, unit)
+  }
   assert.equal(advanced.secondsSinceAreaReset, 1)
 })
 

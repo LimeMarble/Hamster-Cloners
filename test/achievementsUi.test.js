@@ -56,7 +56,7 @@ test('every tile uses its full name as an artwork placeholder, without extra lab
   for (const tier of [1, 2, 3]) {
     const markup = renderToStaticMarkup(createElement(AchievementTier, { tier }))
     const names = [...markup.matchAll(/<span class="achievement-tile-name">([^<]+)<\/span>/g)]
-      .map((match) => match[1])
+      .map((match) => match[1].replaceAll('&#x27;', "'"))
     const expected = ACHIEVEMENTS.filter((achievement) => achievement.tier === tier)
       .map((achievement) => achievement.name)
     assert.deepEqual(names.sort(), expected.sort())
@@ -70,6 +70,24 @@ test('hover details show requirements, earned status, and the Treat reward', () 
   assert.match(markup, /Replace a planted Leek with another crop/)
   assert.match(markup, /✓ Earned/)
   assert.match(markup, /5 Hamster Treats/)
+})
+
+test('queued Misfortune achievements appear in their tiers with requirements and rewards', () => {
+  for (const [id, tier, treats] of [['cmonDoSomething', 1, 5], ['supportingCast', 2, 25]]) {
+    const achievement = ACHIEVEMENTS.find((entry) => entry.id === id)
+    const tiles = renderToStaticMarkup(createElement(AchievementTier, { tier }))
+    assert.ok(tiles.includes(achievement.name.replaceAll("'", '&#x27;')))
+    const otherTier = renderToStaticMarkup(createElement(AchievementTier, { tier: tier === 1 ? 2 : 1 }))
+    assert.ok(!otherTier.includes(achievement.name.replaceAll("'", '&#x27;')))
+    const details = renderToStaticMarkup(createElement(AchievementDetails, { achievement }))
+    assert.match(details, new RegExp(`${treats} Hamster Treats`))
+    if (id === 'cmonDoSomething') {
+      assert.match(details, /Leeching Gourd in Misfortune/)
+      assert.match(details, /debuff-removal augmentation is disabled/)
+    } else {
+      assert.match(details, /Purchase Burdened Foundations/)
+    }
+  }
 })
 
 test('Palm Oil Plantation appears in Tier 1 with its 500× requirement and Treat reward', () => {
