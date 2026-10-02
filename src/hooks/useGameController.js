@@ -358,6 +358,12 @@ export function useGameController() {
       },
     },
     overlays: {
+      achievementNotifications: {
+        earnedAchievementIds: game.earnedAchievementIds,
+        numberNotation: game.numberNotation,
+        suffixScientificExponent: game.suffixScientificExponent,
+        onOpenAchievements: actions.navigationActions.onShowAchievements,
+      },
       backgroundCatchUp: backgroundCatchUp
         ? {
             ...backgroundCatchUp,

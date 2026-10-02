@@ -1,6 +1,7 @@
 import { BackgroundCatchUpOverlay } from './BackgroundCatchUpOverlay.jsx'
 import { BlueprintEdit } from './BlueprintEdit.jsx'
 import { TestingPanel } from './TestingPanel.jsx'
+import { AchievementNotifications } from './AchievementNotifications.jsx'
 
 function MonocropWarning({ onClose }) {
   return (
@@ -125,6 +126,7 @@ function MisfortuneWipeConfirmation({ onCancel, onConfirm }) {
 }
 
 export function GameOverlays({
+  achievementNotifications,
   backgroundCatchUp,
   blueprintEditor,
   monocropWarning,
@@ -135,6 +137,7 @@ export function GameOverlays({
 }) {
   return (
     <>
+      {achievementNotifications ? <AchievementNotifications {...achievementNotifications} /> : null}
       {blueprintEditor ? <BlueprintEdit {...blueprintEditor} /> : null}
       {testingPanel ? <TestingPanel {...testingPanel} /> : null}
       {monocropWarning.isOpen ? (

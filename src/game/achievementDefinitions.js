@@ -63,3 +63,20 @@ export const ACHIEVEMENTS = Object.freeze([
 ])
 
 export const HAMSTER_TREAT_DIVISOR = 100
+
+// Display order is independent of awarding/save order. Crop thresholds follow
+// crop order, not assumed difficulty: optimization can earn them earlier.
+export const ACHIEVEMENT_DISPLAY_ORDER = Object.freeze([
+  'cropRotation', 'backUnderControl',
+  'leek1000', 'potato100', 'turnip3', 'apple10B',
+  'agriculturalDiversity', 'youGetNothing',
+  'sunflower400K', 'canola800', 'controlledBurn', 'absolutelyNothing', 'thisIsFine',
+  'inventions', 'firstExpansion', 'unionized', 'firstPerfection', 'rowDuplicators', 'seedAugmentation',
+  'trade', 'misfortune', 'manatees',
+])
+
+export function getAchievementsForTier(tier) {
+  const order = new Map(ACHIEVEMENT_DISPLAY_ORDER.map((id, index) => [id, index]))
+  return ACHIEVEMENTS.filter((achievement) => achievement.tier === tier)
+    .sort((left, right) => (order.get(left.id) ?? Infinity) - (order.get(right.id) ?? Infinity))
+}

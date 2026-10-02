@@ -6,7 +6,7 @@ import {
   hasCompletedCapybaraDemonstration,
   isWaterLettuceFieldInfested,
 } from '../game/gameLogic.js'
-import { getCropName } from '../game/crops.js'
+import { getCropName, hasVisitedMisfortune } from '../game/crops.js'
 import {
   getPercentageGainPerSecond,
   getProductPercentageGainPerSecond,
@@ -79,6 +79,8 @@ function BlueprintPanel({
   const visibleBlueprintSlotIndexes = Array.from(
     { length: visibleBlueprintSlotCount },
     (_, slotIndex) => slotIndex,
+  ).filter((slotIndex) =>
+    slotIndex !== 3 || slotIndex < unlockedBlueprintSlotCount || hasVisitedMisfortune(game),
   )
   const plantedCropDescription =
     plantedCrops.length > 0
@@ -249,6 +251,7 @@ function areBlueprintPropsEqual(previous, next) {
       nextGame.suffixScientificExponent &&
     previousGame.activeBlueprintSlot === nextGame.activeBlueprintSlot &&
     previousGame.hasUnlockedKnotweed === nextGame.hasUnlockedKnotweed &&
+    hasVisitedMisfortune(previousGame) === hasVisitedMisfortune(nextGame) &&
     hasCompletedCapybaraDemonstration(
       previousGame,
       CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
