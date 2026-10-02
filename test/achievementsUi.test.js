@@ -52,6 +52,18 @@ test('all three tiers are selectable with only the active tier rendered', () => 
   assert.doesNotMatch(phases, /Crop Rotation|A Bright Idea/)
 })
 
+test('every tile uses its full name as an artwork placeholder, without extra labels or invented images', () => {
+  for (const tier of [1, 2, 3]) {
+    const markup = renderToStaticMarkup(createElement(AchievementTier, { tier }))
+    const names = [...markup.matchAll(/<span class="achievement-tile-name">([^<]+)<\/span>/g)]
+      .map((match) => match[1])
+    const expected = ACHIEVEMENTS.filter((achievement) => achievement.tier === tier)
+      .map((achievement) => achievement.name)
+    assert.deepEqual(names.sort(), expected.sort())
+    assert.doesNotMatch(markup, /<img|role="tooltip"|Hamster Treats|✓/)
+  }
+})
+
 test('hover details show requirements, earned status, and the Treat reward', () => {
   const achievement = ACHIEVEMENTS.find(({ id }) => id === 'cropRotation')
   const markup = renderToStaticMarkup(createElement(AchievementDetails, { achievement, isEarned: true }))

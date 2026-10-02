@@ -45,8 +45,8 @@ function AchievementCard({ achievement, isEarned }) {
       bounds.left + bounds.width / 2 - width / 2))
     const placeAbove = window.innerHeight - bounds.bottom < 220 && bounds.top > window.innerHeight / 2
     setPosition({ left, width, ...(placeAbove
-      ? { bottom: window.innerHeight - bounds.top + 8 }
-      : { top: bounds.bottom + 8 }) })
+      ? { bottom: window.innerHeight - bounds.top }
+      : { top: bounds.bottom }) })
   }
 
   useEffect(() => {
@@ -71,9 +71,7 @@ function AchievementCard({ achievement, isEarned }) {
   return (
     <div className={`achievement-card ${isEarned ? 'achievement-earned' : ''}`} ref={cardRef}
       onPointerEnter={(event) => { if (event.pointerType !== 'touch') showDetails() }}
-      onPointerLeave={() => {
-        if (!cardRef.current.contains(document.activeElement)) setPosition(null)
-      }}
+      onPointerLeave={(event) => { if (event.pointerType !== 'touch') setPosition(null) }}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPosition(null) }}>
       <button type="button" className="achievement-name" aria-label={`${achievement.name}: ${isEarned ? 'Earned' : 'Not earned'}`}
         aria-describedby={position ? detailsId : undefined}
@@ -84,11 +82,13 @@ function AchievementCard({ achievement, isEarned }) {
           } else showDetails()
         }}
         onKeyDown={(event) => { if (event.key === 'Escape') setPosition(null) }}>
-        {achievement.name}
+        <span className="achievement-tile-name">{achievement.name}</span>
       </button>
       {position ? (
-        <div className="achievement-details" style={position} id={detailsId} role="tooltip">
-          <AchievementDetails achievement={achievement} isEarned={isEarned} />
+        <div className={`achievement-details-anchor ${position.bottom !== undefined ? 'achievement-details-above' : ''}`} style={position}>
+          <div className="achievement-details" id={detailsId} role="tooltip">
+            <AchievementDetails achievement={achievement} isEarned={isEarned} />
+          </div>
         </div>
       ) : null}
     </div>
