@@ -10,6 +10,7 @@ const TIERS = [
 ]
 
 function Requirement({ achievement }) {
+  if (achievement.monocropFactor) return <>Have one crop type count at least <FormattedNumber value={achievement.monocropFactor} /> times the Monocrop limit in one field blueprint.</>
   if (!achievement.metric) return achievement.description
   const { subject, target, unit } = achievement
   const isPercentage = unit === 'hamsterBonus' || unit === 'duplicatorBonus'

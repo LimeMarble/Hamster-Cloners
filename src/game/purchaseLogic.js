@@ -192,8 +192,96 @@ export function getHamsterStateAfterHire({
   }
 }
 
-export function getMaxHamsterPurchase(game) {
-  let nextGame = {
+const bulkPurchaseCostCache = new Map()
+const MAX_BULK_PURCHASE = 10000
+
+function getBulkPurchaseSetup(game, kind) {
+  const costMultiplier = getGameAreaCostMultiplier(game)
+  const owned = Math.max(0, Math.floor(Number(game[
+    kind === 'hamster' ? 'hamsters' : kind === 'row' ? 'rowDuplicators' : 'floorReplicators'
+  ]) || 0))
+  let limit = MAX_BULK_PURCHASE
+  let blockedReason = null
+  let getCost
+
+  if (kind === 'hamster') {
+    if (!game.unionized) {
+      limit = Math.max(0, UNIONIZATION_HAMSTER_COUNT - 1 -
+        Math.max(owned, Math.floor(Number(game.totalHamstersHired) || 0)))
+    }
+    getCost = (offset) => getNextHamsterCost(owned + offset, game.unionized, costMultiplier)
+    if (limit === 0) blockedReason = 'unionization'
+  } else if (kind === 'row') {
+    getCost = (offset) => getNextRowDuplicatorCost(owned + offset, costMultiplier)
+    if (!game.hasUnlockedRowDuplicators) blockedReason = 'locked'
+  } else if (kind === 'floor') {
+    getCost = (offset) => getNextFloorReplicatorCost(owned + offset, costMultiplier)
+    if (!game.hasUnlockedFloorReplicators) blockedReason = 'locked'
+    else if (!canPurchaseFloorReplicatorsInArea(game)) blockedReason = 'area'
+  } else {
+    throw new Error('Unknown machinery purchase type: ' + kind)
+  }
+
+  const key = [owned, costMultiplier, Boolean(game.unionized), limit].join(':')
+  let cache = bulkPurchaseCostCache.get(kind)
+  if (cache?.key !== key) {
+    cache = { key, totals: [0], getCost }
+    bulkPurchaseCostCache.set(kind, cache)
+  }
+  return { cache, limit, blockedReason }
+}
+
+// Totals are relative to the current owned count, avoiding subtraction of
+// huge lifetime totals. Only newly affordable prices are added between ticks.
+export function getBulkPurchaseQuote(game, kind, requestedQuantity = Infinity) {
+  const { cache, limit, blockedReason: unavailableReason } = getBulkPurchaseSetup(game, kind)
+  const crops = Math.max(0, Number(game.crops) || 0)
+  const exactBatch = requestedQuantity !== Infinity
+  const requested = exactBatch
+    ? Math.max(0, Math.min(MAX_BULK_PURCHASE, Math.floor(requestedQuantity)))
+    : limit
+  const blockedReason = unavailableReason || (requested > limit ? 'unionization' : null)
+  const { totals, getCost } = cache
+  const extend = () => {
+    const cost = getCost(totals.length - 1)
+    totals.push(Number.isFinite(cost) ? totals.at(-1) + cost : Infinity)
+  }
+
+  if (!blockedReason) {
+    if (exactBatch) {
+      while (totals.length <= requested && Number.isFinite(totals.at(-1))) extend()
+    } else {
+      while (totals.length <= limit && totals.at(-1) <= crops &&
+        Number.isFinite(totals.at(-1))) extend()
+    }
+  }
+
+  let quantity = 0
+  if (!blockedReason) {
+    let low = 0
+    let high = Math.min(requested, totals.length - 1)
+    while (low < high) {
+      const middle = Math.ceil((low + high) / 2)
+      if (Number.isFinite(totals[middle]) && totals[middle] <= crops) low = middle
+      else high = middle - 1
+    }
+    quantity = exactBatch && low !== requested ? 0 : low
+  }
+  const cost = exactBatch
+    ? blockedReason ? null : totals[requested] ?? Infinity
+    : totals[quantity]
+
+  return {
+    quantity,
+    cost,
+    shortfall: cost === null ? 0 : Math.max(0, cost - crops),
+    canAfford: quantity > 0,
+    blockedReason,
+  }
+}
+
+export function getMaxHamsterPurchase(game, requestedQuantity = Infinity) {
+  const nextGame = {
     hamsters: Math.max(0, Math.floor(Number(game.hamsters) || 0)),
     totalHamstersHired: Math.max(
       0,
@@ -205,102 +293,46 @@ export function getMaxHamsterPurchase(game) {
       Math.floor(Number(game.postUnionHamstersHired) || 0),
     ),
   }
-  let remainingCrops = Math.max(0, Number(game.crops) || 0)
-  let purchased = 0
-  const costMultiplier = getGameAreaCostMultiplier(game)
-
-  while (purchased < 10000) {
-    if (
-      !nextGame.unionized &&
-      nextGame.totalHamstersHired >= UNIONIZATION_HAMSTER_COUNT - 1
-    ) {
-      break
-    }
-
-    const cost = getNextHamsterCost(
-      nextGame.hamsters,
-      nextGame.unionized,
-      costMultiplier,
-    )
-    if (!Number.isFinite(cost) || cost > remainingCrops) {
-      break
-    }
-
-    remainingCrops -= cost
-    nextGame = getHamsterStateAfterHire(nextGame)
-    purchased += 1
-  }
+  const { quantity: purchased, cost } = getBulkPurchaseQuote(game, 'hamster', requestedQuantity)
 
   return {
     ...nextGame,
-    crops: remainingCrops,
+    hamsters: nextGame.hamsters + purchased,
+    totalHamstersHired: purchased > 0
+      ? Math.max(nextGame.hamsters, nextGame.totalHamstersHired) + purchased
+      : nextGame.totalHamstersHired,
+    postUnionHamstersHired: nextGame.postUnionHamstersHired +
+      (nextGame.unionized ? purchased : 0),
+    crops: Math.max(0, Number(game.crops) || 0) - (purchased > 0 ? cost : 0),
     purchased,
   }
 }
 
 
-export function getMaxDuplicatorPurchase(game) {
-  let rowDuplicators = Math.max(
+export function getMaxDuplicatorPurchase(game, requestedQuantity = Infinity) {
+  const rowDuplicators = Math.max(
     0,
     Math.floor(Number(game.rowDuplicators) || 0),
   )
-  let remainingCrops = Math.max(0, Number(game.crops) || 0)
-  let purchased = 0
-  const costMultiplier = getGameAreaCostMultiplier(game)
-
-  if (game.hasUnlockedRowDuplicators !== true) {
-    return { rowDuplicators, crops: remainingCrops, purchased }
-  }
-
-  while (purchased < 10000) {
-    const cost = getNextRowDuplicatorCost(rowDuplicators, costMultiplier)
-    if (!Number.isFinite(cost) || cost > remainingCrops) {
-      break
-    }
-
-    remainingCrops -= cost
-    rowDuplicators += 1
-    purchased += 1
-  }
+  const { quantity: purchased, cost } = getBulkPurchaseQuote(game, 'row', requestedQuantity)
 
   return {
-    rowDuplicators,
-    crops: remainingCrops,
+    rowDuplicators: rowDuplicators + purchased,
+    crops: Math.max(0, Number(game.crops) || 0) - (purchased > 0 ? cost : 0),
     purchased,
   }
 }
 
-export function getMaxFloorReplicatorPurchase(game) {
-  let floorReplicators = Math.max(
+export function getMaxFloorReplicatorPurchase(game, requestedQuantity = Infinity) {
+  const floorReplicators = Math.max(
     0,
     Math.floor(Number(game.floorReplicators) || 0),
   )
-  let remainingCrops = Math.max(0, Number(game.crops) || 0)
-  let purchased = 0
-
-  if (
-    game.hasUnlockedFloorReplicators !== true ||
-    !canPurchaseFloorReplicatorsInArea(game)
-  ) {
-    return { floorReplicators, crops: remainingCrops, purchased }
-  }
-
-  const costMultiplier = getGameAreaCostMultiplier(game)
-  while (purchased < 10000) {
-    const cost = getNextFloorReplicatorCost(
-      floorReplicators,
-      costMultiplier,
-    )
-    if (!Number.isFinite(cost) || cost > remainingCrops) break
-
-    remainingCrops -= cost
-    floorReplicators += 1
-    purchased += 1
-  }
+  const { quantity: purchased, cost } = getBulkPurchaseQuote(game, 'floor', requestedQuantity)
 
   return {
-    floorReplicators,
-    crops: remainingCrops,
+    floorReplicators: floorReplicators + purchased,
+    crops: Math.max(0, Number(game.crops) || 0) - (purchased > 0 ? cost : 0),
     purchased,
   }
 }

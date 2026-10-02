@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { FLOOR_REPLICATOR_COST_TIER_SIZE } from '../game/gameLogic.js'
 import { FormattedNumber, WholeNumber } from './ui.jsx'
+import { BulkPurchaseButtons } from './BulkPurchaseButtons.jsx'
 
 const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
   floorReplicators,
@@ -160,6 +161,7 @@ export function FloorReplicatorPurchase({
   isFloorReplicatorSupportMode,
   floorReplicatorSupportPassiveEffectBonus,
   onBuyFloorReplicator,
+  onBuyTenFloorReplicators,
   onBuyMaxFloorReplicators,
   onToggleFloorReplicatorMode,
 }) {
@@ -198,14 +200,12 @@ export function FloorReplicatorPurchase({
         >
           Build Floor Replicator
         </button>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={onBuyMaxFloorReplicators}
-          disabled={!canAfford}
-        >
-          Buy max
-        </button>
+        <BulkPurchaseButtons
+          game={game}
+          kind="floor"
+          onBuyTen={onBuyTenFloorReplicators}
+          onBuyMax={onBuyMaxFloorReplicators}
+        />
       </div>
       <p className="affordability" aria-live="polite">
         {!canPurchaseFloorReplicators ? (

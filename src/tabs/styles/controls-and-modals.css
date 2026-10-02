@@ -106,6 +106,31 @@ dd {
   gap: 8px;
 }
 
+.bulk-purchase-button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: min(100%, 240px);
+  min-width: 0;
+  background: #090909;
+  overflow-wrap: anywhere;
+}
+
+.bulk-purchase-button:hover:not(:disabled) {
+  background: #141414;
+}
+
+.bulk-purchase-cost,
+.bulk-purchase-shortfall {
+  font-size: 0.74rem;
+  text-transform: none;
+}
+
+.bulk-purchase-shortfall {
+  font-weight: 400;
+}
+
 .affordability {
   min-height: 1.2em;
   margin: 10px 0 0;

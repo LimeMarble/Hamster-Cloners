@@ -4,6 +4,7 @@ import {
   HIRE_MAX_UNLOCK_COUNT,
 } from '../game/gameLogic.js'
 import { FormattedNumber, WholeNumber } from './ui.jsx'
+import { BulkPurchaseButtons } from './BulkPurchaseButtons.jsx'
 
 const HamsterDetails = memo(function HamsterDetails({
   hamsters,
@@ -103,8 +104,8 @@ export function HamsterPurchase({
   cropHamsterEfficiencyMultiplier,
   hamsterExternalMultiplier,
   unionStatus,
-  canHireMax,
   onBuyHamster,
+  onBuyTenHamsters,
   onBuyMaxHamsters,
 }) {
   const canAffordHamster = game.crops >= nextHamsterCost
@@ -134,14 +135,12 @@ export function HamsterPurchase({
           Hire &amp; teach hamster
         </button>
         {game.totalHamstersHired >= HIRE_MAX_UNLOCK_COUNT ? (
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={onBuyMaxHamsters}
-            disabled={!canHireMax}
-          >
-            Hire max
-          </button>
+          <BulkPurchaseButtons
+            game={game}
+            kind="hamster"
+            onBuyTen={onBuyTenHamsters}
+            onBuyMax={onBuyMaxHamsters}
+          />
         ) : null}
       </div>
       <p className="affordability" aria-live="polite">

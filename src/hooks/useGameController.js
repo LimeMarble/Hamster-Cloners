@@ -130,8 +130,8 @@ export function useGameController() {
             derived.cropHamsterEfficiencyMultiplier,
           hamsterExternalMultiplier: derived.hamsterExternalMultiplier,
           unionStatus: derived.unionStatus,
-          canHireMax: derived.canHireMax,
           onBuyHamster: actions.purchaseActions.onBuyHamster,
+          onBuyTenHamsters: actions.purchaseActions.onBuyTenHamsters,
           onBuyMaxHamsters: actions.purchaseActions.onBuyMaxHamsters,
         },
         duplicatorPurchase: game.hasUnlockedRowDuplicators
@@ -147,6 +147,8 @@ export function useGameController() {
               rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
               onBuyRowDuplicator:
                 actions.purchaseActions.onBuyRowDuplicator,
+              onBuyTenRowDuplicators:
+                actions.purchaseActions.onBuyTenRowDuplicators,
               onBuyMaxRowDuplicators:
                 actions.purchaseActions.onBuyMaxRowDuplicators,
             }
@@ -171,6 +173,8 @@ export function useGameController() {
               floorsBuiltPerSecond: derived.floorsBuiltPerSecond,
               onBuyFloorReplicator:
                 actions.purchaseActions.onBuyFloorReplicator,
+              onBuyTenFloorReplicators:
+                actions.purchaseActions.onBuyTenFloorReplicators,
               onBuyMaxFloorReplicators:
                 actions.purchaseActions.onBuyMaxFloorReplicators,
               onToggleFloorReplicatorMode:

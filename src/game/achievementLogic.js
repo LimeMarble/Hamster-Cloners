@@ -5,6 +5,8 @@ import { getBlueprintCropStats } from './cropStats.js'
 import {
   getBlueprintMonocropMultiplier,
   getGlobalRowProductionEffects,
+  getMonocropCropCount,
+  getMonocropThresholdBonus,
   isMirrorCornOverloaded,
   isWaterLettuceFieldInfested,
 } from './cropEffects.js'
@@ -13,6 +15,7 @@ import {
   getCropHamsterEfficiencyMultiplier,
 } from './cropProduction.js'
 import { getFortuneModifiers } from './fortuneLogic.js'
+import { getMonocropThreshold } from './monocropPenalty.js'
 
 const cacheMetrics = createBlueprintCalculationCache({ structuralFallback: false })
 const cacheStructure = createBlueprintCalculationCache({ structuralFallback: false })
@@ -58,6 +61,15 @@ function getBlueprintMetrics(game, blueprint, fortune, pendingIds) {
     const monocrop = getBlueprintMonocropMultiplier(blueprint, perfections, seeds)
     metrics.diverseUnpenalized = structure.types.size >= 6 && monocrop >= 1
     metrics.infested = structure.infested
+    if (pendingIds.has('palmOilPlantation')) {
+      const threshold = getMonocropThreshold(blueprint.rows * blueprint.columns,
+        getMonocropThresholdBonus(blueprint, perfections, seeds))
+      metrics.monocropOverload = 0
+      for (const cropId of structure.types) {
+        metrics.monocropOverload = Math.max(metrics.monocropOverload,
+          getMonocropCropCount(blueprint, cropId) / threshold)
+      }
+    }
     if (needsPeanuts) {
       const production = getBaseFieldProductionSnapshot(blueprint, perfections,
         game.trade?.rabbitContractsCompleted ?? 0, fortune.passiveEffectMultiplier,

@@ -72,6 +72,16 @@ test('hover details show requirements, earned status, and the Treat reward', () 
   assert.match(markup, /5 Hamster Treats/)
 })
 
+test('Palm Oil Plantation appears in Tier 1 with its 500× requirement and Treat reward', () => {
+  setActiveNumberNotation('suffix', 303)
+  const tiles = renderToStaticMarkup(createElement(AchievementTier, { tier: 1 }))
+  assert.match(tiles, /Palm Oil Plantation/)
+  const achievement = ACHIEVEMENTS.find(({ id }) => id === 'palmOilPlantation')
+  const details = renderToStaticMarkup(createElement(AchievementDetails, { achievement }))
+  assert.match(details, /500 times the Monocrop limit in one field blueprint/)
+  assert.match(details, /5 Hamster Treats/)
+})
+
 test('revised achievement names and Potato threshold display in tiles and hover details', () => {
   setActiveNumberNotation('suffix', 303)
   const tiles = renderToStaticMarkup(createElement(AchievementTier, { tier: 1 }))

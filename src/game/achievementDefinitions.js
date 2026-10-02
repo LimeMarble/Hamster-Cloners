@@ -7,6 +7,7 @@ const strength = (id, name, metric, target, subject, unit) => ({
 const milestone = (id, name, description, tier, condition) => ({
   id, name, description, tier, treats: tier === 3 ? 50 : 25, condition,
 })
+const PALM_OIL_MONOCROP_FACTOR = 500
 
 // Tiers measure importance, not progression era. No achievements are hidden.
 export const ACHIEVEMENTS = Object.freeze([
@@ -31,6 +32,12 @@ export const ACHIEVEMENTS = Object.freeze([
   side('makingPeanuts', 'Making Peanuts',
     'Make at least 5 Crops/sec from one field blueprint in Misfortune. Unlocks Peanuts.',
     (game, metrics) => game.activeArea === 'misfortune' && metrics.misfortuneFieldYield >= 5),
+  {
+    ...side('palmOilPlantation', 'Palm Oil Plantation',
+      `Have one crop type count at least ${PALM_OIL_MONOCROP_FACTOR} times the Monocrop limit in one field blueprint.`,
+      (_game, metrics) => metrics.monocropOverload >= PALM_OIL_MONOCROP_FACTOR),
+    monocropFactor: PALM_OIL_MONOCROP_FACTOR,
+  },
   // Keep historical IDs so revised names/thresholds preserve earned saves.
   strength('potato100', 'Potato Power', 'potato', 25, 'One Potato', 'hamsterBonus'),
   strength('leek1000', 'Enrichment Programme', 'leek', 1000,
@@ -75,7 +82,7 @@ export const ACHIEVEMENT_DISPLAY_ORDER = Object.freeze([
   'leek1000', 'potato100', 'turnip3', 'apple10B',
   'agriculturalDiversity', 'youGetNothing',
   'sunflower400K', 'canola800', 'controlledBurn', 'absolutelyNothing', 'thisIsFine',
-  'makingPeanuts',
+  'makingPeanuts', 'palmOilPlantation',
   'inventions', 'firstExpansion', 'unionized', 'firstPerfection', 'rowDuplicators', 'seedAugmentation',
   'trade', 'misfortune', 'manatees',
 ])

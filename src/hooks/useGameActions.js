@@ -131,11 +131,19 @@ export function useGameActions({
     completeHamsterHire()
   }
 
-  function buyMaxHamsters() {
+  function buyBulkMachinery(purchase, quantity = Infinity) {
     updateGame((currentGame) => {
-      const { purchased, ...nextGame } = getMaxHamsterPurchase(currentGame)
+      const { purchased, ...nextGame } = purchase(currentGame, quantity)
       return purchased > 0 ? { ...currentGame, ...nextGame } : currentGame
     })
+  }
+
+  function buyTenHamsters() {
+    buyBulkMachinery(getMaxHamsterPurchase, 10)
+  }
+
+  function buyMaxHamsters() {
+    buyBulkMachinery(getMaxHamsterPurchase)
   }
 
   function buyRowDuplicator() {
@@ -162,11 +170,12 @@ export function useGameActions({
     })
   }
 
+  function buyTenRowDuplicators() {
+    buyBulkMachinery(getMaxDuplicatorPurchase, 10)
+  }
+
   function buyMaxRowDuplicators() {
-    updateGame((currentGame) => {
-      const { purchased, ...nextGame } = getMaxDuplicatorPurchase(currentGame)
-      return purchased > 0 ? { ...currentGame, ...nextGame } : currentGame
-    })
+    buyBulkMachinery(getMaxDuplicatorPurchase)
   }
 
   function buyFloorReplicator() {
@@ -196,12 +205,12 @@ export function useGameActions({
     })
   }
 
+  function buyTenFloorReplicators() {
+    buyBulkMachinery(getMaxFloorReplicatorPurchase, 10)
+  }
+
   function buyMaxFloorReplicators() {
-    updateGame((currentGame) => {
-      const { purchased, ...nextGame } =
-        getMaxFloorReplicatorPurchase(currentGame)
-      return purchased > 0 ? { ...currentGame, ...nextGame } : currentGame
-    })
+    buyBulkMachinery(getMaxFloorReplicatorPurchase)
   }
 
   function confirmBlueprintExpansionReset() {
@@ -659,10 +668,13 @@ export function useGameActions({
     },
     purchaseActions: {
       onBuyHamster: buyHamster,
+      onBuyTenHamsters: buyTenHamsters,
       onBuyMaxHamsters: buyMaxHamsters,
       onBuyRowDuplicator: buyRowDuplicator,
+      onBuyTenRowDuplicators: buyTenRowDuplicators,
       onBuyMaxRowDuplicators: buyMaxRowDuplicators,
       onBuyFloorReplicator: buyFloorReplicator,
+      onBuyTenFloorReplicators: buyTenFloorReplicators,
       onBuyMaxFloorReplicators: buyMaxFloorReplicators,
       onToggleFloorReplicatorMode: switchFloorReplicatorMode,
     },

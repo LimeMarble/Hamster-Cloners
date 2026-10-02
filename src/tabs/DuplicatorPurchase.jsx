@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import { FormattedNumber, WholeNumber } from './ui.jsx'
+import { BulkPurchaseButtons } from './BulkPurchaseButtons.jsx'
 
 const DuplicatorDetails = memo(function DuplicatorDetails({
   rowDuplicators,
@@ -85,6 +86,7 @@ export function DuplicatorPurchase({
   rowDuplicatorExternalMultiplier,
   rowsBuiltPerSecond,
   onBuyRowDuplicator,
+  onBuyTenRowDuplicators,
   onBuyMaxRowDuplicators,
 }) {
   const canAffordDuplicator = game.crops >= nextRowDuplicatorCost
@@ -114,14 +116,12 @@ export function DuplicatorPurchase({
         >
           Build Row Duplicator
         </button>
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={onBuyMaxRowDuplicators}
-          disabled={!canAffordDuplicator}
-        >
-          Buy max
-        </button>
+        <BulkPurchaseButtons
+          game={game}
+          kind="row"
+          onBuyTen={onBuyTenRowDuplicators}
+          onBuyMax={onBuyMaxRowDuplicators}
+        />
       </div>
       <p className="affordability" aria-live="polite">
         {canAffordDuplicator ? (
