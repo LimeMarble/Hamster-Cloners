@@ -109,7 +109,8 @@ export function AchievementTier({ tier, earnedAchievementIds = [] }) {
   )
 }
 
-export const Achievements = memo(function Achievements({ earnedAchievementIds = [], numberNotation, suffixScientificExponent }) {
+export const Achievements = memo(function Achievements({ earnedAchievementIds = [],
+  hamsterTreatMultiplier, hamsterTreatExponent = 1, numberNotation, suffixScientificExponent }) {
   const [activeTier, setActiveTier] = useState(1)
   // The notation props also invalidate memoization when the display setting changes.
   const earned = new Set(earnedAchievementIds)
@@ -123,9 +124,10 @@ export const Achievements = memo(function Achievements({ earnedAchievementIds = 
       </div>
       <dl className="achievement-summary field-stats">
         <div><dt>Hamster Treats</dt><dd><FormattedNumber value={getHamsterTreats(earnedAchievementIds)} /></dd></div>
-        <div><dt>External Hamster multiplier</dt><dd>×<FormattedNumber value={getAchievementHamsterMultiplier(earnedAchievementIds)} maximumFractionDigits={2} /></dd></div>
+        <div><dt>External Hamster multiplier</dt><dd>×<FormattedNumber value={hamsterTreatMultiplier ?? getAchievementHamsterMultiplier(earnedAchievementIds)} maximumFractionDigits={2} /></dd></div>
+        {hamsterTreatExponent > 1 ? <div><dt>Hamster Treat exponent</dt><dd><FormattedNumber value={hamsterTreatExponent} maximumFractionDigits={3} /></dd></div> : null}
       </dl>
-      <p className="card-copy">Each Treat adds 1% external Hamster efficiency. Awards stay earned across resets and both areas.</p>
+      <p className="card-copy">Each Treat adds 1% to the base external Hamster multiplier{hamsterTreatExponent > 1 ? ', raised to the exponent above by Peanuts' : ''}. Awards stay earned across resets and both areas.</p>
       <div className="achievement-tier-tabs" role="tablist" aria-label="Achievement tiers">
         {TIERS.map(({ id, label }, index) => (
           <button type="button" role="tab" id={`achievement-tier-tab-${id}`} key={id}

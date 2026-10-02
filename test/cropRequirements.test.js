@@ -101,7 +101,8 @@ for (const stage of stages) {
     for (const perfection of Object.values(CROP_PERFECTIONS).filter(({ cost }) => cost != null)) {
       assert.equal(
         getCropPerfectionCost(perfection.id, game),
-        perfection.cost * (perfection.costCurrency === 'rabbitRelations' ? 1 : stage.multiplier),
+        perfection.cost * (perfection.costCurrency === 'rabbitRelations' ? 1 : stage.multiplier) *
+          (perfection.costCurrency !== 'rabbitRelations' && stage.area === 'main' && perfection.cost >= 4e95 ? 500 : 1),
       )
     }
     const cost = CROP_PERFECTIONS.enrichingLeek.cost * stage.multiplier
@@ -169,7 +170,7 @@ test('milestone purchases use their scaled cost, but the Row Duplicator reset re
     const precursor = { ...game, activeArea: 'main', completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER] }
     const precursorCost = getGreaterBlueprintingCost(precursor)
     assert.equal(getGreaterBlueprintingCost(game), precursorCost, 'Greater Blueprinting always uses main currency')
-    assert.equal(precursorCost, GREATER_BLUEPRINTING_COST * getCropRequirementMultiplier(precursor))
+    assert.equal(precursorCost, GREATER_BLUEPRINTING_COST * getCropRequirementMultiplier(precursor) * 500)
     assert.equal(unlockGreaterBlueprinting({ ...precursor, crops: precursorCost }).crops, 0)
   }
 })
@@ -191,7 +192,7 @@ test('Misfortune upgrade and assembly requirements receive exactly one 10× incr
 
 test('Demo 2 scales its Misfortune goal, not Demo 0/1 or the development-goal count', () => {
   assert.equal(CAPYBARA_DEMONSTRATIONS[0].target, 2e13)
-  assert.equal(CAPYBARA_DEMONSTRATIONS[1].target, 1e20)
+  assert.equal(CAPYBARA_DEMONSTRATIONS[1].target, 2.5e20)
   assert.equal(CAPYBARA_DEMONSTRATIONS[2].target, MISFORTUNE_CROP_GOAL * 10)
   assert.equal(CAPYBARA_DEMONSTRATIONS[3].target, 3)
   const game = stageGame(stages[3])

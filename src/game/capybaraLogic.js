@@ -49,7 +49,7 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     number: 1,
     name: 'Beyond Fortune',
     goal: 'Reach the listed field-blueprint Crop-yield requirement.',
-    target: 1e20,
+    target: 2.5e20,
     unit: 'blueprint Crop yield',
     restrictions: ['No Breeze of Fortune effects may be active'],
     rewardName: 'Floor Replicators',

@@ -62,6 +62,9 @@ export function SignedPercentage({ value }) {
 }
 
 function CropPassiveStatValue({ stat }) {
+  if (stat.format === 'exponent-bonus') {
+    return <>+<FormattedNumber value={stat.value} maximumFractionDigits={3} /></>
+  }
   if (stat.format === 'percentage') {
     return <SignedPercentage value={stat.value} />
   }

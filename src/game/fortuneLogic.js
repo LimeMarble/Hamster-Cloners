@@ -596,6 +596,17 @@ export function spawnCloverBundle(game, random = Math.random) {
   }
 }
 
+export function removeActiveFortuneEffect(game, effectId) {
+  const fortune = normalizeFortuneState(game.fortune)
+  const activeEffects = fortune.activeEffects.filter((effect) => effect.id !== effectId)
+  if (activeEffects.length === fortune.activeEffects.length) return game
+
+  return {
+    ...game,
+    fortune: { ...fortune, activeEffects },
+  }
+}
+
 export function wipeActiveFortuneEffects(game) {
   return {
     ...game,

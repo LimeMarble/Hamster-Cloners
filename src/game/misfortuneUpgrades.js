@@ -20,6 +20,7 @@ export const MISFORTUNE_UPGRADE_IDS = Object.freeze({
   UNFORTUNATE_ROW: 'unfortunateRow',
   FORTUNATE_COLUMN: 'fortunateColumn',
   RUSHED_START: 'rushedStart',
+  OILY_TREATS: 'oilyTreats',
   ADVERSITY_GROWN_TUBERS: 'adversityGrownTubers',
   BURDENED_FOUNDATIONS: 'burdenedFoundations',
   NOURISHING_MISERY: 'nourishingMisery',
@@ -38,6 +39,7 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
   [MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
     name: 'Fortunate Column',
+    requiredCropPerfectionId: 'sweetPotato',
     cost: 7.77e50,
     cropProductionMultiplier: 1.25,
   }),
@@ -53,11 +55,13 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
   [MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
     name: 'Adversity-Grown Tubers',
+    requiredCropPerfectionId: 'sweetPotato',
     cost: 7e22,
   }),
   [MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
     name: 'Burdened Foundations',
+    requiredCropPerfectionId: 'sweetPotato',
     cost: 4.44e29,
     passiveEffectBonusPerTier: 0.01,
     floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
@@ -65,11 +69,13 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
   [MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
     name: 'Nourishing Misery',
+    requiredCropPerfectionId: 'sweetPotato',
     cost: 2e37,
   }),
   [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
     name: 'Hunt for Something Greater',
+    requiredCropPerfectionId: 'sweetPotato',
     cost: 7.77e40,
     secondsPerTimeMultiplier: 60,
     maximumTimeMultiplier: 10,
@@ -77,13 +83,21 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
   [MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
     name: 'Final Support',
+    requiredCropPerfectionId: 'sweetPotato',
     cost: 2.5e62,
     passiveEffectBonusPerTier: 0.002,
     floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
   }),
+  [MISFORTUNE_UPGRADE_IDS.OILY_TREATS]: Object.freeze({
+    id: MISFORTUNE_UPGRADE_IDS.OILY_TREATS,
+    name: 'Oily Treats',
+    // Upgrade prices receive the existing Misfortune ×10 requirement factor.
+    cost: 1.8e11,
+  }),
   [MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
     name: 'Not-So-Final Support',
+    requiredCropPerfectionId: 'sweetPotato',
     cost: 1e70,
   }),
 })
@@ -130,6 +144,14 @@ export function hasMisfortuneUpgrade(game, upgradeId) {
     Array.isArray(game?.completedMisfortuneUpgrades) &&
     game.completedMisfortuneUpgrades.includes(upgradeId)
   )
+}
+
+export function isMisfortuneUpgradeVisible(game, upgradeId) {
+  const upgrade = MISFORTUNE_UPGRADES[upgradeId]
+  return Boolean(upgrade && (
+    !upgrade.requiredCropPerfectionId ||
+    game?.completedCropPerfections?.includes(upgrade.requiredCropPerfectionId)
+  ))
 }
 
 export function unlockMisfortuneUpgrade(game, upgradeId) {
@@ -259,6 +281,7 @@ function getAreaUnlockedCropIds(game, areaId) {
     area.hasUnlockedWheat,
     [],
     game?.floorReplicators,
+    game?.earnedAchievementIds?.includes('makingPeanuts') === true,
   )
 
   return getVisibleCropIds(

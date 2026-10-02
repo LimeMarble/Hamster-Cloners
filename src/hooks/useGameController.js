@@ -4,7 +4,10 @@ import {
   canPurchaseFloorReplicatorsInArea,
   canUnlockMisfortuneUpgrade,
   collectCloverBundle,
+  removeActiveFortuneEffect,
   getHuntForSomethingGreaterMultiplier,
+  getAchievementHamsterMultiplier,
+  getAchievementTreatExponent,
   getMissingMisfortuneCropTypeIds,
   hasMisfortuneUpgrade,
   isFloorReplicatorSupportModeAvailable,
@@ -230,6 +233,12 @@ export function useGameController() {
           MISFORTUNE_UPGRADE_IDS.RUSHED_START,
         ),
         onUnlockRushedStart: actions.onUnlockRushedStart,
+        oilyTreats: MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.OILY_TREATS],
+        hasOilyTreats: hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.OILY_TREATS),
+        canUnlockOilyTreats: canUnlockMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.OILY_TREATS),
+        hasSweetPotato: derived.hasSweetPotato,
+        onUnlockOilyTreats: actions.onUnlockOilyTreats,
+        onVisitSweetPotatoInMain: actions.onVisitSweetPotatoInMain,
         adversityGrownTubers: MISFORTUNE_UPGRADES[
           MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS
         ],
@@ -341,6 +350,8 @@ export function useGameController() {
       },
       achievements: {
         earnedAchievementIds: game.earnedAchievementIds,
+        hamsterTreatMultiplier: getAchievementHamsterMultiplier(game),
+        hamsterTreatExponent: getAchievementTreatExponent(game),
         numberNotation: game.numberNotation,
         suffixScientificExponent: game.suffixScientificExponent,
       },
@@ -403,6 +414,8 @@ export function useGameController() {
           updateGame((currentGame) =>
             collectCloverBundle(currentGame, bundleIndex),
           ),
+        onRemoveEffect: (effectId) =>
+          updateGame((currentGame) => removeActiveFortuneEffect(currentGame, effectId)),
       },
     },
   }

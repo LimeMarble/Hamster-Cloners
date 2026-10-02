@@ -291,6 +291,7 @@ export function getRabbitContractCropIds(game) {
     game.hasUnlockedWheat,
     [],
     game.floorReplicators,
+    game.earnedAchievementIds?.includes('makingPeanuts') === true,
   ).filter(isRabbitContractCropEligible)
 }
 

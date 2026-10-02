@@ -50,7 +50,7 @@ export function SplitweedAugmentations({ game, onPurchaseSeedAugmentation }) {
           Each directly adjacent Crop that inherently produces no harvest
           adds +1 to the Monocrop limit per level. Each Crop is counted
           once per adjacent Splitweed, even when it occupies multiple
-          tiles. Each new level costs 50 times the previous one.
+          tiles.
         </p>
         <dl className='seed-augmentation-stats'>
           <div>

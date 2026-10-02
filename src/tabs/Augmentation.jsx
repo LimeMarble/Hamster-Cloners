@@ -36,7 +36,7 @@ export function Augmentation({
           <p className='eyebrow'>Capybara technology</p>
           <h1 id='augmentation-title'>Seed Augmentation</h1>
           <p className='trade-copy'>
-            Modify perfected Crops with powerful, increasingly expensive
+            Modify perfected Crops with powerful
             improvements. Choose a Crop below to view its upgrades.
           </p>
         </div>

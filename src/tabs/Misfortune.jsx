@@ -46,6 +46,12 @@ export function Misfortune({
   hasRushedStart,
   canUnlockRushedStart,
   onUnlockRushedStart,
+  oilyTreats,
+  hasOilyTreats,
+  canUnlockOilyTreats,
+  hasSweetPotato,
+  onUnlockOilyTreats,
+  onVisitSweetPotatoInMain,
   adversityGrownTubers,
   hasAdversityGrownTubers,
   canUnlockAdversityGrownTubers,
@@ -146,6 +152,42 @@ export function Misfortune({
                   )}
           </button>
         </article>
+        {oilyTreats ? (
+          <article className="misfortune-upgrade-card">
+            <div>
+              <h2>{oilyTreats.name}</h2>
+              <p>
+                Floor Replicator production gains the square root of your
+                Hamster Treat multiplier, including Peanuts. Applies in both
+                areas; Hamsters and Row Duplicators gain no additional bonus.
+              </p>
+              <p>
+                Unlocks access to Sweet Potato perfection back in the main
+                field. Return to Inventions → Crop Perfection to purchase it;
+                perfected Sweet Potatoes also work in Misfortune.
+              </p>
+              <p className="misfortune-upgrade-note">
+                Cost: <FormattedNumber value={oilyTreats.cost} /> Misfortune Crops.
+                This choice is permanent until Misfortune progress is wiped.
+              </p>
+              {hasOilyTreats && !hasSweetPotato ? (
+                <button type="button" className="secondary-button"
+                  onClick={onVisitSweetPotatoInMain}>
+                  View Sweet Potato in Main
+                </button>
+              ) : null}
+            </div>
+            <button type="button"
+              className={hasOilyTreats ? 'secondary-button' : 'primary-button'}
+              onClick={onUnlockOilyTreats}
+              disabled={hasOilyTreats || !canUnlockOilyTreats}>
+              {hasOilyTreats ? 'Accepted' : canUnlockOilyTreats ? 'Accept Oily Treats' :
+                <>Need <FormattedNumber value={oilyTreats.cost} /> Crops</>}
+            </button>
+          </article>
+        ) : null}
+        {hasSweetPotato ? (
+          <>
         <article className="misfortune-upgrade-card">
           <div>
             <h2>Adversity-Grown Tubers</h2>
@@ -417,6 +459,8 @@ export function Misfortune({
                   </>}
           </button>
         </article>
+          </>
+        ) : null}
       </div>
       <button type="button" className="secondary-button" onClick={onLeave}>
         Return to main field

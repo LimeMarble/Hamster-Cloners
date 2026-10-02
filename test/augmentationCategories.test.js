@@ -140,3 +140,17 @@ test('Corn purchase and toggle status remain intact inside its category', () => 
   const disabledHtml = render({ ...purchased, seedAugmentations: { ...purchased.seedAugmentations, mirrorCornDebuffRemovalEnabled: false } }, 'corn')
   assert.ok(disabledHtml.includes('Remove Hamster debuff'))
 })
+
+test('every crop category hides cost-growth explanations but keeps effects and purchase prices', () => {
+  const game = lateGame()
+  for (const category of getVisibleAugmentationCategories(game)) {
+    const html = render(game, category.cropId)
+    assert.doesNotMatch(html, /increasingly expensive|Each new level costs|times the previous/i)
+    assert.match(html, /Augment —/)
+    assert.match(html, /Crops/)
+    assert.equal(cardCount(html), category.augmentationIds.length)
+  }
+  assert.match(render(game, 'corn'), /Each level adds \+1 to the multiplier/)
+  assert.match(render(game, 'sweetPotato'), /growth exponent cap by 4/)
+  assert.match(render(game, 'knotweed'), /adds \+1 to the Monocrop limit per level/)
+})

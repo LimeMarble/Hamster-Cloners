@@ -105,7 +105,6 @@ export function SweetPotatoAugmentations({
         </div>
         <p>
           Each level raises the connected-bed growth exponent cap by 4.
-          Each new level costs 1,000 times the previous one.
         </p>
         <dl className='seed-augmentation-stats'>
           <div>
@@ -150,7 +149,6 @@ export function SweetPotatoAugmentations({
           Each level raises the base in the Sweet Potato crowding penalty by
           0.05. The penalty remains base^(m × (m − 1) / 2), where m is the
           bed&apos;s number of unique connected Turnip and Mirror Corn buffs.
-          Each new level costs 500 times the previous one.
         </p>
         <dl className='seed-augmentation-stats'>
           <div>

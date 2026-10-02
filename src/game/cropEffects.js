@@ -64,6 +64,7 @@ const getCachedGlobalPassiveEffectMultiplier =
 const getCachedMangroveNurseryEffect = createBlueprintCalculationCache()
 const getCachedSweetPotatoBedEffects = createBlueprintCalculationCache()
 const getCachedSoybeanMachineryEffect = createBlueprintCalculationCache()
+const getCachedPeanutTreatEffect = createBlueprintCalculationCache()
 
 export {
   getAdjacentCropConnections,
@@ -263,10 +264,37 @@ export function getHarvestBonusConnections(
 }
 
 export function getMonocropCropCount(blueprint, crop) {
+  const count = getPlantedCropCount(blueprint, crop)
   return (
-    getPlantedCropCount(blueprint, crop) *
+    count ** (CROP_DEFINITIONS[crop]?.monocropCountExponent ?? 1) *
     (CROP_DEFINITIONS[crop]?.monocropCountWeight ?? 1)
   )
+}
+
+export function getPeanutTreatEffect(
+  blueprint,
+  completedCropPerfections = [],
+  passiveEffectMultiplier = 1,
+  seedAugmentations = {},
+) {
+  return getCachedPeanutTreatEffect(blueprint,
+    [completedCropPerfections, passiveEffectMultiplier, seedAugmentations], () => {
+      const count = getPlantedCropCount(blueprint, 'peanuts')
+      const activeCount = isWaterLettuceFieldInfested(blueprint) ? 0 :
+        blueprint.cells.reduce((total, crop, index) => total + (crop === 'peanuts' &&
+          !isMirrorCornOverloaded(blueprint, index, completedCropPerfections,
+            seedAugmentations) ? 1 : 0), 0)
+      const monocropCount = getMonocropCropCount(blueprint, 'peanuts')
+      const bonusPerPeanut = count === 0 || activeCount === 0 ? 0 :
+        applyMonocropPenaltyToBonus(CROP_DEFINITIONS.peanuts.treatExponentBonus,
+          monocropCount, blueprint.rows * blueprint.columns,
+          getMonocropThresholdBonus(blueprint, completedCropPerfections,
+            seedAugmentations)) *
+        getGlobalPassiveEffectMultiplier(blueprint, completedCropPerfections,
+          passiveEffectMultiplier, seedAugmentations)
+      return { count, activeCount, monocropCount, bonusPerPeanut,
+        exponentBonus: bonusPerPeanut * activeCount }
+    })
 }
 
 function getAdjacentCropIdentity(blueprint, index) {

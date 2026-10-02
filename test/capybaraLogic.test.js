@@ -251,7 +251,12 @@ test('Demonstration 1 allows planted Clover but bans active Breeze effects', () 
     },
   }
 
-  assert.equal(target, 1e20)
+  assert.equal(target, 2.5e20)
+  assert.equal(getCapybaraDemonstrationStatus(
+    introductionCompleteGame,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+    { blueprintCropYield: 1e20 },
+  ).canComplete, false)
   assert.equal(
     CAPYBARA_DEMONSTRATIONS[1].rewardName,
     'Floor Replicators',

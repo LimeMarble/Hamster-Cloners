@@ -2,6 +2,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   createInitialGame,
+  createBlueprint,
+  CAPYBARA_DEMONSTRATIONS,
+  FORTUNE_EFFECT_IDS,
   CLOVER_ASSEMBLY_PART_REQUIREMENT,
   getNextMajorProgressionGoal,
   MAJOR_PROGRESSION_GOALS,
@@ -21,6 +24,8 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'crop-potato',
       'crop-turnip',
       'crop-perfection',
+      'crop-peanuts',
+      'misfortune-upgrade-oilyTreats',
       'perfection-enrichingLeek',
       'perfection-mirrorCorn',
       'crop-apple-tree',
@@ -43,12 +48,12 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'capybara-contact',
       'capybara-demonstration-introduction',
       'capybara-demonstration-one',
+      'perfection-sweetPotato',
       'crop-soybean',
       'misfortune-upgrade-finalSupport',
       'perfection-five-leaf-clover',
       'misfortune-upgrade-notSoFinalSupport',
       'augmentation-rich-soil',
-      'perfection-sweetPotato',
       'perfection-samplingLentil',
       'perfection-blazingCarrot',
       'capybara-demonstration-two',
@@ -273,22 +278,39 @@ test('major progression advances to the earliest unfinished goal', () => {
   }
   const secondDemonstrationGoal = getNextMajorProgressionGoal(game)
   assert.equal(secondDemonstrationGoal.id, 'capybara-demonstration-one')
-  assert.equal(secondDemonstrationGoal.target, 1e20)
+  assert.equal(secondDemonstrationGoal.target, 2.5e20)
   assert.equal(secondDemonstrationGoal.displayProgressAsDash, false)
+  assert.match(secondDemonstrationGoal.description, /No Breeze of Fortune effects may be active/)
+  assert.ok(secondDemonstrationGoal.description.includes(CAPYBARA_DEMONSTRATIONS[1].hint))
+  assert.doesNotMatch(secondDemonstrationGoal.description, /without a planted|no planted/i)
 
-  const cloverPlantedGoal = getNextMajorProgressionGoal({
+  const cloverPlantedGame = {
     ...game,
-    blueprint: {
-      ...game.blueprint,
-      cells: game.blueprint.cells.map((crop, index) =>
-        index === 0 ? 'fourLeafClover' : crop,
-      ),
-    },
-  })
+    blueprint: createBlueprint({ rows: 1, columns: 2, cells: ['leek', 'fourLeafClover'] }),
+  }
+  const cloverPlantedGoal = getNextMajorProgressionGoal(cloverPlantedGame)
   assert.equal(cloverPlantedGoal.id, 'capybara-demonstration-one')
-  assert.equal(cloverPlantedGoal.current, 0)
-  assert.equal(cloverPlantedGoal.progress, 0)
+  assert.ok(cloverPlantedGoal.current > 0)
+  assert.ok(cloverPlantedGoal.progress > 0)
   assert.equal(cloverPlantedGoal.displayProgressAsDash, false)
+
+  const breezeActiveGame = {
+    ...cloverPlantedGame,
+    fortune: { ...game.fortune, activeEffects: [{ id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 10 }] },
+  }
+  const breezeActiveGoal = getNextMajorProgressionGoal(breezeActiveGame)
+  assert.equal(breezeActiveGoal.id, 'capybara-demonstration-one')
+  assert.equal(breezeActiveGoal.current, 0)
+  assert.equal(breezeActiveGoal.progress, 0)
+  assert.equal(breezeActiveGoal.isReady, false)
+  assert.equal(breezeActiveGoal.displayProgressAsDash, true)
+
+  const expiredBreezeGoal = getNextMajorProgressionGoal({
+    ...breezeActiveGame,
+    fortune: { ...game.fortune, activeEffects: [{ id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 0 }] },
+  })
+  assert.equal(expiredBreezeGoal.displayProgressAsDash, false)
+  assert.ok(expiredBreezeGoal.current > 0)
 
   game = {
     ...game,
@@ -369,6 +391,7 @@ test('Misfortune progress includes every permanent Misfortune upgrade', () => {
   const upgradeOrder = [
     MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
     MISFORTUNE_UPGRADE_IDS.RUSHED_START,
+    MISFORTUNE_UPGRADE_IDS.OILY_TREATS,
     MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
     MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
     MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
@@ -380,6 +403,7 @@ test('Misfortune progress includes every permanent Misfortune upgrade', () => {
   let game = {
     ...createInitialGame(),
     activeArea: 'misfortune',
+    earnedAchievementIds: ['makingPeanuts'],
     crops: 1e200,
     totalHamstersHired: 1000,
     unionized: true,

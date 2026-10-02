@@ -233,6 +233,21 @@ export const CROP_DEFINITIONS = {
       '1 Crop per slot · +444% global Row production per horizontal Soybean connection · +444% global Floor production per complete 2×2 Soybean square',
     unlockDescription: `Unlocks at ${SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT.toLocaleString()} Floor Replicators`,
   },
+  peanuts: {
+    name: 'Peanuts',
+    icon: '🥜',
+    baseYield: 150,
+    hamsterEfficiencyBonus: 0,
+    treatExponentBonus: 0.5,
+    monocropCountExponent: 2,
+    passiveProtectionTier: 2,
+    canBeMirrorCornTarget: false,
+    isRewardCrop: true,
+    effectDescription:
+      '150 Crops per slot · +0.5 to the Hamster Treat multiplier exponent per Peanut · n Peanuts count as n² crops toward their Monocrop limit · exponent bonus cannot be boosted by adjacent crops',
+    unlockDescription:
+      'Make at least 5 Crops/sec from one field blueprint in Misfortune (Making Peanuts)',
+  },
   shoalGrass: {
     name: 'Shoal Grass',
     icon: '🍃',
@@ -385,6 +400,7 @@ export const CROP_PERFECTIONS = {
     bedBuffCrowdingMultiplier: 0.5,
     requiresRowDuplicators: true,
     requiresMisfortune: true,
+    requiredMisfortuneUpgradeId: 'oilyTreats',
     baseEffectDescription: '1 Crop per slot',
     effectDescription:
       'Orthogonally connected Sweet Potatoes form one bed · each bed gives +2 × n × 1.5^min(n − 1, 11) Hamster Efficiency · every unique connected Turnip or Mirror Corn buffs the whole bed once, followed by a ×0.5^(m(m − 1) / 2) crowding penalty',
@@ -748,6 +764,7 @@ export function getUnlockedCropIds(
   hasUnlockedWheat = false,
   unlockedManateeCropIds = [],
   floorReplicators = 0,
+  hasUnlockedPeanuts = false,
 ) {
   const unlockedCrops = ['leek']
 
@@ -801,6 +818,7 @@ export function getUnlockedCropIds(
       unlockedCrops.push(cropId)
     }
   })
+  if (hasUnlockedPeanuts) unlockedCrops.push('peanuts')
 
   return unlockedCrops
 }

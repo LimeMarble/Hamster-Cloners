@@ -5,6 +5,7 @@ import {
   getAchievementHamsterMultiplier, getHamsterTreats, grantAchievement,
   advanceGameSimulationStep, getBlueprintCropStats, getFortuneModifiers,
   getCropHamsterEfficiencyMultiplier, getGlobalRowProductionEffects,
+  getBaseFieldIncome,
   MISFORTUNE_UPGRADE_IDS, FLOOR_REPLICATOR_MODES,
   collectCloverBundle, createInitialFiveLeafState, spawnCloverBundle,
   resetForBlueprintExpansion,
@@ -15,15 +16,15 @@ function withBlueprint(blueprint, extra = {}) {
   return { ...createInitialGame(), blueprint, blueprintSlots: [blueprint], ...extra }
 }
 
-test('the roster keeps the seven whimsical achievements and only six requested crop thresholds', () => {
+test('the roster keeps the whimsical achievements, Making Peanuts, and six crop thresholds', () => {
   assert.deepEqual(ACHIEVEMENTS.filter((achievement) => achievement.metric)
     .map(({ metric, target }) => [metric, target]), [
-    ['potato', 1], ['leek', 1000], ['turnip', 3], ['apple', 1e10],
+    ['potato', 25], ['leek', 1000], ['turnip', 3], ['apple', 1e10],
     ['sunflower', 4000], ['canola', 800],
   ])
   const sideIds = ACHIEVEMENTS.filter((a) => a.tier === 1 && !a.metric).map((a) => a.id)
   assert.deepEqual(sideIds, ['cropRotation', 'backUnderControl', 'agriculturalDiversity',
-    'controlledBurn', 'thisIsFine', 'absolutelyNothing', 'youGetNothing'])
+    'controlledBurn', 'thisIsFine', 'absolutelyNothing', 'youGetNothing', 'makingPeanuts'])
   assert.equal(ACHIEVEMENTS.find((a) => a.id === 'agriculturalDiversity').treats, 10)
   assert.ok(ACHIEVEMENTS.filter((a) => a.tier === 1 && a.id !== 'agriculturalDiversity')
     .every((a) => a.treats === 5))
@@ -79,7 +80,23 @@ test('Potato and Turnip checks use individual effective passives, not summed bon
   assert.ok(!awardAchievements(ordinary).earnedAchievementIds.includes('turnip3'))
   const strong = withBlueprint(createBlueprint({ rows: 3, columns: 3,
     cells: [null, 'turnip', null, 'turnip', 'sweetPotato', 'turnip', null, 'turnip'] }))
-  assert.ok(awardAchievements(strong).earnedAchievementIds.includes('potato100'))
+  assert.ok(!awardAchievements(strong).earnedAchievementIds.includes('potato100'))
+})
+
+test('Potato Power requires +2500% from one Potato, inclusive of the exact threshold', () => {
+  const support = {
+    floorReplicators: 495000,
+    floorReplicatorMode: FLOOR_REPLICATOR_MODES.SUPPORT,
+    completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT],
+  }
+  const exact = withBlueprint(createBlueprint({ cells: ['sweetPotato'] }), support)
+  const fortune = getFortuneModifiers(exact)
+  const stats = getBlueprintCropStats(exact.blueprint, 0, [], 0, 0, 0, fortune, exact.seedAugmentations)
+  assert.equal(stats.passiveStats.find((stat) => stat.id === 'hamster-efficiency').value, 25)
+  assert.ok(awardAchievements(exact).earnedAchievementIds.includes('potato100'))
+  const below = withBlueprint(createBlueprint({ rows: 2, columns: 2, cells: ['sweetPotato', 'sweetPotato'] }),
+    { ...support, floorReplicators: 494990 })
+  assert.ok(!awardAchievements(below).earnedAchievementIds.includes('potato100'))
 })
 
 test('Leek, Apple and Sunflower achievements use per-crop strength with relevant modifiers', () => {
@@ -130,17 +147,33 @@ test('Nothing checks one blueprint, independently of having zero planted fields'
   assert.ok(awardAchievements(useless).earnedAchievementIds.includes('youGetNothing'))
 })
 
-test('Controlled Burn requires overload plus a surviving harvest in the same blueprint', () => {
+test('This is Fine requires only a burnt crop, even when the entire blueprint has no harvest', () => {
   const blueprint = createBlueprint({ rows: 4, columns: 4,
     cells: ['corn', null, 'corn', null, null, 'leek', null, null,
       'corn', null, null, null, null, null, null, 'leek'],
     mirrorCornTargets: [5, null, 5, null, null, null, null, null, 5] })
   const game = withBlueprint(blueprint, { completedCropPerfections: ['mirrorCorn'] })
   assert.ok(awardAchievements(game).earnedAchievementIds.includes('controlledBurn'))
-  const allBurnt = createBlueprint({ ...blueprint, cells: blueprint.cells.map((id, index) => index === 15 ? null : id) })
-  // Mirror Corn still harvests, so this also legitimately has a surviving harvest.
-  assert.ok(awardAchievements(withBlueprint(allBurnt, { completedCropPerfections: ['mirrorCorn'] }))
+  const noHarvest = createBlueprint({ ...blueprint, cells: blueprint.cells.map((id, index) =>
+    index === 15 ? null : index === 1 || index === 4 ? 'knotweed' : id) })
+  assert.ok(getBaseFieldIncome(noHarvest, ['mirrorCorn']) <= 0)
+  assert.ok(awardAchievements(withBlueprint(noHarvest, { completedCropPerfections: ['mirrorCorn'] }))
     .earnedAchievementIds.includes('controlledBurn'))
+  assert.ok(!awardAchievements(withBlueprint(blueprint)).earnedAchievementIds.includes('controlledBurn'))
+  const emptyTarget = createBlueprint({ ...blueprint, cells: blueprint.cells.map((id, index) => index === 5 ? null : id) })
+  assert.ok(!awardAchievements(withBlueprint(emptyTarget, { completedCropPerfections: ['mirrorCorn'] }))
+    .earnedAchievementIds.includes('controlledBurn'))
+  assert.ok(!awardAchievements({ ...game, seedAugmentations: { ...game.seedAugmentations, mirrorCornReflectionLimitUnlocked: true } })
+    .earnedAchievementIds.includes('controlledBurn'))
+})
+
+test('renamed achievements and the increased Potato threshold preserve existing saved awards', () => {
+  const ids = ['controlledBurn', 'thisIsFine', 'potato100']
+  const restored = importGame(exportGame({ ...createInitialGame(), earnedAchievementIds: ids }))
+  assert.deepEqual(restored.earnedAchievementIds, ids)
+  assert.equal(getHamsterTreats(restored), 15)
+  assert.equal(ACHIEVEMENTS.find(({ id }) => id === 'controlledBurn').name, 'This is Fine')
+  assert.equal(ACHIEVEMENTS.find(({ id }) => id === 'thisIsFine').name, 'This is NOT Fine')
 })
 
 test('Absolutely Nothing awards on collection, never just on configuring or cheat-granting an effect', () => {

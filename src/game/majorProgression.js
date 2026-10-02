@@ -24,6 +24,7 @@ import {
   MISFORTUNE_UPGRADE_IDS,
   MISFORTUNE_UPGRADES,
   hasMisfortuneUpgrade,
+  isMisfortuneUpgradeVisible,
 } from './misfortuneUpgrades.js'
 import {
   RABBIT_UNLOCK_IDS,
@@ -131,11 +132,27 @@ function createMisfortuneUpgradeGoal(upgradeId, description) {
     unit: 'Misfortune Crops',
     description,
     isApplicable: (game) =>
-      game.activeArea === GAME_AREA_IDS.MISFORTUNE,
+      game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
+      isMisfortuneUpgradeVisible(game, upgradeId),
     isComplete: (game) => hasMisfortuneUpgrade(game, upgradeId),
     getCurrent: (game) => game.crops,
     requiresAction: true,
   }
+}
+
+const SWEET_POTATO_PERFECTION_GOAL = {
+  ...createPerfectionGoal('sweetPotato'),
+  isApplicable: (game) =>
+    hasVisitedMisfortune(game) ||
+    hasCropPerfection(game, 'sweetPotato') ||
+    hasCompletedCapybaraDemonstration(
+      game,
+      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+    ),
+  isLocked: (game) => !isCropPerfectionVisible(game, 'sweetPotato'),
+  getDescription: (game) => isCropPerfectionVisible(game, 'sweetPotato')
+    ? 'Purchase Sweet Potato in Inventions → Crop Perfection.'
+    : 'Continue progressing in Misfortune to discover how to perfect Potato.',
 }
 
 const CLOVER_PERFECTION_GOAL = {
@@ -239,6 +256,23 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: (game) => game.crops,
     requiresAction: false,
   },
+  {
+    id: 'crop-peanuts',
+    category: 'Crop unlock',
+    title: 'Making Peanuts',
+    target: 5,
+    unit: 'blueprint Crops/sec',
+    description: 'Make 5 Crops/sec from one field blueprint under Misfortune’s penalties to unlock Peanuts.',
+    isApplicable: (game) => game.activeArea === GAME_AREA_IDS.MISFORTUNE,
+    isComplete: (game) => game.earnedAchievementIds?.includes('makingPeanuts') === true,
+    getCurrent: (game) => Math.max(...[game.blueprint, ...(game.blueprintSlots ?? [])]
+      .filter(Boolean).map((blueprint) => getCapybaraBlueprintCropYield({ ...game, blueprint }))),
+    requiresAction: false,
+  },
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.OILY_TREATS,
+    'Purchase Oily Treats, then revisit main → Inventions → Crop Perfection for Sweet Potato. Its effects work in Misfortune too.',
+  ),
   createPerfectionGoal('enrichingLeek'),
   createPerfectionGoal('mirrorCorn'),
   createCropGoal({
@@ -399,7 +433,9 @@ export const MAJOR_PROGRESSION_GOALS = [
     target: CAPYBARA_DEMONSTRATIONS[1].target,
     unit: 'blueprint Crop yield',
     description:
-      'Reach the required intrinsic blueprint Crop yield without a planted 4-Leaf Clover or active Breeze of Fortune effects.',
+      'Reach the required intrinsic blueprint Crop yield. ' +
+      CAPYBARA_DEMONSTRATIONS[1].restrictions.join('. ') + '. ' +
+      CAPYBARA_DEMONSTRATIONS[1].hint,
     isComplete: (game) =>
       hasCompletedCapybaraDemonstration(
         game,
@@ -408,6 +444,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: getCapybaraBlueprintCropYield,
     requiresAction: true,
   },
+  SWEET_POTATO_PERFECTION_GOAL,
   {
     id: 'crop-soybean',
     category: 'Crop unlock',
@@ -448,7 +485,6 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: (game) => game.crops,
     requiresAction: true,
   },
-  createPerfectionGoal('sweetPotato'),
   createPerfectionGoal('samplingLentil'),
   createPerfectionGoal('blazingCarrot'),
   {
@@ -516,16 +552,17 @@ export function getNextMajorProgressionGoal(game, context = {}) {
     ? getCapybaraDemonstrationStatus(game, goal.demonstrationId)
     : null
   const progressLabel = goal.getProgressLabel?.(game) ?? null
+  const isLocked = goal.isLocked?.(game) === true
   const displayProgressAsDash =
-    demonstrationStatus?.number >= 1 &&
-    demonstrationStatus.requiresNoClover === true &&
-    demonstrationStatus.restrictionsMet === false
+    isLocked || (demonstrationStatus?.number >= 1 &&
+    demonstrationStatus.requiresNoActiveBreezeEffects === true &&
+    demonstrationStatus.restrictionsMet === false)
   const current = displayProgressAsDash || progressLabel
     ? 0
     : getSafeProgressValue(goal.getCurrent(game))
-  const target = getSafeProgressValue(goal.getTarget?.(game) ?? goal.target)
+  const target = isLocked ? 0 : getSafeProgressValue(goal.getTarget?.(game) ?? goal.target)
   const progress = target > 0 ? Math.min(1, current / target) : 0
-  const progressPerSecond = progressLabel
+  const progressPerSecond = isLocked || progressLabel
     ? null
     : goal.getProgressPerSecond?.(game, context) ?? null
 
@@ -533,7 +570,7 @@ export function getNextMajorProgressionGoal(game, context = {}) {
     id: goal.id,
     category: goal.category,
     title: goal.title,
-    description: goal.description,
+    description: goal.getDescription?.(game) ?? goal.description,
     current,
     target,
     unit: goal.unit,
@@ -543,6 +580,7 @@ export function getNextMajorProgressionGoal(game, context = {}) {
     displayProgressAsDash,
     isReady:
       goal.requiresAction === true &&
+      !isLocked &&
       !progressLabel &&
       (demonstrationStatus
         ? demonstrationStatus.canComplete

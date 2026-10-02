@@ -5,7 +5,7 @@ import {
 } from '../game/fortuneLogic.js'
 import { FormattedNumber } from './ui.jsx'
 
-function CloverFortuneContent({ fortune, isDisabled, onCollect }) {
+function CloverFortuneContent({ fortune, isDisabled, onCollect, onRemoveEffect }) {
   if (isDisabled) return null
 
   const state = normalizeFortuneState(fortune)
@@ -44,6 +44,10 @@ function CloverFortuneContent({ fortune, isDisabled, onCollect }) {
                 key={activeEffect.id}
                 tabIndex={0}
                 aria-label={`${effect.name}: ${effect.description}. ${remainingSeconds} seconds remaining.`}
+                onContextMenu={(event) => {
+                  event.preventDefault()
+                  onRemoveEffect?.(activeEffect.id)
+                }}
               >
                 <span className="fortune-effect-icon" aria-hidden="true">
                   {effect.icon}
@@ -65,6 +69,7 @@ function CloverFortuneContent({ fortune, isDisabled, onCollect }) {
                     />{' '}
                     seconds remaining
                   </time>
+                  <small>Right-click to remove.</small>
                 </div>
               </div>
             ) : null

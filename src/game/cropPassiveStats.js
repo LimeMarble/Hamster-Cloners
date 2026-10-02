@@ -22,6 +22,16 @@ export function getCropPassiveStats({
   const adjustForMonocrop = (bonus) =>
     bonus > 0 ? bonus * monocropMultiplier : bonus / monocropMultiplier
   const passiveStats = []
+  if (crop === 'peanuts') {
+    const peanutEffect = cropEffects.getPeanutTreatEffect(blueprint,
+      completedCropPerfections, passiveEffectMultiplier, seedAugmentations)
+    passiveStats.push({
+      id: 'peanut-treat-exponent',
+      label: 'Hamster Treat exponent',
+      format: 'exponent-bonus',
+      value: peanutEffect.bonusPerPeanut,
+    })
+  }
 
   if (baseHamsterEfficiencyBonus !== 0) {
     passiveStats.push({

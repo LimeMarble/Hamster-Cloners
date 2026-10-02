@@ -16,6 +16,7 @@ import {
   getFortuneModifiers,
   getMirrorCornEffectMultiplier,
   normalizeFortuneState,
+  removeActiveFortuneEffect,
   spawnCloverBundle,
   wipeActiveFortuneEffects,
 } from '../src/game/gameLogic.js'
@@ -322,6 +323,46 @@ test('testing helpers spawn a bundle and wipe only active Clover effects', () =>
   assert.deepEqual(wiped.fortune.activeEffects, [])
   assert.deepEqual(wiped.fortune.bundles, [{ x: 30, y: 63 }])
   assert.deepEqual(wiped.fortune.notice, game.fortune.notice)
+})
+
+test('removing one active Breeze clears its full stacked duration and preserves other effects and Clover state', () => {
+  const game = createCloverGame()
+  game.fortune = {
+    ...game.fortune,
+    bundles: [{ x: 30, y: 63 }],
+    secondsTowardBundleRoll: 23,
+    activeEffects: [
+      { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 240 },
+      { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: 30 },
+    ],
+    notice: { effectId: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 3 },
+    discoveredEffects: [FORTUNE_EFFECT_IDS.BOUNTY, FORTUNE_EFFECT_IDS.DEMONSTRATION],
+  }
+  const before = structuredClone(game)
+  const removed = removeActiveFortuneEffect(game, FORTUNE_EFFECT_IDS.BOUNTY)
+  assert.deepEqual(removed.fortune.activeEffects, [
+    { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: 30 },
+  ])
+  assert.equal(getFortuneModifiers(removed).cropYieldMultiplier, 1)
+  assert.equal(getFortuneModifiers(removed).passiveEffectMultiplier, 1.1)
+  for (const key of Object.keys(game.fortune).filter((key) => key !== 'activeEffects')) {
+    assert.deepEqual(removed.fortune[key], game.fortune[key], key)
+  }
+  assert.deepEqual(game, before)
+  assert.equal(removed.blueprint, game.blueprint)
+})
+
+test('removing an absent or already removed Breeze is a no-op', () => {
+  const game = createCloverGame()
+  assert.equal(removeActiveFortuneEffect(game, 'unknown'), game)
+  assert.equal(removeActiveFortuneEffect(game, FORTUNE_EFFECT_IDS.BOUNTY), game)
+  const active = {
+    ...game,
+    fortune: { ...game.fortune, activeEffects: [{ id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 40 }] },
+  }
+  const removed = removeActiveFortuneEffect(active, FORTUNE_EFFECT_IDS.BOUNTY)
+  assert.deepEqual(removed.fortune.activeEffects, [])
+  assert.equal(removeActiveFortuneEffect(removed, FORTUNE_EFFECT_IDS.BOUNTY), removed)
 })
 test('crop hover stats include the updated Breeze yield and passive modifiers', () => {
   const blueprint = createBlueprint({

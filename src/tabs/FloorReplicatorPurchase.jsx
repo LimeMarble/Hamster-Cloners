@@ -30,8 +30,7 @@ const FloorReplicatorDetails = memo(function FloorReplicatorDetails({
         Floor Replicators follow you between field areas, but can initially
         only be built in Misfortune. Each supplies a base 0.1 Floors per
         second. Every ten Replicators multiply their effectiveness by 2.
-        Tier prices grow by ×10 until 500 Replicators; afterward, the next
-        growth factor rises by a further +5, +10, +15, and so on each tier.
+        Tier prices initially grow by ×10.
       </p>
       <dl className="replicator-stats">
         <div>

@@ -62,6 +62,7 @@ export {
   getMonocropCropCount,
   getMonocropThresholdBonus,
   getPlantedCropCount,
+  getPeanutTreatEffect,
   getRootTunnelAdjacencyStrength,
   hasReachedMonocropLimit,
   isCropDebuffIsolatedByShoalGrass,

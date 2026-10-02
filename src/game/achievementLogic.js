@@ -8,7 +8,10 @@ import {
   isMirrorCornOverloaded,
   isWaterLettuceFieldInfested,
 } from './cropEffects.js'
-import { getBaseFieldIncome, getCropHamsterEfficiencyMultiplier } from './cropProduction.js'
+import {
+  applyCropProductionModifiers, getBaseFieldIncome, getBaseFieldProductionSnapshot,
+  getCropHamsterEfficiencyMultiplier,
+} from './cropProduction.js'
 import { getFortuneModifiers } from './fortuneLogic.js'
 
 const cacheMetrics = createBlueprintCalculationCache({ structuralFallback: false })
@@ -41,26 +44,38 @@ function getBlueprintMetrics(game, blueprint, fortune, pendingIds) {
   const structure = getBlueprintStructure(blueprint)
   const needsApple = pendingIds.has('apple10B') && structure.types.has('appleTree')
   const needsCanola = pendingIds.has('canola800') && structure.types.has('canola')
+  const needsPeanuts = pendingIds.has('makingPeanuts') && game.activeArea === 'misfortune'
+  const needsHarvestTrade = needsApple || (needsPeanuts && structure.types.has('carrot'))
   return cacheMetrics(blueprint, [
     perfections, seeds, ...Object.values(fortune),
     needsCanola ? game.hamsters : 0,
-    needsApple ? game.trade?.rabbitContractsCompleted : 0,
-    needsApple ? game.trade?.totalRabbitRelationsEarned : 0,
+    needsHarvestTrade ? game.trade?.rabbitContractsCompleted : 0,
+    needsHarvestTrade ? game.trade?.totalRabbitRelationsEarned : 0,
+    needsPeanuts ? game.activeArea : null,
     ...pendingIds,
   ], () => {
     const metrics = {}
     const monocrop = getBlueprintMonocropMultiplier(blueprint, perfections, seeds)
     metrics.diverseUnpenalized = structure.types.size >= 6 && monocrop >= 1
     metrics.infested = structure.infested
-    if (pendingIds.has('controlledBurn') || pendingIds.has('youGetNothing')) {
+    if (needsPeanuts) {
+      const production = getBaseFieldProductionSnapshot(blueprint, perfections,
+        game.trade?.rabbitContractsCompleted ?? 0, fortune.passiveEffectMultiplier,
+        seeds, game.trade?.totalRabbitRelationsEarned ?? 0, game.activeArea,
+        fortune.leekEnrichmentExponent)
+      metrics.misfortuneFieldYield = applyCropProductionModifiers(production.total, fortune)
+    }
+    if (pendingIds.has('controlledBurn')) {
+      metrics.controlledBurn = blueprint.cells.some((id, index) =>
+        CROP_DEFINITIONS[id] && !CROP_DEFINITIONS[id].internalOnly &&
+        isMirrorCornOverloaded(blueprint, index, perfections, seeds),
+      )
+    }
+    if (pendingIds.has('youGetNothing')) {
       const income = getBaseFieldIncome(blueprint, perfections,
         game.trade?.rabbitContractsCompleted ?? 0,
         fortune.passiveEffectMultiplier, seeds, fortune.activeArea,
         fortune.leekEnrichmentExponent) * fortune.harvestMultiplier * fortune.cropYieldMultiplier
-      metrics.controlledBurn = income > 0 && blueprint.cells.some((id, index) =>
-        CROP_DEFINITIONS[id] && !CROP_DEFINITIONS[id].internalOnly &&
-        isMirrorCornOverloaded(blueprint, index, perfections, seeds),
-      )
       metrics.nothing = income <= 0 && getCropHamsterEfficiencyMultiplier(
         blueprint, perfections, 0, fortune.passiveEffectMultiplier, seeds,
       ) <= 0

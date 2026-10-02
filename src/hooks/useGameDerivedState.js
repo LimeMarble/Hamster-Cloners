@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
-import { getAchievementHamsterMultiplier } from '../game/achievementState.js'
+import {
+  getAchievementHamsterMultiplier, getOilyTreatsFloorMultiplier,
+} from '../game/achievementState.js'
 import { hasVisitedMisfortune } from '../game/crops.js'
 import {
   canUnlockCropPerfection,
@@ -186,7 +188,7 @@ export function useGameDerivedState(game) {
         ? 3
         : 1) *
       getCapybaraHamsterEfficiencyMultiplier(game) *
-      getAchievementHamsterMultiplier(game) *
+      getAchievementHamsterMultiplier(game, fortuneModifiers.passiveEffectMultiplier) *
       rushedStartExternalMultiplier *
       huntForSomethingGreaterMultiplier,
   )
@@ -228,7 +230,8 @@ export function useGameDerivedState(game) {
   )
   const floorReplicatorExternalMultiplier =
     getFloorReplicatorExternalMultiplier(
-      rushedStartExternalMultiplier * huntForSomethingGreaterMultiplier,
+      rushedStartExternalMultiplier * huntForSomethingGreaterMultiplier *
+        getOilyTreatsFloorMultiplier(game, fortuneModifiers.passiveEffectMultiplier),
     )
   const isFloorReplicatorSupportMode =
     isFloorReplicatorSupportModeActive(game)
@@ -371,6 +374,7 @@ export function useGameDerivedState(game) {
         game.hasUnlockedWheat,
         unlockedManateeCropIds,
         game.floorReplicators,
+        game.earnedAchievementIds?.includes('makingPeanuts') === true,
       ),
     [
       game.blueprint,
@@ -388,6 +392,7 @@ export function useGameDerivedState(game) {
       game.hasUnlockedWheat,
       unlockedManateeCropIds,
       game.floorReplicators,
+      game.earnedAchievementIds,
     ],
   )
   const visibleCropIds = useMemo(

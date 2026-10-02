@@ -132,7 +132,7 @@ export function MirrorCornAugmentations({
         </div>
         <p>
           Each level adds +1 to the multiplier supplied by every Mirror
-          Corn reflection. Each new level costs 10 times the previous one.
+          Corn reflection.
         </p>
         <dl className='seed-augmentation-stats'>
           <div>

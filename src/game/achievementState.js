@@ -1,4 +1,6 @@
 import { ACHIEVEMENTS, HAMSTER_TREAT_DIVISOR } from './achievementDefinitions.js'
+import { getPeanutTreatEffect } from './cropEffects.js'
+import { getFortuneModifiers } from './fortuneLogic.js'
 
 const definitionsById = new Map(ACHIEVEMENTS.map((achievement) => [achievement.id, achievement]))
 const treatCache = new WeakMap()
@@ -18,8 +20,22 @@ export function getHamsterTreats(gameOrIds) {
   return treats
 }
 
-export function getAchievementHamsterMultiplier(gameOrIds) {
-  return 1 + getHamsterTreats(gameOrIds) / HAMSTER_TREAT_DIVISOR
+export function getAchievementTreatExponent(game, passiveEffectMultiplier) {
+  if (!game?.blueprint) return 1
+  const passive = passiveEffectMultiplier ?? getFortuneModifiers(game).passiveEffectMultiplier
+  return 1 + getPeanutTreatEffect(game.blueprint, game.completedCropPerfections,
+    passive, game.seedAugmentations).exponentBonus
+}
+
+export function getAchievementHamsterMultiplier(gameOrIds, passiveEffectMultiplier) {
+  const base = 1 + getHamsterTreats(gameOrIds) / HAMSTER_TREAT_DIVISOR
+  return base ** getAchievementTreatExponent(gameOrIds, passiveEffectMultiplier)
+}
+
+export function getOilyTreatsFloorMultiplier(game, passiveEffectMultiplier) {
+  return game?.completedMisfortuneUpgrades?.includes('oilyTreats')
+    ? Math.sqrt(getAchievementHamsterMultiplier(game, passiveEffectMultiplier))
+    : 1
 }
 
 export function grantAchievement(game, id) {

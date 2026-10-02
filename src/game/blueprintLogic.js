@@ -393,6 +393,12 @@ export function isCropPerfectionVisible(game, perfectionId) {
   if (!perfection || isCropPerfectionTemporarilyUnavailable(perfectionId)) {
     return false
   }
+  // Previously perfected crops stay usable when a new prerequisite is added.
+  if (hasCropPerfection(game?.completedCropPerfections ?? [], perfectionId)) return true
+  if (perfection.requiredMisfortuneUpgradeId &&
+      !game?.completedMisfortuneUpgrades?.includes(perfection.requiredMisfortuneUpgradeId)) {
+    return false
+  }
 
   return (
     perfection.requiresMisfortune !== true ||

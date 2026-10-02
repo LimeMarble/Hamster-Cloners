@@ -59,7 +59,8 @@ test('both perfections stay hidden and unpurchasable before entering Misfortune,
     assert.equal(canUnlockCropPerfection(game, id), false)
     assert.equal(unlockCropPerfection(game, id), null)
     const goal = MAJOR_PROGRESSION_GOALS.find(({ id: goalId }) => goalId === `perfection-${id}`)
-    assert.equal(goal.isApplicable(game), false)
+    assert.equal(goal.isApplicable(game), id === 'sweetPotato')
+    if (id === 'sweetPotato') assert.equal(goal.isLocked(game), true)
   }
   const html = render(game)
   assert.ok(!html.includes('Sweet Potato'))
@@ -67,28 +68,35 @@ test('both perfections stay hidden and unpurchasable before entering Misfortune,
   assert.ok(html.includes('Splitweed'))
 })
 
-test('entering Misfortune reveals both perfections without changing their other requirements', () => {
+test('entering Misfortune reveals Sampling Lentil; Sweet Potato still needs Oily Treats', () => {
   const entered = {
     ...switchGameArea(mainGame(), GAME_AREA_IDS.MISFORTUNE),
     crops: 1e150,
     hasUnlockedLentil: true,
   }
+  assert.equal(isCropPerfectionVisible(entered, 'sweetPotato'), false)
+  assert.equal(canUnlockCropPerfection(entered, 'sweetPotato'), false)
+  assert.equal(unlockCropPerfection(entered, 'sweetPotato'), null)
+  assert.equal(isCropPerfectionVisible(entered, 'samplingLentil'), true)
+  assert.ok(!render(entered).includes('Sweet Potato'))
+  const ready = { ...entered, completedMisfortuneUpgrades: ['oilyTreats'] }
   for (const id of perfectionIds) {
-    assert.equal(isCropPerfectionVisible(entered, id), true)
-    assert.equal(canUnlockCropPerfection(entered, id), true)
-    assert.equal(canUnlockCropPerfection({ ...entered, crops: 0 }, id), false)
+    assert.equal(isCropPerfectionVisible(ready, id), true)
+    assert.equal(canUnlockCropPerfection(ready, id), true)
+    assert.equal(canUnlockCropPerfection({ ...ready, crops: 0 }, id), false)
     const goal = MAJOR_PROGRESSION_GOALS.find(({ id: goalId }) => goalId === `perfection-${id}`)
-    assert.equal(goal.isApplicable(entered), true)
+    assert.equal(goal.isApplicable(ready), true)
   }
-  assert.equal(canUnlockCropPerfection({ ...entered, hasUnlockedRowDuplicators: false }, 'sweetPotato'), false)
-  const html = render(entered)
+  assert.equal(canUnlockCropPerfection({ ...ready, hasUnlockedRowDuplicators: false }, 'sweetPotato'), false)
+  const html = render(ready)
   assert.ok(html.includes('Sweet Potato'))
   assert.ok(html.includes('Sampling Lentil'))
 })
 
-test('returning to Main and saving preserves visibility after a Misfortune visit', () => {
+test('returning to Main and saving preserves visibility after buying Oily Treats', () => {
   const returned = switchGameArea(
-    switchGameArea(mainGame(), GAME_AREA_IDS.MISFORTUNE),
+    { ...switchGameArea(mainGame(), GAME_AREA_IDS.MISFORTUNE),
+      completedMisfortuneUpgrades: ['oilyTreats'] },
     GAME_AREA_IDS.MAIN,
   )
   const restored = importGame(exportGame(returned))

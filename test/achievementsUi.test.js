@@ -72,6 +72,21 @@ test('hover details show requirements, earned status, and the Treat reward', () 
   assert.match(markup, /5 Hamster Treats/)
 })
 
+test('revised achievement names and Potato threshold display in tiles and hover details', () => {
+  setActiveNumberNotation('suffix', 303)
+  const tiles = renderToStaticMarkup(createElement(AchievementTier, { tier: 1 }))
+  assert.match(tiles, /This is Fine/)
+  assert.match(tiles, /This is NOT Fine/)
+  assert.doesNotMatch(tiles, /Controlled Burn/)
+  const potato = ACHIEVEMENTS.find(({ id }) => id === 'potato100')
+  const potatoDetails = renderToStaticMarkup(createElement(AchievementDetails, { achievement: potato }))
+  assert.match(potatoDetails, /\+2\.50?k% Hamster efficiency/)
+  const burn = ACHIEVEMENTS.find(({ id }) => id === 'controlledBurn')
+  const burnDetails = renderToStaticMarkup(createElement(AchievementDetails, { achievement: burn }))
+  assert.match(burnDetails, /Burn a crop through excess Mirror Corn reflections/)
+  assert.doesNotMatch(burnDetails, /still harvests|surviving harvest/)
+})
+
 test('navigation and screen expose the Achievements tab', () => {
   const nav = renderToStaticMarkup(createElement(GameNavigation, { activeTab: 'achievements' }))
   assert.match(nav, /game-tab-active[^>]*>Achievements/)

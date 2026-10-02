@@ -48,7 +48,7 @@ import {
 import { advanceCloverAssemblyState } from './cloverAssemblyLogic.js'
 import { getCropRequirementMultiplier } from './cropRequirements.js'
 import { awardAchievements } from './achievementLogic.js'
-import { getAchievementHamsterMultiplier } from './achievementState.js'
+import { getAchievementHamsterMultiplier, getOilyTreatsFloorMultiplier } from './achievementState.js'
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
   SIMULATION_TICK_INTERVAL_MS / 1000
@@ -206,7 +206,7 @@ export function advanceGameSimulationStep(
         ? 3
         : 1) *
       getCapybaraHamsterEfficiencyMultiplier(currentGame) *
-        getAchievementHamsterMultiplier(currentGame) *
+        getAchievementHamsterMultiplier(currentGame, fortuneModifiers.passiveEffectMultiplier) *
         rushedStartExternalMultiplier *
           huntForSomethingGreaterMultiplier,
     currentGame.hamsters,
@@ -224,7 +224,8 @@ export function advanceGameSimulationStep(
     ? getFloorsProducedPerSecond(
       currentGame.floorReplicators,
       rushedStartExternalMultiplier *
-        huntForSomethingGreaterMultiplier,
+        huntForSomethingGreaterMultiplier *
+        getOilyTreatsFloorMultiplier(currentGame, fortuneModifiers.passiveEffectMultiplier),
       floorReplicatorEffectivenessMultiplier,
     ) *
       safeElapsedSeconds

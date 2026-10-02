@@ -511,6 +511,19 @@ export function useGameActions({
     )
   }
 
+  function unlockOilyTreats() {
+    updateGame((currentGame) => purchaseMisfortuneUpgrade(
+      currentGame, MISFORTUNE_UPGRADE_IDS.OILY_TREATS,
+    ) ?? currentGame)
+  }
+
+  function visitSweetPotatoInMain() {
+    updateGame((currentGame) => switchGameArea(currentGame, GAME_AREA_IDS.MAIN))
+    resetBlueprintEditor()
+    setActiveInventionsTab('cropPerfection')
+    setActiveTab('inventions')
+  }
+
   function unlockNotSoFinalSupport() {
     updateGame((currentGame) =>
       purchaseMisfortuneUpgrade(
@@ -712,6 +725,8 @@ export function useGameActions({
     onUnlockUnfortunateRow: unlockUnfortunateRow,
     onUnlockFortunateColumn: unlockFortunateColumn,
     onUnlockRushedStart: unlockRushedStart,
+    onUnlockOilyTreats: unlockOilyTreats,
+    onVisitSweetPotatoInMain: visitSweetPotatoInMain,
     onUnlockAdversityGrownTubers: unlockAdversityGrownTubers,
     onUnlockBurdenedFoundations: unlockBurdenedFoundations,
     onUnlockNourishingMisery: unlockNourishingMisery,
