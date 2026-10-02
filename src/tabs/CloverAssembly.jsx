@@ -2,7 +2,7 @@ import {
   CLOVER_ASSEMBLY_PART_REQUIREMENT,
   CLOVER_ASSEMBLY_PARTS,
   GAME_AREA_IDS,
-  GREATER_BLUEPRINTING_COST,
+  getGreaterBlueprintingCost,
   RABBIT_UNLOCK_IDS,
   hasRabbitUnlock,
   isGreaterBlueprintingVisible,
@@ -43,6 +43,7 @@ export function CloverAssembly({
   onOpenClover,
 }) {
   if (!isGreaterBlueprintingVisible(game)) return null
+  const greaterBlueprintingCost = getGreaterBlueprintingCost(game)
 
   const hasGreaterBlueprinting =
     game.hasUnlockedGreaterBlueprinting === true
@@ -85,7 +86,7 @@ export function CloverAssembly({
               'Main field only'
             ) : (
               <>
-                Spend <FormattedNumber value={GREATER_BLUEPRINTING_COST} />{' '}
+                Spend <FormattedNumber value={greaterBlueprintingCost} />{' '}
                 Crops
               </>
             )}
@@ -95,9 +96,9 @@ export function CloverAssembly({
       {!hasGreaterBlueprinting ? (
         <p className="invention-progress">
           <FormattedNumber
-            value={Math.min(mainFieldCrops, GREATER_BLUEPRINTING_COST)}
+            value={Math.min(mainFieldCrops, greaterBlueprintingCost)}
           />{' '}
-          / <FormattedNumber value={GREATER_BLUEPRINTING_COST} /> main-field
+          / <FormattedNumber value={greaterBlueprintingCost} /> main-field
           Crops
         </p>
       ) : null}

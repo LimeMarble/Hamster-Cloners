@@ -1,5 +1,6 @@
 import {
   getNextSeedAugmentationCost,
+  getSeedAugmentationCost,
   hasRichSoilAugmentation,
   isSeedAugmentationVisible,
   SEED_AUGMENTATIONS,
@@ -55,7 +56,7 @@ export function RichSoilAugmentation({ game, onPurchaseSeedAugmentation }) {
         <div>
           <dt>Cost</dt>
           <dd>
-            <FormattedNumber value={augmentation.cost} /> Misfortune Crops
+            <FormattedNumber value={getSeedAugmentationCost(game, augmentation.id)} /> Misfortune Crops
           </dd>
         </div>
       </dl>

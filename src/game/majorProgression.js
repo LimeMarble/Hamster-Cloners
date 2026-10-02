@@ -7,6 +7,7 @@ import {
   LENTIL_UNLOCK_CROP_COUNT,
   SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
   hasUnlockedSoybean,
+  hasVisitedMisfortune,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
@@ -34,10 +35,13 @@ import {
   CAPYBARA_DEMONSTRATIONS,
   getCapybaraBlueprintCropYield,
   getCapybaraDemonstrationStatus,
+  isCapybaraDemonstrationVisible,
   hasCompletedCapybaraDemonstration,
 } from './capybaraLogic.js'
 import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
 import { getMisfortuneAreaCrops } from './areaLogic.js'
+import { getCropPerfectionCost, isCropPerfectionVisible } from './blueprintLogic.js'
+import { getCropRequirement } from './cropRequirements.js'
 import {
   hasRichSoilAugmentation,
   SEED_AUGMENTATIONS,
@@ -77,12 +81,14 @@ function createCropGoal({
   isComplete,
   getCurrent = (game) => game.crops,
   requiresAction = false,
+  scaleRequirement = unit === 'Crops',
 }) {
   return {
     id,
     category: 'Crop unlock',
     title,
     target,
+    getTarget: (game) => scaleRequirement ? getCropRequirement(game, target) : target,
     unit,
     description,
     isComplete,
@@ -101,10 +107,12 @@ function createPerfectionGoal(perfectionId) {
     category: 'Crop perfection',
     title: 'Unlock ' + perfection.name,
     target: perfection.cost,
+    getTarget: (game) => getCropPerfectionCost(perfectionId, game),
     unit: usesRabbitRelations ? 'Rabbit relations' : 'Crops',
     description: usesRabbitRelations
       ? 'Purchase ' + perfection.name + ' in Trade → Rabbit unlocks.'
       : 'Purchase ' + perfection.name + ' in Inventions → Crop Perfection.',
+    isApplicable: (game) => isCropPerfectionVisible(game, perfectionId),
     isComplete: (game) => hasCropPerfection(game, perfectionId),
     getCurrent: (game) =>
       usesRabbitRelations ? game.trade?.rabbitRelations : game.crops,
@@ -134,6 +142,7 @@ const CLOVER_PERFECTION_GOAL = {
   id: 'perfection-five-leaf-clover',
   category: 'Crop perfection',
   title: 'Assemble 5-Leaf Clover',
+  isApplicable: hasVisitedMisfortune,
   target: CLOVER_ASSEMBLY_PART_REQUIREMENT,
   unit: 'of each required Crop',
   description:
@@ -171,6 +180,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'crop-corn',
     title: 'Unlock Corn',
     target: FIRST_COLUMN_EXPANSION_COST,
+    scaleRequirement: false,
     description:
       'Reach the cost, then complete the first Blueprint Column Expansion in Inventions.',
     requiresAction: true,
@@ -221,6 +231,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     category: 'Milestone',
     title: 'Unlock Crop Perfection',
     target: CROP_PERFECTION_UNLOCK_CROP_COUNT,
+    getTarget: (game) => getCropRequirement(game, CROP_PERFECTION_UNLOCK_CROP_COUNT),
     unit: 'Crops',
     description:
       'Reach the Crop threshold to reveal permanent Crop Perfections.',
@@ -265,6 +276,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     category: 'Milestone',
     title: 'Unlock Row Duplicators',
     target: ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
+    getTarget: (game) => getCropRequirement(game, ROW_DUPLICATORS_UNLOCK_CROP_COUNT),
     unit: 'Crops',
     description:
       'Reach the cost, then perform the Row Duplicator reset in Inventions.',
@@ -316,6 +328,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     category: 'Milestone',
     title: 'Establish Trade Relations',
     target: TRADE_ESTABLISHMENT_COST,
+    getTarget: (game) => getCropRequirement(game, TRADE_ESTABLISHMENT_COST),
     unit: 'Crops',
     description:
       'Spend the cost in the Trade tab to establish relations without resetting.',
@@ -346,40 +359,6 @@ export const MAJOR_PROGRESSION_GOALS = [
     isComplete: (game) =>
       hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER),
     getCurrent: (game) => game.trade?.rabbitRelations,
-    requiresAction: true,
-  },
-  {
-    id: 'crop-soybean',
-    category: 'Crop unlock',
-    title: 'Unlock Soybean',
-    target: SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
-    unit: 'Floor Replicators',
-    description:
-      'After unlocking Carrot in Misfortune, own 555 Floor Replicators to unlock Soybean.',
-    isComplete: hasUnlockedSoybean,
-    getCurrent: (game) => game.floorReplicators,
-  },
-  createMisfortuneUpgradeGoal(
-    MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
-    'Purchase Final Support from the Misfortune tab.',
-  ),
-  CLOVER_PERFECTION_GOAL,
-  createMisfortuneUpgradeGoal(
-    MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
-    'Purchase Not-So-Final Support from the Misfortune tab to unlock Misfortune-only Seed Augmentations.',
-  ),
-  {
-    id: 'augmentation-rich-soil',
-    category: 'Seed augmentation',
-    title: 'Unlock Rich Soil',
-    target: SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RICH_SOIL].cost,
-    unit: 'Misfortune Crops',
-    description: 'Purchase Rich Soil for Enriching Leek in the Augmentation tab.',
-    isApplicable: (game) =>
-      game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
-      hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT),
-    isComplete: (game) => hasRichSoilAugmentation(game.seedAugmentations),
-    getCurrent: (game) => game.crops,
     requiresAction: true,
   },
   {
@@ -429,6 +408,46 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: getCapybaraBlueprintCropYield,
     requiresAction: true,
   },
+  {
+    id: 'crop-soybean',
+    category: 'Crop unlock',
+    title: 'Unlock Soybean',
+    target: SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+    unit: 'Floor Replicators',
+    description:
+      'After unlocking Carrot in Misfortune, own 555 Floor Replicators to unlock Soybean.',
+    isApplicable: hasVisitedMisfortune,
+    isComplete: hasUnlockedSoybean,
+    getCurrent: (game) => game.floorReplicators,
+  },
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+    'Purchase Final Support from the Misfortune tab.',
+  ),
+  CLOVER_PERFECTION_GOAL,
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
+    'Purchase Not-So-Final Support from the Misfortune tab to unlock Misfortune-only Seed Augmentations.',
+  ),
+  {
+    id: 'augmentation-rich-soil',
+    category: 'Seed augmentation',
+    title: 'Unlock Rich Soil',
+    target: SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RICH_SOIL].cost,
+    getTarget: (game) => getCropRequirement(
+      game,
+      SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RICH_SOIL].cost,
+      GAME_AREA_IDS.MISFORTUNE,
+    ),
+    unit: 'Misfortune Crops',
+    description: 'Purchase Rich Soil for Enriching Leek in the Augmentation tab.',
+    isApplicable: (game) =>
+      game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
+      hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT),
+    isComplete: (game) => hasRichSoilAugmentation(game.seedAugmentations),
+    getCurrent: (game) => game.crops,
+    requiresAction: true,
+  },
   createPerfectionGoal('sweetPotato'),
   createPerfectionGoal('samplingLentil'),
   createPerfectionGoal('blazingCarrot'),
@@ -472,6 +491,8 @@ export function getNextMajorProgressionGoal(game, context = {}) {
   const goal = MAJOR_PROGRESSION_GOALS.find(
     (candidateGoal) =>
       candidateGoal.isApplicable?.(game) !== false &&
+      (!candidateGoal.demonstrationId ||
+        isCapybaraDemonstrationVisible(game, candidateGoal.demonstrationId)) &&
       !candidateGoal.isComplete(game),
   )
 
@@ -502,7 +523,7 @@ export function getNextMajorProgressionGoal(game, context = {}) {
   const current = displayProgressAsDash || progressLabel
     ? 0
     : getSafeProgressValue(goal.getCurrent(game))
-  const target = getSafeProgressValue(goal.target)
+  const target = getSafeProgressValue(goal.getTarget?.(game) ?? goal.target)
   const progress = target > 0 ? Math.min(1, current / target) : 0
   const progressPerSecond = progressLabel
     ? null

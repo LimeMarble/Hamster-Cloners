@@ -1,5 +1,9 @@
 import { CROP_PERFECTIONS } from '../game/crops.js'
-import { ROW_DUPLICATORS_UNLOCK_CROP_COUNT } from '../game/gameLogic.js'
+import {
+  getCropPerfectionCost,
+  getRowDuplicatorsUnlockCropCount,
+  isCropPerfectionVisible,
+} from '../game/gameLogic.js'
 import { CropPerfectionPurchase } from './CropPerfectionPurchase.jsx'
 import { CloverAssembly } from './CloverAssembly.jsx'
 import { FormattedNumber } from './ui.jsx'
@@ -43,6 +47,11 @@ export function Inventions({
   onCancelRowDuplicatorUnlock,
   onConfirmRowDuplicatorUnlock,
 }) {
+  const enrichingLeekCost = getCropPerfectionCost('enrichingLeek', game)
+  const mirrorCornCost = getCropPerfectionCost('mirrorCorn', game)
+  const leechingGourdCost = getCropPerfectionCost('leechingGourd', game)
+  const splitweedCost = getCropPerfectionCost('splitweed', game)
+  const rowDuplicatorsUnlockCropCount = getRowDuplicatorsUnlockCropCount(game)
   return (
     <>
       <section className="inventions-panel" aria-labelledby="inventions-title">
@@ -98,7 +107,7 @@ export function Inventions({
                   disabled={!canUnlockEnrichingLeek}
                 >
                   Spend{' '}
-                  <FormattedNumber value={CROP_PERFECTIONS.enrichingLeek.cost} maximumFractionDigits={0} />{' '}
+                  <FormattedNumber value={enrichingLeekCost} maximumFractionDigits={0} />{' '}
                   Crops
                 </button>
               )}
@@ -106,11 +115,11 @@ export function Inventions({
             {!hasEnrichingLeek ? (
               <p className="invention-progress">
                 <FormattedNumber
-                  value={Math.min(game.crops, CROP_PERFECTIONS.enrichingLeek.cost)}
+                  value={Math.min(game.crops, enrichingLeekCost)}
                   maximumFractionDigits={0}
                 />{' '}
                 /{' '}
-                <FormattedNumber value={CROP_PERFECTIONS.enrichingLeek.cost} maximumFractionDigits={0} />{' '}
+                <FormattedNumber value={enrichingLeekCost} maximumFractionDigits={0} />{' '}
                 Crops
               </p>
             ) : null}
@@ -133,7 +142,7 @@ export function Inventions({
                   disabled={!canUnlockMirrorCorn}
                 >
                   Spend{' '}
-                  <FormattedNumber value={CROP_PERFECTIONS.mirrorCorn.cost} maximumFractionDigits={0} />{' '}
+                  <FormattedNumber value={mirrorCornCost} maximumFractionDigits={0} />{' '}
                   Crops
                 </button>
               )}
@@ -141,11 +150,11 @@ export function Inventions({
             {!hasMirrorCorn ? (
               <p className="invention-progress">
                 <FormattedNumber
-                  value={Math.min(game.crops, CROP_PERFECTIONS.mirrorCorn.cost)}
+                  value={Math.min(game.crops, mirrorCornCost)}
                   maximumFractionDigits={0}
                 />{' '}
                 /{' '}
-                <FormattedNumber value={CROP_PERFECTIONS.mirrorCorn.cost} maximumFractionDigits={0} />{' '}
+                <FormattedNumber value={mirrorCornCost} maximumFractionDigits={0} />{' '}
                 Crops
               </p>
             ) : null}
@@ -168,7 +177,7 @@ export function Inventions({
                   disabled={!canUnlockLeechingGourd}
                 >
                   Spend{' '}
-                  <FormattedNumber value={CROP_PERFECTIONS.leechingGourd.cost} maximumFractionDigits={0} />{' '}
+                  <FormattedNumber value={leechingGourdCost} maximumFractionDigits={0} />{' '}
                   Crops
                 </button>
               )}
@@ -176,11 +185,11 @@ export function Inventions({
             {!hasLeechingGourd ? (
               <p className="invention-progress">
                 <FormattedNumber
-                  value={Math.min(game.crops, CROP_PERFECTIONS.leechingGourd.cost)}
+                  value={Math.min(game.crops, leechingGourdCost)}
                   maximumFractionDigits={0}
                 />{' '}
                 /{' '}
-                <FormattedNumber value={CROP_PERFECTIONS.leechingGourd.cost} maximumFractionDigits={0} />{' '}
+                <FormattedNumber value={leechingGourdCost} maximumFractionDigits={0} />{' '}
                 Crops
               </p>
             ) : null}
@@ -210,7 +219,7 @@ export function Inventions({
                     >
                       Spend{' '}
                       <FormattedNumber
-                        value={CROP_PERFECTIONS.splitweed.cost}
+                        value={splitweedCost}
                         maximumFractionDigits={0}
                       />{' '}
                       Crops
@@ -222,13 +231,13 @@ export function Inventions({
                     <FormattedNumber
                       value={Math.min(
                         game.crops,
-                        CROP_PERFECTIONS.splitweed.cost,
+                        splitweedCost,
                       )}
                       maximumFractionDigits={0}
                     />{' '}
                     /{' '}
                     <FormattedNumber
-                      value={CROP_PERFECTIONS.splitweed.cost}
+                      value={splitweedCost}
                       maximumFractionDigits={0}
                     />{' '}
                     Crops
@@ -236,7 +245,7 @@ export function Inventions({
                 ) : null}
               </>
             ) : null}
-            {game.hasUnlockedRowDuplicators ? (
+            {game.hasUnlockedRowDuplicators && isCropPerfectionVisible(game, 'sweetPotato') ? (
               <CropPerfectionPurchase
                 game={game}
                 eyebrow="Potato perfection"
@@ -247,7 +256,7 @@ export function Inventions({
                 onUnlock={onUnlockSweetPotato}
               />
             ) : null}
-            {game.hasUnlockedLentil && game.hasUnlockedRowDuplicators ? (
+            {game.hasUnlockedLentil && game.hasUnlockedRowDuplicators && isCropPerfectionVisible(game, 'samplingLentil') ? (
               <CropPerfectionPurchase
                 game={game}
                 eyebrow="Lentil perfection"
@@ -339,7 +348,7 @@ export function Inventions({
                 <h2>Row Duplicators</h2>
                 <p>
                   Reset at{' '}
-                  <FormattedNumber value={ROW_DUPLICATORS_UNLOCK_CROP_COUNT} maximumFractionDigits={0} />{' '}
+                  <FormattedNumber value={rowDuplicatorsUnlockCropCount} maximumFractionDigits={0} />{' '}
                   Crops to unlock purchasable Row Duplicators.
                 </p>
               </div>
@@ -359,11 +368,11 @@ export function Inventions({
             {!game.hasUnlockedRowDuplicators ? (
               <p className="invention-progress">
                 <FormattedNumber
-                  value={Math.min(game.crops, ROW_DUPLICATORS_UNLOCK_CROP_COUNT)}
+                  value={Math.min(game.crops, rowDuplicatorsUnlockCropCount)}
                   maximumFractionDigits={0}
                 />{' '}
                 /{' '}
-                <FormattedNumber value={ROW_DUPLICATORS_UNLOCK_CROP_COUNT} maximumFractionDigits={0} />{' '}
+                <FormattedNumber value={rowDuplicatorsUnlockCropCount} maximumFractionDigits={0} />{' '}
                 Crops
               </p>
             ) : null}

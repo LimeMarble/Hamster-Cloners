@@ -1,4 +1,6 @@
 import { useMemo } from 'react'
+import { getAchievementHamsterMultiplier } from '../game/achievementState.js'
+import { hasVisitedMisfortune } from '../game/crops.js'
 import {
   canUnlockCropPerfection,
   canUnlockRowDuplicators,
@@ -184,6 +186,7 @@ export function useGameDerivedState(game) {
         ? 3
         : 1) *
       getCapybaraHamsterEfficiencyMultiplier(game) *
+      getAchievementHamsterMultiplier(game) *
       rushedStartExternalMultiplier *
       huntForSomethingGreaterMultiplier,
   )
@@ -341,6 +344,7 @@ export function useGameDerivedState(game) {
     RABBIT_UNLOCK_IDS.CARROT,
   )
   const hasMisfortuneCarrot = hasUnlockedCarrotInMisfortune(game)
+  const hasMisfortuneVisit = hasVisitedMisfortune(game)
   const hasUnlockedFourLeafClover = hasRabbitUnlock(
     game,
     RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
@@ -393,12 +397,14 @@ export function useGameDerivedState(game) {
         game.totalHamstersHired,
         game.hasUnlockedRowDuplicators,
         hasMisfortuneCarrot,
+        hasMisfortuneVisit,
       ),
     [
       unlockedCropIds,
       game.totalHamstersHired,
       game.hasUnlockedRowDuplicators,
       hasMisfortuneCarrot,
+      hasMisfortuneVisit,
     ],
   )
   const visibleUnlockedCropIds = useMemo(

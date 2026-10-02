@@ -1,5 +1,7 @@
 import { normalizeTradeState, RABBIT_UNLOCK_IDS } from './tradeLogic.js'
 import { normalizeFortuneState } from './fortuneLogic.js'
+import { awardAchievements } from './achievementLogic.js'
+import { normalizeAchievementIds } from './achievementState.js'
 import {
   CAPYBARA_DEMONSTRATION_IDS,
   normalizeCapybaraState,
@@ -47,6 +49,7 @@ import {
   RUSHED_START_TOTAL_DURATION_SECONDS,
 } from './misfortuneUpgrades.js'
 import { normalizeCloverAssemblyState } from './cloverAssemblyLogic.js'
+import { getCropRequirementMultiplier } from './cropRequirements.js'
 
 export const DEFAULT_SAVE_KEY = 'hamster-cloners-save-v1'
 export const SAVE_KEY =
@@ -93,7 +96,7 @@ function toNonNegativeInteger(value, fallback) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback
 }
 
-function getAreaCropUnlocks(rawState, includeStoredUnlocks = true) {
+function getAreaCropUnlocks(rawState, includeStoredUnlocks = true, requirementMultiplier = 1) {
   const crops = toNonNegativeNumber(rawState?.crops, 0)
   const hasStoredUnlock = (field) =>
     includeStoredUnlocks && rawState?.[field] === true
@@ -106,24 +109,24 @@ function getAreaCropUnlocks(rawState, includeStoredUnlocks = true) {
     hasUnlockedTurnip:
       hasStoredUnlock('hasUnlockedTurnip') ||
       (includeStoredUnlocks && rawState?.hasUnlockedPumpkin === true) ||
-      crops >= TURNIP_UNLOCK_CROP_COUNT,
+      crops >= TURNIP_UNLOCK_CROP_COUNT * requirementMultiplier,
     hasUnlockedAppleTree:
       hasStoredUnlock('hasUnlockedAppleTree') ||
       hasLegacyAppleTreeUnlock ||
-      crops >= APPLE_TREE_UNLOCK_CROP_COUNT,
+      crops >= APPLE_TREE_UNLOCK_CROP_COUNT * requirementMultiplier,
     hasUnlockedLentil:
       hasStoredUnlock('hasUnlockedLentil') ||
-      crops >= LENTIL_UNLOCK_CROP_COUNT,
+      crops >= LENTIL_UNLOCK_CROP_COUNT * requirementMultiplier,
     hasUnlockedKnotweed:
       hasStoredUnlock('hasUnlockedKnotweed') ||
-      crops >= KNOTWEED_UNLOCK_CROP_COUNT,
+      crops >= KNOTWEED_UNLOCK_CROP_COUNT * requirementMultiplier,
     hasUnlockedWheat:
       hasStoredUnlock('hasUnlockedWheat') ||
       (rawState?.hasUnlockedRowDuplicators === true &&
-        crops >= WHEAT_UNLOCK_CROP_COUNT),
+        crops >= WHEAT_UNLOCK_CROP_COUNT * requirementMultiplier),
     hasUnlockedSunflower:
       hasStoredUnlock('hasUnlockedSunflower') ||
-      crops >= SUNFLOWER_UNLOCK_CROP_COUNT,
+      crops >= SUNFLOWER_UNLOCK_CROP_COUNT * requirementMultiplier,
   }
 }
 
@@ -171,6 +174,8 @@ export function normalizeGame(rawGame) {
   const activeArea = rawGame.activeArea === GAME_AREA_IDS.MISFORTUNE
     ? GAME_AREA_IDS.MISFORTUNE
     : GAME_AREA_IDS.MAIN
+  const capybara = normalizeCapybaraState(rawGame.capybara)
+  const cropRequirementMultiplier = getCropRequirementMultiplier({ activeArea, capybara })
   const completedMisfortuneUpgrades = normalizeMisfortuneUpgrades(
     rawGame.completedMisfortuneUpgrades,
   )
@@ -178,10 +183,15 @@ export function normalizeGame(rawGame) {
     rawGame.misfortuneAreaStateVersion !== MISFORTUNE_AREA_STATE_VERSION
   const hasSeparatedAreaCropUnlocks =
     rawGame.areaCropUnlocksSeparated === true
-  const legacySharedAreaCropUnlocks = getAreaCropUnlocks(rawGame)
+  const legacySharedAreaCropUnlocks = getAreaCropUnlocks(
+    rawGame,
+    true,
+    getCropRequirementMultiplier({ capybara }, GAME_AREA_IDS.MAIN),
+  )
   const activeAreaCropUnlocks = getAreaCropUnlocks(
     rawGame,
     hasSeparatedAreaCropUnlocks || activeArea === GAME_AREA_IDS.MAIN,
+    cropRequirementMultiplier,
   )
   const hasUnlockedSunflower =
     activeAreaCropUnlocks.hasUnlockedSunflower
@@ -238,7 +248,6 @@ export function normalizeGame(rawGame) {
     rawGame.seedAugmentations,
   )
   const manatees = normalizeManateeState(rawGame.manatees)
-  const capybara = normalizeCapybaraState(rawGame.capybara)
   const normalizeOptionalArea = (rawArea, areaId) => {
     if (!rawArea || typeof rawArea !== 'object') return null
 
@@ -375,6 +384,7 @@ export function normalizeGame(rawGame) {
   }
 
   const normalizedGame = {
+    earnedAchievementIds: normalizeAchievementIds(rawGame.earnedAchievementIds),
     crops: currentCrops,
     totalCropsMade: toNonNegativeNumber(
       rawGame.totalCropsMade,
@@ -404,7 +414,7 @@ export function normalizeGame(rawGame) {
       hasUnlockedRootTunnel,
     hasUnlockedCropPerfection:
       rawGame.hasUnlockedCropPerfection === true ||
-      toNonNegativeNumber(rawGame.crops, 0) >= CROP_PERFECTION_UNLOCK_CROP_COUNT,
+      currentCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT * cropRequirementMultiplier,
     hasUnlockedRowDuplicators: rawGame.hasUnlockedRowDuplicators === true,
     rowDuplicators: toNonNegativeInteger(rawGame.rowDuplicators, 0),
     hasUnlockedFloorReplicators:
@@ -476,17 +486,17 @@ export function normalizeGame(rawGame) {
     !shouldResetMisfortuneProgress ||
     activeArea !== GAME_AREA_IDS.MISFORTUNE
   ) {
-    return normalizedGame
+    return awardAchievements(normalizedGame)
   }
 
-  return {
+  return awardAchievements({
     ...normalizedGame,
     ...createInitialMisfortuneAreaState(rabbitBlueprintExpansions),
     areaProgress: {
       ...normalizedGame.areaProgress,
       misfortune: null,
     },
-  }
+  })
 }
 
 function parseSavePayload(saveCode) {

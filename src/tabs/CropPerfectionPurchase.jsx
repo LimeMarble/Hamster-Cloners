@@ -1,4 +1,5 @@
 import { FormattedNumber } from './ui.jsx'
+import { getCropPerfectionCost } from '../game/blueprintLogic.js'
 
 export function CropPerfectionPurchase({
   game,
@@ -9,6 +10,7 @@ export function CropPerfectionPurchase({
   canUnlock,
   onUnlock,
 }) {
+  const cost = getCropPerfectionCost(perfection.id, game)
   return (
     <>
       <article className="invention-card crop-perfection-card">
@@ -28,7 +30,7 @@ export function CropPerfectionPurchase({
           >
             Spend{' '}
             <FormattedNumber
-              value={perfection.cost}
+              value={cost}
               maximumFractionDigits={0}
             />{' '}
             Crops
@@ -38,12 +40,12 @@ export function CropPerfectionPurchase({
       {!isComplete ? (
         <p className="invention-progress">
           <FormattedNumber
-            value={Math.min(game.crops, perfection.cost)}
+            value={Math.min(game.crops, cost)}
             maximumFractionDigits={0}
           />{' '}
           /{' '}
           <FormattedNumber
-            value={perfection.cost}
+            value={cost}
             maximumFractionDigits={0}
           />{' '}
           Crops

@@ -7,8 +7,13 @@ import { getFieldsPlanted } from './cropProduction.js'
 import { getRabbitRelationsMultiplier } from './cropEffects.js'
 import { getFortuneModifiers } from './fortuneLogic.js'
 import { CLOVER_ASSEMBLY_RABBIT_UNLOCK_ID } from './cloverAssemblyLogic.js'
+import { getCropRequirement } from './cropRequirements.js'
+import { hasMisfortuneUpgrade, MISFORTUNE_UPGRADE_IDS } from './misfortuneUpgrades.js'
 
 export const TRADE_ESTABLISHMENT_COST = 1e57
+export function getTradeEstablishmentCost(game) {
+  return getCropRequirement(game, TRADE_ESTABLISHMENT_COST)
+}
 export const RABBIT_CONTRACT_MIN_FACTOR = 1e7
 export const RABBIT_CONTRACT_MAX_FACTOR = 5e7
 export const RABBIT_ACTIVE_CONTRACT_COUNT = 3
@@ -148,6 +153,12 @@ export function isRabbitContractCropEligible(cropId) {
 
 export function hasRabbitUnlock(game, unlockId) {
   return game.trade?.rabbitUnlocks?.includes(unlockId) === true
+}
+
+export function isRabbitUnlockAvailable(game, unlockId) {
+  return unlockId !== RABBIT_UNLOCK_IDS.RABBITS_CHARM ||
+    hasRabbitUnlock(game, unlockId) ||
+    hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER)
 }
 
 export function getRabbitContractCompletionsPerSecond(
@@ -514,14 +525,14 @@ export function normalizeTradeState(rawTrade) {
 export function establishTradeRelations(game, random = Math.random) {
   if (
     game.trade?.established === true ||
-    Number(game.crops) < TRADE_ESTABLISHMENT_COST
+    Number(game.crops) < getTradeEstablishmentCost(game)
   ) {
     return null
   }
 
   const establishedGame = {
     ...game,
-    crops: game.crops - TRADE_ESTABLISHMENT_COST,
+    crops: game.crops - getTradeEstablishmentCost(game),
     trade: {
       ...createInitialTradeState(),
       ...game.trade,
@@ -820,6 +831,7 @@ export function purchaseRabbitUnlock(game, unlockId) {
   if (
     game.trade?.established !== true ||
     !unlock ||
+    !isRabbitUnlockAvailable(game, unlockId) ||
     hasRabbitUnlock(game, unlockId) ||
     currentRelations < unlock.cost
   ) {

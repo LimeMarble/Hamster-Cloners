@@ -26,7 +26,7 @@ function createAugmentationGame() {
   return {
     ...initial,
     activeArea: 'misfortune',
-    crops: 1e71,
+    crops: 1e72,
     secondsSinceAreaReset: 345,
     hamsters: 200,
     rowDuplicators: 123,
@@ -37,9 +37,9 @@ function createAugmentationGame() {
   }
 }
 
-test('Not-So-Final Support costs exactly 1e70 Misfortune crops, with no support bonus', () => {
+test('Not-So-Final Support costs exactly 1e71 Misfortune crops, with no support bonus', () => {
   assert.equal(MISFORTUNE_UPGRADES[precursorId].name, 'Not-So-Final Support')
-  assert.equal(MISFORTUNE_UPGRADES[precursorId].cost, 1e70)
+  assert.equal(MISFORTUNE_UPGRADES[precursorId].cost, 1e71)
   assert.equal(MISFORTUNE_UPGRADES[precursorId].passiveEffectBonusPerTier, undefined)
   const game = createAugmentationGame()
   assert.equal(canUnlockMisfortuneUpgrade({ ...game, crops: 9e69 }, precursorId), false)
@@ -49,9 +49,9 @@ test('Not-So-Final Support costs exactly 1e70 Misfortune crops, with no support 
 })
 
 test('buying the precursor spends current-area crops once and does not reset either area', () => {
-  const game = { ...createAugmentationGame(), crops: 2e70 }
+  const game = { ...createAugmentationGame(), crops: 2e71 }
   const purchased = purchaseMisfortuneUpgrade(game, precursorId)
-  assert.equal(purchased.crops, 1e70)
+  assert.equal(purchased.crops, 1e71)
   assert.equal(purchased.secondsSinceAreaReset, 345)
   assert.equal(purchased.hamsters, game.hamsters)
   assert.equal(purchased.rowDuplicators, game.rowDuplicators)
@@ -124,7 +124,7 @@ test('the Misfortune goal bar puts the precursor directly before Rich Soil', () 
   const precursor = MAJOR_PROGRESSION_GOALS[precursorIndex]
   const richSoil = MAJOR_PROGRESSION_GOALS[richSoilIndex]
   const game = createAugmentationGame()
-  assert.equal(precursor.target, 1e70)
+  assert.equal(precursor.target, 1e71)
   assert.equal(precursor.isApplicable(game), true)
   assert.equal(precursor.isApplicable({ ...game, activeArea: 'main' }), false)
   assert.equal(precursor.isComplete(game), false)

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   createInitialGame,
+  CLOVER_ASSEMBLY_PART_REQUIREMENT,
   getNextMajorProgressionGoal,
   MAJOR_PROGRESSION_GOALS,
   MISFORTUNE_UPGRADE_IDS,
@@ -39,14 +40,14 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'trade-relations',
       'crop-carrot',
       'crop-four-leaf-clover',
+      'capybara-contact',
+      'capybara-demonstration-introduction',
+      'capybara-demonstration-one',
       'crop-soybean',
       'misfortune-upgrade-finalSupport',
       'perfection-five-leaf-clover',
       'misfortune-upgrade-notSoFinalSupport',
       'augmentation-rich-soil',
-      'capybara-contact',
-      'capybara-demonstration-introduction',
-      'capybara-demonstration-one',
       'perfection-sweetPotato',
       'perfection-samplingLentil',
       'perfection-blazingCarrot',
@@ -187,8 +188,10 @@ test('major progression advances to the earliest unfinished goal', () => {
     ...game,
     trade: {
       ...game.trade,
-      rabbitUnlocks: ['carrot', 'fourLeafClover'],
+      rabbitUnlocks: ['carrot', 'fourLeafClover', 'capybaraContact'],
     },
+    capybara: { completedDemonstrations: ['introduction', 'demonstrationOne'] },
+    areaProgress: { ...game.areaProgress, misfortune: { rowDuplicators: 500 } },
   }
   const soybeanGoal = getNextMajorProgressionGoal(game)
   assert.equal(soybeanGoal.id, 'crop-soybean')
@@ -222,7 +225,7 @@ test('major progression advances to the earliest unfinished goal', () => {
         'rabbitsCharm',
       ],
     },
-    cloverAssembly: { progress: 3.885e58, assembled: false },
+    cloverAssembly: { progress: CLOVER_ASSEMBLY_PART_REQUIREMENT / 2, assembled: false },
   }
   const revealedFiveLeafCloverGoal = getNextMajorProgressionGoal(game, {
     cloverAssemblyProductionPerSecond: 1.25e55,
@@ -238,6 +241,8 @@ test('major progression advances to the earliest unfinished goal', () => {
   game = {
     ...game,
     cloverAssembly: { progress: 7.77e58, assembled: true },
+    capybara: { completedDemonstrations: [] },
+    trade: { ...game.trade, rabbitUnlocks: ['carrot', 'fourLeafClover'] },
   }
   const capybaraGoal = getNextMajorProgressionGoal(game)
   assert.equal(capybaraGoal.id, 'capybara-contact')
@@ -294,7 +299,7 @@ test('major progression advances to the earliest unfinished goal', () => {
   const thirdDemonstrationGoal = getNextMajorProgressionGoal(game)
   assert.equal(thirdDemonstrationGoal.id, 'capybara-demonstration-two')
   assert.equal(thirdDemonstrationGoal.current, 0)
-  assert.equal(thirdDemonstrationGoal.target, 1e300)
+  assert.equal(thirdDemonstrationGoal.target, 1e301)
 
   game = {
     ...game,
@@ -394,8 +399,9 @@ test('Misfortune progress includes every permanent Misfortune upgrade', () => {
     trade: {
       established: true,
       rabbitRelations: 1e30,
-      rabbitUnlocks: ['carrot', 'fourLeafClover'],
+      rabbitUnlocks: ['carrot', 'fourLeafClover', 'capybaraContact'],
     },
+    capybara: { completedDemonstrations: ['introduction', 'demonstrationOne'] },
   }
 
   for (const upgradeId of upgradeOrder) {

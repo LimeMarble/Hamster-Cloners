@@ -841,6 +841,7 @@ test('Enriching Leek costs 20 billion Crops to unlock', () => {
 test('Sweet Potato is purchasable while Wheat retains the logarithmic effect', () => {
   const sweetPotatoPerfectionGame = {
     crops: CROP_PERFECTIONS.sweetPotato.cost,
+    activeArea: 'misfortune',
     hasUnlockedCropPerfection: true,
     hasUnlockedRowDuplicators: true,
     completedCropPerfections: [],

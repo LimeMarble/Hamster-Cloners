@@ -1,5 +1,6 @@
 import {
   getNextSeedAugmentationCost,
+  getSeedAugmentationCost,
   getSplitweedVineNourishmentStrengthBonus,
   isSeedAugmentationVisible,
   SEED_AUGMENTATIONS,
@@ -80,7 +81,7 @@ export function LeechingGourdAugmentations({ game, onPurchaseSeedAugmentation })
             </div>
             <div>
               <dt>Cost</dt>
-              <dd><FormattedNumber value={leechingVine.cost} /> Crops</dd>
+              <dd><FormattedNumber value={getSeedAugmentationCost(game, leechingVine.id)} /> Crops</dd>
             </div>
           </dl>
           <button
@@ -130,7 +131,7 @@ export function LeechingGourdAugmentations({ game, onPurchaseSeedAugmentation })
             </div>
             <div>
               <dt>Cost</dt>
-              <dd><FormattedNumber value={sneakyCrawler.cost} /> Crops</dd>
+              <dd><FormattedNumber value={getSeedAugmentationCost(game, sneakyCrawler.id)} /> Crops</dd>
             </div>
           </dl>
           <button
@@ -182,7 +183,7 @@ export function LeechingGourdAugmentations({ game, onPurchaseSeedAugmentation })
             </div>
             <div>
               <dt>Cost</dt>
-              <dd><FormattedNumber value={greaterAbsorption.cost} /> Crops</dd>
+              <dd><FormattedNumber value={getSeedAugmentationCost(game, greaterAbsorption.id)} /> Crops</dd>
             </div>
           </dl>
           <button

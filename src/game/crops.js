@@ -11,6 +11,7 @@ import {
   hasRichSoilAugmentation,
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
+import { getCropRequirement } from './cropRequirements.js'
 import {
   formatWholeNumber,
   getCachedFormattedNumber,
@@ -49,6 +50,13 @@ export function hasUnlockedSoybean(game) {
     Math.max(0, Math.floor(Number(game?.floorReplicators) || 0)) >=
       SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT
   )
+}
+
+export function hasVisitedMisfortune(game) {
+  return game?.activeArea === 'misfortune' || Boolean(game?.areaProgress?.misfortune) ||
+    game?.earnedAchievementIds?.includes('misfortune') === true ||
+    game?.completedMisfortuneUpgrades?.length > 0 ||
+    game?.capybara?.completedDemonstrations?.includes('misfortuneTrial') === true
 }
 
 export const CROP_EFFECT_BYPASS_TIERS = Object.freeze({
@@ -376,6 +384,7 @@ export const CROP_PERFECTIONS = {
     bedGrowthExponentCap: 11,
     bedBuffCrowdingMultiplier: 0.5,
     requiresRowDuplicators: true,
+    requiresMisfortune: true,
     baseEffectDescription: '1 Crop per slot',
     effectDescription:
       'Orthogonally connected Sweet Potatoes form one bed · each bed gives +2 × n × 1.5^min(n − 1, 11) Hamster Efficiency · every unique connected Turnip or Mirror Corn buffs the whole bed once, followed by a ×0.5^(m(m − 1) / 2) crowding penalty',
@@ -385,6 +394,7 @@ export const CROP_PERFECTIONS = {
     cropId: 'lentil',
     name: 'Sampling Lentil',
     cost: 1e123,
+    requiresMisfortune: true,
     globalHarvestMultiplier: 1.8,
     nonTradedNeighborEffectMultiplier: 3,
     tradedNeighborEffectMultiplier: 6,
@@ -440,27 +450,29 @@ export function getCropUnlockDescription(
   cropId,
   activeArea = 'main',
   hasFiveLeafClover = false,
+  game,
 ) {
   const format = (value) => getCachedFormattedNumber(value, 0)
+  const formatRequirement = (value) => format(getCropRequirement(game, value, activeArea))
   const formatCounter = (value) => formatWholeNumber(value)
 
   switch (cropId) {
     case 'sweetPotato':
       return `Unlocks at ${formatCounter(SWEET_POTATO_UNLOCK_HAMSTER_COUNT)} Hamsters after Pumpkin`
     case 'turnip':
-      return `Unlocks at ${format(TURNIP_UNLOCK_CROP_COUNT)} Crops`
+      return `Unlocks at ${formatRequirement(TURNIP_UNLOCK_CROP_COUNT)} Crops`
     case 'appleTree':
-      return `Unlocks at ${format(APPLE_TREE_UNLOCK_CROP_COUNT)} Crops`
+      return `Unlocks at ${formatRequirement(APPLE_TREE_UNLOCK_CROP_COUNT)} Crops`
     case 'lentil':
-      return `Unlocks at ${format(LENTIL_UNLOCK_CROP_COUNT)} Crops`
+      return `Unlocks at ${formatRequirement(LENTIL_UNLOCK_CROP_COUNT)} Crops`
     case 'knotweed':
-      return `Unlocks at ${format(KNOTWEED_UNLOCK_CROP_COUNT)} Crops`
+      return `Unlocks at ${formatRequirement(KNOTWEED_UNLOCK_CROP_COUNT)} Crops`
     case 'wheat':
-      return `Unlocks at ${format(WHEAT_UNLOCK_CROP_COUNT)} Crops after Row Duplicators`
+      return `Unlocks at ${formatRequirement(WHEAT_UNLOCK_CROP_COUNT)} Crops after Row Duplicators`
     case 'rootTunnel':
       return 'Reward for Capybara Demonstration 2'
     case 'sunflower':
-      return `Unlocks at ${format(SUNFLOWER_UNLOCK_CROP_COUNT)} Crops`
+      return `Unlocks at ${formatRequirement(SUNFLOWER_UNLOCK_CROP_COUNT)} Crops`
     case 'canola':
       return `Unlocks at ${formatCounter(CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT)} Row Duplicators`
     case 'carrot':
@@ -798,6 +810,7 @@ export function getVisibleCropIds(
   totalHamstersHired = 0,
   hasUnlockedRowDuplicators = false,
   hasMisfortuneCarrot = false,
+  hasMisfortuneVisit = hasMisfortuneCarrot,
 ) {
   const visibleCropIds = ['leek']
   const progressionCropIds = CROP_IDS.filter(
@@ -832,11 +845,14 @@ export function getVisibleCropIds(
       break
     }
 
+    if (cropId === 'soybean' && !hasMisfortuneVisit) break
+
     visibleCropIds.push(cropId)
   }
 
   if (
     hasMisfortuneCarrot &&
+    hasMisfortuneVisit &&
     visibleCropIds.includes('carrot') &&
     !visibleCropIds.includes('soybean')
   ) {

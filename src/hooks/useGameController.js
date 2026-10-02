@@ -339,6 +339,11 @@ export function useGameController() {
           actions.isRowDuplicatorUnlockPending,
         ...actions.inventionsActions,
       },
+      achievements: {
+        earnedAchievementIds: game.earnedAchievementIds,
+        numberNotation: game.numberNotation,
+        suffixScientificExponent: game.suffixScientificExponent,
+      },
       statistics: {
         game,
         unlockedCropIds: derived.unlockedCropIds,

@@ -3,13 +3,15 @@ import {
   RABBIT_BLAZING_CONTRACT_RATE,
   RABBIT_UNLOCK_IDS,
   RABBIT_UNLOCKS,
-  TRADE_ESTABLISHMENT_COST,
+  getTradeEstablishmentCost,
   getCapybaraDemonstrationStatus,
+  isCapybaraDemonstrationVisible,
   hasCompletedCapybaraDemonstration,
   CAPYBARA_DEMONSTRATION_IDS,
   getRabbitContractLimitingCropId,
   getRabbitRelationsMultiplier,
   hasRabbitUnlock,
+  isRabbitUnlockAvailable,
 } from '../game/gameLogic.js'
 import { getCropName } from '../game/crops.js'
 import { BlazingCarrotPerfection } from './BlazingCarrotPerfection.jsx'
@@ -18,7 +20,8 @@ import { FormattedNumber } from './ui.jsx'
 import { ManateeRelations } from './ManateeRelations.jsx'
 
 function EstablishTradeCard({ game, onEstablishTrade }) {
-  const canAfford = game.crops >= TRADE_ESTABLISHMENT_COST
+  const cost = getTradeEstablishmentCost(game)
+  const canAfford = game.crops >= cost
 
   return (
     <article className="trade-establishment-card">
@@ -33,7 +36,7 @@ function EstablishTradeCard({ game, onEstablishTrade }) {
       <div className="trade-establishment-action">
         <strong>
           <FormattedNumber
-            value={TRADE_ESTABLISHMENT_COST}
+            value={cost}
             maximumFractionDigits={0}
           />{' '}
           Crops
@@ -155,6 +158,7 @@ function RabbitUnlocks({
         {RABBIT_UNLOCKS.map((unlock) => {
           const isPurchased = hasRabbitUnlock(game, unlock.id)
           const canAfford = game.trade.rabbitRelations >= unlock.cost
+          const isAvailable = isRabbitUnlockAvailable(game, unlock.id)
 
           return (
             <article
@@ -166,11 +170,12 @@ function RabbitUnlocks({
               <div>
                 <h3>{unlock.name}</h3>
                 <p>{unlock.description}</p>
+                {!isAvailable ? <p>Requires Hunt for Something Greater.</p> : null}
               </div>
               <button
                 type="button"
                 onClick={() => onPurchaseRabbitUnlock(unlock.id)}
-                disabled={isPurchased || !canAfford}
+                disabled={isPurchased || !canAfford || !isAvailable}
               >
                 {isPurchased ? (
                   'Unlocked'
@@ -224,7 +229,9 @@ function CapybaraDemonstrations({
       </p>
 
       <div className="capybara-demonstration-list">
-        {CAPYBARA_DEMONSTRATIONS.map((demonstration) => {
+        {CAPYBARA_DEMONSTRATIONS.filter((demonstration) =>
+          isCapybaraDemonstrationVisible(game, demonstration.id),
+        ).map((demonstration) => {
           const status = getCapybaraDemonstrationStatus(
             game,
             demonstration.id,

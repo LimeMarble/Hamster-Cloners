@@ -466,6 +466,7 @@ function BlueprintEditContent({
                             cropId,
                             game.activeArea,
                             game.cloverAssembly?.assembled === true,
+                            game,
                           )}
                     </small>
                   </button>

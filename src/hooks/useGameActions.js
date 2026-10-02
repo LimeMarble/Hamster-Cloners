@@ -18,6 +18,7 @@ import {
   getMaxFloorReplicatorPurchase,
   canPurchaseFloorReplicatorsInArea,
   getMaxHamsterPurchase,
+  getMisfortuneUpgradeCost,
   getNextHamsterCost,
   getNextFloorReplicatorCost,
   getNextRowDuplicatorCost,
@@ -44,6 +45,7 @@ import {
 } from '../game/gameLogic.js'
 import { exportGame, importGame } from '../game/storage.js'
 import { createGameSaveFile, downloadSaveFile } from '../game/saveFile.js'
+import { getCachedFormattedNumber } from '../game/numberFormat.js'
 
 export function useGameActions({
   gameRef,
@@ -398,8 +400,14 @@ export function useGameActions({
   }
 
   function unlockUnfortunateRow() {
+    const cost = getCachedFormattedNumber(
+      getMisfortuneUpgradeCost(MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW),
+      0,
+      gameRef.current.numberNotation,
+      gameRef.current.suffixScientificExponent,
+    )
     const didConfirm = window.confirm(
-      'Accept Unfortunate Row for 250k Crops? This resets Crops and field growth in both the main and Misfortune areas, then grants the blueprints in both areas one permanent Row.',
+      `Accept Unfortunate Row for ${cost} Crops? This resets Crops and field growth in both the main and Misfortune areas, then grants the blueprints in both areas one permanent Row.`,
     )
 
     if (!didConfirm) {
@@ -415,8 +423,14 @@ export function useGameActions({
   }
 
   function unlockFortunateColumn() {
+    const cost = getCachedFormattedNumber(
+      getMisfortuneUpgradeCost(MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN),
+      0,
+      gameRef.current.numberNotation,
+      gameRef.current.suffixScientificExponent,
+    )
     const didConfirm = window.confirm(
-      'Accept Fortunate Column for 7.77e50 Crops? This resets Crops and field growth in both the main and Misfortune areas, then grants the blueprints in both areas one permanent Column.',
+      `Accept Fortunate Column for ${cost} Crops? This resets Crops and field growth in both the main and Misfortune areas, then grants the blueprints in both areas one permanent Column.`,
     )
 
     if (!didConfirm) {
@@ -627,6 +641,7 @@ export function useGameActions({
       onShowMisfortune: () => setActiveTab('misfortune'),
       onOpenInventions: openInventions,
       onShowStatistics: () => setActiveTab('statistics'),
+      onShowAchievements: () => setActiveTab('achievements'),
       onOpenOptions: openOptions,
     },
     purchaseActions: {

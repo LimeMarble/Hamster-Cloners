@@ -2,6 +2,7 @@ import {
   getLeekAugmentationYieldBonus,
   getLeekEnrichmentLevel,
   getNextSeedAugmentationCost,
+  getSeedAugmentationCost,
   SEED_AUGMENTATIONS,
   SEED_AUGMENTATION_IDS,
 } from '../game/augmentationLogic.js'
@@ -95,7 +96,7 @@ export function LeekAugmentations({ game, onPurchaseSeedAugmentation }) {
           </div>
           <div>
             <dt>Cost</dt>
-            <dd><FormattedNumber value={diagonal.cost} /> Crops</dd>
+            <dd><FormattedNumber value={getSeedAugmentationCost(game, diagonal.id)} /> Crops</dd>
           </div>
         </dl>
         <button

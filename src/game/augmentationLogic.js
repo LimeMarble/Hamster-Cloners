@@ -2,6 +2,7 @@ import {
   GAME_AREA_IDS,
   MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
 } from './gameConfig.js'
+import { getCropRequirement } from './cropRequirements.js'
 
 export const SEED_AUGMENTATION_IDS = Object.freeze({
   LEEK_ENRICHMENT: 'leekEnrichment',
@@ -353,7 +354,24 @@ export function getLeechingVineNourishmentVarietyBonus(seedAugmentations) {
     : 0
 }
 
+export function getSeedAugmentationCost(game, augmentationId) {
+  const augmentation = SEED_AUGMENTATIONS[augmentationId]
+  return getCropRequirement(
+    game,
+    augmentation?.cost ?? augmentation?.baseCost,
+    augmentation?.purchaseArea,
+  )
+}
+
 export function getNextSeedAugmentationCost(game, augmentationId) {
+  return getCropRequirement(
+    game,
+    getUnscaledNextSeedAugmentationCost(game, augmentationId),
+    SEED_AUGMENTATIONS[augmentationId]?.purchaseArea,
+  )
+}
+
+function getUnscaledNextSeedAugmentationCost(game, augmentationId) {
   const state = normalizeSeedAugmentationState(game.seedAugmentations)
 
   if (augmentationId === SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT) {

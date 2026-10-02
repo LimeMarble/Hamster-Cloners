@@ -20,6 +20,7 @@ import {
 test('Sampling Lentil costs 1e123 Crops and uses the normal perfection flow', () => {
   const game = {
     crops: CROP_PERFECTIONS.samplingLentil.cost,
+    activeArea: 'misfortune',
     hasUnlockedCropPerfection: true,
     hasUnlockedRowDuplicators: true,
     completedCropPerfections: [],

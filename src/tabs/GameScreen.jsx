@@ -5,6 +5,7 @@ import { FloorReplicatorPurchase } from './FloorReplicatorPurchase.jsx'
 import { Inventions } from './Inventions.jsx'
 import { Options } from './Options.jsx'
 import { Statistics } from './Statistics.jsx'
+import { Achievements } from './Achievements.jsx'
 import { Trade } from './Trade.jsx'
 import { Augmentation } from './Augmentation.jsx'
 import { FormattedNumber } from './ui.jsx'
@@ -56,6 +57,7 @@ export function GameScreen({
   augmentation,
   misfortune,
   statistics,
+  achievements,
   options,
 }) {
   if (activeTab === 'field') {
@@ -85,6 +87,7 @@ export function GameScreen({
   if (activeTab === 'statistics') {
     return <Statistics {...statistics} />
   }
+  if (activeTab === 'achievements') return <Achievements {...achievements} />
 
   return <Options {...options} />
 }

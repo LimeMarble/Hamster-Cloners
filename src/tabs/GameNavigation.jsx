@@ -27,6 +27,7 @@ function GameNavigationContent({
   onShowAugmentation,
   onShowMisfortune,
   onShowStatistics,
+  onShowAchievements,
   onOpenOptions,
 }) {
   return (
@@ -105,6 +106,11 @@ function GameNavigationContent({
         onClick={onShowStatistics}
       >
         Statistics
+      </button>
+      <button type="button"
+        className={`game-tab ${activeTab === 'achievements' ? 'game-tab-active' : ''}`}
+        onClick={onShowAchievements}>
+        Achievements
       </button>
       <button
         type="button"

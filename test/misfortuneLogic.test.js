@@ -251,7 +251,7 @@ test('Unfortunate Row resets both areas and grants one blueprint Row', () => {
   }
   const baseGame = {
     ...switchGameArea(mainGame, GAME_AREA_IDS.MISFORTUNE),
-    crops: 250_000,
+    crops: MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW].cost,
     farmland: {
       rows: 4.5,
       columns: 5.5,
@@ -263,7 +263,7 @@ test('Unfortunate Row resets both areas and grants one blueprint Row', () => {
 
   assert.equal(
     purchaseMisfortuneUpgrade(
-      { ...baseGame, crops: 249_999 },
+      { ...baseGame, crops: baseGame.crops - 1 },
       MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
     ),
     null,
@@ -409,7 +409,7 @@ test('Fortunate Column resets both areas and grants one blueprint Column', () =>
   )
 
   assert.ok(upgradedGame)
-  assert.equal(upgrade.cost, 7.77e50)
+  assert.equal(upgrade.cost, 7.77e50 * 10)
   assert.equal(upgradedGame.crops, 0)
   assert.equal(upgradedGame.farmland.columns, 0.9)
   assert.equal(upgradedGame.farmland.rows, 1)
@@ -489,7 +489,7 @@ test('the Misfortune wipe resets only the area-specific state', () => {
 
   const activeMisfortune = {
     ...switchGameArea(mainGame, GAME_AREA_IDS.MISFORTUNE),
-    crops: 250_000,
+    crops: MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW].cost,
   }
   const upgradedMisfortune = purchaseMisfortuneUpgrade(
     activeMisfortune,
@@ -622,7 +622,7 @@ test('Burdened Foundations trades Floor production for Crop passives', () => {
     farmland,
   }
 
-  assert.equal(upgrade.cost, 4.44e29)
+  assert.equal(upgrade.cost, 4.44e29 * 10)
   assert.equal(upgrade.passiveEffectBonusPerTier, 0.01)
   assert.equal(toggleFloorReplicatorMode(game), null)
 
@@ -743,7 +743,7 @@ test('Demonstration 2 progress is saved but can only pass in Misfortune', () => 
     areaProgress: {
       main: null,
       misfortune: {
-        crops: 1e300,
+        crops: 1e301,
       },
     },
   }

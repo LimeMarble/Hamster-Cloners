@@ -1,10 +1,12 @@
 import { GAME_AREA_IDS } from './gameConfig.js'
+import { getCropRequirement } from './cropRequirements.js'
 import { normalizeFortuneState } from './fortuneLogic.js'
 import { createInitialFiveLeafState } from './fiveLeafCloverLogic.js'
 import { hasMisfortuneUpgrade, MISFORTUNE_UPGRADE_IDS } from './misfortuneUpgrades.js'
 
 export const GREATER_BLUEPRINTING_COST = 1e146
-export const CLOVER_ASSEMBLY_PART_REQUIREMENT = 7.77e58
+export const CLOVER_ASSEMBLY_PART_REQUIREMENT =
+  getCropRequirement(undefined, 7.77e58, GAME_AREA_IDS.MISFORTUNE)
 export const CLOVER_ASSEMBLY_RABBIT_UNLOCK_ID = 'rabbitsCharm'
 
 export const CLOVER_ASSEMBLY_PARTS = Object.freeze([
@@ -74,12 +76,16 @@ export function isGreaterBlueprintingVisible(game) {
   )
 }
 
+export function getGreaterBlueprintingCost(game) {
+  return getCropRequirement(game, GREATER_BLUEPRINTING_COST, GAME_AREA_IDS.MAIN)
+}
+
 export function canUnlockGreaterBlueprinting(game) {
   return (
     isGreaterBlueprintingVisible(game) &&
     game?.activeArea === GAME_AREA_IDS.MAIN &&
     game?.hasUnlockedGreaterBlueprinting !== true &&
-    toNonNegativeNumber(game?.crops) >= GREATER_BLUEPRINTING_COST
+    toNonNegativeNumber(game?.crops) >= getGreaterBlueprintingCost(game)
   )
 }
 
@@ -88,7 +94,7 @@ export function unlockGreaterBlueprinting(game) {
 
   return {
     ...game,
-    crops: toNonNegativeNumber(game.crops) - GREATER_BLUEPRINTING_COST,
+    crops: toNonNegativeNumber(game.crops) - getGreaterBlueprintingCost(game),
     hasUnlockedGreaterBlueprinting: true,
   }
 }

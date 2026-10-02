@@ -308,7 +308,7 @@ test('Demonstration 1 allows planted Clover but bans active Breeze effects', () 
   assert.equal(completed.hasUnlockedFloorReplicators, true)
 })
 
-test("Demonstration 2 requires 1e300 Crops inside Fortune's Wrath", () => {
+test("Demonstration 2 requires 1e301 Crops inside Fortune's Wrath", () => {
   const game = {
     ...createContactGame(),
     capybara: {
@@ -319,7 +319,7 @@ test("Demonstration 2 requires 1e300 Crops inside Fortune's Wrath", () => {
       completedSecondaryObjectives: [],
     },
     activeArea: 'misfortune',
-    crops: 1e300,
+    crops: 1e301,
   }
   const demonstration = CAPYBARA_DEMONSTRATIONS[2]
   const status = getCapybaraDemonstrationStatus(
@@ -327,9 +327,9 @@ test("Demonstration 2 requires 1e300 Crops inside Fortune's Wrath", () => {
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
   )
 
-  assert.equal(demonstration.target, 1e300)
+  assert.equal(demonstration.target, 1e301)
   assert.equal(demonstration.rewardName, 'Establish contact with Manatees')
-  assert.equal(status.current, 1e300)
+  assert.equal(status.current, 1e301)
   assert.equal(status.progress, 1)
   assert.equal(status.canComplete, true)
 

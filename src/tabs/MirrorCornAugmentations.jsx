@@ -2,6 +2,7 @@ import {
   getMirrorCornEffectivenessBonus,
   getMirrorCornEffectivenessLevel,
   getNextSeedAugmentationCost,
+  getSeedAugmentationCost,
   hasMirrorCornDebuffRemovalAugmentation,
   isMirrorCornDebuffRemovalEnabled,
   SEED_AUGMENTATIONS,
@@ -87,7 +88,7 @@ export function MirrorCornAugmentations({
           </div>
           <div>
             <dt>Cost</dt>
-            <dd><FormattedNumber value={cornDebuffRemoval.cost} /> Crops</dd>
+            <dd><FormattedNumber value={getSeedAugmentationCost(game, cornDebuffRemoval.id)} /> Crops</dd>
           </div>
         </dl>
         <button
@@ -197,7 +198,7 @@ export function MirrorCornAugmentations({
           </div>
           <div>
             <dt>Cost</dt>
-            <dd><FormattedNumber value={cornReflectionLimit.cost} /> Crops</dd>
+            <dd><FormattedNumber value={getSeedAugmentationCost(game, cornReflectionLimit.id)} /> Crops</dd>
           </div>
         </dl>
         <button

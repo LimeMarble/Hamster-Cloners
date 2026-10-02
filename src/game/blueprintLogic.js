@@ -12,11 +12,13 @@ import {
   BLUEPRINT_EXPANSIONS,
   BLUEPRINT_EXPANSION_TRACKS,
   FIELD_RESET_STARTING_COLUMNS,
+  GAME_AREA_IDS,
   INITIAL_BLUEPRINT_SIZE,
   MISFORTUNE_AREA_STATE_VERSION,
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   STARTING_CROPS,
 } from './gameConfig.js'
+import { getCropRequirement } from './cropRequirements.js'
 import { createInitialFortuneState } from './fortuneLogic.js'
 import { createInitialSeedAugmentationState } from './augmentationLogic.js'
 import {
@@ -154,6 +156,7 @@ export function createInitialGame() {
   return {
     crops: STARTING_CROPS,
     totalCropsMade: 0,
+    earnedAchievementIds: [],
     playtimeSeconds: 0,
     secondsSinceAreaReset: 0,
     hamsters: 0,
@@ -354,8 +357,11 @@ function getCompletedCropPerfections(game) {
     : []
 }
 
-export function getCropPerfectionCost(perfectionId) {
-  return CROP_PERFECTIONS[perfectionId]?.cost ?? null
+export function getCropPerfectionCost(perfectionId, game) {
+  const cost = CROP_PERFECTIONS[perfectionId]?.cost ?? null
+  return getCropPerfectionCurrency(perfectionId) === 'rabbitRelations'
+    ? cost
+    : getCropRequirement(game, cost)
 }
 
 export function getCropPerfectionCurrency(perfectionId) {
@@ -382,12 +388,29 @@ function getCropPerfectionBalance(game, perfectionId) {
     : Math.max(0, Number(game.crops) || 0)
 }
 
+export function isCropPerfectionVisible(game, perfectionId) {
+  const perfection = CROP_PERFECTIONS[perfectionId]
+  if (!perfection || isCropPerfectionTemporarilyUnavailable(perfectionId)) {
+    return false
+  }
+
+  return (
+    perfection.requiresMisfortune !== true ||
+    hasCropPerfection(game?.completedCropPerfections ?? [], perfectionId) ||
+    game?.activeArea === GAME_AREA_IDS.MISFORTUNE ||
+    game?.areaProgress?.misfortune != null ||
+    (Array.isArray(game?.completedMisfortuneUpgrades) &&
+      game.completedMisfortuneUpgrades.length > 0)
+  )
+}
+
 export function canUnlockCropPerfection(game, perfectionId) {
-  const cost = getCropPerfectionCost(perfectionId)
+  const cost = getCropPerfectionCost(perfectionId, game)
 
   return (
     game.hasUnlockedCropPerfection === true &&
     cost !== null &&
+    isCropPerfectionVisible(game, perfectionId) &&
     !isCropPerfectionTemporarilyUnavailable(perfectionId) &&
     (CROP_PERFECTIONS[perfectionId]?.requiresRowDuplicators !== true ||
       game.hasUnlockedRowDuplicators === true) &&
@@ -398,7 +421,7 @@ export function canUnlockCropPerfection(game, perfectionId) {
 }
 
 export function unlockCropPerfection(game, perfectionId) {
-  const cost = getCropPerfectionCost(perfectionId)
+  const cost = getCropPerfectionCost(perfectionId, game)
 
   if (!canUnlockCropPerfection(game, perfectionId) || cost === null) {
     return null
@@ -440,10 +463,14 @@ export function unlockCropPerfection(game, perfectionId) {
   }
 }
 
+export function getRowDuplicatorsUnlockCropCount(game) {
+  return getCropRequirement(game, ROW_DUPLICATORS_UNLOCK_CROP_COUNT)
+}
+
 export function canUnlockRowDuplicators(game) {
   return (
     game.hasUnlockedRowDuplicators !== true &&
-    Math.max(0, Number(game.crops) || 0) >= ROW_DUPLICATORS_UNLOCK_CROP_COUNT
+    Math.max(0, Number(game.crops) || 0) >= getRowDuplicatorsUnlockCropCount(game)
   )
 }
 

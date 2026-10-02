@@ -3,10 +3,12 @@ import {
   GAME_AREA_IDS,
   MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
 } from './gameConfig.js'
+import { getCropRequirement } from './cropRequirements.js'
 import {
   getUnlockedCropIds,
   getVisibleCropIds,
   hasUnlockedCarrotInMisfortune,
+  hasVisitedMisfortune,
 } from './crops.js'
 
 export const FLOOR_REPLICATOR_MODES = Object.freeze({
@@ -26,7 +28,7 @@ export const MISFORTUNE_UPGRADE_IDS = Object.freeze({
   NOT_SO_FINAL_SUPPORT: MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
 })
 
-export const MISFORTUNE_UPGRADES = Object.freeze({
+const BASE_MISFORTUNE_UPGRADES = Object.freeze({
   [MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
     name: 'Unfortunate Row',
@@ -85,6 +87,16 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     cost: 1e70,
   }),
 })
+
+export const MISFORTUNE_UPGRADES = Object.freeze(Object.fromEntries(
+  Object.entries(BASE_MISFORTUNE_UPGRADES).map(([id, upgrade]) => [
+    id,
+    Object.freeze({
+      ...upgrade,
+      cost: getCropRequirement(undefined, upgrade.cost, GAME_AREA_IDS.MISFORTUNE),
+    }),
+  ]),
+))
 
 export const RUSHED_START_TOTAL_DURATION_SECONDS =
   MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.RUSHED_START]
@@ -254,6 +266,7 @@ function getAreaUnlockedCropIds(game, areaId) {
     game?.totalHamstersHired,
     game?.hasUnlockedRowDuplicators,
     hasUnlockedCarrotInMisfortune(game),
+    hasVisitedMisfortune(game),
   ).filter((cropId) => unlockedCropIds.includes(cropId))
 }
 

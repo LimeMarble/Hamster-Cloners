@@ -211,6 +211,7 @@ test('major progression places Sweet Potato before the Lentil and Carrot perfect
   const initialGame = createInitialGame()
   const game = {
     ...initialGame,
+    areaProgress: { ...initialGame.areaProgress, misfortune: {} },
     totalHamstersHired: 1000,
     hamsters: 125,
     unionized: true,

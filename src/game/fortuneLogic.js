@@ -7,6 +7,7 @@ import {
   getMonocropThresholdBonus,
 } from './cropEffects.js'
 import { getMonocropYieldMultiplier } from './monocropPenalty.js'
+import { grantAchievement } from './achievementState.js'
 import {
   FORTUNES_WRATH_CROP_DIVISOR,
   FORTUNES_WRATH_CROP_EXPONENT,
@@ -560,12 +561,20 @@ export function collectCloverBundle(
   }
 
   const collectedBundle = fortune.bundles[bundleIndex]
-  const gameAfterCollection = {
+  let gameAfterCollection = {
     ...game,
     fortune: {
       ...fortune,
       bundles: fortune.bundles.filter((_, index) => index !== bundleIndex),
     },
+  }
+
+  if (game.cloverAssembly?.assembled === true) {
+    const state = normalizeFiveLeafState(game.fortune?.fiveLeaf, game)
+    const loadout = state.loadouts[state.activeLoadoutIndex]
+    if (Object.values(loadout.allocations).every((percentage) => percentage === 0)) {
+      gameAfterCollection = grantAchievement(gameAfterCollection, 'absolutelyNothing')
+    }
   }
 
   return addRandomFortuneEffect(gameAfterCollection, random, {

@@ -95,10 +95,10 @@ test('Clover assembly progress follows the slowest required Crop production and 
   const cappedProgress = advanceCloverAssemblyState(
     progress,
     {
-      appleTree: 1e59,
-      canola: 1e59,
-      soybean: 1e59,
-      carrot: 1e59,
+      appleTree: CLOVER_ASSEMBLY_PART_REQUIREMENT,
+      canola: CLOVER_ASSEMBLY_PART_REQUIREMENT,
+      soybean: CLOVER_ASSEMBLY_PART_REQUIREMENT,
+      carrot: CLOVER_ASSEMBLY_PART_REQUIREMENT,
     },
     1,
     true,

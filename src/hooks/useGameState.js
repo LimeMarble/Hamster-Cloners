@@ -13,6 +13,7 @@ import {
 import { loadGameSnapshot, saveGame } from '../game/storage.js'
 import { setActiveNumberNotation } from '../game/numberFormat.js'
 import { shareUnchangedStructure } from '../game/structuralSharing.js'
+import { awardAchievements } from '../game/achievementLogic.js'
 
 const ACTIVE_CATCH_UP_LIMIT_SECONDS = 1
 
@@ -95,6 +96,7 @@ export function useGameState(isEditingBlueprintRef) {
     } = {},
   ) {
     revisionRef.current += 1
+    nextGame = awardAchievements(nextGame, gameRef.current)
     gameRef.current = nextGame
     simulatedAtRef.current = simulatedAt
     setActiveNumberNotation(

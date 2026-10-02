@@ -10,6 +10,7 @@ import {
   isMisfortuneAreaActive,
 } from './areaLogic.js'
 import { GAME_AREA_IDS, MISFORTUNE_CROP_GOAL } from './gameConfig.js'
+import { getCropRequirement } from './cropRequirements.js'
 
 export const CAPYBARA_DEMONSTRATION_IDS = Object.freeze({
   INTRODUCTION: 'introduction',
@@ -63,7 +64,7 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     number: 2,
     name: "Fortune's Wrath",
     goal: 'Reach the listed Crop requirement in the Misfortune area.',
-    target: MISFORTUNE_CROP_GOAL,
+    target: getCropRequirement(undefined, MISFORTUNE_CROP_GOAL, GAME_AREA_IDS.MISFORTUNE),
     unit: 'Misfortune Crops',
     metric: 'misfortuneCrops',
     restrictions: [
@@ -172,6 +173,18 @@ export function hasCompletedCapybaraDemonstration(game, demonstrationId) {
   return game.capybara?.completedDemonstrations?.includes(demonstrationId) === true
 }
 
+export function isCapybaraDemonstrationVisible(game, demonstrationId) {
+  const index = CAPYBARA_DEMONSTRATIONS.findIndex(({ id }) => id === demonstrationId)
+  if (index < 0) return false
+  const demonstration = CAPYBARA_DEMONSTRATIONS[index]
+  // New demonstrations default to the previous demonstration as their gate.
+  // An explicit null prerequisite can opt out if a later design calls for it.
+  const prerequisiteId = demonstration.prerequisiteDemonstrationId === undefined
+    ? CAPYBARA_DEMONSTRATIONS[index - 1]?.id
+    : demonstration.prerequisiteDemonstrationId
+  return !prerequisiteId || hasCompletedCapybaraDemonstration(game, prerequisiteId)
+}
+
 export function hasCompletedCapybaraSecondaryObjective(game, objectiveId) {
   return game.capybara?.completedSecondaryObjectives?.includes(objectiveId) === true
 }
@@ -251,12 +264,7 @@ export function getCapybaraDemonstrationStatus(
     : false
   const hasContact = hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT)
   const hasReachedGoal = current >= demonstration.target
-  const hasPrerequisite = demonstration.prerequisiteDemonstrationId
-    ? hasCompletedCapybaraDemonstration(
-        game,
-        demonstration.prerequisiteDemonstrationId,
-      )
-    : true
+  const hasPrerequisite = isCapybaraDemonstrationVisible(game, demonstrationId)
   const restrictionsMet = demonstration.requiresNoActiveBreezeEffects
     ? hasNoActiveBreezeEffects(game)
     : true
