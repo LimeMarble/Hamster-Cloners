@@ -18,7 +18,7 @@ import {
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   STARTING_CROPS,
 } from './gameConfig.js'
-import { getCropRequirement } from './cropRequirements.js'
+import { getCropRequirement, getSharedCropProgressionCost } from './cropRequirements.js'
 import { createInitialFortuneState } from './fortuneLogic.js'
 import { createInitialSeedAugmentationState } from './augmentationLogic.js'
 import {
@@ -362,7 +362,7 @@ export function getCropPerfectionCost(perfectionId, game) {
   const cost = CROP_PERFECTIONS[perfectionId]?.cost ?? null
   return getCropPerfectionCurrency(perfectionId) === 'rabbitRelations'
     ? cost
-    : getCropRequirement(game, cost)
+    : getSharedCropProgressionCost(game, cost)
 }
 
 export function getCropPerfectionCurrency(perfectionId) {

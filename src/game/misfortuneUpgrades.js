@@ -68,12 +68,6 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
     passiveEffectBonusPerTier: 0.01,
     floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
   }),
-  [MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY]: Object.freeze({
-    id: MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
-    name: 'Nourishing Misery',
-    requiredCropPerfectionId: 'sweetPotato',
-    cost: 2e37,
-  }),
   [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
     name: 'Hunt for Something Greater',
@@ -81,6 +75,13 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
     cost: 7.77e40,
     secondsPerTimeMultiplier: 60,
     maximumTimeMultiplier: 10,
+  }),
+  [MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY]: Object.freeze({
+    id: MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+    name: 'Nourishing Misery',
+    requiredCropPerfectionId: 'sweetPotato',
+    requiredMisfortuneUpgradeId: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+    cost: 2e37,
   }),
   [MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
@@ -160,6 +161,7 @@ export function isMisfortuneUpgradeVisible(game, upgradeId) {
 }
 
 function hasMisfortuneUpgradeProgressRequirements(game, upgrade) {
+  if (hasMisfortuneUpgrade(game, upgrade.id)) return true
   return (
     (!upgrade.requiredMisfortuneUpgradeId ||
       hasMisfortuneUpgrade(game, upgrade.requiredMisfortuneUpgradeId)) &&

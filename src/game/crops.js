@@ -11,7 +11,7 @@ import {
   hasRichSoilAugmentation,
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
-import { getCropRequirement } from './cropRequirements.js'
+import { getCropRequirement, getCropRequirementMultiplier, scaleCropRequirement } from './cropRequirements.js'
 import {
   formatWholeNumber,
   getCachedFormattedNumber,
@@ -33,15 +33,21 @@ export const MISFORTUNE_CORN_UNLOCK_CROP_COUNT = 2.5e5
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
 
 // Base values before the area's progression multiplier. Keep main balancing
-// separate from Misfortune: these display as 8e20 and 2e22 there.
+// separate from Misfortune; apply the area's multiplier exactly once.
 export const AREA_CROP_UNLOCK_REQUIREMENTS = Object.freeze({
+  appleTree: Object.freeze({ main: APPLE_TREE_UNLOCK_CROP_COUNT, misfortune: 1e17 }),
   lentil: Object.freeze({ main: LENTIL_UNLOCK_CROP_COUNT, misfortune: 8e19 }),
   knotweed: Object.freeze({ main: KNOTWEED_UNLOCK_CROP_COUNT, misfortune: 2e21 }),
+  wheat: Object.freeze({ main: WHEAT_UNLOCK_CROP_COUNT, misfortune: 1.25e35 }),
 })
 
 export function getCropUnlockBaseRequirement(cropId, activeArea = 'main') {
   const requirements = AREA_CROP_UNLOCK_REQUIREMENTS[cropId]
   return requirements?.[activeArea] ?? requirements?.main ?? null
+}
+
+export function getCropUnlockRequirement(cropId, activeArea = 'main', requirementMultiplier = 1) {
+  return scaleCropRequirement(getCropUnlockBaseRequirement(cropId, activeArea), requirementMultiplier)
 }
 
 export function hasUnlockedCorn(game, crops = game?.crops) {
@@ -507,13 +513,13 @@ export function getCropUnlockDescription(
     case 'turnip':
       return `Unlocks at ${formatRequirement(TURNIP_UNLOCK_CROP_COUNT)} Crops`
     case 'appleTree':
-      return `Unlocks at ${formatRequirement(APPLE_TREE_UNLOCK_CROP_COUNT)} Crops`
+      return `Unlocks at ${formatRequirement(getCropUnlockBaseRequirement(cropId, activeArea))} Crops`
     case 'lentil':
       return `Unlocks at ${formatRequirement(getCropUnlockBaseRequirement(cropId, activeArea))} Crops`
     case 'knotweed':
       return `Unlocks at ${formatRequirement(getCropUnlockBaseRequirement(cropId, activeArea))} Crops`
     case 'wheat':
-      return `Unlocks at ${formatRequirement(WHEAT_UNLOCK_CROP_COUNT)} Crops after Row Duplicators`
+      return `Unlocks at ${format(getCropUnlockRequirement(cropId, activeArea, getCropRequirementMultiplier(game, activeArea)))} Crops after Row Duplicators`
     case 'rootTunnel':
       return 'Reward for Capybara Demonstration 2'
     case 'sunflower':

@@ -116,7 +116,7 @@ test('later Misfortune upgrades and their goals stay hidden until Sweet Potato i
     const goal = MAJOR_PROGRESSION_GOALS.find(({ id: goalId }) => goalId === `misfortune-upgrade-${id}`)
     assert.equal(isMisfortuneUpgradeVisible(locked, id), false)
     assert.equal(goal.isApplicable(locked), false)
-    const needsMoreProgress = ['fortunateColumn', 'finalSupport', 'notSoFinalSupport'].includes(id)
+    const needsMoreProgress = ['nourishingMisery', 'fortunateColumn', 'finalSupport', 'notSoFinalSupport'].includes(id)
     assert.equal(isMisfortuneUpgradeVisible(perfected, id), !needsMoreProgress)
     assert.equal(goal.isApplicable(perfected), !needsMoreProgress)
     assert.equal(isMisfortuneUpgradeVisible(fullyRevealed, id), true)
@@ -144,10 +144,10 @@ test('the Misfortune page hides later cards until perfection, not just the Oily 
   assert.doesNotMatch(perfected, /View Sweet Potato in Main/)
 })
 
-test('Fortunate Column and Final Support require Hunt for both visibility and purchasing', () => {
+test('Nourishing Misery, Fortunate Column and Final Support require Hunt for both visibility and purchasing', () => {
   const game = afterDemoOne({ activeArea: 'misfortune', crops: 1e200,
     completedCropPerfections: ['sweetPotato'] })
-  for (const id of ['fortunateColumn', 'finalSupport']) {
+  for (const id of ['nourishingMisery', 'fortunateColumn', 'finalSupport']) {
     assert.equal(isMisfortuneUpgradeVisible(game, id), false)
     assert.equal(canUnlockMisfortuneUpgrade(game, id), false)
     assert.equal(purchaseMisfortuneUpgrade(game, id), null)
@@ -156,7 +156,7 @@ test('Fortunate Column and Final Support require Hunt for both visibility and pu
     assert.equal(canUnlockMisfortuneUpgrade(ready, id), true)
     assert.ok(purchaseMisfortuneUpgrade(ready, id).completedMisfortuneUpgrades.includes(id))
   }
-  for (const id of ['adversityGrownTubers', 'burdenedFoundations', 'nourishingMisery', 'huntForSomethingGreater']) {
+  for (const id of ['adversityGrownTubers', 'burdenedFoundations', 'huntForSomethingGreater']) {
     assert.equal(isMisfortuneUpgradeVisible(game, id), true)
     assert.equal(canUnlockMisfortuneUpgrade(game, id), true)
   }
@@ -182,9 +182,12 @@ test('the page reveals Hunt-gated and Clover-gated cards separately, with simple
   const props = { ...MISFORTUNE_UPGRADES, hasSweetPotato: true }
   const beforeHunt = renderToStaticMarkup(createElement(Misfortune, props))
   assert.match(beforeHunt, /Hunt for Something Greater/)
-  assert.doesNotMatch(beforeHunt, /Fortunate Column|Final Support/)
+  assert.doesNotMatch(beforeHunt, /Nourishing Misery|Fortunate Column|Final Support/)
   const afterHunt = renderToStaticMarkup(createElement(Misfortune, {
     ...props, hasHuntForSomethingGreater: true }))
+  assert.match(afterHunt, /Nourishing Misery/)
+  assert.ok(afterHunt.indexOf('<h2>Hunt for Something Greater</h2>') <
+    afterHunt.indexOf('<h2>Nourishing Misery</h2>'))
   assert.match(afterHunt, /Fortunate Column/)
   assert.match(afterHunt, /Final Support/)
   assert.doesNotMatch(afterHunt, /Not-So-Final Support/)

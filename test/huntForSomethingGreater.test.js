@@ -5,6 +5,7 @@ import {
   MISFORTUNE_UPGRADE_IDS,
   MISFORTUNE_UPGRADES,
   advanceGameSimulationStep,
+  awardAchievements,
   createBlueprint,
   createInitialGame,
   getHuntForSomethingGreaterMultiplier,
@@ -35,7 +36,7 @@ function createMisfortuneGame(overrides = {}) {
   }
 }
 
-test('Hunt for Something Greater costs 7.77e40 Misfortune Crops', () => {
+test('Hunt for Something Greater keeps its 7.77e41 Misfortune Crop cost', () => {
   const upgrade = MISFORTUNE_UPGRADES[
     MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER
   ]
@@ -46,7 +47,7 @@ test('Hunt for Something Greater costs 7.77e40 Misfortune Crops', () => {
   )
 
   assert.ok(purchased)
-  assert.equal(upgrade.cost, 7.77e40)
+  assert.equal(upgrade.cost, 7.77e41)
   assert.equal(purchased.crops, 0)
   assert.ok(
     purchased.completedMisfortuneUpgrades.includes(
@@ -183,13 +184,21 @@ test('Hunt multiplies Column, Row, and Floor production', () => {
     random: () => 1,
   })
 
-  assert.ok(Math.abs(advanced.farmland.columns - 1.5) < 1e-10)
-  assert.ok(Math.abs(advanced.farmland.rows - 1.612) < 1e-10)
-  assert.ok(Math.abs(advanced.farmland.floors - 1.6) < 1e-10)
+  const baseline = advanceGameSimulationStep(
+    { ...game, completedMisfortuneUpgrades: [] }, 1, { random: () => 1 },
+  )
+  const multiplier = getHuntForSomethingGreaterMultiplier(game)
+  for (const unit of ['columns', 'rows', 'floors']) {
+    const actualGain = advanced.farmland[unit] - game.farmland[unit]
+    const expectedGain = (baseline.farmland[unit] - game.farmland[unit]) * multiplier
+    assert.ok(Math.abs(actualGain - expectedGain) < 1e-10, unit)
+  }
 })
 
 test('Main inherits Hunt time scaling with zero missing Crop types', () => {
-  const game = {
+  // Keep Treat bonuses identical when comparing Hunt with the same save
+  // without its multiplier; owning a Misfortune upgrade can earn achievements.
+  const game = awardAchievements({
     ...createInitialGame(),
     hamsters: 1,
     hasUnlockedRowDuplicators: true,
@@ -200,16 +209,21 @@ test('Main inherits Hunt time scaling with zero missing Crop types', () => {
       MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
     ],
     secondsSinceAreaReset: 180,
-  }
+  })
   const advanced = advanceGameSimulationStep(game, 1, {
     random: () => 1,
   })
 
   assert.equal(getMissingMisfortuneCropTypeIds(game).length, 0)
   assert.equal(getHuntForSomethingGreaterMultiplier(game), 3)
-  assert.ok(Math.abs(advanced.farmland.columns - 1.2) < 1e-10)
-  assert.ok(Math.abs(advanced.farmland.rows - 1.306) < 1e-10)
-  assert.ok(Math.abs(advanced.farmland.floors - 1.3) < 1e-10)
+  const baseline = advanceGameSimulationStep(
+    { ...game, completedMisfortuneUpgrades: [] }, 1, { random: () => 1 },
+  )
+  for (const unit of ['columns', 'rows', 'floors']) {
+    const actualGain = advanced.farmland[unit] - game.farmland[unit]
+    const expectedGain = (baseline.farmland[unit] - game.farmland[unit]) * 3
+    assert.ok(Math.abs(actualGain - expectedGain) < 1e-10, unit)
+  }
 })
 
 test('the reset timer keeps advancing and preserves values beyond ten minutes', () => {

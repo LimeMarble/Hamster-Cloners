@@ -56,6 +56,7 @@ import {
   WHEAT_UNLOCK_CROP_COUNT,
   getCropUnlockDescription,
   getCropUnlockBaseRequirement,
+  getCropUnlockRequirement,
 } from '../src/game/crops.js'
 import { exportGame, importGame, normalizeGame } from '../src/game/storage.js'
 import { getCachedFormattedNumber } from '../src/game/numberFormat.js'
@@ -103,7 +104,7 @@ for (const stage of stages) {
       assert.equal(
         getCropPerfectionCost(perfection.id, game),
         perfection.cost * (perfection.costCurrency === 'rabbitRelations' ? 1 : stage.multiplier) *
-          (perfection.costCurrency !== 'rabbitRelations' && stage.area === 'main' && perfection.cost >= 4e95 ? 500 : 1),
+          (perfection.costCurrency !== 'rabbitRelations' && perfection.cost >= 4e95 ? 500 : 1),
       )
     }
     const cost = CROP_PERFECTIONS.enrichingLeek.cost * stage.multiplier
@@ -124,9 +125,13 @@ for (const stage of stages) {
       ['hasUnlockedSunflower', SUNFLOWER_UNLOCK_CROP_COUNT],
       ['hasUnlockedCropPerfection', CROP_PERFECTION_UNLOCK_CROP_COUNT],
     ]) {
-      const cropId = flag === 'hasUnlockedLentil' ? 'lentil'
-        : flag === 'hasUnlockedKnotweed' ? 'knotweed' : null
-      const threshold = (cropId ? getCropUnlockBaseRequirement(cropId, stage.area) : base) * stage.multiplier
+      const cropId = flag === 'hasUnlockedAppleTree' ? 'appleTree'
+        : flag === 'hasUnlockedLentil' ? 'lentil'
+        : flag === 'hasUnlockedKnotweed' ? 'knotweed'
+        : flag === 'hasUnlockedWheat' ? 'wheat' : null
+      const threshold = cropId === 'wheat'
+        ? getCropUnlockRequirement(cropId, stage.area, stage.multiplier)
+        : (cropId ? getCropUnlockBaseRequirement(cropId, stage.area) : base) * stage.multiplier
       const below = { ...game, crops: threshold * 0.99, [flag]: false }
       const reached = { ...game, crops: threshold, [flag]: false }
       assert.equal(advanceGameSimulationStep(below, 1 / 60)[flag], false, flag)

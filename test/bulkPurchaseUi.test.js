@@ -3,7 +3,7 @@ import test, { before, after } from 'node:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createServer } from 'vite'
-import { createInitialGame } from '../src/game/gameLogic.js'
+import { createInitialGame, getBulkPurchaseQuote } from '../src/game/gameLogic.js'
 import { readFileSync } from 'node:fs'
 
 let server, BulkPurchaseButtons, HamsterPurchase, useGameActions, setActiveNumberNotation
@@ -21,11 +21,13 @@ function renderBulk(game, kind = 'hamster') {
   return renderToStaticMarkup(createElement(BulkPurchaseButtons, { game, kind }))
 }
 
-test('black bulk buttons show batch cost and the total Buy Max will actually spend', () => {
+test('bulk buttons retain the original secondary color and show full cost, not a shortfall', () => {
   const game = { ...createInitialGame(), hamsters: 10, totalHamstersHired: 10, crops: 10 }
   const markup = renderBulk(game)
   assert.match(markup, /bulk-purchase-button/)
-  assert.match(markup, /Buy 10.*195 Crops.*185 more Crops needed/s)
+  assert.match(markup, /Buy 10.*195 Crops/s)
+  assert.doesNotMatch(markup, /more Crops needed/)
+  assert.equal((markup.match(/class="secondary-button bulk-purchase-button"/g) || []).length, 2)
   assert.match(markup, /<span>Buy max<\/span>/)
   assert.doesNotMatch(markup.slice(markup.indexOf('Buy max')), /bulk-purchase-cost|0 Crops|more Crops needed/)
   assert.equal((markup.match(/disabled=""/g) || []).length, 2)
@@ -33,7 +35,22 @@ test('black bulk buttons show batch cost and the total Buy Max will actually spe
   assert.doesNotMatch(funded, /disabled=""|more Crops needed/)
   assert.match(funded, /Buy max \(10\).*195 Crops/s)
   const css = readFileSync(new URL('../src/tabs/styles/controls-and-modals.css', import.meta.url), 'utf8')
-  assert.match(css, /\.bulk-purchase-button\s*\{[^}]*background: #090909/s)
+  assert.match(css, /\.secondary-button\s*\{[^}]*background: var\(--panel-raised\)/s)
+  assert.doesNotMatch(css, /\.bulk-purchase-button[^{]*\{[^}]*background:/s)
+})
+
+test('Buy 10 keeps its full cost visible without extra Crops needed for every machinery type', () => {
+  const base = { ...createInitialGame(), crops: 0, hamsters: 10, totalHamstersHired: 10,
+    hasUnlockedRowDuplicators: true, hasUnlockedFloorReplicators: true }
+  setActiveNumberNotation('suffix')
+  for (const kind of ['hamster', 'row', 'floor']) {
+    const game = { ...base, activeArea: kind === 'floor' ? 'misfortune' : 'main' }
+    assert.ok(getBulkPurchaseQuote(game, kind, 10).shortfall > 0)
+    const markup = renderBulk(game, kind)
+    assert.match(markup, /Buy 10<\/span><span class="bulk-purchase-cost">[^<]+ Crops/)
+    assert.doesNotMatch(markup, /more Crops needed/)
+    assert.equal((markup.match(/disabled=""/g) || []).length, 2)
+  }
 })
 
 test('bulk cost labels follow the selected number notation', () => {

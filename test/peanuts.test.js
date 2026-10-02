@@ -190,7 +190,7 @@ test('Oily Treats multiplies floors only, in both areas, and leaves support mode
   }
 })
 
-test('main Sweet Potato and later Crop costs receive another 500×; earlier and Misfortune costs do not', () => {
+test('shared Sweet Potato and later Crop costs receive another 500× in both areas; earlier costs do not', () => {
   const game = { ...createInitialGame(), activeArea: 'main',
     capybara: { completedDemonstrations: ['introduction', 'demonstrationOne'] },
     hasUnlockedCropPerfection: true, hasUnlockedRowDuplicators: true,
@@ -200,7 +200,10 @@ test('main Sweet Potato and later Crop costs receive another 500×; earlier and 
   assert.equal(getCropPerfectionCost('enrichingLeek', game), 2e11)
   near(getNextSeedAugmentationCost(game, 'sweeterBond'), 3.5e103)
   near(getNextSeedAugmentationCost(game, 'leekDiagonal'), 1e69)
-  assert.equal(getCropPerfectionCost('sweetPotato', { ...game, activeArea: 'misfortune' }), 4e96)
+  const misfortune = { ...game, activeArea: 'misfortune' }
+  near(getCropPerfectionCost('sweetPotato', misfortune), 2e99)
+  near(getCropPerfectionCost('samplingLentil', misfortune), 5e126)
+  near(getNextSeedAugmentationCost(misfortune, 'sweeterBond'), 3.5e103)
   const cost = getCropPerfectionCost('sweetPotato', game)
   assert.equal(canUnlockCropPerfection({ ...game, crops: cost * 0.99 }, 'sweetPotato'), false)
   assert.equal(canUnlockCropPerfection({ ...game, crops: cost }, 'sweetPotato'), true)

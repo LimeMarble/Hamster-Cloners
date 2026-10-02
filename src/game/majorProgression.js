@@ -9,6 +9,7 @@ import {
   hasUnlockedSoybean,
   hasUnlockedCorn,
   getCropUnlockBaseRequirement,
+  getCropUnlockRequirement,
   MISFORTUNE_CORN_UNLOCK_CROP_COUNT,
   hasVisitedMisfortune,
   SUNFLOWER_UNLOCK_CROP_COUNT,
@@ -45,7 +46,7 @@ import {
 import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
 import { getMisfortuneAreaCrops } from './areaLogic.js'
 import { getCropPerfectionCost, isCropPerfectionVisible } from './blueprintLogic.js'
-import { getCropRequirement } from './cropRequirements.js'
+import { getCropRequirement, getCropRequirementMultiplier } from './cropRequirements.js'
 import {
   hasRichSoilAugmentation,
   SEED_AUGMENTATIONS,
@@ -290,6 +291,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'crop-apple-tree',
     title: 'Unlock Apple Sapling',
     target: APPLE_TREE_UNLOCK_CROP_COUNT,
+    getTarget: (game) => getCropRequirement(game, getCropUnlockBaseRequirement('appleTree', game.activeArea)),
     description: 'Reach the Crop threshold to permanently unlock Apple Sapling.',
     isComplete: (game) => game.hasUnlockedAppleTree === true,
   }),
@@ -335,17 +337,18 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'crop-wheat',
     title: 'Unlock Wheat',
     target: WHEAT_UNLOCK_CROP_COUNT,
+    getTarget: (game) => getCropUnlockRequirement('wheat', game.activeArea, getCropRequirementMultiplier(game)),
     description:
       'After unlocking Row Duplicators, reach the Crop threshold to permanently unlock Wheat.',
     isComplete: (game) => game.hasUnlockedWheat === true,
   }),
   createMisfortuneUpgradeGoal(
-    MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
-    'Purchase Nourishing Misery from the Misfortune tab.',
-  ),
-  createMisfortuneUpgradeGoal(
     MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
     'Purchase Hunt for Something Greater from the Misfortune tab.',
+  ),
+  createMisfortuneUpgradeGoal(
+    MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+    'Purchase Nourishing Misery from the Misfortune tab.',
   ),
   createPerfectionGoal('splitweed'),
   createCropGoal({

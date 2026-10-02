@@ -22,11 +22,6 @@ function BulkPurchaseButton({ quote, label, onClick }) {
       {quote.blockedReason && quote.cost !== null ? (
         <span className="bulk-purchase-shortfall">{unavailableText}</span>
       ) : null}
-      {quote.shortfall > 0 ? (
-        <span className="bulk-purchase-shortfall">
-          <FormattedNumber value={quote.shortfall} maximumFractionDigits={2} /> more Crops needed
-        </span>
-      ) : null}
     </button>
   )
 }

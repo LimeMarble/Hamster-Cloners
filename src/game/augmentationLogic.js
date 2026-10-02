@@ -2,7 +2,7 @@ import {
   GAME_AREA_IDS,
   MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
 } from './gameConfig.js'
-import { getCropRequirement } from './cropRequirements.js'
+import { getCropRequirement, getSharedCropProgressionCost } from './cropRequirements.js'
 
 export const SEED_AUGMENTATION_IDS = Object.freeze({
   LEEK_ENRICHMENT: 'leekEnrichment',
@@ -117,7 +117,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     name: 'Sneaky Crawler',
     cost: 3e136,
     nourishmentVarietyBonus: 1,
-    requiredMisfortuneUpgradeId: 'huntForSomethingGreater',
+    requiredMisfortuneUpgradeIds: ['huntForSomethingGreater', 'nourishingMisery'],
   }),
   [SEED_AUGMENTATION_IDS.GREATER_ABSORPTION]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.GREATER_ABSORPTION,
@@ -125,7 +125,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     name: 'Greater Absorption',
     cost: 6e137,
     splitweedNourishmentStrengthBonus: 1,
-    requiredMisfortuneUpgradeId: 'huntForSomethingGreater',
+    requiredMisfortuneUpgradeIds: ['huntForSomethingGreater', 'nourishingMisery'],
   }),
 })
 
@@ -356,19 +356,25 @@ export function getLeechingVineNourishmentVarietyBonus(seedAugmentations) {
 
 export function getSeedAugmentationCost(game, augmentationId) {
   const augmentation = SEED_AUGMENTATIONS[augmentationId]
-  return getCropRequirement(
+  return getScaledAugmentationCost(
     game,
+    augmentation,
     augmentation?.cost ?? augmentation?.baseCost,
-    augmentation?.purchaseArea,
   )
 }
 
 export function getNextSeedAugmentationCost(game, augmentationId) {
-  return getCropRequirement(
+  return getScaledAugmentationCost(
     game,
+    SEED_AUGMENTATIONS[augmentationId],
     getUnscaledNextSeedAugmentationCost(game, augmentationId),
-    SEED_AUGMENTATIONS[augmentationId]?.purchaseArea,
   )
+}
+
+function getScaledAugmentationCost(game, augmentation, baseCost) {
+  return augmentation?.purchaseArea
+    ? getCropRequirement(game, baseCost, augmentation.purchaseArea)
+    : getSharedCropProgressionCost(game, baseCost)
 }
 
 function getUnscaledNextSeedAugmentationCost(game, augmentationId) {
@@ -457,8 +463,8 @@ export function isSeedAugmentationVisible(game, augmentationId) {
   }
 
   const requiredDemonstrationId = augmentation.requiredDemonstrationId
-  const requiredMisfortuneUpgradeId =
-    augmentation.requiredMisfortuneUpgradeId
+  const requiredMisfortuneUpgradeIds = augmentation.requiredMisfortuneUpgradeIds ??
+    (augmentation.requiredMisfortuneUpgradeId ? [augmentation.requiredMisfortuneUpgradeId] : [])
   const hasMisfortuneAugmentationAccess =
     augmentation.purchaseArea !== GAME_AREA_IDS.MISFORTUNE ||
     game.completedMisfortuneUpgrades?.includes(
@@ -471,7 +477,7 @@ export function isSeedAugmentationVisible(game, augmentationId) {
       game.capybara?.completedDemonstrations?.includes(
         requiredDemonstrationId,
       ) === true) &&
-    (!requiredMisfortuneUpgradeId ||
+    requiredMisfortuneUpgradeIds.every((requiredMisfortuneUpgradeId) =>
       game.completedMisfortuneUpgrades?.includes(
         requiredMisfortuneUpgradeId,
       ) === true)

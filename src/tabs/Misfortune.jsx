@@ -273,40 +273,6 @@ export function Misfortune({
         </article>
         <article className="misfortune-upgrade-card">
           <div>
-            <h2>{nourishingMisery.name}</h2>
-            <p>
-              Unlocks the Leeching Vine modification for Leeching Gourd
-              within Seed Augmentation. This research does not alter the
-              Gourd by itself.
-            </p>
-            <p className="misfortune-upgrade-note">
-              Cost: <FormattedNumber value={nourishingMisery.cost} /> Crops.
-            </p>
-          </div>
-          <button
-            type="button"
-            className={
-              hasNourishingMisery ? 'secondary-button' : 'primary-button'
-            }
-            onClick={onUnlockNourishingMisery}
-            disabled={
-              !isMisfortuneAreaActive || hasNourishingMisery || !canUnlockNourishingMisery
-            }
-          >
-            {hasNourishingMisery
-              ? 'Accepted'
-              : canUnlockNourishingMisery
-                ? 'Study Gourd nourishment'
-                : (
-                    <>
-                      Need{' '}
-                      <FormattedNumber value={nourishingMisery.cost} /> Crops
-                    </>
-                  )}
-          </button>
-        </article>
-        <article className="misfortune-upgrade-card">
-          <div>
             <h2>{huntForSomethingGreater.name}</h2>
             <p>
               Multiplies Column, Row, and Floor production by 1 plus the
@@ -366,6 +332,42 @@ export function Misfortune({
                   )}
           </button>
         </article>
+        {hasHuntForSomethingGreater || hasNourishingMisery ? (
+        <article className="misfortune-upgrade-card">
+          <div>
+            <h2>{nourishingMisery.name}</h2>
+            <p>
+              Unlocks the Leeching Vine modification for Leeching Gourd
+              within Seed Augmentation. This research does not alter the
+              Gourd by itself.
+            </p>
+            <p className="misfortune-upgrade-note">
+              Cost: <FormattedNumber value={nourishingMisery.cost} /> Crops.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={
+              hasNourishingMisery ? 'secondary-button' : 'primary-button'
+            }
+            onClick={onUnlockNourishingMisery}
+            disabled={
+              !isMisfortuneAreaActive || hasNourishingMisery || !canUnlockNourishingMisery
+            }
+          >
+            {hasNourishingMisery
+              ? 'Accepted'
+              : canUnlockNourishingMisery
+                ? 'Study Gourd nourishment'
+                : (
+                    <>
+                      Need{' '}
+                      <FormattedNumber value={nourishingMisery.cost} /> Crops
+                    </>
+                  )}
+          </button>
+        </article>
+        ) : null}
         {hasHuntForSomethingGreater ? (
           <>
         <article className="misfortune-upgrade-card">

@@ -6,8 +6,9 @@ import { createServer } from 'vite'
 import {
   CAPYBARA_DEMONSTRATION_IDS, MISFORTUNE_UPGRADES,
   canUnlockMisfortuneUpgrade, createInitialGame, purchaseMisfortuneUpgrade,
-  switchGameArea,
+  switchGameArea, isMisfortuneUpgradeVisible,
 } from '../src/game/gameLogic.js'
+import { exportGame, importGame } from '../src/game/storage.js'
 
 let server, Misfortune, GameNavigation, useGameDerivedState
 before(async () => {
@@ -121,4 +122,42 @@ test('the purchase logic rejects every Misfortune upgrade from main regardless o
     assert.equal(canUnlockMisfortuneUpgrade(inside, id), true, id)
     assert.ok(purchaseMisfortuneUpgrade(inside, id), id)
   }
+})
+
+test('Hunt precedes Nourishing Misery in both purchase progression and the page', () => {
+  const game = { ...createInitialGame(), activeArea: 'misfortune', crops: 1e200,
+    completedCropPerfections: ['sweetPotato'] }
+  assert.equal(MISFORTUNE_UPGRADES.huntForSomethingGreater.cost, 7.77e41)
+  assert.equal(MISFORTUNE_UPGRADES.nourishingMisery.cost, 2e38)
+  assert.equal(canUnlockMisfortuneUpgrade(game, 'huntForSomethingGreater'), true)
+  assert.equal(isMisfortuneUpgradeVisible(game, 'nourishingMisery'), false)
+  assert.equal(canUnlockMisfortuneUpgrade(game, 'nourishingMisery'), false)
+  assert.equal(purchaseMisfortuneUpgrade(game, 'nourishingMisery'), null)
+  const afterHunt = purchaseMisfortuneUpgrade(game, 'huntForSomethingGreater')
+  assert.equal(isMisfortuneUpgradeVisible(afterHunt, 'nourishingMisery'), true)
+  assert.equal(canUnlockMisfortuneUpgrade(afterHunt, 'nourishingMisery'), true)
+  assert.ok(purchaseMisfortuneUpgrade(afterHunt, 'nourishingMisery'))
+
+  const beforeMarkup = renderToStaticMarkup(createElement(Misfortune,
+    upgradeProps({ hasHuntForSomethingGreater: false })))
+  assert.match(beforeMarkup, /Hunt for Something Greater/)
+  assert.doesNotMatch(beforeMarkup, /Nourishing Misery/)
+  const afterMarkup = renderToStaticMarkup(createElement(Misfortune, upgradeProps()))
+  assert.ok(afterMarkup.indexOf('<h2>Hunt for Something Greater</h2>') <
+    afterMarkup.indexOf('<h2>Nourishing Misery</h2>'))
+})
+
+test('older saves keep an already purchased Nourishing Misery even without Hunt', () => {
+  const legacy = { ...createInitialGame(), activeArea: 'misfortune',
+    completedCropPerfections: ['sweetPotato', 'leechingGourd'],
+    completedMisfortuneUpgrades: ['nourishingMisery'],
+    seedAugmentations: { leechingVineUnlocked: true } }
+  const restored = importGame(exportGame(legacy))
+  assert.ok(restored.completedMisfortuneUpgrades.includes('nourishingMisery'))
+  assert.ok(!restored.completedMisfortuneUpgrades.includes('huntForSomethingGreater'))
+  assert.equal(restored.seedAugmentations.leechingVineUnlocked, true)
+  assert.equal(isMisfortuneUpgradeVisible(restored, 'nourishingMisery'), true)
+  const markup = renderToStaticMarkup(createElement(Misfortune,
+    upgradeProps({ hasHuntForSomethingGreater: false, hasNourishingMisery: true })))
+  assert.match(markup, /Nourishing Misery/)
 })

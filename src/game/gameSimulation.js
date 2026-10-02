@@ -10,13 +10,12 @@ import {
   getRowDuplicatorExternalMultiplier,
 } from './cropProduction.js'
 import {
-  APPLE_TREE_UNLOCK_CROP_COUNT,
   CROP_PERFECTION_UNLOCK_CROP_COUNT,
   getCropUnlockBaseRequirement,
+  getCropUnlockRequirement,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
-  WHEAT_UNLOCK_CROP_COUNT,
   hasUnlockedCorn,
 } from './crops.js'
 import { advanceFortuneState, getFortuneModifiers } from './fortuneLogic.js'
@@ -237,7 +236,7 @@ export function advanceGameSimulationStep(
   const hasUnlockedWheat =
     currentGame.hasUnlockedWheat ||
     (currentGame.hasUnlockedRowDuplicators === true &&
-      nextCrops >= WHEAT_UNLOCK_CROP_COUNT * cropRequirementMultiplier)
+      nextCrops >= getCropUnlockRequirement('wheat', currentGame.activeArea, cropRequirementMultiplier))
   const hasUnlockedSunflower =
     currentGame.hasUnlockedSunflower ||
     nextCrops >= SUNFLOWER_UNLOCK_CROP_COUNT * cropRequirementMultiplier
@@ -279,7 +278,7 @@ export function advanceGameSimulationStep(
       nextCrops >= TURNIP_UNLOCK_CROP_COUNT * cropRequirementMultiplier,
     hasUnlockedAppleTree:
       currentGame.hasUnlockedAppleTree ||
-      nextCrops >= APPLE_TREE_UNLOCK_CROP_COUNT * cropRequirementMultiplier,
+      nextCrops >= getCropUnlockBaseRequirement('appleTree', currentGame.activeArea) * cropRequirementMultiplier,
     hasUnlockedLentil:
       currentGame.hasUnlockedLentil ||
       nextCrops >= getCropUnlockBaseRequirement('lentil', currentGame.activeArea) * cropRequirementMultiplier,

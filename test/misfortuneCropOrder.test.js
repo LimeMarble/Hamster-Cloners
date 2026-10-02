@@ -15,6 +15,7 @@ import {
   getUnlockedCropIds, getVisibleCropIds, hasUnlockedCarrotInMisfortune,
   hasUnlockedCanolaInMisfortune, hasUnlockedCorn,
   hasUnlockedSoybean, getCropUnlockDescription, getCropUnlockBaseRequirement,
+  getCropUnlockRequirement,
 } from '../src/game/crops.js'
 import { getCropRequirement } from '../src/game/cropRequirements.js'
 import { exportGame, importGame, normalizeGame } from '../src/game/storage.js'
@@ -187,17 +188,18 @@ test('main crop costs stay unchanged, and Potato has no previous-crop requiremen
   assert.equal(APPLE_TREE_UNLOCK_CROP_COUNT, 1e15)
   assert.equal(LENTIL_UNLOCK_CROP_COUNT, 8e16)
   assert.equal(KNOTWEED_UNLOCK_CROP_COUNT, 2e19)
-  assert.equal(getCropRequirement(earlyMisfortune(), APPLE_TREE_UNLOCK_CROP_COUNT), 1e16)
+  assert.equal(getCropRequirement(createInitialGame(), getCropUnlockBaseRequirement('appleTree')), 1e15)
   assert.equal(getCropRequirement(createInitialGame(), getCropUnlockBaseRequirement('lentil')), 8e16)
   assert.equal(getCropRequirement(createInitialGame(), getCropUnlockBaseRequirement('knotweed')), 2e19)
   assert.doesNotMatch(getCropUnlockDescription('sweetPotato', 'misfortune'), /after Pumpkin/)
   assert.match(getCropUnlockDescription('sweetPotato', 'main'), /after Pumpkin/)
 })
 
-test('Misfortune Lentil and Knotweed use the exact new thresholds in ticks, saves, goals and descriptions', () => {
-  for (const [cropId, flag, target] of [
-    ['lentil', 'hasUnlockedLentil', 8e20],
-    ['knotweed', 'hasUnlockedKnotweed', 2e22],
+test('Misfortune Apple, Lentil and Knotweed use the exact thresholds in ticks, saves, goals and descriptions', () => {
+  for (const [cropId, flag, target, goalId] of [
+    ['appleTree', 'hasUnlockedAppleTree', 1e18, 'crop-apple-tree'],
+    ['lentil', 'hasUnlockedLentil', 8e20, 'crop-lentil'],
+    ['knotweed', 'hasUnlockedKnotweed', 2e22, 'crop-knotweed'],
   ]) {
     const below = earlyMisfortune({ crops: target * 0.999, [flag]: false })
     const reached = earlyMisfortune({ crops: target, [flag]: false })
@@ -207,7 +209,7 @@ test('Misfortune Lentil and Knotweed use the exact new thresholds in ticks, save
     const unlocked = advanceGameSimulationStep(reached, 1 / 60)
     assert.equal(unlocked[flag], true, cropId)
     assert.equal(normalizeGame(reached)[flag], true, cropId)
-    const goal = MAJOR_PROGRESSION_GOALS.find(({ id }) => id === `crop-${cropId}`)
+    const goal = MAJOR_PROGRESSION_GOALS.find(({ id }) => id === goalId)
     assert.equal(goal.getTarget(reached), target, cropId)
     assert.equal(getCropUnlockDescription(cropId, 'misfortune', false, reached),
       `Unlocks at ${getCachedFormattedNumber(target, 0)} Crops`)
@@ -219,10 +221,33 @@ test('Misfortune Lentil and Knotweed use the exact new thresholds in ticks, save
   assert.equal(MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS].cost, 7e23)
 })
 
-test('previously earned Misfortune Lentil and Knotweed unlocks remain earned below the new costs', () => {
-  const game = earlyMisfortune({ crops: 0, hasUnlockedLentil: true, hasUnlockedKnotweed: true })
+test('previously earned Misfortune Apple, Lentil and Knotweed unlocks remain earned below the new costs', () => {
+  const game = earlyMisfortune({ crops: 0, hasUnlockedAppleTree: true,
+    hasUnlockedLentil: true, hasUnlockedKnotweed: true })
   for (const state of [advanceGameSimulationStep(game, 1 / 60), importGame(exportGame(game))]) {
+    assert.equal(state.hasUnlockedAppleTree, true)
     assert.equal(state.hasUnlockedLentil, true)
     assert.equal(state.hasUnlockedKnotweed, true)
   }
+})
+
+test('Misfortune Wheat unlocks at 1.25e36, keeps Row Duplicators required and preserves earned unlocks', () => {
+  const target = 1.25e36
+  const below = earlyMisfortune({ crops: target * 0.999, hasUnlockedWheat: false })
+  const reached = { ...below, crops: target }
+  assert.equal(getCropUnlockRequirement('wheat', 'misfortune', 10), target)
+  assert.equal(advanceGameSimulationStep(below, 1 / 60).hasUnlockedWheat, false)
+  assert.equal(normalizeGame(below).hasUnlockedWheat, false)
+  assert.equal(advanceGameSimulationStep(reached, 1 / 60).hasUnlockedWheat, true)
+  assert.equal(normalizeGame(reached).hasUnlockedWheat, true)
+  const withoutDuplicators = { ...reached, hasUnlockedRowDuplicators: false }
+  assert.equal(advanceGameSimulationStep(withoutDuplicators, 1 / 60).hasUnlockedWheat, false)
+  assert.equal(normalizeGame(withoutDuplicators).hasUnlockedWheat, false)
+  assert.equal(MAJOR_PROGRESSION_GOALS.find(({ id }) => id === 'crop-wheat').getTarget(reached), target)
+  assert.equal(getCropUnlockDescription('wheat', 'misfortune', false, reached),
+    `Unlocks at ${getCachedFormattedNumber(target, 0)} Crops after Row Duplicators`)
+  const earned = { ...below, crops: 0, hasUnlockedWheat: true }
+  assert.equal(advanceGameSimulationStep(earned, 1 / 60).hasUnlockedWheat, true)
+  assert.equal(importGame(exportGame(earned)).hasUnlockedWheat, true)
+  assert.equal(getCropRequirement(createInitialGame(), getCropUnlockBaseRequirement('wheat', 'main')), 1.25e32)
 })

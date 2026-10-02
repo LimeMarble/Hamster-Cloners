@@ -26,14 +26,13 @@ import {
   MAX_BLUEPRINT_SLOT_COUNT,
 } from './gameLogic.js'
 import {
-  APPLE_TREE_UNLOCK_CROP_COUNT,
   CROP_PERFECTION_IDS,
   CROP_PERFECTION_UNLOCK_CROP_COUNT,
   getCropUnlockBaseRequirement,
+  getCropUnlockRequirement,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
-  WHEAT_UNLOCK_CROP_COUNT,
   hasUnlockedCorn,
   isCropPerfectionTemporarilyUnavailable,
   isCropTemporarilyUnavailable,
@@ -118,7 +117,7 @@ function getAreaCropUnlocks(rawState, includeStoredUnlocks = true, requirementMu
     hasUnlockedAppleTree:
       hasStoredUnlock('hasUnlockedAppleTree') ||
       hasLegacyAppleTreeUnlock ||
-      crops >= APPLE_TREE_UNLOCK_CROP_COUNT * requirementMultiplier,
+      crops >= getCropUnlockBaseRequirement('appleTree', areaId) * requirementMultiplier,
     hasUnlockedLentil:
       hasStoredUnlock('hasUnlockedLentil') ||
       crops >= getCropUnlockBaseRequirement('lentil', areaId) * requirementMultiplier,
@@ -128,7 +127,7 @@ function getAreaCropUnlocks(rawState, includeStoredUnlocks = true, requirementMu
     hasUnlockedWheat:
       hasStoredUnlock('hasUnlockedWheat') ||
       (rawState?.hasUnlockedRowDuplicators === true &&
-        crops >= WHEAT_UNLOCK_CROP_COUNT * requirementMultiplier),
+        crops >= getCropUnlockRequirement('wheat', areaId, requirementMultiplier)),
     hasUnlockedSunflower:
       hasStoredUnlock('hasUnlockedSunflower') ||
       crops >= SUNFLOWER_UNLOCK_CROP_COUNT * requirementMultiplier,

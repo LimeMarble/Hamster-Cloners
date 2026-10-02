@@ -113,12 +113,7 @@ dd {
   gap: 4px;
   width: min(100%, 240px);
   min-width: 0;
-  background: #090909;
   overflow-wrap: anywhere;
-}
-
-.bulk-purchase-button:hover:not(:disabled) {
-  background: #141414;
 }
 
 .bulk-purchase-cost,

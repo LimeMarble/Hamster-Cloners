@@ -66,7 +66,7 @@ function createVineBlueprint() {
   })
 }
 
-test('Nourishing Misery unlocks the 1e120 Leeching Vine augmentation', () => {
+test('after Hunt, Nourishing Misery unlocks the Leeching Vine augmentation at its configured price', () => {
   const initialGame = {
     ...createInitialGame(),
     activeArea: GAME_AREA_IDS.MISFORTUNE,
@@ -74,6 +74,7 @@ test('Nourishing Misery unlocks the 1e120 Leeching Vine augmentation', () => {
       MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY
     ].cost,
     completedCropPerfections: ['leechingGourd'],
+    completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER],
     capybara: {
       completedDemonstrations: [CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION],
       completedSecondaryObjectives: [],
@@ -83,7 +84,7 @@ test('Nourishing Misery unlocks the 1e120 Leeching Vine augmentation', () => {
 
   assert.equal(
     MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY].cost,
-    2e37,
+    2e38,
   )
   assert.equal(SEED_AUGMENTATIONS[augmentationId].cost, 1e120)
   assert.equal(isSeedAugmentationVisible(initialGame, augmentationId), false)
@@ -94,10 +95,11 @@ test('Nourishing Misery unlocks the 1e120 Leeching Vine augmentation', () => {
   )
   assert.ok(researchedGame)
   assert.equal(isSeedAugmentationVisible(researchedGame, augmentationId), true)
-  assert.equal(getNextSeedAugmentationCost(researchedGame, augmentationId), 1e120)
+  const vineCost = getNextSeedAugmentationCost(researchedGame, augmentationId)
+  assert.equal(vineCost, 5e123)
 
   const augmentedGame = purchaseSeedAugmentation(
-    { ...researchedGame, crops: 1e120 },
+    { ...researchedGame, crops: vineCost },
     augmentationId,
   )
   assert.ok(augmentedGame)
@@ -106,7 +108,7 @@ test('Nourishing Misery unlocks the 1e120 Leeching Vine augmentation', () => {
   assert.equal(getNextSeedAugmentationCost(augmentedGame, augmentationId), null)
 })
 
-test('Hunt for Something Greater reveals Sneaky Crawler', () => {
+test('Hunt and Nourishing Misery are both required to reveal Sneaky Crawler', () => {
   const augmentationId = SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER
   const augmentation = SEED_AUGMENTATIONS[augmentationId]
   const hiddenGame = {
@@ -122,15 +124,25 @@ test('Hunt for Something Greater reveals Sneaky Crawler', () => {
   assert.equal(augmentation.cost, 3e136)
   assert.equal(isSeedAugmentationVisible(hiddenGame, augmentationId), false)
 
-  const revealedGame = {
+  const huntOnlyGame = {
     ...hiddenGame,
     completedMisfortuneUpgrades: [
       MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
     ],
   }
+  assert.equal(isSeedAugmentationVisible(huntOnlyGame, augmentationId), false)
+  assert.equal(purchaseSeedAugmentation(huntOnlyGame, augmentationId), null)
+  const revealedGame = {
+    ...huntOnlyGame,
+    completedMisfortuneUpgrades: [
+      ...huntOnlyGame.completedMisfortuneUpgrades,
+      MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+    ],
+  }
   assert.equal(isSeedAugmentationVisible(revealedGame, augmentationId), true)
 
-  const purchased = purchaseSeedAugmentation(revealedGame, augmentationId)
+  const purchased = purchaseSeedAugmentation({ ...revealedGame,
+    crops: getNextSeedAugmentationCost(revealedGame, augmentationId) }, augmentationId)
   assert.ok(purchased)
   assert.equal(purchased.crops, 0)
   assert.equal(purchased.seedAugmentations.sneakyCrawlerUnlocked, true)
@@ -194,6 +206,7 @@ test('Greater Absorption raises each Splitweed from 2 to 3 nourishment strength'
     completedCropPerfections: ['leechingGourd'],
     completedMisfortuneUpgrades: [
       MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+      MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
     ],
     capybara: {
       completedDemonstrations: [CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION],
@@ -204,9 +217,17 @@ test('Greater Absorption raises each Splitweed from 2 to 3 nourishment strength'
 
   assert.equal(augmentation.cost, 6e137)
   assert.equal(isSeedAugmentationVisible(eligibleGame, augmentationId), true)
-  assert.equal(getNextSeedAugmentationCost(eligibleGame, augmentationId), 6e137)
+  const absorptionCost = getNextSeedAugmentationCost(eligibleGame, augmentationId)
+  assert.equal(absorptionCost, 3e140)
+  for (const missing of [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+    MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY]) {
+    const locked = { ...eligibleGame, crops: absorptionCost,
+      completedMisfortuneUpgrades: eligibleGame.completedMisfortuneUpgrades.filter((id) => id !== missing) }
+    assert.equal(isSeedAugmentationVisible(locked, augmentationId), false)
+    assert.equal(purchaseSeedAugmentation(locked, augmentationId), null)
+  }
 
-  const purchased = purchaseSeedAugmentation(eligibleGame, augmentationId)
+  const purchased = purchaseSeedAugmentation({ ...eligibleGame, crops: absorptionCost }, augmentationId)
   assert.ok(purchased)
   assert.equal(purchased.crops, 0)
   assert.equal(purchased.seedAugmentations.greaterAbsorptionUnlocked, true)
