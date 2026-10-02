@@ -4,6 +4,7 @@ import {
 } from '../game/achievementState.js'
 import { hasVisitedMisfortune } from '../game/crops.js'
 import {
+  CAPYBARA_DEMONSTRATION_IDS,
   canUnlockCropPerfection,
   canUnlockRowDuplicators,
   getCapybaraBlueprintCropYield,
@@ -21,6 +22,7 @@ import {
   getGameAreaCostMultiplier,
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
+  hasCompletedCapybaraDemonstration,
   isMisfortuneAreaActive,
   getFloorReplicatorCoordinationMultiplier,
   getFloorReplicatorExternalMultiplier,
@@ -488,6 +490,8 @@ export function useGameDerivedState(game) {
 
   return {
     isMisfortuneAreaActive: isMisfortuneAreaActive(game),
+    isMisfortuneTabVisible: hasVisitedMisfortune(game) ||
+      hasCompletedCapybaraDemonstration(game, CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE),
     nextHamsterCost,
     majorProgressionGoal,
     cloverAssemblyProductionPerSecond,

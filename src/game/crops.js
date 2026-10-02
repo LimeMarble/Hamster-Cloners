@@ -32,6 +32,18 @@ export const CORN_REVEAL_HAMSTER_COUNT = 50
 export const MISFORTUNE_CORN_UNLOCK_CROP_COUNT = 2.5e5
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
 
+// Base values before the area's progression multiplier. Keep main balancing
+// separate from Misfortune: these display as 8e20 and 2e22 there.
+export const AREA_CROP_UNLOCK_REQUIREMENTS = Object.freeze({
+  lentil: Object.freeze({ main: LENTIL_UNLOCK_CROP_COUNT, misfortune: 8e19 }),
+  knotweed: Object.freeze({ main: KNOTWEED_UNLOCK_CROP_COUNT, misfortune: 2e21 }),
+})
+
+export function getCropUnlockBaseRequirement(cropId, activeArea = 'main') {
+  const requirements = AREA_CROP_UNLOCK_REQUIREMENTS[cropId]
+  return requirements?.[activeArea] ?? requirements?.main ?? null
+}
+
 export function hasUnlockedCorn(game, crops = game?.crops) {
   return game?.activeArea === 'misfortune'
     ? game.hasUnlockedCorn === true ||
@@ -497,9 +509,9 @@ export function getCropUnlockDescription(
     case 'appleTree':
       return `Unlocks at ${formatRequirement(APPLE_TREE_UNLOCK_CROP_COUNT)} Crops`
     case 'lentil':
-      return `Unlocks at ${formatRequirement(LENTIL_UNLOCK_CROP_COUNT)} Crops`
+      return `Unlocks at ${formatRequirement(getCropUnlockBaseRequirement(cropId, activeArea))} Crops`
     case 'knotweed':
-      return `Unlocks at ${formatRequirement(KNOTWEED_UNLOCK_CROP_COUNT)} Crops`
+      return `Unlocks at ${formatRequirement(getCropUnlockBaseRequirement(cropId, activeArea))} Crops`
     case 'wheat':
       return `Unlocks at ${formatRequirement(WHEAT_UNLOCK_CROP_COUNT)} Crops after Row Duplicators`
     case 'rootTunnel':

@@ -29,8 +29,7 @@ import {
   APPLE_TREE_UNLOCK_CROP_COUNT,
   CROP_PERFECTION_IDS,
   CROP_PERFECTION_UNLOCK_CROP_COUNT,
-  LENTIL_UNLOCK_CROP_COUNT,
-  KNOTWEED_UNLOCK_CROP_COUNT,
+  getCropUnlockBaseRequirement,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
@@ -122,10 +121,10 @@ function getAreaCropUnlocks(rawState, includeStoredUnlocks = true, requirementMu
       crops >= APPLE_TREE_UNLOCK_CROP_COUNT * requirementMultiplier,
     hasUnlockedLentil:
       hasStoredUnlock('hasUnlockedLentil') ||
-      crops >= LENTIL_UNLOCK_CROP_COUNT * requirementMultiplier,
+      crops >= getCropUnlockBaseRequirement('lentil', areaId) * requirementMultiplier,
     hasUnlockedKnotweed:
       hasStoredUnlock('hasUnlockedKnotweed') ||
-      crops >= KNOTWEED_UNLOCK_CROP_COUNT * requirementMultiplier,
+      crops >= getCropUnlockBaseRequirement('knotweed', areaId) * requirementMultiplier,
     hasUnlockedWheat:
       hasStoredUnlock('hasUnlockedWheat') ||
       (rawState?.hasUnlockedRowDuplicators === true &&

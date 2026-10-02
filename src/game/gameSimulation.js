@@ -12,8 +12,7 @@ import {
 import {
   APPLE_TREE_UNLOCK_CROP_COUNT,
   CROP_PERFECTION_UNLOCK_CROP_COUNT,
-  KNOTWEED_UNLOCK_CROP_COUNT,
-  LENTIL_UNLOCK_CROP_COUNT,
+  getCropUnlockBaseRequirement,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
@@ -283,10 +282,10 @@ export function advanceGameSimulationStep(
       nextCrops >= APPLE_TREE_UNLOCK_CROP_COUNT * cropRequirementMultiplier,
     hasUnlockedLentil:
       currentGame.hasUnlockedLentil ||
-      nextCrops >= LENTIL_UNLOCK_CROP_COUNT * cropRequirementMultiplier,
+      nextCrops >= getCropUnlockBaseRequirement('lentil', currentGame.activeArea) * cropRequirementMultiplier,
     hasUnlockedKnotweed:
       currentGame.hasUnlockedKnotweed ||
-      nextCrops >= KNOTWEED_UNLOCK_CROP_COUNT * cropRequirementMultiplier,
+      nextCrops >= getCropUnlockBaseRequirement('knotweed', currentGame.activeArea) * cropRequirementMultiplier,
     hasUnlockedWheat,
     hasUnlockedRootTunnel,
     hasUnlockedSunflower,

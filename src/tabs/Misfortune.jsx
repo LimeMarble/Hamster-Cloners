@@ -34,6 +34,7 @@ export function MisfortuneStatus() {
 }
 
 export function Misfortune({
+  isMisfortuneAreaActive = false,
   unfortunateRow,
   hasUnfortunateRow,
   canUnlockUnfortunateRow,
@@ -80,11 +81,18 @@ export function Misfortune({
   canUnlockNotSoFinalSupport,
   onUnlockNotSoFinalSupport,
   onLeave,
+  onEnter,
 }) {
   return (
     <section className="misfortune-panel" aria-labelledby="misfortune-title">
       <p className="eyebrow">Demonstration 2 challenge area</p>
       <h1 id="misfortune-title">Misfortune</h1>
+      {!isMisfortuneAreaActive ? (
+        <p className="misfortune-upgrade-note">
+          You can view upgrades here, but must enter Demo 2 to purchase them
+          with Misfortune Crops.
+        </p>
+      ) : null}
       <p>
         This area keeps its own Crops, Hamsters, Row Duplicators, farmland,
         blueprints, paid Row and Column expansions, and milestone Crop
@@ -109,7 +117,7 @@ export function Misfortune({
             type="button"
             className={hasUnfortunateRow ? 'secondary-button' : 'primary-button'}
             onClick={onUnlockUnfortunateRow}
-            disabled={hasUnfortunateRow || !canUnlockUnfortunateRow}
+            disabled={!isMisfortuneAreaActive || hasUnfortunateRow || !canUnlockUnfortunateRow}
           >
             {hasUnfortunateRow
               ? 'Accepted'
@@ -138,7 +146,7 @@ export function Misfortune({
             type="button"
             className={hasRushedStart ? 'secondary-button' : 'primary-button'}
             onClick={onUnlockRushedStart}
-            disabled={hasRushedStart || !canUnlockRushedStart}
+            disabled={!isMisfortuneAreaActive || hasRushedStart || !canUnlockRushedStart}
           >
             {hasRushedStart
               ? 'Accepted'
@@ -178,7 +186,7 @@ export function Misfortune({
             <button type="button"
               className={hasOilyTreats ? 'secondary-button' : 'primary-button'}
               onClick={onUnlockOilyTreats}
-              disabled={hasOilyTreats || !canUnlockOilyTreats}>
+              disabled={!isMisfortuneAreaActive || hasOilyTreats || !canUnlockOilyTreats}>
               {hasOilyTreats ? 'Accepted' : canUnlockOilyTreats ? 'Accept Oily Treats' :
                 <>Need <FormattedNumber value={oilyTreats.cost} /> Crops</>}
             </button>
@@ -207,7 +215,7 @@ export function Misfortune({
             }
             onClick={onUnlockAdversityGrownTubers}
             disabled={
-              hasAdversityGrownTubers || !canUnlockAdversityGrownTubers
+              !isMisfortuneAreaActive || hasAdversityGrownTubers || !canUnlockAdversityGrownTubers
             }
           >
             {hasAdversityGrownTubers
@@ -247,7 +255,7 @@ export function Misfortune({
             }
             onClick={onUnlockBurdenedFoundations}
             disabled={
-              hasBurdenedFoundations || !canUnlockBurdenedFoundations
+              !isMisfortuneAreaActive || hasBurdenedFoundations || !canUnlockBurdenedFoundations
             }
           >
             {hasBurdenedFoundations
@@ -282,7 +290,7 @@ export function Misfortune({
             }
             onClick={onUnlockNourishingMisery}
             disabled={
-              hasNourishingMisery || !canUnlockNourishingMisery
+              !isMisfortuneAreaActive || hasNourishingMisery || !canUnlockNourishingMisery
             }
           >
             {hasNourishingMisery
@@ -338,6 +346,7 @@ export function Misfortune({
             }
             onClick={onUnlockHuntForSomethingGreater}
             disabled={
+              !isMisfortuneAreaActive ||
               hasHuntForSomethingGreater ||
               !canUnlockHuntForSomethingGreater
             }
@@ -377,7 +386,7 @@ export function Misfortune({
               hasFortunateColumn ? 'secondary-button' : 'primary-button'
             }
             onClick={onUnlockFortunateColumn}
-            disabled={hasFortunateColumn || !canUnlockFortunateColumn}
+            disabled={!isMisfortuneAreaActive || hasFortunateColumn || !canUnlockFortunateColumn}
           >
             {hasFortunateColumn
               ? 'Accepted'
@@ -413,7 +422,7 @@ export function Misfortune({
             type="button"
             className={hasFinalSupport ? 'secondary-button' : 'primary-button'}
             onClick={onUnlockFinalSupport}
-            disabled={hasFinalSupport || !canUnlockFinalSupport}
+            disabled={!isMisfortuneAreaActive || hasFinalSupport || !canUnlockFinalSupport}
           >
             {hasFinalSupport
               ? 'Accepted'
@@ -446,7 +455,7 @@ export function Misfortune({
             type="button"
             className={hasNotSoFinalSupport ? 'secondary-button' : 'primary-button'}
             onClick={onUnlockNotSoFinalSupport}
-            disabled={hasNotSoFinalSupport || !canUnlockNotSoFinalSupport}
+            disabled={!isMisfortuneAreaActive || hasNotSoFinalSupport || !canUnlockNotSoFinalSupport}
           >
             {hasNotSoFinalSupport
               ? 'Accepted'
@@ -462,8 +471,9 @@ export function Misfortune({
           </>
         ) : null}
       </div>
-      <button type="button" className="secondary-button" onClick={onLeave}>
-        Return to main field
+      <button type="button" className="secondary-button"
+        onClick={isMisfortuneAreaActive ? onLeave : onEnter}>
+        {isMisfortuneAreaActive ? 'Return to main field' : 'Enter Misfortune (Demo 2)'}
       </button>
     </section>
   )

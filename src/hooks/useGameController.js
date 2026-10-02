@@ -77,8 +77,9 @@ export function useGameController() {
   const shouldShowFloorReplicators =
     game.hasUnlockedFloorReplicators &&
     (canPurchaseFloorReplicators || game.floorReplicators >= 1)
-  const activeTab = actions.activeTab === 'clover' &&
-    game.cloverAssembly?.assembled !== true
+  const activeTab = (actions.activeTab === 'clover' &&
+    game.cloverAssembly?.assembled !== true) ||
+    (actions.activeTab === 'misfortune' && !derived.isMisfortuneTabVisible)
       ? 'field'
       : actions.activeTab
 
@@ -95,7 +96,7 @@ export function useGameController() {
       isCloverTabVisible: game.cloverAssembly?.assembled === true,
       isTradeTabVisible: derived.isTradeTabVisible,
       isAugmentationTabVisible: derived.isAugmentationTabVisible,
-      isMisfortuneTabVisible: derived.isMisfortuneAreaActive,
+      isMisfortuneTabVisible: derived.isMisfortuneTabVisible,
       showInventionsUnlockPrompt: derived.showInventionsUnlockPrompt,
       inventionsUnlockCount: INVENTIONS_HAMSTER_UNLOCK_COUNT,
       ...actions.navigationActions,
@@ -201,6 +202,7 @@ export function useGameController() {
         ...actions.augmentationActions,
       },
       misfortune: {
+        isMisfortuneAreaActive: derived.isMisfortuneAreaActive,
         unfortunateRow: MISFORTUNE_UPGRADES[
           MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW
         ],
@@ -325,6 +327,7 @@ export function useGameController() {
         ),
         onUnlockNotSoFinalSupport: actions.onUnlockNotSoFinalSupport,
         onLeave: actions.onLeaveMisfortuneArea,
+        onEnter: actions.onEnterMisfortuneArea,
       },
       inventions: {
         game,

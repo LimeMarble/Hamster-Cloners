@@ -29,7 +29,7 @@ function App() {
     <main className="game-shell">
       <GameHeader />
       <GameNavigation {...navigation} />
-      {navigation.isMisfortuneTabVisible ? <MisfortuneStatus /> : null}
+      {screen.misfortune.isMisfortuneAreaActive ? <MisfortuneStatus /> : null}
       <CloverFortune {...overlays.fortune} />
       <GameScreen {...screen} />
       <MajorProgressionBar {...progression} />

@@ -55,6 +55,7 @@ import {
   TURNIP_UNLOCK_CROP_COUNT,
   WHEAT_UNLOCK_CROP_COUNT,
   getCropUnlockDescription,
+  getCropUnlockBaseRequirement,
 } from '../src/game/crops.js'
 import { exportGame, importGame, normalizeGame } from '../src/game/storage.js'
 import { getCachedFormattedNumber } from '../src/game/numberFormat.js'
@@ -123,7 +124,9 @@ for (const stage of stages) {
       ['hasUnlockedSunflower', SUNFLOWER_UNLOCK_CROP_COUNT],
       ['hasUnlockedCropPerfection', CROP_PERFECTION_UNLOCK_CROP_COUNT],
     ]) {
-      const threshold = base * stage.multiplier
+      const cropId = flag === 'hasUnlockedLentil' ? 'lentil'
+        : flag === 'hasUnlockedKnotweed' ? 'knotweed' : null
+      const threshold = (cropId ? getCropUnlockBaseRequirement(cropId, stage.area) : base) * stage.multiplier
       const below = { ...game, crops: threshold * 0.99, [flag]: false }
       const reached = { ...game, crops: threshold, [flag]: false }
       assert.equal(advanceGameSimulationStep(below, 1 / 60)[flag], false, flag)

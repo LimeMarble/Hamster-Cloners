@@ -733,6 +733,7 @@ export function useGameActions({
       ? getBlueprintExpansion(pendingBlueprintExpansionId)
       : null,
     isRowDuplicatorUnlockPending,
+    onEnterMisfortuneArea: enterMisfortuneArea,
     onLeaveMisfortuneArea: leaveMisfortuneArea,
     onUnlockUnfortunateRow: unlockUnfortunateRow,
     onUnlockFortunateColumn: unlockFortunateColumn,

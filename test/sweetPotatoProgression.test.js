@@ -82,6 +82,9 @@ test('locked Sweet Potato shows a Misfortune clue and a dash, never its cost or 
 })
 
 test('Oily Treats reveals the regular cost, and perfecting Sweet Potato advances to Soybean', () => {
+  const oilyTreats = MAJOR_PROGRESSION_GOALS.find(({ id }) => id === 'misfortune-upgrade-oilyTreats')
+  assert.equal(oilyTreats.description,
+    'Purchase Oily Treats, then revisit main for Sweet Potato. Its effects work in Misfortune too.')
   const game = afterDemoOne({ areaProgress: { misfortune: {} },
     completedMisfortuneUpgrades: ['oilyTreats'], crops: 2e99 })
   game.crops = getCropPerfectionCost('sweetPotato', game)

@@ -7,16 +7,18 @@ import {
   createInitialGame, getUnlockedBlueprintSlotCount, getRabbitContractCropIds,
   advanceGameSimulationStep, createBlueprint, getNextMajorProgressionGoal,
   purchaseMisfortuneUpgrade, MISFORTUNE_UPGRADES, MISFORTUNE_UPGRADE_IDS,
+  MAJOR_PROGRESSION_GOALS,
   switchGameArea, wipeMisfortuneAreaProgress,
 } from '../src/game/gameLogic.js'
 import {
-  APPLE_TREE_UNLOCK_CROP_COUNT, KNOTWEED_UNLOCK_CROP_COUNT,
+  APPLE_TREE_UNLOCK_CROP_COUNT, KNOTWEED_UNLOCK_CROP_COUNT, LENTIL_UNLOCK_CROP_COUNT,
   getUnlockedCropIds, getVisibleCropIds, hasUnlockedCarrotInMisfortune,
   hasUnlockedCanolaInMisfortune, hasUnlockedCorn,
-  hasUnlockedSoybean, getCropUnlockDescription,
+  hasUnlockedSoybean, getCropUnlockDescription, getCropUnlockBaseRequirement,
 } from '../src/game/crops.js'
 import { getCropRequirement } from '../src/game/cropRequirements.js'
 import { exportGame, importGame, normalizeGame } from '../src/game/storage.js'
+import { getCachedFormattedNumber } from '../src/game/numberFormat.js'
 
 let server, useGameDerivedState
 before(async () => {
@@ -181,11 +183,46 @@ test('Clover retains its own perfection requirement, and Peanuts keep their disp
     .visibleUnlockedCropIds.includes('fourLeafClover'))
 })
 
-test('crop costs stay unchanged, and Potato no longer describes a previous-crop requirement in Misfortune', () => {
+test('main crop costs stay unchanged, and Potato has no previous-crop requirement in Misfortune', () => {
   assert.equal(APPLE_TREE_UNLOCK_CROP_COUNT, 1e15)
+  assert.equal(LENTIL_UNLOCK_CROP_COUNT, 8e16)
   assert.equal(KNOTWEED_UNLOCK_CROP_COUNT, 2e19)
   assert.equal(getCropRequirement(earlyMisfortune(), APPLE_TREE_UNLOCK_CROP_COUNT), 1e16)
-  assert.equal(getCropRequirement(earlyMisfortune(), KNOTWEED_UNLOCK_CROP_COUNT), 2e20)
+  assert.equal(getCropRequirement(createInitialGame(), getCropUnlockBaseRequirement('lentil')), 8e16)
+  assert.equal(getCropRequirement(createInitialGame(), getCropUnlockBaseRequirement('knotweed')), 2e19)
   assert.doesNotMatch(getCropUnlockDescription('sweetPotato', 'misfortune'), /after Pumpkin/)
   assert.match(getCropUnlockDescription('sweetPotato', 'main'), /after Pumpkin/)
+})
+
+test('Misfortune Lentil and Knotweed use the exact new thresholds in ticks, saves, goals and descriptions', () => {
+  for (const [cropId, flag, target] of [
+    ['lentil', 'hasUnlockedLentil', 8e20],
+    ['knotweed', 'hasUnlockedKnotweed', 2e22],
+  ]) {
+    const below = earlyMisfortune({ crops: target * 0.999, [flag]: false })
+    const reached = earlyMisfortune({ crops: target, [flag]: false })
+    assert.equal(getCropRequirement(reached, getCropUnlockBaseRequirement(cropId, 'misfortune')), target)
+    assert.equal(advanceGameSimulationStep(below, 1 / 60)[flag], false, cropId)
+    assert.equal(normalizeGame(below)[flag], false, cropId)
+    const unlocked = advanceGameSimulationStep(reached, 1 / 60)
+    assert.equal(unlocked[flag], true, cropId)
+    assert.equal(normalizeGame(reached)[flag], true, cropId)
+    const goal = MAJOR_PROGRESSION_GOALS.find(({ id }) => id === `crop-${cropId}`)
+    assert.equal(goal.getTarget(reached), target, cropId)
+    assert.equal(getCropUnlockDescription(cropId, 'misfortune', false, reached),
+      `Unlocks at ${getCachedFormattedNumber(target, 0)} Crops`)
+    assert.equal(importGame(exportGame({ ...unlocked, crops: 0 }))[flag], true, cropId)
+    const main = switchGameArea(unlocked, 'main')
+    const restored = switchGameArea(importGame(exportGame(main)), 'misfortune')
+    assert.equal(restored[flag], true, cropId)
+  }
+  assert.equal(MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS].cost, 7e23)
+})
+
+test('previously earned Misfortune Lentil and Knotweed unlocks remain earned below the new costs', () => {
+  const game = earlyMisfortune({ crops: 0, hasUnlockedLentil: true, hasUnlockedKnotweed: true })
+  for (const state of [advanceGameSimulationStep(game, 1 / 60), importGame(exportGame(game))]) {
+    assert.equal(state.hasUnlockedLentil, true)
+    assert.equal(state.hasUnlockedKnotweed, true)
+  }
 })
