@@ -423,7 +423,7 @@ test('Carrot harvest stacks multiplicatively and stays active alongside Apple Sa
     23,
   )
 
-  assert.ok(Math.abs(stackedProduction.total - (25 + 40) * 1.25 * 1.1) < 1e-12)
+  assert.ok(Math.abs(stackedProduction.total - (25 + 10) * 1.25 * 1.1) < 1e-12)
   assert.ok(Math.abs(appleProduction.total - 10 * 1.192) < 1e-12)
 })
 

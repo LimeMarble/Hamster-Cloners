@@ -35,6 +35,7 @@ import {
   SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
   WHEAT_UNLOCK_CROP_COUNT,
+  hasUnlockedCorn,
   isCropPerfectionTemporarilyUnavailable,
   isCropTemporarilyUnavailable,
 } from './crops.js'
@@ -96,7 +97,7 @@ function toNonNegativeInteger(value, fallback) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback
 }
 
-function getAreaCropUnlocks(rawState, includeStoredUnlocks = true, requirementMultiplier = 1) {
+function getAreaCropUnlocks(rawState, includeStoredUnlocks = true, requirementMultiplier = 1, areaId = GAME_AREA_IDS.MAIN) {
   const crops = toNonNegativeNumber(rawState?.crops, 0)
   const hasStoredUnlock = (field) =>
     includeStoredUnlocks && rawState?.[field] === true
@@ -106,6 +107,11 @@ function getAreaCropUnlocks(rawState, includeStoredUnlocks = true, requirementMu
     rawState.completedCropUnlocks.includes('appleTree')
 
   return {
+    hasUnlockedCorn: hasUnlockedCorn({
+      ...rawState,
+      activeArea: areaId,
+      hasUnlockedCorn: hasStoredUnlock('hasUnlockedCorn'),
+    }),
     hasUnlockedTurnip:
       hasStoredUnlock('hasUnlockedTurnip') ||
       (includeStoredUnlocks && rawState?.hasUnlockedPumpkin === true) ||
@@ -192,6 +198,7 @@ export function normalizeGame(rawGame) {
     rawGame,
     hasSeparatedAreaCropUnlocks || activeArea === GAME_AREA_IDS.MAIN,
     cropRequirementMultiplier,
+    activeArea,
   )
   const hasUnlockedSunflower =
     activeAreaCropUnlocks.hasUnlockedSunflower
@@ -258,7 +265,7 @@ export function normalizeGame(rawGame) {
         ? { ...rawArea, ...legacySharedAreaCropUnlocks }
         : rawArea
 
-    return normalizeStoredAreaState(areaSource)
+    return normalizeStoredAreaState(areaSource, undefined, areaId)
   }
   const areaProgress = {
     main: normalizeOptionalArea(

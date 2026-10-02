@@ -2,6 +2,8 @@ import { grantFreeBlueprintExpansion } from './blueprintLogic.js'
 import {
   CROP_DEFINITIONS,
   getUnlockedCropIds,
+  hasUnlockedCanolaInMisfortune,
+  hasUnlockedCorn,
 } from './crops.js'
 import { getFieldsPlanted } from './cropProduction.js'
 import { getRabbitRelationsMultiplier } from './cropEffects.js'
@@ -292,6 +294,8 @@ export function getRabbitContractCropIds(game) {
     [],
     game.floorReplicators,
     game.earnedAchievementIds?.includes('makingPeanuts') === true,
+    hasUnlockedCanolaInMisfortune(game),
+    hasUnlockedCorn(game),
   ).filter(isRabbitContractCropEligible)
 }
 

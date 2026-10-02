@@ -28,25 +28,36 @@ export const CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT = 500
 export const SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT = 555
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
 export const CORN_REVEAL_HAMSTER_COUNT = 50
+// Base requirement before Misfortune's progression multiplier: 2.5M displayed.
+export const MISFORTUNE_CORN_UNLOCK_CROP_COUNT = 2.5e5
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
 
-export function hasUnlockedCarrotInMisfortune(game) {
-  const misfortuneRowDuplicators = game?.activeArea === 'misfortune'
-    ? game?.rowDuplicators
-    : game?.areaProgress?.misfortune?.rowDuplicators
+export function hasUnlockedCorn(game, crops = game?.crops) {
+  return game?.activeArea === 'misfortune'
+    ? game.hasUnlockedCorn === true ||
+      Number(crops) >= getCropRequirement(game, MISFORTUNE_CORN_UNLOCK_CROP_COUNT)
+    : Number(game?.blueprint?.columns) > 1
+}
 
+export function hasUnlockedCarrotInMisfortune(game) {
   return (
+    hasVisitedMisfortune(game) &&
     Array.isArray(game?.trade?.rabbitUnlocks) &&
-    game.trade.rabbitUnlocks.includes('carrot') &&
-    Math.max(0, Math.floor(Number(misfortuneRowDuplicators) || 0)) >=
-      CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT
+    game.trade.rabbitUnlocks.includes('carrot')
   )
+}
+
+export function hasUnlockedCanolaInMisfortune(game) {
+  const misfortune = game?.activeArea === 'misfortune'
+    ? game
+    : game?.areaProgress?.misfortune
+  return Math.max(0, Math.floor(Number(misfortune?.rowDuplicators) || 0)) >=
+    CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT
 }
 
 export function hasUnlockedSoybean(game) {
   return (
-    Array.isArray(game?.trade?.rabbitUnlocks) &&
-    game.trade.rabbitUnlocks.includes('carrot') &&
+    hasUnlockedCanolaInMisfortune(game) &&
     Math.max(0, Math.floor(Number(game?.floorReplicators) || 0)) >=
       SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT
   )
@@ -198,7 +209,7 @@ export const CROP_DEFINITIONS = {
   carrot: {
     name: 'Carrot',
     icon: '🥕',
-    baseYield: 40,
+    baseYield: 10,
     hamsterEfficiencyBonus: 0,
     canBeMirrorCornTarget: false,
     tradeFaction: 'rabbits',
@@ -209,7 +220,7 @@ export const CROP_DEFINITIONS = {
     highHarvestGlobalHarvestBonus: 0.04,
     maximumRabbitContractBonus: 1,
     effectDescription:
-      '40 Crops per slot · +4% Rabbit relations · +10% all Crop harvest, plus +0.4% per completed Rabbit contract (caps at +100%) · +4% all Crop harvest per crop type with more than 10,000 total harvest',
+      '10 Crops per slot · +4% Rabbit relations · +10% all Crop harvest, plus +0.4% per completed Rabbit contract (caps at +100%) · +4% all Crop harvest per crop type with more than 10,000 total harvest',
     unlockDescription: 'Unlock with 500 Rabbit relations',
   },
   fourLeafClover: {
@@ -223,16 +234,6 @@ export const CROP_DEFINITIONS = {
       'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · only one can be planted per blueprint',
     unlockDescription: 'Unlock with 77,777 Rabbit relations',
   },
-  soybean: {
-    name: 'Soybean',
-    icon: '🌱',
-    baseYield: 1,
-    hamsterEfficiencyBonus: 0,
-    machineryPatternBonus: 4.44,
-    effectDescription:
-      '1 Crop per slot · +444% global Row production per horizontal Soybean connection · +444% global Floor production per complete 2×2 Soybean square',
-    unlockDescription: `Unlocks at ${SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT.toLocaleString()} Floor Replicators`,
-  },
   peanuts: {
     name: 'Peanuts',
     icon: '🥜',
@@ -243,10 +244,21 @@ export const CROP_DEFINITIONS = {
     passiveProtectionTier: 2,
     canBeMirrorCornTarget: false,
     isRewardCrop: true,
+    displayBeforeCropId: 'soybean',
     effectDescription:
       '150 Crops per slot · +0.5 to the Hamster Treat multiplier exponent per Peanut · n Peanuts count as n² crops toward their Monocrop limit · exponent bonus cannot be boosted by adjacent crops',
     unlockDescription:
       'Make at least 5 Crops/sec from one field blueprint in Misfortune (Making Peanuts)',
+  },
+  soybean: {
+    name: 'Soybean',
+    icon: '🌱',
+    baseYield: 1,
+    hamsterEfficiencyBonus: 0,
+    machineryPatternBonus: 4.44,
+    effectDescription:
+      '1 Crop per slot · +444% global Row production per horizontal Soybean connection · +444% global Floor production per complete 2×2 Soybean square',
+    unlockDescription: `Unlocks at ${SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT.toLocaleString()} Floor Replicators after Canola in Misfortune`,
   },
   shoalGrass: {
     name: 'Shoal Grass',
@@ -452,7 +464,7 @@ export const CROP_PERFECTIONS = {
     maximumSurveyRelationLog: 40,
     maximumSurveyRelations: 1e40,
     maximumSurveyTimeReduction: 0.8,
-    baseEffectDescription: '40 Crops per slot',
+    baseEffectDescription: '10 Crops per slot',
     effectDescription:
       '+10% Rabbit relations · +50% all Crop harvest per log10(total Rabbit relations earned), capped at +1,900% · +25% all Crop harvest per Crop type with at least 1T harvest',
     manateeEffectDescription:
@@ -473,8 +485,13 @@ export function getCropUnlockDescription(
   const formatCounter = (value) => formatWholeNumber(value)
 
   switch (cropId) {
+    case 'corn':
+      return activeArea === 'misfortune'
+        ? `Unlocks at ${formatRequirement(MISFORTUNE_CORN_UNLOCK_CROP_COUNT)} Crops`
+        : CROP_DEFINITIONS.corn.unlockDescription
     case 'sweetPotato':
-      return `Unlocks at ${formatCounter(SWEET_POTATO_UNLOCK_HAMSTER_COUNT)} Hamsters after Pumpkin`
+      return `Unlocks at ${formatCounter(SWEET_POTATO_UNLOCK_HAMSTER_COUNT)} Hamsters` +
+        (activeArea === 'misfortune' ? '' : ' after Pumpkin')
     case 'turnip':
       return `Unlocks at ${formatRequirement(TURNIP_UNLOCK_CROP_COUNT)} Crops`
     case 'appleTree':
@@ -499,7 +516,7 @@ export function getCropUnlockDescription(
       }
       return `Unlock with ${format(27777)} Rabbit relations`
     case 'soybean':
-      return `Unlocks at ${formatCounter(SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT)} Floor Replicators`
+      return `Unlocks at ${formatCounter(SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT)} Floor Replicators after Canola in Misfortune`
     default:
       return CROP_DEFINITIONS[cropId]?.unlockDescription ?? ''
   }
@@ -765,10 +782,12 @@ export function getUnlockedCropIds(
   unlockedManateeCropIds = [],
   floorReplicators = 0,
   hasUnlockedPeanuts = false,
+  hasMisfortuneCanola = rowDuplicators >= CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT,
+  cornUnlocked = blueprint.columns > 1,
 ) {
   const unlockedCrops = ['leek']
 
-  if (blueprint.columns > 1) {
+  if (cornUnlocked) {
     unlockedCrops.push('corn')
   }
   if (unionized) {
@@ -808,7 +827,7 @@ export function getUnlockedCropIds(
     unlockedCrops.push('fourLeafClover')
   }
   if (
-    hasUnlockedCarrot &&
+    hasMisfortuneCanola &&
     floorReplicators >= SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT
   ) {
     unlockedCrops.push('soybean')
@@ -827,10 +846,12 @@ export function getVisibleCropIds(
   unlockedCropIds,
   totalHamstersHired = 0,
   hasUnlockedRowDuplicators = false,
-  hasMisfortuneCarrot = false,
-  hasMisfortuneVisit = hasMisfortuneCarrot,
+  hasMisfortuneCanola = false,
+  hasMisfortuneVisit = hasMisfortuneCanola,
+  activeArea = 'main',
 ) {
   const visibleCropIds = ['leek']
+  const followsCropOrder = activeArea !== 'misfortune'
   const progressionCropIds = CROP_IDS.filter(
     (cropId) =>
       CROP_DEFINITIONS[cropId]?.isManateeCrop !== true &&
@@ -841,37 +862,26 @@ export function getVisibleCropIds(
     const cropId = progressionCropIds[index]
     const previousCropId = progressionCropIds[index - 1]
 
-    if (!unlockedCropIds.includes(previousCropId)) {
+    if (followsCropOrder && !unlockedCropIds.includes(previousCropId)) {
       break
     }
 
     if (
-      cropId === 'corn' &&
-      totalHamstersHired < CORN_REVEAL_HAMSTER_COUNT
+      (cropId === 'corn' && totalHamstersHired < CORN_REVEAL_HAMSTER_COUNT) ||
+      (cropId === 'pumpkin' && totalHamstersHired < PUMPKIN_REVEAL_HAMSTER_COUNT) ||
+      (cropId === 'wheat' && !hasUnlockedRowDuplicators) ||
+      (cropId === 'soybean' && (!hasMisfortuneVisit || !hasMisfortuneCanola))
     ) {
-      break
+      if (followsCropOrder) break
+      continue
     }
-
-    if (
-      cropId === 'pumpkin' &&
-      totalHamstersHired < PUMPKIN_REVEAL_HAMSTER_COUNT
-    ) {
-      break
-    }
-
-    if (cropId === 'wheat' && !hasUnlockedRowDuplicators) {
-      break
-    }
-
-    if (cropId === 'soybean' && !hasMisfortuneVisit) break
 
     visibleCropIds.push(cropId)
   }
 
   if (
-    hasMisfortuneCarrot &&
+    hasMisfortuneCanola &&
     hasMisfortuneVisit &&
-    visibleCropIds.includes('carrot') &&
     !visibleCropIds.includes('soybean')
   ) {
     visibleCropIds.push('soybean')
@@ -881,7 +891,14 @@ export function getVisibleCropIds(
     (cropId) => CROP_DEFINITIONS[cropId]?.isRewardCrop === true,
   ).forEach((cropId) => {
     if (unlockedCropIds.includes(cropId)) {
-      visibleCropIds.push(cropId)
+      const insertionIndex = visibleCropIds.indexOf(
+        CROP_DEFINITIONS[cropId].displayBeforeCropId,
+      )
+      if (insertionIndex >= 0) {
+        visibleCropIds.splice(insertionIndex, 0, cropId)
+      } else {
+        visibleCropIds.push(cropId)
+      }
     }
   })
 

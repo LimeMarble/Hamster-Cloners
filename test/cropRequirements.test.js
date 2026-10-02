@@ -252,7 +252,9 @@ test('the actual progress bar uses the same scaled requirement as the unlock che
     assert.equal(goal.target, TURNIP_UNLOCK_CROP_COUNT * stage.multiplier)
     assert.equal(goal.progress, 0.5)
     const corn = MAJOR_PROGRESSION_GOALS.find(({ id }) => id === 'crop-corn')
-    assert.equal(corn.getTarget(game), getBlueprintExpansionCost(createInitialGame(), 'firstColumn'))
+    assert.equal(corn.getTarget(game), stage.area === 'misfortune'
+      ? 2.5e6
+      : getBlueprintExpansionCost(createInitialGame(), 'firstColumn'))
   }
 })
 

@@ -18,6 +18,7 @@ import {
   SUNFLOWER_UNLOCK_CROP_COUNT,
   TURNIP_UNLOCK_CROP_COUNT,
   WHEAT_UNLOCK_CROP_COUNT,
+  hasUnlockedCorn,
 } from './crops.js'
 import { advanceFortuneState, getFortuneModifiers } from './fortuneLogic.js'
 import {
@@ -273,6 +274,7 @@ export function advanceGameSimulationStep(
       Math.max(0, productionForTick),
     playtimeSeconds: nextPlaytimeSeconds,
     secondsSinceAreaReset: nextSecondsSinceAreaReset,
+    hasUnlockedCorn: hasUnlockedCorn(currentGame, nextCrops),
     hasUnlockedTurnip:
       currentGame.hasUnlockedTurnip ||
       nextCrops >= TURNIP_UNLOCK_CROP_COUNT * cropRequirementMultiplier,

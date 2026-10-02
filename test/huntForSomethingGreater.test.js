@@ -86,7 +86,7 @@ test('Hunt counts Crop types present in Main but missing from Misfortune', () =>
   )
 })
 
-test('Hunt counts Trade crops hidden behind missing Misfortune crops', () => {
+test('Hunt counts actual missing crops, not Carrot formerly hidden behind Canola', () => {
   const mainBlueprint = createBlueprint({
     rows: 1,
     columns: 2,
@@ -116,6 +116,7 @@ test('Hunt counts Trade crops hidden behind missing Misfortune crops', () => {
     ...switchGameArea(mainGame, GAME_AREA_IDS.MISFORTUNE),
     hamsters: 500,
     rowDuplicators: 499,
+    hasUnlockedCorn: true,
     hasUnlockedTurnip: true,
     hasUnlockedAppleTree: true,
     hasUnlockedLentil: true,
@@ -129,7 +130,6 @@ test('Hunt counts Trade crops hidden behind missing Misfortune crops', () => {
   assert.deepEqual(getMissingMisfortuneCropTypeIds(game), [
     'sunflower',
     'canola',
-    'carrot',
     'fourLeafClover',
   ])
 })

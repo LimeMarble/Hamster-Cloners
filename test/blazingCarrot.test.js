@@ -13,9 +13,20 @@ import {
   getRabbitRelationsMultiplier,
   unlockCropPerfection,
 } from '../src/game/gameLogic.js'
-import { CROP_PERFECTIONS } from '../src/game/crops.js'
+import { CROP_DEFINITIONS, CROP_PERFECTIONS } from '../src/game/crops.js'
 
 const BLAZING_CARROT = 'blazingCarrot'
+
+test('Carrot has a base yield of 10 with its existing passive bonuses', () => {
+  const blueprint = createBlueprint({ cells: ['carrot'] })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(CROP_DEFINITIONS.carrot.baseYield, 10)
+  assert.match(CROP_DEFINITIONS.carrot.effectDescription, /^10 Crops per slot/)
+  assert.equal(CROP_PERFECTIONS.blazingCarrot.baseEffectDescription, '10 Crops per slot')
+  assert.equal(getCropProductionPerSecond(blueprint, farmland), 11)
+  assert.equal(getRabbitRelationsMultiplier(blueprint), 1.04)
+})
 
 function createSpacedCarrotBlueprint(count) {
   const rows = 20
@@ -90,7 +101,7 @@ test('Blazing Carrot relation-log harvest bonus caps at +1900 percent', () => {
       {},
       1e12,
     ),
-    280,
+    70,
   )
   assert.equal(
     getCropProductionPerSecond(
@@ -103,7 +114,7 @@ test('Blazing Carrot relation-log harvest bonus caps at +1900 percent', () => {
       {},
       1e40,
     ),
-    800,
+    200,
   )
 
   const stats = getBlueprintCropStats(

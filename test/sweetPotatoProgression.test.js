@@ -5,11 +5,13 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createServer } from 'vite'
 import {
   createInitialGame,
+  canUnlockMisfortuneUpgrade,
   getCropPerfectionCost,
   getNextMajorProgressionGoal,
   isMisfortuneUpgradeVisible,
   MAJOR_PROGRESSION_GOALS,
   MISFORTUNE_UPGRADES,
+  purchaseMisfortuneUpgrade,
 } from '../src/game/gameLogic.js'
 
 let server, Misfortune, MajorProgressionBar
@@ -101,6 +103,9 @@ test('later Misfortune upgrades and their goals stay hidden until Sweet Potato i
     completedMisfortuneUpgrades: ['oilyTreats'], crops: 1e200 })
   const perfected = { ...locked,
     completedCropPerfections: [...locked.completedCropPerfections, 'sweetPotato'] }
+  const fullyRevealed = { ...perfected,
+    completedMisfortuneUpgrades: ['oilyTreats', 'huntForSomethingGreater'],
+    cloverAssembly: { assembled: true } }
   for (const id of ['unfortunateRow', 'rushedStart', 'oilyTreats']) {
     assert.equal(isMisfortuneUpgradeVisible(locked, id), true)
   }
@@ -108,8 +113,11 @@ test('later Misfortune upgrades and their goals stay hidden until Sweet Potato i
     const goal = MAJOR_PROGRESSION_GOALS.find(({ id: goalId }) => goalId === `misfortune-upgrade-${id}`)
     assert.equal(isMisfortuneUpgradeVisible(locked, id), false)
     assert.equal(goal.isApplicable(locked), false)
-    assert.equal(isMisfortuneUpgradeVisible(perfected, id), true)
-    assert.equal(goal.isApplicable(perfected), true)
+    const needsMoreProgress = ['fortunateColumn', 'finalSupport', 'notSoFinalSupport'].includes(id)
+    assert.equal(isMisfortuneUpgradeVisible(perfected, id), !needsMoreProgress)
+    assert.equal(goal.isApplicable(perfected), !needsMoreProgress)
+    assert.equal(isMisfortuneUpgradeVisible(fullyRevealed, id), true)
+    assert.equal(goal.isApplicable(fullyRevealed), true)
     assert.equal(goal.isApplicable({ ...perfected, activeArea: 'main' }), false)
   }
   assert.equal(isMisfortuneUpgradeVisible(locked, 'invalid'), false)
@@ -125,9 +133,63 @@ test('the Misfortune page hides later cards until perfection, not just the Oily 
     assert.ok(!locked.includes(MISFORTUNE_UPGRADES[id].name))
   }
   assert.match(locked, /View Sweet Potato in Main/)
-  const perfected = renderToStaticMarkup(createElement(Misfortune, { ...props, hasSweetPotato: true }))
+  const perfected = renderToStaticMarkup(createElement(Misfortune, {
+    ...props, hasSweetPotato: true, hasHuntForSomethingGreater: true, hasFiveLeafClover: true }))
   for (const id of laterUpgradeIds) {
     assert.ok(perfected.includes(MISFORTUNE_UPGRADES[id].name))
   }
   assert.doesNotMatch(perfected, /View Sweet Potato in Main/)
+})
+
+test('Fortunate Column and Final Support require Hunt for both visibility and purchasing', () => {
+  const game = afterDemoOne({ activeArea: 'misfortune', crops: 1e200,
+    completedCropPerfections: ['sweetPotato'] })
+  for (const id of ['fortunateColumn', 'finalSupport']) {
+    assert.equal(isMisfortuneUpgradeVisible(game, id), false)
+    assert.equal(canUnlockMisfortuneUpgrade(game, id), false)
+    assert.equal(purchaseMisfortuneUpgrade(game, id), null)
+    const ready = { ...game, completedMisfortuneUpgrades: ['huntForSomethingGreater'] }
+    assert.equal(isMisfortuneUpgradeVisible(ready, id), true)
+    assert.equal(canUnlockMisfortuneUpgrade(ready, id), true)
+    assert.ok(purchaseMisfortuneUpgrade(ready, id).completedMisfortuneUpgrades.includes(id))
+  }
+  for (const id of ['adversityGrownTubers', 'burdenedFoundations', 'nourishingMisery', 'huntForSomethingGreater']) {
+    assert.equal(isMisfortuneUpgradeVisible(game, id), true)
+    assert.equal(canUnlockMisfortuneUpgrade(game, id), true)
+  }
+})
+
+test('Not-So-Final Support requires assembled 5-Leaf Clover, not just filled assembly progress', () => {
+  const game = afterDemoOne({ activeArea: 'misfortune', crops: 1e200,
+    completedCropPerfections: ['sweetPotato'],
+    completedMisfortuneUpgrades: ['huntForSomethingGreater'] })
+  for (const cloverAssembly of [undefined, { assembled: false, progress: 7.77e58 }]) {
+    const locked = { ...game, cloverAssembly }
+    assert.equal(isMisfortuneUpgradeVisible(locked, 'notSoFinalSupport'), false)
+    assert.equal(canUnlockMisfortuneUpgrade(locked, 'notSoFinalSupport'), false)
+    assert.equal(purchaseMisfortuneUpgrade(locked, 'notSoFinalSupport'), null)
+  }
+  const ready = { ...game, cloverAssembly: { assembled: true } }
+  assert.equal(isMisfortuneUpgradeVisible(ready, 'notSoFinalSupport'), true)
+  assert.equal(canUnlockMisfortuneUpgrade(ready, 'notSoFinalSupport'), true)
+  assert.ok(purchaseMisfortuneUpgrade(ready, 'notSoFinalSupport'))
+})
+
+test('the page reveals Hunt-gated and Clover-gated cards separately, with simple cost wording', () => {
+  const props = { ...MISFORTUNE_UPGRADES, hasSweetPotato: true }
+  const beforeHunt = renderToStaticMarkup(createElement(Misfortune, props))
+  assert.match(beforeHunt, /Hunt for Something Greater/)
+  assert.doesNotMatch(beforeHunt, /Fortunate Column|Final Support/)
+  const afterHunt = renderToStaticMarkup(createElement(Misfortune, {
+    ...props, hasHuntForSomethingGreater: true }))
+  assert.match(afterHunt, /Fortunate Column/)
+  assert.match(afterHunt, /Final Support/)
+  assert.doesNotMatch(afterHunt, /Not-So-Final Support/)
+  const afterClover = renderToStaticMarkup(createElement(Misfortune, {
+    ...props, hasHuntForSomethingGreater: true, hasFiveLeafClover: true }))
+  assert.match(afterClover, /Not-So-Final Support/)
+  const precursorCard = afterClover.slice(afterClover.indexOf('<h2>Not-So-Final Support</h2>'))
+  assert.match(precursorCard, /Need .*Crops/)
+  assert.doesNotMatch(precursorCard, /Misfortune Crops/)
+  assert.doesNotMatch(afterClover, /This choice is permanent|progress is wiped|Permanent upgrades/)
 })

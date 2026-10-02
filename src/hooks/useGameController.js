@@ -237,6 +237,7 @@ export function useGameController() {
         hasOilyTreats: hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.OILY_TREATS),
         canUnlockOilyTreats: canUnlockMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.OILY_TREATS),
         hasSweetPotato: derived.hasSweetPotato,
+        hasFiveLeafClover: game.cloverAssembly?.assembled === true,
         onUnlockOilyTreats: actions.onUnlockOilyTreats,
         onVisitSweetPotatoInMain: actions.onVisitSweetPotatoInMain,
         adversityGrownTubers: MISFORTUNE_UPGRADES[

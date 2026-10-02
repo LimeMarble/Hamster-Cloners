@@ -23,12 +23,14 @@ import {
 import { createInitialCloverAssemblyState } from './cloverAssemblyLogic.js'
 import { normalizeFortuneState } from './fortuneLogic.js'
 import { createInitialFiveLeafState } from './fiveLeafCloverLogic.js'
+import { hasUnlockedCorn } from './crops.js'
 
 const VALID_EXPANSION_IDS = new Set(
   BLUEPRINT_EXPANSIONS.map(({ id }) => id),
 )
 
 export const AREA_CROP_UNLOCK_FIELDS = Object.freeze([
+  'hasUnlockedCorn',
   'hasUnlockedTurnip',
   'hasUnlockedAppleTree',
   'hasUnlockedLentil',
@@ -128,6 +130,7 @@ export function captureCurrentAreaState(game) {
     hamsters: toNonNegativeInteger(game.hamsters),
     rowDuplicators: toNonNegativeInteger(game.rowDuplicators),
     ...getAreaCropUnlockState(game),
+    hasUnlockedCorn: hasUnlockedCorn(game),
     farmland: createFarmlandMultipliers(game.farmland),
     completedBlueprintExpansions: Array.isArray(
       game.completedBlueprintExpansions,
@@ -144,10 +147,11 @@ export function captureCurrentAreaState(game) {
   }
 }
 
-export function normalizeStoredAreaState(rawArea, fallbackArea) {
+export function normalizeStoredAreaState(rawArea, fallbackArea, areaId = GAME_AREA_IDS.MAIN) {
   const fallback = fallbackArea ?? createInitialMisfortuneAreaState()
   const source = rawArea && typeof rawArea === 'object' ? rawArea : fallback
   const cropUnlocks = getAreaCropUnlockState(source, fallback)
+  cropUnlocks.hasUnlockedCorn = hasUnlockedCorn({ ...source, activeArea: areaId })
   const blueprint = removeLockedAreaCrops(
     source.blueprint ?? fallback.blueprint,
     cropUnlocks,
@@ -381,7 +385,7 @@ export function switchGameArea(game, targetAreaId) {
   const targetFallback = targetArea === GAME_AREA_IDS.MISFORTUNE
     ? createInitialMisfortuneAreaState(game.rabbitBlueprintExpansions)
     : currentAreaState
-  const targetState = normalizeStoredAreaState(storedTarget, targetFallback)
+  const targetState = normalizeStoredAreaState(storedTarget, targetFallback, targetArea)
 
   return {
     ...game,

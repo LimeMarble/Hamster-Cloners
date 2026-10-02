@@ -31,7 +31,8 @@ function createAugmentationGame() {
     hamsters: 200,
     rowDuplicators: 123,
     floorReplicators: 500,
-    completedCropPerfections: ['enrichingLeek', 'mirrorCorn'],
+    completedCropPerfections: ['enrichingLeek', 'mirrorCorn', 'sweetPotato'],
+    cloverAssembly: { ...initial.cloverAssembly, assembled: true },
     capybara: { ...initial.capybara, completedDemonstrations: ['introduction', 'demonstrationOne'] },
     areaProgress: { main: { ...initial, crops: 1e140 }, misfortune: null },
   }

@@ -50,6 +50,7 @@ export function Misfortune({
   hasOilyTreats,
   canUnlockOilyTreats,
   hasSweetPotato,
+  hasFiveLeafClover,
   onUnlockOilyTreats,
   onVisitSweetPotatoInMain,
   adversityGrownTubers,
@@ -91,7 +92,7 @@ export function Misfortune({
         with the main field.
       </p>
       <div className="misfortune-upgrades">
-        <p className="eyebrow">Permanent upgrades</p>
+        <p className="eyebrow">Upgrades</p>
         <article className="misfortune-upgrade-card">
           <div>
             <h2>Unfortunate Row</h2>
@@ -102,7 +103,6 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={unfortunateRow.cost} /> Crops.
-              This choice is permanent.
             </p>
           </div>
           <button
@@ -131,8 +131,7 @@ export function Misfortune({
               returning to normal. This applies in both field areas.
             </p>
             <p className="misfortune-upgrade-note">
-              Cost: <FormattedNumber value={rushedStart.cost} /> Crops. This
-              choice is permanent.
+              Cost: <FormattedNumber value={rushedStart.cost} /> Crops.
             </p>
           </div>
           <button
@@ -168,7 +167,6 @@ export function Misfortune({
               </p>
               <p className="misfortune-upgrade-note">
                 Cost: <FormattedNumber value={oilyTreats.cost} /> Misfortune Crops.
-                This choice is permanent until Misfortune progress is wiped.
               </p>
               {hasOilyTreats && !hasSweetPotato ? (
                 <button type="button" className="secondary-button"
@@ -197,7 +195,7 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={adversityGrownTubers.cost} />
-              {' '}Crops. This choice is permanent.
+              {' '}Crops.
             </p>
           </div>
           <button
@@ -237,7 +235,7 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={burdenedFoundations.cost} />
-              {' '}Crops. This choice is permanent.
+              {' '}Crops.
             </p>
           </div>
           <button
@@ -275,7 +273,6 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={nourishingMisery.cost} /> Crops.
-              This choice is permanent.
             </p>
           </div>
           <button
@@ -329,7 +326,7 @@ export function Misfortune({
             ) : null}
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={huntForSomethingGreater.cost} />{' '}
-              Crops. This choice is permanent.
+              Crops.
             </p>
           </div>
           <button
@@ -360,6 +357,8 @@ export function Misfortune({
                   )}
           </button>
         </article>
+        {hasHuntForSomethingGreater ? (
+          <>
         <article className="misfortune-upgrade-card">
           <div>
             <h2>{fortunateColumn.name}</h2>
@@ -370,7 +369,6 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={fortunateColumn.cost} /> Crops.
-              This choice is permanent until Misfortune progress is wiped.
             </p>
           </div>
           <button
@@ -408,8 +406,7 @@ export function Misfortune({
               tier.
             </p>
             <p className="misfortune-upgrade-note">
-              Cost: <FormattedNumber value={finalSupport.cost} /> Crops. This
-              choice is permanent until Misfortune progress is wiped.
+              Cost: <FormattedNumber value={finalSupport.cost} /> Crops.
             </p>
           </div>
           <button
@@ -429,6 +426,9 @@ export function Misfortune({
                   )}
           </button>
         </article>
+          </>
+        ) : null}
+        {hasFiveLeafClover ? (
         <article className="misfortune-upgrade-card">
           <div>
             <h2>{notSoFinalSupport.name}</h2>
@@ -439,8 +439,7 @@ export function Misfortune({
             </p>
             <p className="misfortune-upgrade-note">
               Cost: <FormattedNumber value={notSoFinalSupport.cost} />{' '}
-              Misfortune Crops. This choice is permanent until Misfortune
-              progress is wiped.
+              Crops.
             </p>
           </div>
           <button
@@ -455,10 +454,11 @@ export function Misfortune({
                 ? 'Unlock Misfortune augments'
                 : <>
                     Need <FormattedNumber value={notSoFinalSupport.cost} />{' '}
-                    Misfortune Crops
+                    Crops
                   </>}
           </button>
         </article>
+        ) : null}
           </>
         ) : null}
       </div>

@@ -10,13 +10,26 @@ import {
   getOilyTreatsFloorMultiplier, getPeanutTreatEffect,
   isCropPerfectionVisible, purchaseMisfortuneUpgrade, switchGameArea,
 } from '../src/game/gameLogic.js'
-import { CROP_DEFINITIONS, getUnlockedCropIds, getVisibleCropIds } from '../src/game/crops.js'
+import { CROP_DEFINITIONS, CROP_IDS, getUnlockedCropIds, getVisibleCropIds } from '../src/game/crops.js'
 import { exportGame, importGame } from '../src/game/storage.js'
 
 function near(actual, expected) {
   assert.ok(Math.abs(actual - expected) <= Math.max(1, Math.abs(expected)) * 1e-12,
     `${actual} should be approximately ${expected}`)
 }
+
+test('Peanuts appear immediately before Soybean without becoming a prerequisite for it', () => {
+  assert.equal(CROP_IDS.indexOf('peanuts') + 1, CROP_IDS.indexOf('soybean'))
+  const visible = getVisibleCropIds(CROP_IDS, 1000, true, true, true)
+  assert.equal(visible.indexOf('peanuts') + 1, visible.indexOf('soybean'))
+  const withoutPeanuts = getVisibleCropIds(
+    CROP_IDS.filter((id) => id !== 'peanuts'), 1000, true, true, true,
+  )
+  assert.ok(withoutPeanuts.includes('soybean'))
+  assert.ok(!withoutPeanuts.includes('peanuts'))
+  assert.deepEqual(visible.filter((id) => id !== 'peanuts'), withoutPeanuts)
+  assert.deepEqual(getVisibleCropIds(['leek', 'peanuts']), ['leek', 'peanuts'])
+})
 
 function peanutGame(count = 7, extra = {}) {
   const blueprint = createBlueprint({ rows: 14, columns: 14, cells: Array(count).fill('peanuts') })

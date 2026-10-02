@@ -7,7 +7,8 @@ import { getCropRequirement } from './cropRequirements.js'
 import {
   getUnlockedCropIds,
   getVisibleCropIds,
-  hasUnlockedCarrotInMisfortune,
+  hasUnlockedCanolaInMisfortune,
+  hasUnlockedCorn,
   hasVisitedMisfortune,
 } from './crops.js'
 
@@ -40,6 +41,7 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
     name: 'Fortunate Column',
     requiredCropPerfectionId: 'sweetPotato',
+    requiredMisfortuneUpgradeId: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
     cost: 7.77e50,
     cropProductionMultiplier: 1.25,
   }),
@@ -84,6 +86,7 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
     name: 'Final Support',
     requiredCropPerfectionId: 'sweetPotato',
+    requiredMisfortuneUpgradeId: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
     cost: 2.5e62,
     passiveEffectBonusPerTier: 0.002,
     floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
@@ -98,6 +101,7 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
     name: 'Not-So-Final Support',
     requiredCropPerfectionId: 'sweetPotato',
+    requiresFiveLeafClover: true,
     cost: 1e70,
   }),
 })
@@ -148,10 +152,19 @@ export function hasMisfortuneUpgrade(game, upgradeId) {
 
 export function isMisfortuneUpgradeVisible(game, upgradeId) {
   const upgrade = MISFORTUNE_UPGRADES[upgradeId]
-  return Boolean(upgrade && (
-    !upgrade.requiredCropPerfectionId ||
-    game?.completedCropPerfections?.includes(upgrade.requiredCropPerfectionId)
-  ))
+  return Boolean(upgrade &&
+    hasMisfortuneUpgradeProgressRequirements(game, upgrade) && (
+      !upgrade.requiredCropPerfectionId ||
+      game?.completedCropPerfections?.includes(upgrade.requiredCropPerfectionId)
+    ))
+}
+
+function hasMisfortuneUpgradeProgressRequirements(game, upgrade) {
+  return (
+    (!upgrade.requiredMisfortuneUpgradeId ||
+      hasMisfortuneUpgrade(game, upgrade.requiredMisfortuneUpgradeId)) &&
+    (!upgrade.requiresFiveLeafClover || game?.cloverAssembly?.assembled === true)
+  )
 }
 
 export function unlockMisfortuneUpgrade(game, upgradeId) {
@@ -160,6 +173,7 @@ export function unlockMisfortuneUpgrade(game, upgradeId) {
   if (
     game?.activeArea !== GAME_AREA_IDS.MISFORTUNE ||
     !upgrade ||
+    !hasMisfortuneUpgradeProgressRequirements(game, upgrade) ||
     Math.max(0, Number(game.crops) || 0) < upgrade.cost ||
     hasMisfortuneUpgrade(game, upgradeId)
   ) {
@@ -186,6 +200,7 @@ export function canUnlockMisfortuneUpgrade(game, upgradeId) {
   return (
     game?.activeArea === GAME_AREA_IDS.MISFORTUNE &&
     cost !== null &&
+    hasMisfortuneUpgradeProgressRequirements(game, MISFORTUNE_UPGRADES[upgradeId]) &&
     !hasMisfortuneUpgrade(game, upgradeId) &&
     Math.max(0, Number(game.crops) || 0) >= cost
   )
@@ -282,14 +297,17 @@ function getAreaUnlockedCropIds(game, areaId) {
     [],
     game?.floorReplicators,
     game?.earnedAchievementIds?.includes('makingPeanuts') === true,
+    hasUnlockedCanolaInMisfortune(game),
+    hasUnlockedCorn({ ...area, activeArea: areaId }),
   )
 
   return getVisibleCropIds(
     unlockedCropIds,
     game?.totalHamstersHired,
     game?.hasUnlockedRowDuplicators,
-    hasUnlockedCarrotInMisfortune(game),
+    hasUnlockedCanolaInMisfortune(game),
     hasVisitedMisfortune(game),
+    areaId,
   ).filter((cropId) => unlockedCropIds.includes(cropId))
 }
 

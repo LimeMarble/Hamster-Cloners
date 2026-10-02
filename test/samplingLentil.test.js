@@ -64,8 +64,8 @@ test('Sampling Lentil multiplies its 80 percent effect from unique surrounding C
     ['samplingLentil'],
   )
 
-  assert.ok(Math.abs(regularProduction - 110 * 1.25 * 1.2) < 1e-12)
-  assert.ok(Math.abs(perfectedProduction - 110 * 11.8 * 1.2) < 1e-12)
+  assert.ok(Math.abs(regularProduction - 50 * 1.25 * 1.2) < 1e-12)
+  assert.ok(Math.abs(perfectedProduction - 50 * 11.8 * 1.2) < 1e-12)
   assert.deepEqual(patternEffect, {
     uniqueNonTradedCropTypeCount: 3,
     uniqueTradedCropTypeCount: 2,

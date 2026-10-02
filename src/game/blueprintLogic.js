@@ -166,6 +166,7 @@ export function createInitialGame() {
     hasSeenMonocropLimit: false,
     hasSeenBlueprintMastery: false,
     hasVisitedInventions: false,
+    hasUnlockedCorn: false,
     hasUnlockedTurnip: false,
     hasUnlockedAppleTree: false,
     hasUnlockedLentil: false,

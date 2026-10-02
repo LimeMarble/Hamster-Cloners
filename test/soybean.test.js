@@ -43,7 +43,7 @@ function getUnlockedCrops({
   )
 }
 
-test('Soybean appears after Clover, reveals with Carrot, and unlocks at 555 Floor Replicators', () => {
+test('Soybean appears after Clover, reveals with Misfortune Canola, and unlocks at 555 Floor Replicators', () => {
   const lockedCropIds = getUnlockedCrops({ floorReplicators: 554 })
   const unlockedCropIds = getUnlockedCrops({ floorReplicators: 555 })
   const visibleCropIds = getVisibleCropIds(
@@ -52,7 +52,7 @@ test('Soybean appears after Clover, reveals with Carrot, and unlocks at 555 Floo
     true,
     true,
   )
-  const beforeMisfortuneCarrotIsVisible = getVisibleCropIds(
+  const beforeMisfortuneCanolaIsVisible = getVisibleCropIds(
     getUnlockedCrops({ floorReplicators: 555, rowDuplicators: 499 }),
     1000,
     true,
@@ -64,8 +64,9 @@ test('Soybean appears after Clover, reveals with Carrot, and unlocks at 555 Floo
   assert.equal(lockedCropIds.includes('soybean'), false)
   assert.equal(unlockedCropIds.includes('fourLeafClover'), false)
   assert.equal(unlockedCropIds.includes('soybean'), true)
-  assert.equal(beforeMisfortuneCarrotIsVisible.includes('carrot'), false)
-  assert.equal(beforeMisfortuneCarrotIsVisible.includes('soybean'), false)
+  assert.equal(beforeMisfortuneCanolaIsVisible.includes('carrot'), false)
+  assert.equal(beforeMisfortuneCanolaIsVisible.includes('soybean'), false)
+  assert.equal(getUnlockedCrops({ floorReplicators: 555, rowDuplicators: 499 }).includes('soybean'), false)
   assert.equal(visibleCropIds.includes('fourLeafClover'), true)
   assert.equal(visibleCropIds.includes('soybean'), true)
   assert.equal(

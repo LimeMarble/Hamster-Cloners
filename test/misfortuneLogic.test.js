@@ -161,7 +161,8 @@ test('legacy Misfortune saves move shared Crop unlocks back to the main area', (
   })
 
   const restoredMain = switchGameArea(normalized, GAME_AREA_IDS.MAIN)
-  AREA_CROP_UNLOCK_FIELDS.forEach((field) => {
+  assert.equal(restoredMain.hasUnlockedCorn, false)
+  AREA_CROP_UNLOCK_FIELDS.filter((field) => field !== 'hasUnlockedCorn').forEach((field) => {
     assert.equal(restoredMain[field], true)
   })
 })
@@ -395,6 +396,7 @@ test('Fortunate Column resets both areas and grants one blueprint Column', () =>
   const baseGame = {
     ...switchGameArea(mainGame, GAME_AREA_IDS.MISFORTUNE),
     crops: upgrade.cost,
+    completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER],
     farmland: {
       rows: 4,
       columns: 5,

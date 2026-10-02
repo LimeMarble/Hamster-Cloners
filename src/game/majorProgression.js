@@ -7,6 +7,8 @@ import {
   LENTIL_UNLOCK_CROP_COUNT,
   SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
   hasUnlockedSoybean,
+  hasUnlockedCorn,
+  MISFORTUNE_CORN_UNLOCK_CROP_COUNT,
   hasVisitedMisfortune,
   SUNFLOWER_UNLOCK_CROP_COUNT,
   SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
@@ -193,18 +195,25 @@ export const MAJOR_PROGRESSION_GOALS = [
     getCurrent: (game) => game.totalHamstersHired,
     requiresAction: false,
   },
-  createCropGoal({
+  {
     id: 'crop-corn',
+    category: 'Crop unlock',
     title: 'Unlock Corn',
     target: FIRST_COLUMN_EXPANSION_COST,
-    scaleRequirement: false,
+    unit: 'Crops',
     description:
       'Reach the cost, then complete the first Blueprint Column Expansion in Inventions.',
     requiresAction: true,
-    isComplete: (game) =>
-      hasCompletedExpansion(game, 'firstColumn') ||
-      getSafeProgressValue(game.blueprint?.columns) > 1,
-  }),
+    isComplete: (game) => hasUnlockedCorn(game) ||
+      (game.activeArea !== GAME_AREA_IDS.MISFORTUNE && hasCompletedExpansion(game, 'firstColumn')),
+    getCurrent: (game) => game.crops,
+    getTarget: (game) => game.activeArea === GAME_AREA_IDS.MISFORTUNE
+      ? getCropRequirement(game, MISFORTUNE_CORN_UNLOCK_CROP_COUNT)
+      : FIRST_COLUMN_EXPANSION_COST,
+    getDescription: (game) => game.activeArea === GAME_AREA_IDS.MISFORTUNE
+      ? 'Reach the Crop requirement to unlock Corn in Misfortune.'
+      : 'Reach the cost, then complete the first Blueprint Column Expansion in Inventions.',
+  },
   createMisfortuneUpgradeGoal(
     MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
     'Purchase Unfortunate Row from the Misfortune tab.',
@@ -452,7 +461,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     target: SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
     unit: 'Floor Replicators',
     description:
-      'After unlocking Carrot in Misfortune, own 555 Floor Replicators to unlock Soybean.',
+      'After unlocking Canola in Misfortune, own 555 Floor Replicators to unlock Soybean.',
     isApplicable: hasVisitedMisfortune,
     isComplete: hasUnlockedSoybean,
     getCurrent: (game) => game.floorReplicators,

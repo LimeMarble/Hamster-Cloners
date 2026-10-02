@@ -52,7 +52,8 @@ import {
 import {
   getUnlockedCropIds,
   getVisibleCropIds,
-  hasUnlockedCarrotInMisfortune,
+  hasUnlockedCanolaInMisfortune,
+  hasUnlockedCorn,
 } from '../game/crops.js'
 import { getMonocropThreshold } from '../game/monocropPenalty.js'
 import { formatWholeNumber } from '../game/numberFormat.js'
@@ -346,7 +347,8 @@ export function useGameDerivedState(game) {
     game,
     RABBIT_UNLOCK_IDS.CARROT,
   )
-  const hasMisfortuneCarrot = hasUnlockedCarrotInMisfortune(game)
+  const hasMisfortuneCanola = hasUnlockedCanolaInMisfortune(game)
+  const cornUnlocked = hasUnlockedCorn(game)
   const hasMisfortuneVisit = hasVisitedMisfortune(game)
   const hasUnlockedFourLeafClover = hasRabbitUnlock(
     game,
@@ -375,6 +377,8 @@ export function useGameDerivedState(game) {
         unlockedManateeCropIds,
         game.floorReplicators,
         game.earnedAchievementIds?.includes('makingPeanuts') === true,
+        hasMisfortuneCanola,
+        cornUnlocked,
       ),
     [
       game.blueprint,
@@ -393,6 +397,8 @@ export function useGameDerivedState(game) {
       unlockedManateeCropIds,
       game.floorReplicators,
       game.earnedAchievementIds,
+      hasMisfortuneCanola,
+      cornUnlocked,
     ],
   )
   const visibleCropIds = useMemo(
@@ -401,15 +407,17 @@ export function useGameDerivedState(game) {
         unlockedCropIds,
         game.totalHamstersHired,
         game.hasUnlockedRowDuplicators,
-        hasMisfortuneCarrot,
+        hasMisfortuneCanola,
         hasMisfortuneVisit,
+        game.activeArea,
       ),
     [
       unlockedCropIds,
       game.totalHamstersHired,
       game.hasUnlockedRowDuplicators,
-      hasMisfortuneCarrot,
+      hasMisfortuneCanola,
       hasMisfortuneVisit,
+      game.activeArea,
     ],
   )
   const visibleUnlockedCropIds = useMemo(
