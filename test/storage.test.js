@@ -11,6 +11,7 @@ import {
   SUNFLOWER_UNLOCK_CROP_COUNT,
   WHEAT_UNLOCK_CROP_COUNT,
 } from '../src/game/crops.js'
+import { createInitialFortuneState } from '../src/game/fortuneLogic.js'
 
 test('legacy saves reset blueprint progress after the expansion axes swap', () => {
   const migratedGame = normalizeGame({
@@ -411,6 +412,7 @@ test('Clover bundles and active Breezes of Fortune persist with safe defaults', 
   const olderSave = normalizeGame({})
 
   assert.deepEqual(cloverSave.fortune, {
+    ...createInitialFortuneState(),
     bundles: [{ x: 25, y: 75 }],
     secondsTowardBundleRoll: 42,
     activeEffects: [
@@ -419,11 +421,13 @@ test('Clover bundles and active Breezes of Fortune persist with safe defaults', 
     notice: { effectId: 'bounty', remainingSeconds: 4 },
   })
   assert.deepEqual(olderSave.fortune, {
+    ...createInitialFortuneState(),
     bundles: [],
     secondsTowardBundleRoll: 0,
     activeEffects: [],
     notice: null,
   })
+  assert.deepEqual(importGame(exportGame(cloverSave)).fortune, cloverSave.fortune)
 })
 test('exports and imports a versioned Base64 save code', () => {
   const saveCode = exportGame({

@@ -36,7 +36,7 @@ test('shared late perfections keep the 500× factor in Misfortune, including pro
     near(getCropPerfectionCost(perfection.id, main), expected)
   }
   near(getCropPerfectionCost('sweetPotato', misfortune), 2e99)
-  near(getCropPerfectionCost('samplingLentil', misfortune), 5e126)
+  near(getCropPerfectionCost('samplingLentil', misfortune), CROP_PERFECTIONS.samplingLentil.cost * 5000)
   for (const id of ['sweetPotato', 'samplingLentil']) {
     const goal = MAJOR_PROGRESSION_GOALS.find((goal) => goal.id === `perfection-${id}`)
     assert.equal(goal.getTarget(misfortune), getCropPerfectionCost(id, misfortune))

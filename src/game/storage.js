@@ -295,6 +295,7 @@ export function normalizeGame(rawGame) {
     hasCurrentBlueprintAxes && Array.isArray(rawGame.blueprintSlots)
       ? rawGame.blueprintSlots
       : []
+  const earnedAchievementIds = normalizeAchievementIds(rawGame.earnedAchievementIds)
   const unlockedBlueprintSlotCount = getUnlockedBlueprintSlotCount({
     blueprint,
     unionized: rawGame.unionized === true,
@@ -306,6 +307,7 @@ export function normalizeGame(rawGame) {
     activeArea,
     areaProgress,
     trade,
+    earnedAchievementIds,
   })
   const blueprintSlotCount = Math.max(
     unlockedBlueprintSlotCount,
@@ -389,7 +391,7 @@ export function normalizeGame(rawGame) {
   }
 
   const normalizedGame = {
-    earnedAchievementIds: normalizeAchievementIds(rawGame.earnedAchievementIds),
+    earnedAchievementIds,
     crops: currentCrops,
     totalCropsMade: toNonNegativeNumber(
       rawGame.totalCropsMade,

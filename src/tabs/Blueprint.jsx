@@ -1,8 +1,9 @@
 import { memo } from 'react'
 import {
-  BLUEPRINT_SLOT_UNLOCK_HINTS,
   CAPYBARA_DEMONSTRATION_IDS,
+  GAME_AREA_IDS,
   canRestartFields,
+  getBlueprintSlotUnlockHints,
   getFieldsPlanted,
   hasCompletedCapybaraDemonstration,
   isWaterLettuceFieldInfested,
@@ -71,13 +72,18 @@ function BlueprintPanel({
     game,
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
   )
-  const visibleBlueprintSlotCount = hasUnlockedManatees
-    ? BLUEPRINT_SLOT_UNLOCK_HINTS.length
-    : visibleCropIds.includes('soybean')
-      ? 4
-      : game.hasUnlockedKnotweed
-        ? 3
-        : 2
+  const blueprintSlotUnlockHints = getBlueprintSlotUnlockHints(game)
+  const visibleBlueprintSlotCount = Math.max(
+    unlockedBlueprintSlotCount,
+    hasUnlockedManatees
+      ? blueprintSlotUnlockHints.length
+      : visibleCropIds.includes('soybean') ||
+          (game.activeArea !== GAME_AREA_IDS.MISFORTUNE && hasVisitedMisfortune(game))
+        ? 4
+        : game.hasUnlockedKnotweed
+          ? 3
+          : 2,
+  )
   const visibleBlueprintSlotIndexes = Array.from(
     { length: visibleBlueprintSlotCount },
     (_, slotIndex) => slotIndex,
@@ -121,7 +127,7 @@ function BlueprintPanel({
             slotIndex < unlockedBlueprintSlotCount &&
             Boolean(blueprintSlots[slotIndex])
           const active = game.activeBlueprintSlot === slotIndex
-          const unlockHint = BLUEPRINT_SLOT_UNLOCK_HINTS[slotIndex]
+          const unlockHint = blueprintSlotUnlockHints[slotIndex]
 
           return (
             <button
@@ -262,6 +268,7 @@ function areBlueprintPropsEqual(previous, next) {
     previousGame.suffixScientificExponent ===
       nextGame.suffixScientificExponent &&
     previousGame.activeBlueprintSlot === nextGame.activeBlueprintSlot &&
+    previousGame.activeArea === nextGame.activeArea &&
     previousGame.hasUnlockedKnotweed === nextGame.hasUnlockedKnotweed &&
     canRestartFields(previousGame) === canRestartFields(nextGame) &&
     hasVisitedMisfortune(previousGame) === hasVisitedMisfortune(nextGame) &&

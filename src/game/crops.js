@@ -439,7 +439,8 @@ export const CROP_PERFECTIONS = {
     id: 'samplingLentil',
     cropId: 'lentil',
     name: 'Sampling Lentil',
-    cost: 1e123,
+    // The existing ×10 progression and ×500 late-cost factors give 2.5e140.
+    cost: 5e136,
     requiresMisfortune: true,
     globalHarvestMultiplier: 1.8,
     nonTradedNeighborEffectMultiplier: 3,

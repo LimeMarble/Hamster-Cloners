@@ -24,6 +24,14 @@ function contactGame() {
     rabbitUnlocks: ['capybaraContact'] } }
 }
 
+test('Rabbit lore contains only the in-game preference text', () => {
+  const markup = renderToStaticMarkup(createElement(Trade, {
+    game: contactGame(), activeRelation: 'rabbits',
+  }))
+  assert.match(markup, /The Rabbits insist they dislike apples, pumpkins, and pesky weeds\./)
+  assert.doesNotMatch(markup, /Whether that is accurate rabbit lore is another question/)
+})
+
 test('only Demo 0 is initially visible and unknown demonstrations stay hidden', () => {
   const game = contactGame()
   assert.deepEqual(CAPYBARA_DEMONSTRATIONS.map(({ id }) =>

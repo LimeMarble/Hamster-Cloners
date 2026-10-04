@@ -10,8 +10,15 @@ import {
   getOilyTreatsFloorMultiplier, getPeanutTreatEffect,
   isCropPerfectionVisible, purchaseMisfortuneUpgrade, switchGameArea,
 } from '../src/game/gameLogic.js'
-import { CROP_DEFINITIONS, CROP_IDS, getUnlockedCropIds, getVisibleCropIds } from '../src/game/crops.js'
+import { CROP_DEFINITIONS, CROP_IDS, CROP_PERFECTIONS, getUnlockedCropIds, getVisibleCropIds } from '../src/game/crops.js'
 import { exportGame, importGame } from '../src/game/storage.js'
+
+// Keep this math fixture at 300 Treats when unrelated achievements are added.
+const THREE_HUNDRED_TREAT_ACHIEVEMENT_IDS = Object.freeze([
+  'inventions', 'firstExpansion', 'unionized',
+  'firstPerfection', 'rowDuplicators', 'seedAugmentation',
+  'trade', 'misfortune', 'manatees',
+])
 
 function near(actual, expected) {
   assert.ok(Math.abs(actual - expected) <= Math.max(1, Math.abs(expected)) * 1e-12,
@@ -34,7 +41,7 @@ test('Peanuts appear immediately before Soybean without becoming a prerequisite 
 function peanutGame(count = 7, extra = {}) {
   const blueprint = createBlueprint({ rows: 14, columns: 14, cells: Array(count).fill('peanuts') })
   return { ...createInitialGame(), blueprint, blueprintSlots: [blueprint],
-    earnedAchievementIds: ACHIEVEMENTS.filter(({ tier }) => tier > 1).map(({ id }) => id),
+    earnedAchievementIds: [...THREE_HUNDRED_TREAT_ACHIEVEMENT_IDS],
     ...extra }
 }
 
@@ -196,13 +203,13 @@ test('shared Sweet Potato and later Crop costs receive another 500× in both are
     hasUnlockedCropPerfection: true, hasUnlockedRowDuplicators: true,
     areaProgress: { misfortune: {} }, completedMisfortuneUpgrades: ['oilyTreats'] }
   near(getCropPerfectionCost('sweetPotato', game), 2e99)
-  near(getCropPerfectionCost('samplingLentil', game), 5e126)
+  near(getCropPerfectionCost('samplingLentil', game), CROP_PERFECTIONS.samplingLentil.cost * 5000)
   assert.equal(getCropPerfectionCost('enrichingLeek', game), 2e11)
   near(getNextSeedAugmentationCost(game, 'sweeterBond'), 3.5e103)
   near(getNextSeedAugmentationCost(game, 'leekDiagonal'), 1e69)
   const misfortune = { ...game, activeArea: 'misfortune' }
   near(getCropPerfectionCost('sweetPotato', misfortune), 2e99)
-  near(getCropPerfectionCost('samplingLentil', misfortune), 5e126)
+  near(getCropPerfectionCost('samplingLentil', misfortune), CROP_PERFECTIONS.samplingLentil.cost * 5000)
   near(getNextSeedAugmentationCost(misfortune, 'sweeterBond'), 3.5e103)
   const cost = getCropPerfectionCost('sweetPotato', game)
   assert.equal(canUnlockCropPerfection({ ...game, crops: cost * 0.99 }, 'sweetPotato'), false)

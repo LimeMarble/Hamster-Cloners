@@ -18,6 +18,7 @@ import { BlazingCarrotPerfection } from './BlazingCarrotPerfection.jsx'
 import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber } from './ui.jsx'
 import { ManateeRelations } from './ManateeRelations.jsx'
+import { RabbitExampleBuilds } from './RabbitExampleBuilds.jsx'
 
 function EstablishTradeCard({ game, onEstablishTrade }) {
   const cost = getTradeEstablishmentCost(game)
@@ -527,16 +528,19 @@ export function Trade({
           {activeRelation === 'rabbits' ? (
             <div className="trade-relation-panel">
               <section className="trading-group" aria-labelledby="rabbits-title">
-                <div className="trading-group-title">
-                  <span aria-hidden="true">🐇</span>
-                  <div>
-                    <p className="eyebrow">Trading partner</p>
-                    <h2 id="rabbits-title">Rabbits</h2>
+                <div className="rabbit-group-heading">
+                  <div className="trading-group-title">
+                    <span aria-hidden="true">🐇</span>
+                    <div>
+                      <p className="eyebrow">Trading partner</p>
+                      <h2 id="rabbits-title">Rabbits</h2>
+                    </div>
                   </div>
+                  <RabbitExampleBuilds game={game} />
                 </div>
                 <p className="trade-copy rabbit-lore">
                   The Rabbits insist they dislike apples, pumpkins, and pesky
-                  weeds. Whether that is accurate rabbit lore is another question.
+                  weeds.
                 </p>
                 <div className="rabbit-contract-summary">
                   <span>

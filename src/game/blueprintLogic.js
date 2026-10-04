@@ -46,11 +46,25 @@ export const BLUEPRINT_SLOT_UNLOCK_HINTS = Object.freeze([
   null,
   'Unlocks with Potato',
   'Unlocks with Sunflower',
+  'Unlocks with Peanuts',
+  'Unlocks with Mangrove Sapling',
+])
+
+const MISFORTUNE_BLUEPRINT_SLOT_UNLOCK_HINTS = Object.freeze([
+  null,
+  'Unlocks with Peanuts',
+  'Unlocks with Sunflower',
   'Unlocks with Soybean',
   'Unlocks with Mangrove Sapling',
 ])
 
 export const MAX_BLUEPRINT_SLOT_COUNT = BLUEPRINT_SLOT_UNLOCK_HINTS.length
+
+export function getBlueprintSlotUnlockHints(game) {
+  return game?.activeArea === GAME_AREA_IDS.MISFORTUNE
+    ? MISFORTUNE_BLUEPRINT_SLOT_UNLOCK_HINTS
+    : BLUEPRINT_SLOT_UNLOCK_HINTS
+}
 
 function normalizeUniqueCloverCells(cells) {
   let hasClover = false
@@ -255,12 +269,20 @@ export function getUnlockedBlueprintSlotCount(game) {
     return 5
   }
 
-  if (hasUnlockedSoybean(game)) {
+  const hasUnlockedPeanuts =
+    game.earnedAchievementIds?.includes('makingPeanuts') === true
+  const isMisfortune = game.activeArea === GAME_AREA_IDS.MISFORTUNE
+
+  if (isMisfortune ? hasUnlockedSoybean(game) : hasUnlockedPeanuts) {
     return 4
   }
 
   if (game.hasUnlockedSunflower === true) {
     return 3
+  }
+
+  if (isMisfortune) {
+    return hasUnlockedPeanuts ? 2 : 1
   }
 
   return game.unionized === true &&

@@ -1,0 +1,212 @@
+.rabbit-group-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rabbit-example-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(700px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #b98f36;
+  color: var(--text-strong);
+  background: var(--panel);
+}
+
+.rabbit-example-dialog::backdrop {
+  background: rgb(0 0 0 / 82%);
+}
+
+body:has(.rabbit-example-dialog[open]) {
+  overflow: hidden;
+}
+
+.rabbit-example-heading {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  background: var(--panel);
+}
+
+.rabbit-example-heading h2 {
+  margin: 0;
+  color: var(--text-strong);
+}
+
+.rabbit-example-heading form {
+  flex: 0 0 auto;
+}
+
+.rabbit-example-heading .icon-button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  color: var(--text-strong);
+  background: var(--panel-raised);
+  font-size: 1.3rem;
+}
+
+.rabbit-example-launcher button:focus-visible,
+.rabbit-example-heading button:focus-visible {
+  outline: 2px solid var(--crop-gold);
+  outline-offset: 3px;
+}
+
+.rabbit-example-guide {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.rabbit-example-guide h3 {
+  margin: 0 0 8px;
+  color: var(--text-strong);
+  font-size: 0.9rem;
+}
+
+.rabbit-example-guide p {
+  margin: 0 0 8px;
+  font-size: 0.83rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.rabbit-example-guide p:last-child {
+  margin-bottom: 0;
+}
+
+.rabbit-example-layout {
+  display: grid;
+  grid-template-columns: 198px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.rabbit-example-figure {
+  min-width: 0;
+  margin: 0;
+}
+
+.rabbit-example-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  aspect-ratio: 1;
+  width: 100%;
+}
+
+.rabbit-example-tile {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  border: 1px solid #635845;
+  background: #211d15 url('../../assets/soil.png') center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+
+.rabbit-example-recipient {
+  outline: 2px solid var(--field-green);
+  outline-offset: -3px;
+}
+
+.rabbit-example-recipient > span {
+  z-index: 2;
+  color: #effff0;
+  background: rgb(0 0 0 / 75%);
+  padding: 4px;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.rabbit-example-crop-icon {
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  font-size: 1.8rem;
+}
+
+.rabbit-example-reflections {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.rabbit-example-reflections line {
+  stroke: #f4d553;
+  stroke-width: 0.07;
+  stroke-linecap: round;
+  opacity: 0.78;
+}
+
+.rabbit-example-figure figcaption {
+  margin-top: 9px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.rabbit-example-prerequisite {
+  color: var(--crop-gold);
+}
+
+.rabbit-example-support {
+  padding: 13px;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
+}
+
+.rabbit-example-crop-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 10px 0;
+}
+
+.rabbit-example-crop-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.rabbit-example-list-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 560px) {
+  .rabbit-example-dialog {
+    padding: 16px;
+  }
+
+  .rabbit-example-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 15px;
+  }
+
+  .rabbit-example-figure {
+    justify-self: center;
+    width: min(198px, 100%);
+  }
+}

@@ -4,9 +4,11 @@ import {
   canUnlockCropPerfection,
   createBlueprint,
   createFarmlandMultipliers,
+  createInitialGame,
   getBlueprintCropStats,
   getCarrotHighHarvestEffect,
   getCropProductionPerSecond,
+  getCropPerfectionCost,
   getSamplingLentilPatternEffect,
   unlockCropPerfection,
 } from '../src/game/gameLogic.js'
@@ -17,26 +19,37 @@ import {
   isTradedCrop,
 } from '../src/game/crops.js'
 
-test('Sampling Lentil costs 1e123 Crops and uses the normal perfection flow', () => {
-  const game = {
-    crops: CROP_PERFECTIONS.samplingLentil.cost,
-    activeArea: 'misfortune',
-    hasUnlockedCropPerfection: true,
-    hasUnlockedRowDuplicators: true,
-    completedCropPerfections: [],
-  }
+function near(actual, expected) {
+  assert.ok(Math.abs(actual - expected) <= Math.max(1, Math.abs(expected)) * 1e-12,
+    `${actual} should be approximately ${expected}`)
+}
 
-  assert.equal(CROP_PERFECTIONS.samplingLentil.cost, 1e123)
-  assert.equal(canUnlockCropPerfection(game, 'samplingLentil'), true)
-  assert.deepEqual(unlockCropPerfection(game, 'samplingLentil'), {
-    ...game,
-    crops: 0,
-    completedCropPerfections: ['samplingLentil'],
-  })
+test('Sampling Lentil costs 2.5e140 Crops at current progression in both areas', () => {
+  for (const activeArea of ['main', 'misfortune']) {
+    const game = {
+      ...createInitialGame(),
+      crops: 2.5e140,
+      activeArea,
+      hasUnlockedCropPerfection: true,
+      hasUnlockedRowDuplicators: true,
+      areaProgress: { main: null, misfortune: {} },
+      capybara: { completedDemonstrations: ['introduction', 'demonstrationOne'] },
+    }
+
+    assert.equal(getCropPerfectionCost('samplingLentil', game), 2.5e140)
+    assert.equal(canUnlockCropPerfection({ ...game, crops: 2.49e140 }, 'samplingLentil'), false)
+    assert.equal(unlockCropPerfection({ ...game, crops: 2.49e140 }, 'samplingLentil'), null)
+    assert.equal(canUnlockCropPerfection(game, 'samplingLentil'), true)
+    assert.deepEqual(unlockCropPerfection(game, 'samplingLentil'), {
+      ...game,
+      crops: 0,
+      completedCropPerfections: ['samplingLentil'],
+    })
+  }
   assert.equal(getCropName('lentil', ['samplingLentil']), 'Sampling Lentil')
 })
 
-test('Sampling Lentil multiplies its 80 percent effect from unique surrounding Crop types', () => {
+test('Sampling Lentil multiplies its harvest bonus from unique surrounding Crop types', () => {
   const blueprint = createBlueprint({
     rows: 3,
     columns: 3,
@@ -63,13 +76,36 @@ test('Sampling Lentil multiplies its 80 percent effect from unique surrounding C
     4,
     ['samplingLentil'],
   )
+  const perfection = CROP_PERFECTIONS.samplingLentil
+  const expectedPatternMultiplier =
+    perfection.nonTradedNeighborEffectMultiplier ** 3 *
+    perfection.tradedNeighborEffectMultiplier ** 2
+  const expectedHarvestBonus =
+    (perfection.globalHarvestMultiplier - 1) * expectedPatternMultiplier
+  const baseHarvestByCropType = blueprint.cells.reduce((totals, cropId) => {
+    if (cropId) {
+      totals[cropId] = (totals[cropId] ?? 0) + CROP_DEFINITIONS[cropId].baseYield
+    }
+    return totals
+  }, {})
+  const baseHarvest = Object.values(baseHarvestByCropType).reduce((total, harvest) => total + harvest, 0)
+  const carrotCount = blueprint.cells.filter((cropId) => cropId === 'carrot').length
+  const carrotBaseMultiplier = 1 + carrotCount * CROP_DEFINITIONS.carrot.globalHarvestBonusAtZero
+  // Sampling can cross Carrot's harvest threshold; exclude that bonus when
+  // calculating which types qualify, then apply it to the final harvest.
+  const qualificationMultiplier = (1 + expectedHarvestBonus) * carrotBaseMultiplier
+  const qualifyingCropTypeCount = Object.values(baseHarvestByCropType).filter(
+    (harvest) => harvest * qualificationMultiplier > CROP_DEFINITIONS.carrot.highHarvestThreshold,
+  ).length
+  const carrotHighHarvestMultiplier =
+    1 + carrotCount * qualifyingCropTypeCount * CROP_DEFINITIONS.carrot.highHarvestGlobalHarvestBonus
 
-  assert.ok(Math.abs(regularProduction - 50 * 1.25 * 1.2) < 1e-12)
-  assert.ok(Math.abs(perfectedProduction - 50 * 11.8 * 1.2) < 1e-12)
+  near(regularProduction, baseHarvest * CROP_DEFINITIONS.lentil.globalHarvestMultiplier * carrotBaseMultiplier)
+  near(perfectedProduction, baseHarvest * qualificationMultiplier * carrotHighHarvestMultiplier)
   assert.deepEqual(patternEffect, {
     uniqueNonTradedCropTypeCount: 3,
     uniqueTradedCropTypeCount: 2,
-    multiplier: 13.5,
+    multiplier: expectedPatternMultiplier,
   })
   assert.deepEqual(
     lentilStats.passiveStats.find(
@@ -79,15 +115,14 @@ test('Sampling Lentil multiplies its 80 percent effect from unique surrounding C
       id: 'sampling-lentil-pattern',
       label: 'Neighbor pattern (3 non-traded, 2 traded)',
       format: 'multiplier',
-      value: 13.5,
+      value: expectedPatternMultiplier,
     },
   )
-  assert.ok(
-    Math.abs(
-      lentilStats.passiveStats.find(
-        (stat) => stat.id === 'global-crop-harvest',
-      ).value - 10.8,
-    ) < 1e-12,
+  near(
+    lentilStats.passiveStats.find(
+      (stat) => stat.id === 'global-crop-harvest',
+    ).value,
+    expectedHarvestBonus,
   )
 })
 
@@ -108,7 +143,7 @@ test('Sampling Lentil counts toward Blazing Carrot high-harvest qualification', 
   assert.deepEqual(samplingEffect, {
     uniqueNonTradedCropTypeCount: 0,
     uniqueTradedCropTypeCount: 1,
-    multiplier: 2,
+    multiplier: CROP_PERFECTIONS.samplingLentil.tradedNeighborEffectMultiplier,
   })
   assert.equal(
     getCarrotHighHarvestEffect(
@@ -145,7 +180,9 @@ test('trade classification is data-driven and Root Tunnel counts as a non-traded
     {
       uniqueNonTradedCropTypeCount: 1,
       uniqueTradedCropTypeCount: 1,
-      multiplier: 3,
+      multiplier:
+        CROP_PERFECTIONS.samplingLentil.nonTradedNeighborEffectMultiplier *
+        CROP_PERFECTIONS.samplingLentil.tradedNeighborEffectMultiplier,
     },
   )
   assert.equal(
