@@ -3,7 +3,7 @@ import { normalizeFortuneState } from './fortuneLogic.js'
 import { createInitialFiveLeafState } from './fiveLeafCloverLogic.js'
 import { hasMisfortuneUpgrade, MISFORTUNE_UPGRADE_IDS } from './misfortuneUpgrades.js'
 
-export const GREATER_BLUEPRINTING_COST = 7.77e160
+export const GREATER_BLUEPRINTING_COST = 7.77e159
 export const CLOVER_ASSEMBLY_PART_REQUIREMENT = 7.77e59
 export const CLOVER_ASSEMBLY_RABBIT_UNLOCK_ID = 'rabbitsCharm'
 
