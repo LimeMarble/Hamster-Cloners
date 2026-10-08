@@ -19,6 +19,7 @@ import {
   establishTradeRelations,
   getCarrotHighHarvestEffect,
   getCropProductionSnapshotPerSecond,
+  getRabbitContractCropIds,
   getRabbitContractCompletionsPerSecond,
   getRabbitContractLimitingCropId,
   getRabbitContractRelationsReward,
@@ -27,6 +28,30 @@ import {
   isRabbitContractCropEligible,
   purchaseRabbitUnlock,
 } from '../src/game/gameLogic.js'
+import { SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT } from '../src/game/crops.js'
+
+function createEligibleCropPaceGame() {
+  const initial = createInitialGame()
+  return {
+    ...initial,
+    blueprint: createBlueprint({ rows: 1, columns: 2, cells: ['leek', null] }),
+    hasUnlockedTurnip: true,
+    farmland: { rows: 1, columns: 1, floors: 1, farms: 1, otherMultiplier: 1 },
+    trade: {
+      ...initial.trade,
+      established: true,
+      rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
+    },
+  }
+}
+
+function unlockSoybeanForPace(game) {
+  return {
+    ...game,
+    floorReplicators: SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+    areaProgress: { ...game.areaProgress, misfortune: { rowDuplicators: 500 } },
+  }
+}
 
 test('Rabbit relation rewards match the logarithmic fields formula', () => {
   assert.equal(getRabbitContractRelationsReward(1e40, 30e6), 120)
@@ -60,24 +85,27 @@ test('testing contract grants include normal average Rabbit relation rewards', (
   )
 })
 
-test('Rabbit pace uses the slowest grown crop and five-second hysteresis', () => {
+test('Rabbit pace uses the slowest eligible unlocked crop and five-second hysteresis', () => {
   const initialGame = createInitialGame()
   const game = {
     ...initialGame,
+    blueprint: createBlueprint({ rows: 1, columns: 2 }),
+    hasUnlockedTurnip: true,
     trade: {
       ...initialGame.trade,
       rabbitUnlocks: [RABBIT_UNLOCK_IDS.CONTRACTOR],
     },
   }
-  const exactThresholdProduction = { leek: 1.5e8, corn: 1e30 }
-  const blazingProduction = { leek: 1.53e8, corn: 1e30 }
-  const underThresholdProduction = { leek: 1.47e8, corn: 1e30 }
+  const exactThresholdProduction = { leek: 1.5e8, corn: 1e30, turnip: 1e30 }
+  const blazingProduction = { leek: 1.53e8, corn: 1e30, turnip: 1e30 }
+  const underThresholdProduction = { leek: 1.47e8, corn: 1e30, turnip: 1e30 }
 
   assert.equal(
-    getRabbitContractLimitingCropId({
+    getRabbitContractLimitingCropId(game, {
       appleTree: 0,
       corn: 1e30,
       leek: 1.53e8,
+      turnip: 1e30,
     }),
     'leek',
   )
@@ -186,6 +214,105 @@ test('Rabbit pace estimates are sampled at 10 Hz instead of every simulation tic
   assert.equal(sampled.rabbitContractPaceTransitionSeconds, 0.02)
   assert.equal(sampled.rabbitContractPaceSampleSeconds, 0)
 })
+
+test('missing or zero-yield Leek, Corn, and Turnip each limit the contract estimate to zero', () => {
+  const game = createEligibleCropPaceGame()
+  const eligibleCropIds = getRabbitContractCropIds(game)
+  assert.deepEqual(eligibleCropIds, ['leek', 'corn', 'turnip'])
+
+  for (const cropId of eligibleCropIds) {
+    const production = Object.fromEntries(eligibleCropIds.map((id) => [id, 1e30]))
+    for (const isMissing of [true, false]) {
+      if (isMissing) delete production[cropId]
+      else production[cropId] = 0
+      assert.equal(getRabbitContractLimitingCropId(game, production), cropId)
+      assert.equal(getRabbitContractCompletionsPerSecond(game, production), 0)
+    }
+    production[cropId] = 3e8
+    assert.equal(getRabbitContractLimitingCropId(game, production), cropId)
+    assert.equal(getRabbitContractCompletionsPerSecond(game, production), 10)
+  }
+
+  assert.equal(getRabbitContractCompletionsPerSecond(game, undefined), 0)
+})
+
+test('unlocked Soybean counts even when absent, while locked and rejected crops do not', () => {
+  const lockedGame = createEligibleCropPaceGame()
+  const production = { leek: 1e30, corn: 1e30, turnip: 1e30 }
+  const lockedRate = getRabbitContractCompletionsPerSecond(lockedGame, production)
+  assert.ok(lockedRate > 10)
+  assert.equal(getRabbitContractCompletionsPerSecond(lockedGame, {
+    ...production, soybean: 0, appleTree: 0, pumpkin: 0, knotweed: 0, fourLeafClover: 0,
+  }), lockedRate)
+
+  const game = unlockSoybeanForPace(lockedGame)
+  assert.ok(getRabbitContractCropIds(game).includes('soybean'))
+  assert.equal(game.blueprint.cells.includes('soybean'), false)
+  assert.equal(getRabbitContractLimitingCropId(game, production), 'soybean')
+  assert.equal(getRabbitContractCompletionsPerSecond(game, production), 0)
+  assert.equal(getRabbitContractCompletionsPerSecond(game, {
+    ...production, soybean: 3e8,
+  }), 10)
+})
+
+test('Rabbit pace follows the active area contract pool instead of planted locked crops', () => {
+  const game = unlockSoybeanForPace(createEligibleCropPaceGame())
+  const production = { leek: 1e30, corn: 0, turnip: 1e30, soybean: 1e30 }
+  assert.ok(getRabbitContractCropIds(game).includes('corn'))
+  assert.equal(getRabbitContractLimitingCropId(game, production), 'corn')
+  assert.equal(getRabbitContractCompletionsPerSecond(game, production), 0)
+
+  const misfortune = {
+    ...game, activeArea: 'misfortune', hasUnlockedCorn: false, rowDuplicators: 500,
+  }
+  assert.ok(!getRabbitContractCropIds(misfortune).includes('corn'))
+  assert.ok(getRabbitContractCompletionsPerSecond(misfortune, production) > 10)
+})
+
+test('missing Soybean stops bulk rewards and preserves the five-second display hysteresis', () => {
+  let game = unlockSoybeanForPace(createEligibleCropPaceGame())
+  const contract = {
+    cropId: 'soybean', factor: 3e7, fieldsPlanted: 1,
+    requiredAmount: 3e7, progress: 0, relationsReward: 100,
+  }
+  game = {
+    ...game,
+    trade: {
+      ...game.trade, rabbitContracts: [contract, contract, contract],
+      rabbitContractsBlazing: true,
+      rabbitContractEstimatedCompletionsPerSecond: 7140,
+    },
+  }
+  const production = { leek: 1e30, corn: 1e30, turnip: 1e30 }
+  let trade = advanceRabbitContract(game, production, () => 0, 0.1, true)
+  assert.equal(trade.rabbitContractEstimatedCompletionsPerSecond, 0)
+  assert.equal(trade.rabbitContractsCompleted, 0)
+  assert.equal(trade.rabbitRelations, 0)
+  assert.equal(trade.rabbitContractsBlazing, true)
+  assert.ok(trade.rabbitContracts.every(({ progress }) => progress === 0))
+
+  trade = advanceRabbitContract({ ...game, trade }, production, () => 0, 4.9, true)
+  assert.equal(trade.rabbitContractsBlazing, false)
+  assert.equal(trade.rabbitContractsCompleted, 0)
+  assert.equal(trade.rabbitRelations, 0)
+})
+
+test('bulk completions still award 714 contracts per 0.1 seconds when all eligible crops keep up', () => {
+  const initial = unlockSoybeanForPace(createEligibleCropPaceGame())
+  const game = { ...initial, farmland: { ...initial.farmland, columns: 1e40 } }
+  const contractSize = 1e40 * RABBIT_CONTRACT_AVERAGE_FACTOR
+  const production = Object.fromEntries(getRabbitContractCropIds(game)
+    .map((cropId) => [cropId, contractSize * (cropId === 'soybean' ? 7140 : 1e6)]))
+  assert.equal(getRabbitContractLimitingCropId(game, production), 'soybean')
+
+  const trade = advanceRabbitContract(game, production, () => {
+    assert.fail('bulk completions must not roll individual contracts')
+  }, 0.1, true)
+  assert.ok(Math.abs(trade.rabbitContractEstimatedCompletionsPerSecond - 7140) < 1e-9)
+  assert.equal(trade.rabbitContractsCompleted, 714)
+  assert.equal(trade.rabbitRelations, 714 * 120)
+})
+
 test('Rabbit contracts scale from Fields planted and choose a 10M-50M factor', () => {
   const game = {
     ...createInitialGame(),

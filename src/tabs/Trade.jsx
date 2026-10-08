@@ -464,6 +464,7 @@ export function Trade({
     game.trade.rabbitContractsBlazing === true
   const limitingRabbitContractCropId = hasBlazingContractPace
     ? getRabbitContractLimitingCropId(
+        game,
         rabbitContractProductionPerSecondByCrop,
       )
     : null
@@ -564,7 +565,7 @@ export function Trade({
                           value={rabbitContractCompletionRate}
                           maximumFractionDigits={2}
                         />{' '}
-                        contracts per second, estimated from the slowest grown
+                        contracts per second, estimated from the slowest unlocked
                         eligible Crop and an average-sized contract. This is
                         above the{' '}
                         <FormattedNumber
@@ -590,7 +591,7 @@ export function Trade({
                             )}
                           </>
                         ) : (
-                          'No eligible Crop currently grown'
+                          'No eligible Crops unlocked'
                         )}
                       </p>
                     </article>

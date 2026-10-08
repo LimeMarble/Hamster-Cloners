@@ -7,7 +7,7 @@ import { CROP_IDS, getVisibleCropIds, hasVisitedMisfortune } from '../src/game/c
 
 test('Rabbit’s Charm cannot be bought before Final Support, even with sufficient relations', () => {
   const game = createInitialGame()
-  game.trade = { ...game.trade, established: true, rabbitRelations: 1e20 }
+  game.trade = { ...game.trade, established: true, rabbitRelations: 1e22 }
   assert.equal(isRabbitUnlockAvailable(game, RABBIT_UNLOCK_IDS.RABBITS_CHARM), false)
   assert.equal(purchaseRabbitUnlock(game, RABBIT_UNLOCK_IDS.RABBITS_CHARM), null)
   const hunted = { ...game, completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER] }
@@ -16,7 +16,7 @@ test('Rabbit’s Charm cannot be bought before Final Support, even with sufficie
   const ready = { ...game, completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT] }
   const purchased = purchaseRabbitUnlock(ready, RABBIT_UNLOCK_IDS.RABBITS_CHARM)
   assert.ok(purchased.trade.rabbitUnlocks.includes(RABBIT_UNLOCK_IDS.RABBITS_CHARM))
-  assert.equal(purchased.trade.rabbitRelations, 1e20 - 7.77e18)
+  assert.equal(purchased.trade.rabbitRelations, 1e22 - 7.77e20)
   assert.equal(isRabbitUnlockAvailable({ ...purchased, completedMisfortuneUpgrades: [] }, RABBIT_UNLOCK_IDS.RABBITS_CHARM), true)
 })
 

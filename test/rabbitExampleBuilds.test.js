@@ -8,10 +8,12 @@ import {
   getMirrorCornMaximumReflections, getRabbitContractCropIds,
 } from '../src/game/gameLogic.js'
 import { getRabbitExampleBuild, RABBIT_EXAMPLE_RECIPIENT } from '../src/tabs/rabbitExampleBuilds.js'
+import { SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT } from '../src/game/crops.js'
 
 let server, RabbitExampleBuildsGuide, Trade
 before(async () => {
   server = await createServer({ logLevel: 'silent',
+    resolve: { preserveSymlinks: true },
     server: { middlewareMode: true, hmr: false }, appType: 'custom' })
   ;({ RabbitExampleBuildsGuide } = await server.ssrLoadModule('/src/tabs/RabbitExampleBuilds.jsx'))
   ;({ Trade } = await server.ssrLoadModule('/src/tabs/Trade.jsx'))
@@ -156,4 +158,27 @@ test('the guide launcher appears only under established Rabbit relations and con
   assert.doesNotMatch(renderToStaticMarkup(createElement(Trade, {
     game, activeRelation: 'capybaras', capybaraBlueprintCropYield: 0,
   })), /Example builds/)
+})
+
+test('the blazing display names an eligible Soybean missing from the active blueprint', () => {
+  const initial = createInitialGame()
+  const game = {
+    ...initial,
+    blueprint: createBlueprint({ rows: 1, columns: 2, cells: ['leek', null] }),
+    hasUnlockedTurnip: true,
+    floorReplicators: SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+    areaProgress: { misfortune: { rowDuplicators: 500 } },
+    trade: {
+      ...initial.trade, established: true, rabbitContractsBlazing: true,
+      rabbitUnlocks: ['contractor'],
+    },
+  }
+  const markup = renderToStaticMarkup(createElement(Trade, {
+    game, activeRelation: 'rabbits',
+    rabbitContractProductionPerSecondByCrop: { leek: 1e30, corn: 1e30, turnip: 1e30 },
+  }))
+  assert.match(markup, /Limiting Crop:/)
+  assert.match(markup, /Soybean/)
+  assert.match(markup, /slowest unlocked/)
+  assert.doesNotMatch(markup, /slowest grown/)
 })

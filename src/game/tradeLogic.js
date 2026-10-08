@@ -95,7 +95,7 @@ export const RABBIT_UNLOCKS = Object.freeze([
   {
     id: RABBIT_UNLOCK_IDS.RABBITS_CHARM,
     name: "Rabbit's Charm",
-    cost: 7.77e18,
+    cost: 7.77e20,
     description:
       'Provides the precision fitting needed to assemble a perfected Clover.',
   },
@@ -171,29 +171,27 @@ export function getRabbitContractCompletionsPerSecond(
   const averageContractSize =
     Math.max(1, getFieldsPlanted(game.farmland)) *
     RABBIT_CONTRACT_AVERAGE_FACTOR
-  const limitingCropId = getRabbitContractLimitingCropId(productionByCrop)
+  const limitingCropId = getRabbitContractLimitingCropId(game, productionByCrop)
 
   return limitingCropId === null
     ? 0
-    : toNonNegativeNumber(productionByCrop[limitingCropId]) /
+    : toNonNegativeNumber(productionByCrop?.[limitingCropId]) /
         averageContractSize
 }
 
-export function getRabbitContractLimitingCropId(productionByCrop) {
+export function getRabbitContractLimitingCropId(game, productionByCrop) {
   let limitingCropId = null
   let limitingProduction = Number.POSITIVE_INFINITY
 
-  Object.entries(productionByCrop ?? {}).forEach(
-    ([cropId, productionPerSecond]) => {
-      if (!isRabbitContractCropEligible(cropId)) return
-
-      const safeProduction = toNonNegativeNumber(productionPerSecond)
-      if (safeProduction < limitingProduction) {
-        limitingCropId = cropId
-        limitingProduction = safeProduction
-      }
-    },
-  )
+  // Use the same unlocked crop pool as real contracts, including crops that
+  // are absent from the active blueprint and therefore have no production.
+  for (const cropId of getRabbitContractCropIds(game)) {
+    const safeProduction = toNonNegativeNumber(productionByCrop?.[cropId])
+    if (safeProduction < limitingProduction) {
+      limitingCropId = cropId
+      limitingProduction = safeProduction
+    }
+  }
 
   return limitingCropId
 }

@@ -47,10 +47,11 @@ test('the Clover assembly precursors use their configured main Crop and Rabbit r
     RABBIT_UNLOCK_IDS.RABBITS_CHARM,
   )
 
-  assert.equal(GREATER_BLUEPRINTING_COST, 5e149)
+  assert.equal(GREATER_BLUEPRINTING_COST, 7.77e160)
   assert.ok(researched)
   assert.equal(researched.crops, 0)
   assert.equal(researched.hasUnlockedGreaterBlueprinting, true)
+  assert.equal(unlockGreaterBlueprinting({ ...mainGame, crops: 5e149 }), null)
   assert.equal(
     unlockGreaterBlueprinting({
       ...mainGame,
@@ -58,10 +59,14 @@ test('the Clover assembly precursors use their configured main Crop and Rabbit r
     }),
     null,
   )
-  assert.equal(charm.cost, 7.77e18)
+  assert.equal(charm.cost, 7.77e20)
   assert.ok(charmed)
   assert.equal(charmed.trade.rabbitRelations, 0)
   assert.ok(charmed.trade.rabbitUnlocks.includes(RABBIT_UNLOCK_IDS.RABBITS_CHARM))
+  assert.equal(purchaseRabbitUnlock({
+    ...mainGame,
+    trade: { ...mainGame.trade, established: true, rabbitRelations: 7.77e18 },
+  }, RABBIT_UNLOCK_IDS.RABBITS_CHARM), null)
 })
 
 test('Clover assembly progress follows the slowest required Crop production and caps at its requirement', () => {
