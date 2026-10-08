@@ -161,7 +161,7 @@ export function hasRabbitUnlock(game, unlockId) {
 export function isRabbitUnlockAvailable(game, unlockId) {
   return unlockId !== RABBIT_UNLOCK_IDS.RABBITS_CHARM ||
     hasRabbitUnlock(game, unlockId) ||
-    hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER)
+    hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT)
 }
 
 export function getRabbitContractCompletionsPerSecond(

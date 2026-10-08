@@ -83,7 +83,7 @@ function field(game, modifiers = getFortuneModifiers(game)) {
 test('Rich Soil unlocks the cookie directly, leaving every existing loadout at 0% for it', () => {
   const initial = createInitialGame()
   const before = {
-    ...initial, activeArea: 'misfortune', crops: 5e70,
+    ...initial, activeArea: 'misfortune', crops: 5e71,
     completedCropPerfections: ['enrichingLeek'],
     completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT],
     capybara: { ...initial.capybara, completedDemonstrations: ['introduction'] },

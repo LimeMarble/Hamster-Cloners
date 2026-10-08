@@ -52,6 +52,11 @@ export const BLUEPRINT_BLOCK_AUGMENTATION_REQUIREMENTS = Object.freeze([
     cropIds: ['leek'],
   },
   {
+    id: SEED_AUGMENTATION_IDS.LEEK_ORTHOGONAL_SQUARED,
+    stateKey: 'leekOrthogonalSquaredUnlocked',
+    cropIds: ['leek'],
+  },
+  {
     id: SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL,
     stateKey: 'mirrorCornDebuffRemovalUnlocked',
     cropIds: ['corn'],

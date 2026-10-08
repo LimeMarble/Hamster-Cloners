@@ -87,7 +87,7 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     name: 'Final Support',
     requiredCropPerfectionId: 'sweetPotato',
     requiredMisfortuneUpgradeId: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
-    cost: 2.5e63,
+    cost: 2.5e68,
     passiveEffectBonusPerTier: 0.002,
     floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
   }),

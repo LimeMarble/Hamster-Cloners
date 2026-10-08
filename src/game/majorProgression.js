@@ -47,6 +47,7 @@ import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
 import { getMisfortuneAreaCrops } from './areaLogic.js'
 import { getCropPerfectionCost, getRowDuplicatorsUnlockCropCount, isCropPerfectionVisible } from './blueprintLogic.js'
 import {
+  hasLeekOrthogonalSquaredAugmentation,
   hasRichSoilAugmentation,
   SEED_AUGMENTATIONS,
   SEED_AUGMENTATION_IDS,
@@ -477,6 +478,20 @@ export const MAJOR_PROGRESSION_GOALS = [
     MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
     'Purchase Final Support from the Misfortune tab.',
   ),
+  {
+    id: 'augmentation-leek-orthogonal-squared',
+    category: 'Seed augmentation',
+    title: 'Unlock Orthogonal²',
+    target: SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LEEK_ORTHOGONAL_SQUARED].cost,
+    unit: 'Main Crops',
+    description: 'Purchase Orthogonal² for Enriching Leek in Main → Inventions → Augmentation.',
+    isApplicable: (game) => hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT),
+    isComplete: (game) => hasLeekOrthogonalSquaredAugmentation(game.seedAugmentations),
+    getCurrent: (game) => game.activeArea === GAME_AREA_IDS.MISFORTUNE
+      ? game.areaProgress?.main?.crops
+      : game.crops,
+    requiresAction: true,
+  },
   CLOVER_PERFECTION_GOAL,
   createMisfortuneUpgradeGoal(
     MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,

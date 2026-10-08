@@ -39,7 +39,7 @@ function createRichSoilGame() {
   return {
     ...initial,
     activeArea: GAME_AREA_IDS.MISFORTUNE,
-    crops: 5e70,
+    crops: 5e71,
     hasUnlockedWheat: true,
     blueprint,
     blueprintSlots: [blueprint],
@@ -60,9 +60,9 @@ function fieldSnapshot(blueprint, activeArea, augmentations = richSoil, perfecte
   )
 }
 
-test('Rich Soil spends exactly 5e70 Misfortune crops and requires Seed Augmentation and Enriching Leek', () => {
+test('Rich Soil spends exactly 5e71 Misfortune crops and requires Seed Augmentation and Enriching Leek', () => {
   const game = createRichSoilGame()
-  assert.equal(getNextSeedAugmentationCost(game, augmentationId), 5e70)
+  assert.equal(getNextSeedAugmentationCost(game, augmentationId), 5e71)
   assert.equal(isSeedAugmentationVisible(game, augmentationId), true)
   assert.equal(isSeedAugmentationVisible({ ...game, activeArea: 'main' }, augmentationId), false)
   assert.equal(purchaseSeedAugmentation({ ...game, activeArea: 'main' }, augmentationId), null)
@@ -70,7 +70,7 @@ test('Rich Soil spends exactly 5e70 Misfortune crops and requires Seed Augmentat
   assert.equal(purchaseSeedAugmentation({ ...game, capybara: {} }, augmentationId), null)
   assert.equal(purchaseSeedAugmentation({
     ...game,
-    crops: 2.5e70,
+    crops: 2.5e71,
     areaProgress: { main: { crops: 1e150 }, misfortune: null },
   }, augmentationId), null)
 
@@ -82,7 +82,7 @@ test('Rich Soil spends exactly 5e70 Misfortune crops and requires Seed Augmentat
   assert.equal(purchased.areaProgress.main.crops, 1e150)
   assert.equal(purchased.seedAugmentations.richSoilUnlocked, true)
   assert.equal(getNextSeedAugmentationCost(purchased, augmentationId), null)
-  assert.equal(purchaseSeedAugmentation({ ...purchased, crops: 5e70 }, augmentationId), null)
+  assert.equal(purchaseSeedAugmentation({ ...purchased, crops: 5e71 }, augmentationId), null)
 })
 
 test('Rich Soil scales only Leek contributions by unmodified recipient base harvest, with a minimum of one', () => {
@@ -217,7 +217,7 @@ test('Rich Soil is a Misfortune progression goal after Clover assembly and follo
   assert.equal(goalIndex, cloverIndex + 2)
   const goal = MAJOR_PROGRESSION_GOALS[goalIndex]
   const game = createRichSoilGame()
-  assert.equal(goal.target, 5e70)
+  assert.equal(goal.target, 5e71)
   assert.equal(goal.isApplicable(game), true)
   assert.equal(goal.isApplicable({ ...game, activeArea: 'main' }), false)
   assert.equal(goal.isComplete(game), false)

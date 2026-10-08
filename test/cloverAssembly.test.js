@@ -26,7 +26,10 @@ test('the Clover assembly precursors use their configured main Crop and Rabbit r
   const mainGame = {
     ...createInitialGame(),
     crops: GREATER_BLUEPRINTING_COST,
-    completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER],
+    completedMisfortuneUpgrades: [
+      MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+      MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+    ],
   }
   const researched = unlockGreaterBlueprinting(mainGame)
   const charm = RABBIT_UNLOCKS.find(

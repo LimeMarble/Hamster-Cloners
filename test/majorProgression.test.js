@@ -51,6 +51,7 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'perfection-sweetPotato',
       'crop-soybean',
       'misfortune-upgrade-finalSupport',
+      'augmentation-leek-orthogonal-squared',
       'perfection-five-leaf-clover',
       'misfortune-upgrade-notSoFinalSupport',
       'augmentation-rich-soil',
@@ -430,6 +431,8 @@ test('Misfortune progress includes every permanent Misfortune upgrade', () => {
 
   for (const upgradeId of upgradeOrder) {
     if (upgradeId === MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT) {
+      assert.equal(getNextMajorProgressionGoal(game).id, 'augmentation-leek-orthogonal-squared')
+      game = { ...game, seedAugmentations: { ...game.seedAugmentations, leekOrthogonalSquaredUnlocked: true } }
       assert.equal(getNextMajorProgressionGoal(game).id, 'perfection-five-leaf-clover')
       game = { ...game, cloverAssembly: { progress: 7.77e58, assembled: true } }
     }

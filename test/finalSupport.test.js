@@ -23,7 +23,7 @@ function approximatelyEqual(actual, expected) {
   assert.ok(Math.abs(actual - expected) < 1e-12)
 }
 
-test('Final Support costs 2.5e63 Crops after Hunt and survives saving', () => {
+test('Final Support costs 2.5e68 Crops after Hunt and survives saving', () => {
   const initialGame = createInitialGame()
   const upgrade = MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT]
   const purchased = purchaseMisfortuneUpgrade(
@@ -36,7 +36,7 @@ test('Final Support costs 2.5e63 Crops after Hunt and survives saving', () => {
     MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
   )
 
-  assert.equal(upgrade.cost, 2.5e62 * 10)
+  assert.equal(upgrade.cost, 2.5e68)
   assert.equal(upgrade.passiveEffectBonusPerTier, 0.002)
   assert.ok(purchased)
   assert.equal(purchased.crops, 0)

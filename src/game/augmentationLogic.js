@@ -7,6 +7,7 @@ import { getAreaCropValue } from './cropRequirements.js'
 export const SEED_AUGMENTATION_IDS = Object.freeze({
   LEEK_ENRICHMENT: 'leekEnrichment',
   LEEK_DIAGONAL: 'leekDiagonal',
+  LEEK_ORTHOGONAL_SQUARED: 'leekOrthogonalSquared',
   RICH_SOIL: 'richSoil',
   MIRROR_CORN_DEBUFF_REMOVAL: 'mirrorCornDebuffRemoval',
   MIRROR_CORN_EFFECTIVENESS: 'mirrorCornEffectiveness',
@@ -45,6 +46,15 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     cost: 5e71,
     purchaseArea: GAME_AREA_IDS.MISFORTUNE,
     effectArea: GAME_AREA_IDS.MISFORTUNE,
+  }),
+  [SEED_AUGMENTATION_IDS.LEEK_ORTHOGONAL_SQUARED]: Object.freeze({
+    id: SEED_AUGMENTATION_IDS.LEEK_ORTHOGONAL_SQUARED,
+    cropId: 'leek',
+    name: 'Orthogonal²',
+    cost: 1e157,
+    enrichmentBonus: 400,
+    orthogonalReach: 2,
+    requiredMisfortuneUpgradeId: 'finalSupport',
   }),
   [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL,
@@ -141,6 +151,7 @@ export function createInitialSeedAugmentationState() {
   return {
     leekEnrichmentLevel: 0,
     leekDiagonalUnlocked: false,
+    leekOrthogonalSquaredUnlocked: false,
     richSoilUnlocked: false,
     mirrorCornDebuffRemovalUnlocked: false,
     mirrorCornDebuffRemovalEnabled: false,
@@ -193,6 +204,7 @@ export function normalizeSeedAugmentationState(rawState) {
   return {
     leekEnrichmentLevel: Math.min(maximumLevel, Math.max(0, parsedLevel)),
     leekDiagonalUnlocked: rawState?.leekDiagonalUnlocked === true,
+    leekOrthogonalSquaredUnlocked: rawState?.leekOrthogonalSquaredUnlocked === true,
     richSoilUnlocked: rawState?.richSoilUnlocked === true,
     mirrorCornDebuffRemovalUnlocked,
     mirrorCornDebuffRemovalEnabled:
@@ -232,9 +244,20 @@ export function getLeekEnrichmentLevel(seedAugmentations) {
   return normalizeSeedAugmentationState(seedAugmentations).leekEnrichmentLevel
 }
 
-export function getLeekAugmentationYieldBonus(seedAugmentations) {
+export function getLayeredLeekEnrichmentYieldBonus(seedAugmentations) {
   const level = getLeekEnrichmentLevel(seedAugmentations)
   return (5 * level * (level + 1)) / 2
+}
+
+export function hasLeekOrthogonalSquaredAugmentation(seedAugmentations) {
+  return seedAugmentations?.leekOrthogonalSquaredUnlocked === true
+}
+
+export function getLeekAugmentationYieldBonus(seedAugmentations) {
+  return getLayeredLeekEnrichmentYieldBonus(seedAugmentations) +
+    (hasLeekOrthogonalSquaredAugmentation(seedAugmentations)
+      ? SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LEEK_ORTHOGONAL_SQUARED].enrichmentBonus
+      : 0)
 }
 
 export function hasLeekDiagonalAugmentation(seedAugmentations) {
@@ -422,6 +445,7 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
   }
 
   const oneTimeAugmentationStateKeys = {
+    [SEED_AUGMENTATION_IDS.LEEK_ORTHOGONAL_SQUARED]: 'leekOrthogonalSquaredUnlocked',
     [SEED_AUGMENTATION_IDS.RICH_SOIL]: 'richSoilUnlocked',
     [SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL]:
       'mirrorCornDebuffRemovalUnlocked',
@@ -493,6 +517,7 @@ function canPurchaseSeedAugmentation(game, augmentationId) {
   const isLeekAugmentation =
     augmentationId === SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT ||
     augmentationId === SEED_AUGMENTATION_IDS.LEEK_DIAGONAL ||
+    augmentationId === SEED_AUGMENTATION_IDS.LEEK_ORTHOGONAL_SQUARED ||
     augmentationId === SEED_AUGMENTATION_IDS.RICH_SOIL
   const isCornAugmentation =
     augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_DEBUFF_REMOVAL ||
@@ -539,6 +564,8 @@ export function purchaseSeedAugmentation(game, augmentationId) {
     }
   } else if (augmentationId === SEED_AUGMENTATION_IDS.LEEK_DIAGONAL) {
     seedAugmentations = { ...state, leekDiagonalUnlocked: true }
+  } else if (augmentationId === SEED_AUGMENTATION_IDS.LEEK_ORTHOGONAL_SQUARED) {
+    seedAugmentations = { ...state, leekOrthogonalSquaredUnlocked: true }
   } else if (augmentationId === SEED_AUGMENTATION_IDS.RICH_SOIL) {
     seedAugmentations = { ...state, richSoilUnlocked: true }
   } else if (
@@ -638,12 +665,11 @@ export function getAugmentedHarvestConnections(
   completedCropPerfections = [],
   seedAugmentations = {},
 ) {
-  if (
-    !completedCropPerfections.includes('enrichingLeek') ||
-    !hasLeekDiagonalAugmentation(seedAugmentations)
-  ) {
-    return baseConnections
-  }
+  if (!completedCropPerfections.includes('enrichingLeek')) return baseConnections
+
+  const hasDiagonalReach = hasLeekDiagonalAugmentation(seedAugmentations)
+  const hasSquaredReach = hasLeekOrthogonalSquaredAugmentation(seedAugmentations)
+  if (!hasDiagonalReach && !hasSquaredReach) return baseConnections
 
   const row = Math.floor(targetIndex / blueprint.columns)
   const column = targetIndex % blueprint.columns
@@ -654,23 +680,31 @@ export function getAugmentedHarvestConnections(
     ]),
   )
 
-  for (const rowOffset of [-1, 1]) {
-    for (const columnOffset of [-1, 1]) {
-      const sourceRow = row + rowOffset
-      const sourceColumn = column + columnOffset
-      if (
-        sourceRow < 0 ||
-        sourceRow >= blueprint.rows ||
-        sourceColumn < 0 ||
-        sourceColumn >= blueprint.columns
-      ) {
-        continue
-      }
+  const offsets = hasDiagonalReach
+    ? [[-1, -1], [-1, 1], [1, -1], [1, 1]]
+    : []
+  if (hasSquaredReach) {
+    const reach = SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LEEK_ORTHOGONAL_SQUARED]
+      .orthogonalReach
+    offsets.push([-reach, 0], [reach, 0], [0, -reach], [0, reach])
+  }
 
-      const sourceIndex = sourceRow * blueprint.columns + sourceColumn
-      if (blueprint.cells[sourceIndex] === 'leek') {
-        connections.set(sourceIndex, 0)
-      }
+  for (const [rowOffset, columnOffset] of offsets) {
+    const sourceRow = row + rowOffset
+    const sourceColumn = column + columnOffset
+    if (
+      sourceRow < 0 ||
+      sourceRow >= blueprint.rows ||
+      sourceColumn < 0 ||
+      sourceColumn >= blueprint.columns
+    ) {
+      continue
+    }
+
+    const sourceIndex = sourceRow * blueprint.columns + sourceColumn
+    if (blueprint.cells[sourceIndex] === 'leek') {
+      // This is direct enrichment reach, not travel through a Root Tunnel.
+      connections.set(sourceIndex, 0)
     }
   }
 

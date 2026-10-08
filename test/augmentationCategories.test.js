@@ -24,6 +24,7 @@ let LeechingVineEditorPanel
 before(async () => {
   server = await createServer({
     logLevel: 'silent',
+    resolve: { preserveSymlinks: true },
     server: { middlewareMode: true, hmr: false },
     appType: 'custom',
   })
@@ -45,6 +46,7 @@ function lateGame() {
       MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
       MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
       MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
+      MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
     ],
     capybara: { ...initial.capybara, completedDemonstrations: ['introduction', 'demonstrationOne', 'misfortuneTrial'] },
   }
@@ -84,6 +86,25 @@ test('categories and counts follow existing research and demonstration visibilit
   }
   assert.deepEqual(getVisibleAugmentationCategories(researched).map(({ cropId }) => cropId), ['leek', 'corn', 'sweetPotato'])
   assert.ok(!render(game).includes('Sterile Symbiosis'))
+})
+
+test('Orthogonal² is hidden before Final Support and shows its reach, bonus and purchase state afterward', () => {
+  const game = lateGame()
+  assert.doesNotMatch(render({ ...game, completedMisfortuneUpgrades: [] }), /Orthogonal²/)
+  const markup = render(game)
+  assert.match(markup, /<h2>Orthogonal²<\/h2>/)
+  assert.match(markup.replace(/<[^>]*>/g, ''), /Adds \+400 to/)
+  assert.match(markup, /two tiles away/)
+  assert.match(markup, /regardless of the intervening tile/)
+  assert.ok(markup.indexOf('<h2>Diagonal Enrichment</h2>') < markup.indexOf('<h2>Orthogonal²</h2>'))
+  assert.ok(markup.indexOf('<h2>Orthogonal²</h2>') < markup.indexOf('<h2>Rich Soil</h2>'))
+  const owned = render({ ...game, seedAugmentations: {
+    ...game.seedAugmentations, leekEnrichmentLevel: 5, leekOrthogonalSquaredUnlocked: true,
+  } })
+  assert.match(owned, /Extra adjacent boost<\/dt><dd>\+75 Crops/)
+  const newCard = owned.slice(owned.indexOf('<h2>Orthogonal²</h2>'), owned.indexOf('<h2>Rich Soil</h2>'))
+  assert.match(newCard, /disabled="">Augmentation active<\/button>/)
+  assert.doesNotMatch(markup, /Orthogonal Squared|Orthogonal\^2/)
 })
 
 test('Rich Soil stays inside Leek and keeps its Misfortune precursor and area restrictions', () => {

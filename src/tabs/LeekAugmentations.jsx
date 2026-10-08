@@ -1,8 +1,9 @@
 import {
-  getLeekAugmentationYieldBonus,
+  getLayeredLeekEnrichmentYieldBonus,
   getLeekEnrichmentLevel,
   getNextSeedAugmentationCost,
   getSeedAugmentationCost,
+  isSeedAugmentationVisible,
   SEED_AUGMENTATIONS,
   SEED_AUGMENTATION_IDS,
 } from '../game/augmentationLogic.js'
@@ -15,8 +16,10 @@ export function LeekAugmentations({ game, onPurchaseSeedAugmentation }) {
     SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT]
   const diagonal =
     SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LEEK_DIAGONAL]
+  const orthogonalSquared =
+    SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LEEK_ORTHOGONAL_SQUARED]
   const enrichmentLevel = getLeekEnrichmentLevel(game.seedAugmentations)
-  const enrichmentBonus = getLeekAugmentationYieldBonus(
+  const enrichmentBonus = getLayeredLeekEnrichmentYieldBonus(
     game.seedAugmentations,
   )
   const enrichmentCost = getNextSeedAugmentationCost(
@@ -24,6 +27,7 @@ export function LeekAugmentations({ game, onPurchaseSeedAugmentation }) {
     enrichment.id,
   )
   const diagonalCost = getNextSeedAugmentationCost(game, diagonal.id)
+  const orthogonalSquaredCost = getNextSeedAugmentationCost(game, orthogonalSquared.id)
   const hasEnrichingLeek =
     game.completedCropPerfections.includes('enrichingLeek')
 
@@ -116,6 +120,53 @@ export function LeekAugmentations({ game, onPurchaseSeedAugmentation }) {
               : <>Augment: <FormattedNumber value={diagonalCost} /> Crops</>}
         </button>
       </article>
+
+      {isSeedAugmentationVisible(game, orthogonalSquared.id) ? (
+        <article className='seed-augmentation-card'>
+          <div className='seed-augmentation-heading'>
+            <CropVisual
+              cropId='leek'
+              completedCropPerfections={game.completedCropPerfections}
+              className='seed-augmentation-crop'
+            />
+            <div>
+              <p className='eyebrow'>Enriching Leek</p>
+              <h2>{orthogonalSquared.name}</h2>
+            </div>
+          </div>
+          <p>
+            Adds +<FormattedNumber value={orthogonalSquared.enrichmentBonus} /> to
+            Enriching Leek&apos;s enrichment and extends it to Crops two tiles away
+            orthogonally at full strength, regardless of the intervening tile.
+            Keeps its existing reach and self-enrichment.
+          </p>
+          <dl className='seed-augmentation-stats'>
+            <div>
+              <dt>Status</dt>
+              <dd>{orthogonalSquaredCost === null ? 'Active' : 'Locked'}</dd>
+            </div>
+            <div>
+              <dt>Cost</dt>
+              <dd><FormattedNumber value={getSeedAugmentationCost(game, orthogonalSquared.id)} /> Crops</dd>
+            </div>
+          </dl>
+          <button
+            type='button'
+            className='trade-primary-button'
+            onClick={() => onPurchaseSeedAugmentation(orthogonalSquared.id)}
+            disabled={
+              !hasEnrichingLeek || orthogonalSquaredCost === null ||
+              game.crops < orthogonalSquaredCost
+            }
+          >
+            {!hasEnrichingLeek
+              ? 'Perfect Leek first'
+              : orthogonalSquaredCost === null
+                ? 'Augmentation active'
+                : <>Augment: <FormattedNumber value={orthogonalSquaredCost} /> Crops</>}
+          </button>
+        </article>
+      ) : null}
 
       <RichSoilAugmentation
         game={game}

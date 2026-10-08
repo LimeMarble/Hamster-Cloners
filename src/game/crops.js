@@ -9,6 +9,7 @@ import {
   getSplitweedMonocropLimitLevel,
   hasLeechingVineAugmentation,
   hasLeekDiagonalAugmentation,
+  hasLeekOrthogonalSquaredAugmentation,
   hasRichSoilAugmentation,
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
@@ -701,7 +702,11 @@ function getPerfectionEffectDescription(
     ? 'orthogonally and diagonally adjacent crops'
     : 'adjacent crops'
 
-  const description = `+${adjacentCropYieldBonus} Crop yield to itself and ${adjacencyDescription}`
+  const extendedReachDescription = hasLeekOrthogonalSquaredAugmentation(seedAugmentations)
+    ? ' · also reaches crops two tiles away orthogonally at full strength'
+    : ''
+  const description = `+${adjacentCropYieldBonus} Crop yield to itself and ${adjacencyDescription}` +
+    extendedReachDescription
   return hasRichSoilAugmentation(seedAugmentations)
     ? description + ' · Rich Soil: in Misfortune only, each enrichment contribution is multiplied by max(1, the recipient\'s base harvest)'
     : description
