@@ -70,6 +70,8 @@ test('the Clover assembly precursors use their configured main Crop and Rabbit r
 })
 
 test('Clover assembly progress follows the slowest required Crop production and caps at its requirement', () => {
+  assert.equal(CLOVER_ASSEMBLY_PART_REQUIREMENT, 7.77e64)
+  assert.equal(isCloverAssemblyReady({ progress: 7.77e59 }), false)
   const productionPerSecondByCrop = {
     appleTree: 3e58,
     canola: 4e58,

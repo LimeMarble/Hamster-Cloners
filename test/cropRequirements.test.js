@@ -176,7 +176,7 @@ test('Misfortune upgrade and assembly requirements are final values, with no sec
   const richSoilId = SEED_AUGMENTATION_IDS.RICH_SOIL
   assert.equal(getSeedAugmentationCost(game, richSoilId), SEED_AUGMENTATIONS[richSoilId].cost)
   assert.equal(getSeedAugmentationCost({ ...game, activeArea: 'main' }, richSoilId), SEED_AUGMENTATIONS[richSoilId].cost)
-  assert.equal(CLOVER_ASSEMBLY_PART_REQUIREMENT, 7.77e59)
+  assert.equal(CLOVER_ASSEMBLY_PART_REQUIREMENT, 7.77e64)
   assert.equal(isCloverAssemblyReady({ progress: 7.77e58 }), false)
   assert.equal(isCloverAssemblyReady({ progress: CLOVER_ASSEMBLY_PART_REQUIREMENT }), true)
 })

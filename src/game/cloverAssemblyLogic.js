@@ -4,7 +4,7 @@ import { createInitialFiveLeafState } from './fiveLeafCloverLogic.js'
 import { hasMisfortuneUpgrade, MISFORTUNE_UPGRADE_IDS } from './misfortuneUpgrades.js'
 
 export const GREATER_BLUEPRINTING_COST = 7.77e159
-export const CLOVER_ASSEMBLY_PART_REQUIREMENT = 7.77e59
+export const CLOVER_ASSEMBLY_PART_REQUIREMENT = 7.77e64
 export const CLOVER_ASSEMBLY_RABBIT_UNLOCK_ID = 'rabbitsCharm'
 
 export const CLOVER_ASSEMBLY_PARTS = Object.freeze([
