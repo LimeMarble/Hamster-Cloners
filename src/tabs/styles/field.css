@@ -484,7 +484,7 @@
 .percentage-gain {
   display: block;
   margin-top: 4px;
-  color: var(--field-green);
+  color: var(--percentage-gain-color, var(--field-green));
   font-size: 0.72rem;
   font-weight: 700;
   white-space: nowrap;

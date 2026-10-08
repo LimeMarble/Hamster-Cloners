@@ -2,7 +2,10 @@ import {
   formatWholeNumber,
   getCachedFormattedNumber,
 } from '../game/numberFormat.js'
-import { shouldShowPercentageGain } from '../game/fieldGrowth.js'
+import {
+  getPercentageGainColor,
+  shouldShowPercentageGain,
+} from '../game/fieldGrowth.js'
 import {
   getCropEffectDescription,
   getCropName,
@@ -25,7 +28,11 @@ export function PercentageGain({ value }) {
   if (!shouldShowPercentageGain(value)) return null
 
   return (
-    <small className="percentage-gain" title="Estimated gain at current production rates">
+    <small
+      className="percentage-gain"
+      title="Estimated gain at current production rates"
+      style={{ '--percentage-gain-color': getPercentageGainColor(value) }}
+    >
       +<FormattedNumber value={value} maximumFractionDigits={4} />%/s
     </small>
   )
