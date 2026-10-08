@@ -407,12 +407,13 @@ test('Seed Augmentations require perfected crops and persist with safe limits', 
   )
 })
 
-test('Sterile Symbiosis is hidden until Demo 2 and starts at 1e180', () => {
+test('Sterile Symbiosis is hidden until Demo 2 and stores its final main price', () => {
   const augmentationId =
     SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT
   const baseGame = createAugmentationGame()
 
-  assert.equal(SEED_AUGMENTATIONS[augmentationId].baseCost, 1e180)
+  assert.equal(SEED_AUGMENTATIONS[augmentationId].baseCost, 5e184)
+  assert.equal(SEED_AUGMENTATIONS[augmentationId].misfortuneCost, 5e183)
   assert.equal(SEED_AUGMENTATIONS[augmentationId].costGrowth, 50)
   assert.equal(SEED_AUGMENTATIONS[augmentationId].maximumLevel, 4)
   assert.equal(isSeedAugmentationVisible(baseGame, augmentationId), false)
@@ -420,7 +421,7 @@ test('Sterile Symbiosis is hidden until Demo 2 and starts at 1e180', () => {
     purchaseSeedAugmentation(
       {
         ...baseGame,
-        crops: 1e180,
+        crops: SEED_AUGMENTATIONS[augmentationId].baseCost,
         completedCropPerfections: ['splitweed'],
       },
       augmentationId,
@@ -430,7 +431,7 @@ test('Sterile Symbiosis is hidden until Demo 2 and starts at 1e180', () => {
 
   let game = {
     ...baseGame,
-    crops: 1e180,
+    crops: SEED_AUGMENTATIONS[augmentationId].baseCost,
     completedCropPerfections: ['splitweed'],
     capybara: {
       ...baseGame.capybara,
@@ -441,7 +442,9 @@ test('Sterile Symbiosis is hidden until Demo 2 and starts at 1e180', () => {
       ],
     },
   }
-  const expectedCosts = [1e180, 5e181, 2.5e183, 1.25e185]
+  const definition = SEED_AUGMENTATIONS[augmentationId]
+  const expectedCosts = Array.from({ length: definition.maximumLevel }, (_, level) =>
+    definition.baseCost * definition.costGrowth ** level)
 
   assert.equal(isSeedAugmentationVisible(game, augmentationId), true)
 

@@ -845,6 +845,7 @@ test('Sweet Potato is purchasable while Wheat retains the logarithmic effect', (
     hasUnlockedCropPerfection: true,
     hasUnlockedRowDuplicators: true,
     completedCropPerfections: [],
+    completedMisfortuneUpgrades: ['oilyTreats'],
   }
   const blueprint = createBlueprint({
     rows: 1,
@@ -854,7 +855,7 @@ test('Sweet Potato is purchasable while Wheat retains the logarithmic effect', (
 
   assert.equal(WHEAT_UNLOCK_CROP_COUNT, 1.25e32)
   assert.equal(CROP_DEFINITIONS.wheat.baseYield, 100)
-  assert.equal(CROP_PERFECTIONS.sweetPotato.cost, 4e95)
+  assert.equal(CROP_PERFECTIONS.sweetPotato.cost, 2e99)
   assert.equal(getCropName('sweetPotato'), 'Potato')
   assert.equal(
     getCropName('sweetPotato', ['sweetPotato']),

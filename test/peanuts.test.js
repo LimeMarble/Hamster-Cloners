@@ -197,19 +197,19 @@ test('Oily Treats multiplies floors only, in both areas, and leaves support mode
   }
 })
 
-test('shared Sweet Potato and later Crop costs receive another 500× in both areas; earlier costs do not', () => {
+test('late perfection prices are already folded, and demonstrations do not inflate earlier main prices', () => {
   const game = { ...createInitialGame(), activeArea: 'main',
     capybara: { completedDemonstrations: ['introduction', 'demonstrationOne'] },
     hasUnlockedCropPerfection: true, hasUnlockedRowDuplicators: true,
     areaProgress: { misfortune: {} }, completedMisfortuneUpgrades: ['oilyTreats'] }
   near(getCropPerfectionCost('sweetPotato', game), 2e99)
-  near(getCropPerfectionCost('samplingLentil', game), CROP_PERFECTIONS.samplingLentil.cost * 5000)
-  assert.equal(getCropPerfectionCost('enrichingLeek', game), 2e11)
+  near(getCropPerfectionCost('samplingLentil', game), CROP_PERFECTIONS.samplingLentil.cost)
+  assert.equal(getCropPerfectionCost('enrichingLeek', game), CROP_PERFECTIONS.enrichingLeek.cost)
   near(getNextSeedAugmentationCost(game, 'sweeterBond'), 3.5e103)
-  near(getNextSeedAugmentationCost(game, 'leekDiagonal'), 1e69)
+  near(getNextSeedAugmentationCost(game, 'leekDiagonal'), 1e68)
   const misfortune = { ...game, activeArea: 'misfortune' }
   near(getCropPerfectionCost('sweetPotato', misfortune), 2e99)
-  near(getCropPerfectionCost('samplingLentil', misfortune), CROP_PERFECTIONS.samplingLentil.cost * 5000)
+  near(getCropPerfectionCost('samplingLentil', misfortune), CROP_PERFECTIONS.samplingLentil.cost)
   near(getNextSeedAugmentationCost(misfortune, 'sweeterBond'), 3.5e103)
   const cost = getCropPerfectionCost('sweetPotato', game)
   assert.equal(canUnlockCropPerfection({ ...game, crops: cost * 0.99 }, 'sweetPotato'), false)

@@ -6,8 +6,8 @@ import { createServer } from 'vite'
 import {
   CAPYBARA_DEMONSTRATIONS, MISFORTUNE_CROP_GOAL, MAJOR_PROGRESSION_GOALS,
   SEED_AUGMENTATIONS, canUnlockCropPerfection, createInitialGame,
-  getCropPerfectionCost, getCropRequirement, getNextSeedAugmentationCost,
-  getSeedAugmentationCost, getSharedCropProgressionCost,
+  getCropPerfectionCost, getNextSeedAugmentationCost,
+  getSeedAugmentationCost, getAreaCropValue,
   purchaseSeedAugmentation, unlockCropPerfection,
 } from '../src/game/gameLogic.js'
 import { CROP_PERFECTIONS } from '../src/game/crops.js'
@@ -26,58 +26,80 @@ function near(actual, expected) {
   assert.ok(Math.abs(actual / expected - 1) < 1e-12, `${actual} vs ${expected}`)
 }
 
-test('shared late perfections keep the 500× factor in Misfortune, including progress targets', () => {
+const GOURD_AUGMENTATION_PRICES = [
+  ['leechingVine', 'leechingVineUnlocked', 5e144],
+  ['sneakyCrawler', 'sneakyCrawlerUnlocked', 1.5e148],
+  ['greaterAbsorption', 'greaterAbsorptionUnlocked', 3e149],
+]
+
+test('Gourd augmentations charge their exact rebalanced prices in Main and Misfortune', () => {
+  for (const activeArea of ['main', 'misfortune']) {
+    const game = progressionGame(activeArea, {
+      completedCropPerfections: ['leechingGourd'],
+      completedMisfortuneUpgrades: ['huntForSomethingGreater', 'nourishingMisery'],
+    })
+    for (const [id, flag, cost] of GOURD_AUGMENTATION_PRICES) {
+      assert.equal(getSeedAugmentationCost(game, id), cost)
+      assert.equal(getNextSeedAugmentationCost(game, id), cost)
+      assert.equal(purchaseSeedAugmentation({ ...game, crops: cost * 0.999 }, id), null)
+      const purchased = purchaseSeedAugmentation({ ...game, crops: cost }, id)
+      assert.ok(purchased, id)
+      assert.equal(purchased.crops, 0)
+      assert.equal(purchased.seedAugmentations[flag], true)
+      assert.equal(getNextSeedAugmentationCost(purchased, id), null)
+    }
+  }
+})
+
+test('perfections use their final configured area prices, including progress targets', () => {
   const misfortune = progressionGame()
   const main = progressionGame('main')
   for (const perfection of Object.values(CROP_PERFECTIONS).filter(({ cost }) => cost != null)) {
-    const expected = perfection.costCurrency === 'rabbitRelations' ? perfection.cost
-      : perfection.cost * 10 * (perfection.cost >= 4e95 ? 500 : 1)
-    near(getCropPerfectionCost(perfection.id, misfortune), expected)
-    near(getCropPerfectionCost(perfection.id, main), expected)
+    near(getCropPerfectionCost(perfection.id, misfortune), perfection.misfortuneCost ?? perfection.cost)
+    near(getCropPerfectionCost(perfection.id, main), perfection.cost)
   }
   near(getCropPerfectionCost('sweetPotato', misfortune), 2e99)
-  near(getCropPerfectionCost('samplingLentil', misfortune), CROP_PERFECTIONS.samplingLentil.cost * 5000)
+  near(getCropPerfectionCost('samplingLentil', misfortune), CROP_PERFECTIONS.samplingLentil.cost)
   for (const id of ['sweetPotato', 'samplingLentil']) {
     const goal = MAJOR_PROGRESSION_GOALS.find((goal) => goal.id === `perfection-${id}`)
     assert.equal(goal.getTarget(misfortune), getCropPerfectionCost(id, misfortune))
   }
 })
 
-test('shared augmentations keep the factor through level growth and static cost labels', () => {
+test('augmentations only apply their own level growth to the final area price', () => {
   for (const [id, field] of [['sweeterBond', 'sweeterBondLevel'],
     ['loosenedBoundaries', 'loosenedBoundariesLevel'],
     ['splitweedMonocropLimit', 'splitweedMonocropLimitLevel']]) {
     const definition = SEED_AUGMENTATIONS[id]
     for (let level = 0; level < definition.maximumLevel; level += 1) {
       const game = progressionGame('misfortune', { seedAugmentations: { [field]: level } })
-      const expected = definition.baseCost * definition.costGrowth ** level * 10 * 500
+      const expected = (definition.misfortuneCost ?? definition.baseCost) * definition.costGrowth ** level
       near(getNextSeedAugmentationCost(game, id), expected)
-      near(getNextSeedAugmentationCost({ ...game, activeArea: 'main' }, id), expected)
-      near(getSeedAugmentationCost(game, id), definition.baseCost * 10 * 500)
+      near(getNextSeedAugmentationCost({ ...game, activeArea: 'main' }, id), definition.baseCost * definition.costGrowth ** level)
+      near(getSeedAugmentationCost(game, id), definition.misfortuneCost ?? definition.baseCost)
     }
     assert.equal(getNextSeedAugmentationCost(progressionGame('misfortune', {
       seedAugmentations: { [field]: definition.maximumLevel },
     }), id), null)
   }
   for (const id of ['restoredConnections', 'leechingVine', 'sneakyCrawler', 'greaterAbsorption']) {
-    near(getNextSeedAugmentationCost(progressionGame(), id), SEED_AUGMENTATIONS[id].cost * 10 * 500)
+    near(getNextSeedAugmentationCost(progressionGame(), id), SEED_AUGMENTATIONS[id].cost)
   }
 })
 
 test('Misfortune-only requirements, Rich Soil, earlier prices and relation prices stay unchanged', () => {
   const game = progressionGame()
-  assert.equal(getSharedCropProgressionCost(game, null), null)
-  near(getSharedCropProgressionCost(game, 1e90), 1e91)
-  near(getCropRequirement(game, 1e150), 1e151)
-  near(CAPYBARA_DEMONSTRATIONS[2].target, MISFORTUNE_CROP_GOAL * 10)
-  near(getSeedAugmentationCost(game, 'richSoil'), SEED_AUGMENTATIONS.richSoil.cost * 10)
+  assert.equal(getAreaCropValue(game, null), null)
+  near(getAreaCropValue(game, 1e90), 1e90)
+  near(getAreaCropValue(game, 1e150, 2e150), 2e150)
+  near(CAPYBARA_DEMONSTRATIONS[2].target, MISFORTUNE_CROP_GOAL)
+  near(getSeedAugmentationCost(game, 'richSoil'), SEED_AUGMENTATIONS.richSoil.cost)
   near(getNextSeedAugmentationCost(game, 'leekDiagonal'), 1e69)
   assert.equal(getCropPerfectionCost('blazingCarrot', game), CROP_PERFECTIONS.blazingCarrot.cost)
-  // Keep the existing area-specific ×10/×100 progression factors; only the
-  // missing shared ×500 balancing factor is corrected.
+  // Completing a demonstration does not raise prices of existing items.
   const completed = { ...game, capybara: { completedDemonstrations: ['misfortuneTrial'] } }
   near(getCropPerfectionCost('sweetPotato', completed), 2e99)
-  near(getCropPerfectionCost('sweetPotato', { ...completed, activeArea: 'main' }), 2e100)
+  near(getCropPerfectionCost('sweetPotato', { ...completed, activeArea: 'main' }), 2e99)
 })
 
 test('purchases in Misfortune charge the corrected price, not merely display it', () => {
@@ -98,16 +120,35 @@ test('purchases in Misfortune charge the corrected price, not merely display it'
 })
 
 let server, CropPerfectionPurchase, SweetPotatoAugmentations, BlazingCarrotPerfection
+let LeechingGourdAugmentations
 before(async () => {
   server = await createServer({ logLevel: 'silent',
+    resolve: { preserveSymlinks: true },
     server: { middlewareMode: true, hmr: false }, appType: 'custom' })
   ;({ CropPerfectionPurchase } = await server.ssrLoadModule('/src/tabs/CropPerfectionPurchase.jsx'))
   ;({ SweetPotatoAugmentations } = await server.ssrLoadModule('/src/tabs/SweetPotatoAugmentations.jsx'))
   ;({ BlazingCarrotPerfection } = await server.ssrLoadModule('/src/tabs/BlazingCarrotPerfection.jsx'))
+  ;({ LeechingGourdAugmentations } = await server.ssrLoadModule('/src/tabs/LeechingGourdAugmentations.jsx'))
   const numberFormat = await server.ssrLoadModule('/src/game/numberFormat.js')
   numberFormat.setActiveNumberNotation('suffix', 303)
 })
 after(async () => { setActiveNumberNotation('suffix', 303); await server?.close() })
+
+test('Gourd cards display the rebalanced costs in both price labels and purchase buttons', () => {
+  for (const activeArea of ['main', 'misfortune']) {
+    const game = progressionGame(activeArea, {
+      completedCropPerfections: ['leechingGourd'],
+      completedMisfortuneUpgrades: ['huntForSomethingGreater', 'nourishingMisery'],
+    })
+    const markup = renderToStaticMarkup(createElement(LeechingGourdAugmentations, {
+      game, onPurchaseSeedAugmentation() {},
+    }))
+    for (const [id, , cost] of GOURD_AUGMENTATION_PRICES) {
+      const expected = getCachedFormattedNumber(cost, 0, 'suffix', 303)
+      assert.equal(markup.split(expected).length - 1, 2, id)
+    }
+  }
+})
 
 test('Blazing Carrot purchase and progress labels use 2.5e16 Rabbit relations in either area', () => {
   for (const activeArea of ['main', 'misfortune']) {

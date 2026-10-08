@@ -20,6 +20,7 @@ let CloverAssembly
 before(async () => {
   server = await createServer({
     logLevel: 'silent',
+    resolve: { preserveSymlinks: true },
     server: { middlewareMode: true, hmr: false },
     appType: 'custom',
   })

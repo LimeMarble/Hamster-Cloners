@@ -1,5 +1,4 @@
 import {
-  BLUEPRINT_BLOCK_PLACEMENT_MODES,
   MAX_SAVED_BLUEPRINT_BLOCKS,
   getBlueprintBlockAnchorName,
   getSeedAugmentationName,
@@ -9,7 +8,7 @@ import {
   getCropName,
 } from '../game/crops.js'
 
-function RequirementList({ availability, completedCropPerfections }) {
+export function BlueprintBlockRequirements({ availability, completedCropPerfections }) {
   if (!availability?.hasMissingRequirements) return null
 
   const missing = [
@@ -35,12 +34,6 @@ function RequirementList({ availability, completedCropPerfections }) {
 }
 
 export function BlueprintBlocks({ game, editor }) {
-  const activeAvailability = editor.activeBlock
-    ? editor.libraryEntries.find(
-        ({ block }) => block.id === editor.activeBlockSourceId,
-      )?.availability ?? editor.placementPreview?.availability
-    : null
-
   return (
     <section className="blueprint-block-card" aria-labelledby="blueprint-block-title">
       <div className="blueprint-block-heading">
@@ -57,46 +50,7 @@ export function BlueprintBlocks({ game, editor }) {
         </span>
       </div>
 
-      <div className="blueprint-block-save-row">
-        <label htmlFor="blueprint-block-name">
-          Block name
-          <input
-            id="blueprint-block-name"
-            value={editor.selectionName}
-            onChange={(event) => editor.onSelectionNameChange(event.target.value)}
-            placeholder={`Block ${editor.blocks.length + 1}`}
-            maxLength={50}
-          />
-        </label>
-        {editor.isSelecting ? (
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={editor.onCancelInteraction}
-          >
-            Cancel selection
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="primary-button"
-            onClick={editor.onStartSelection}
-            disabled={editor.blocks.length >= MAX_SAVED_BLUEPRINT_BLOCKS}
-          >
-            Select rectangle
-          </button>
-        )}
-      </div>
-
-      {editor.isSelecting ? (
-        <p className="blueprint-block-instruction">
-          {editor.selectionStartIndex === null
-            ? 'Select the corner that should act as the placement anchor.'
-            : 'Select the opposite corner. The highlighted rectangle will be saved.'}
-        </p>
-      ) : null}
-
-      {editor.status ? (
+      {editor.status && !editor.isSelecting && !editor.activeBlock ? (
         <p
           className={`blueprint-block-status blueprint-block-status-${editor.status.type}`}
           role="status"
@@ -105,102 +59,9 @@ export function BlueprintBlocks({ game, editor }) {
         </p>
       ) : null}
 
-      {editor.activeBlock ? (
-        <div className="blueprint-block-placement">
-          <div>
-            <p className="eyebrow">Placing</p>
-            <h4>{editor.activeBlock.name}</h4>
-            <p>
-              {editor.activeBlock.rows}×{editor.activeBlock.columns}, anchored
-              at its {getBlueprintBlockAnchorName(editor.activeBlock)} corner.
-              Hover a tile, or tap one to pin the preview.
-            </p>
-          </div>
-
-          <div className="blueprint-block-mode" role="group" aria-label="Block placement mode">
-            <button
-              type="button"
-              className={editor.placementMode === BLUEPRINT_BLOCK_PLACEMENT_MODES.STAMP ? 'is-active' : ''}
-              onClick={() => editor.onPlacementModeChange(BLUEPRINT_BLOCK_PLACEMENT_MODES.STAMP)}
-            >
-              Stamp
-              <small>Keep destination cells where the block is empty.</small>
-            </button>
-            <button
-              type="button"
-              className={editor.placementMode === BLUEPRINT_BLOCK_PLACEMENT_MODES.REPLACE ? 'is-active' : ''}
-              onClick={() => editor.onPlacementModeChange(BLUEPRINT_BLOCK_PLACEMENT_MODES.REPLACE)}
-            >
-              Replace
-              <small>Clear destination cells where the block is empty.</small>
-            </button>
-          </div>
-
-          <div className="blueprint-block-transform-row" role="group" aria-label="Transform block">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={editor.onRotateCounterclockwise}
-              aria-label="Rotate block counterclockwise, shortcut Q"
-            >
-              ↺ Rotate (Q)
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={editor.onRotateClockwise}
-              aria-label="Rotate block clockwise, shortcut E"
-            >
-              ↻ Rotate (E)
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={editor.onFlipHorizontal}
-            >
-              ⇋ Flip (F)
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={editor.onFlipVertical}
-            >
-              ⇵ Flip (G)
-            </button>
-          </div>
-
-          <RequirementList
-            availability={activeAvailability}
-            completedCropPerfections={game.completedCropPerfections}
-          />
-
-          {editor.placementPreview ? (
-            <p className={editor.placementPreview.canPlace ? 'blueprint-block-valid' : 'blueprint-block-invalid'}>
-              {editor.placementPreview.canPlace
-                ? 'This preview can be placed.'
-                : editor.placementPreview.error}
-            </p>
-          ) : null}
-
-          <div className="blueprint-block-action-row">
-            <button
-              type="button"
-              className="primary-button"
-              onClick={editor.onPlacePreview}
-              disabled={!editor.placementPreview?.canPlace}
-            >
-              Confirm placement
-            </button>
-            <button type="button" className="secondary-button" onClick={editor.onCancelInteraction}>
-              Stop placing
-            </button>
-          </div>
-        </div>
-      ) : null}
-
       <div className="blueprint-block-library" aria-label="Saved blueprint blocks">
         {editor.libraryEntries.length === 0 ? (
-          <p className="blueprint-block-empty">No blocks saved yet.</p>
+          <p className="blueprint-block-empty">No blocks saved yet. Select crops above the grid, then choose Save as block.</p>
         ) : editor.libraryEntries.map(({ block, availability }) => (
           <article className="blueprint-block-library-item" key={block.id}>
             <div>
@@ -208,7 +69,7 @@ export function BlueprintBlocks({ game, editor }) {
               <p>
                 {block.rows}×{block.columns} · {getBlueprintBlockAnchorName(block)} anchor
               </p>
-              <RequirementList
+              <BlueprintBlockRequirements
                 availability={availability}
                 completedCropPerfections={game.completedCropPerfections}
               />

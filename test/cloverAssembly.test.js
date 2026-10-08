@@ -44,7 +44,7 @@ test('the Clover assembly precursors use their configured main Crop and Rabbit r
     RABBIT_UNLOCK_IDS.RABBITS_CHARM,
   )
 
-  assert.equal(GREATER_BLUEPRINTING_COST, 1e146)
+  assert.equal(GREATER_BLUEPRINTING_COST, 5e149)
   assert.ok(researched)
   assert.equal(researched.crops, 0)
   assert.equal(researched.hasUnlockedGreaterBlueprinting, true)

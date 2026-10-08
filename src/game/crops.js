@@ -12,7 +12,7 @@ import {
   hasRichSoilAugmentation,
   isMirrorCornDebuffRemovalEnabled,
 } from './augmentationLogic.js'
-import { getCropRequirement, getCropRequirementMultiplier, scaleCropRequirement } from './cropRequirements.js'
+import { getAreaCropValue } from './cropRequirements.js'
 import {
   formatWholeNumber,
   getCachedFormattedNumber,
@@ -29,32 +29,34 @@ export const CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT = 500
 export const SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT = 555
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
 export const CORN_REVEAL_HAMSTER_COUNT = 50
-// Base requirement before Misfortune's progression multiplier: 2.5M displayed.
-export const MISFORTUNE_CORN_UNLOCK_CROP_COUNT = 2.5e5
+export const MISFORTUNE_CORN_UNLOCK_CROP_COUNT = 2.5e6
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
 
-// Base values before the area's progression multiplier. Keep main balancing
-// separate from Misfortune; apply the area's multiplier exactly once.
+// Final requirements per area, without global or demonstration-based scaling.
 export const AREA_CROP_UNLOCK_REQUIREMENTS = Object.freeze({
-  appleTree: Object.freeze({ main: APPLE_TREE_UNLOCK_CROP_COUNT, misfortune: 1e17 }),
-  lentil: Object.freeze({ main: LENTIL_UNLOCK_CROP_COUNT, misfortune: 8e19 }),
-  knotweed: Object.freeze({ main: KNOTWEED_UNLOCK_CROP_COUNT, misfortune: 2e21 }),
-  wheat: Object.freeze({ main: WHEAT_UNLOCK_CROP_COUNT, misfortune: 1.25e35 }),
+  corn: Object.freeze({ main: null, misfortune: MISFORTUNE_CORN_UNLOCK_CROP_COUNT }),
+  turnip: Object.freeze({ main: TURNIP_UNLOCK_CROP_COUNT, misfortune: 1e9 }),
+  appleTree: Object.freeze({ main: APPLE_TREE_UNLOCK_CROP_COUNT, misfortune: 1e18 }),
+  lentil: Object.freeze({ main: LENTIL_UNLOCK_CROP_COUNT, misfortune: 8e20 }),
+  knotweed: Object.freeze({ main: KNOTWEED_UNLOCK_CROP_COUNT, misfortune: 2e22 }),
+  wheat: Object.freeze({ main: WHEAT_UNLOCK_CROP_COUNT, misfortune: 1.25e36 }),
+  sunflower: Object.freeze({ main: SUNFLOWER_UNLOCK_CROP_COUNT, misfortune: 1.42e45 }),
+  cropPerfection: Object.freeze({ main: CROP_PERFECTION_UNLOCK_CROP_COUNT, misfortune: 1e10 }),
 })
 
 export function getCropUnlockBaseRequirement(cropId, activeArea = 'main') {
   const requirements = AREA_CROP_UNLOCK_REQUIREMENTS[cropId]
-  return requirements?.[activeArea] ?? requirements?.main ?? null
+  return requirements ? getAreaCropValue(activeArea, requirements.main, requirements.misfortune) : null
 }
 
-export function getCropUnlockRequirement(cropId, activeArea = 'main', requirementMultiplier = 1) {
-  return scaleCropRequirement(getCropUnlockBaseRequirement(cropId, activeArea), requirementMultiplier)
+export function getCropUnlockRequirement(cropId, activeArea = 'main') {
+  return getCropUnlockBaseRequirement(cropId, activeArea)
 }
 
 export function hasUnlockedCorn(game, crops = game?.crops) {
   return game?.activeArea === 'misfortune'
     ? game.hasUnlockedCorn === true ||
-      Number(crops) >= getCropRequirement(game, MISFORTUNE_CORN_UNLOCK_CROP_COUNT)
+      Number(crops) >= MISFORTUNE_CORN_UNLOCK_CROP_COUNT
     : Number(game?.blueprint?.columns) > 1
 }
 
@@ -384,6 +386,7 @@ export const CROP_PERFECTIONS = {
     cropId: 'leek',
     name: 'Enriching Leek',
     cost: 2e10,
+    misfortuneCost: 2e11,
     adjacentCropYieldBonus: 5,
     effectDescription: '+5 Crop yield to itself and adjacent crops',
   },
@@ -392,6 +395,7 @@ export const CROP_PERFECTIONS = {
     cropId: 'corn',
     name: 'Mirror Corn',
     cost: 4e12,
+    misfortuneCost: 4e13,
     baseYield: 5,
     hamsterEfficiencyBonus: -0.5,
     diagonalTargetEffectMultiplier: 4,
@@ -415,6 +419,7 @@ export const CROP_PERFECTIONS = {
     cropId: 'pumpkin',
     name: 'Leeching Gourd',
     cost: 2e19,
+    misfortuneCost: 2e20,
     baseEffectDescription: 'Occupies one 2×2 block and produces no Crops',
     effectDescription:
       'Nullifies adjacent crop debuffs · +5% all Turnip effectiveness per adjacent debuff; harmful crops count twice · Too destructive on soil integrity to plant multiple in a single field',
@@ -423,7 +428,7 @@ export const CROP_PERFECTIONS = {
     id: 'sweetPotato',
     cropId: 'sweetPotato',
     name: 'Sweet Potato',
-    cost: 4e95,
+    cost: 2e99,
     hamsterEfficiencyBonus: 0,
     bedHamsterEfficiencyBonusPerCrop: 2,
     bedGrowthMultiplier: 2,
@@ -440,8 +445,7 @@ export const CROP_PERFECTIONS = {
     id: 'samplingLentil',
     cropId: 'lentil',
     name: 'Sampling Lentil',
-    // The existing ×10 progression and ×500 late-cost factors give 2.5e140.
-    cost: 5e136,
+    cost: 2.5e140,
     requiresMisfortune: true,
     globalHarvestMultiplier: 1.8,
     nonTradedNeighborEffectMultiplier: 3,
@@ -455,6 +459,7 @@ export const CROP_PERFECTIONS = {
     cropId: 'knotweed',
     name: 'Splitweed',
     cost: 3e38,
+    misfortuneCost: 3e39,
     hasDebuff: true,
     isHarmful: false,
     globalPassiveEffectMultiplier: 0,
@@ -498,34 +503,33 @@ export function getCropUnlockDescription(
   cropId,
   activeArea = 'main',
   hasFiveLeafClover = false,
-  game,
 ) {
   const format = (value) => getCachedFormattedNumber(value, 0)
-  const formatRequirement = (value) => format(getCropRequirement(game, value, activeArea))
+  const formatRequirement = (id) => format(getCropUnlockRequirement(id, activeArea))
   const formatCounter = (value) => formatWholeNumber(value)
 
   switch (cropId) {
     case 'corn':
       return activeArea === 'misfortune'
-        ? `Unlocks at ${formatRequirement(MISFORTUNE_CORN_UNLOCK_CROP_COUNT)} Crops`
+        ? `Unlocks at ${formatRequirement('corn')} Crops`
         : CROP_DEFINITIONS.corn.unlockDescription
     case 'sweetPotato':
       return `Unlocks at ${formatCounter(SWEET_POTATO_UNLOCK_HAMSTER_COUNT)} Hamsters` +
         (activeArea === 'misfortune' ? '' : ' after Pumpkin')
     case 'turnip':
-      return `Unlocks at ${formatRequirement(TURNIP_UNLOCK_CROP_COUNT)} Crops`
+      return `Unlocks at ${formatRequirement('turnip')} Crops`
     case 'appleTree':
-      return `Unlocks at ${formatRequirement(getCropUnlockBaseRequirement(cropId, activeArea))} Crops`
+      return `Unlocks at ${formatRequirement(cropId)} Crops`
     case 'lentil':
-      return `Unlocks at ${formatRequirement(getCropUnlockBaseRequirement(cropId, activeArea))} Crops`
+      return `Unlocks at ${formatRequirement(cropId)} Crops`
     case 'knotweed':
-      return `Unlocks at ${formatRequirement(getCropUnlockBaseRequirement(cropId, activeArea))} Crops`
+      return `Unlocks at ${formatRequirement(cropId)} Crops`
     case 'wheat':
-      return `Unlocks at ${format(getCropUnlockRequirement(cropId, activeArea, getCropRequirementMultiplier(game, activeArea)))} Crops after Row Duplicators`
+      return `Unlocks at ${formatRequirement(cropId)} Crops after Row Duplicators`
     case 'rootTunnel':
       return 'Reward for Capybara Demonstration 2'
     case 'sunflower':
-      return `Unlocks at ${formatRequirement(SUNFLOWER_UNLOCK_CROP_COUNT)} Crops`
+      return `Unlocks at ${formatRequirement('sunflower')} Crops`
     case 'canola':
       return `Unlocks at ${formatCounter(CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT)} Row Duplicators`
     case 'carrot':

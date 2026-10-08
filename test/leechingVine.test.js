@@ -105,9 +105,9 @@ test('after Hunt, Nourishing Misery unlocks the Leeching Vine augmentation at it
 
   assert.equal(
     MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY].cost,
-    2e38,
+    2e53,
   )
-  assert.equal(SEED_AUGMENTATIONS[augmentationId].cost, 1e120)
+  assert.equal(SEED_AUGMENTATIONS[augmentationId].cost, 5e144)
   assert.equal(isSeedAugmentationVisible(initialGame, augmentationId), false)
 
   const researchedGame = purchaseMisfortuneUpgrade(
@@ -117,7 +117,7 @@ test('after Hunt, Nourishing Misery unlocks the Leeching Vine augmentation at it
   assert.ok(researchedGame)
   assert.equal(isSeedAugmentationVisible(researchedGame, augmentationId), true)
   const vineCost = getNextSeedAugmentationCost(researchedGame, augmentationId)
-  assert.equal(vineCost, 5e123)
+  assert.equal(vineCost, 5e144)
 
   const augmentedGame = purchaseSeedAugmentation(
     { ...researchedGame, crops: vineCost },
@@ -137,12 +137,13 @@ test('Hunt and Nourishing Misery are both required to reveal Branchier Branches'
     crops: augmentation.cost,
     completedCropPerfections: ['leechingGourd'],
     capybara: {
-      completedDemonstrations: [CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION],
+      completedDemonstrations: [CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE],
       completedSecondaryObjectives: [],
     },
   }
 
-  assert.equal(augmentation.cost, 3e136)
+  assert.equal(augmentation.cost, 1.5e148)
   assert.equal(augmentation.name, 'Branchier Branches')
   assert.equal(augmentation.id, 'sneakyCrawler')
   assert.equal(isSeedAugmentationVisible(hiddenGame, augmentationId), false)
@@ -164,8 +165,10 @@ test('Hunt and Nourishing Misery are both required to reveal Branchier Branches'
   }
   assert.equal(isSeedAugmentationVisible(revealedGame, augmentationId), true)
 
+  const branchierCost = getNextSeedAugmentationCost(revealedGame, augmentationId)
+  assert.equal(branchierCost, 1.5e148)
   const purchased = purchaseSeedAugmentation({ ...revealedGame,
-    crops: getNextSeedAugmentationCost(revealedGame, augmentationId) }, augmentationId)
+    crops: branchierCost }, augmentationId)
   assert.ok(purchased)
   assert.equal(purchased.crops, 0)
   assert.equal(purchased.seedAugmentations.sneakyCrawlerUnlocked, true)
@@ -284,16 +287,17 @@ test('Greater Absorption raises each Splitweed from 2 to 3 nourishment strength'
       MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
     ],
     capybara: {
-      completedDemonstrations: [CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION],
+      completedDemonstrations: [CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE],
       completedSecondaryObjectives: [],
     },
     seedAugmentations: ACTIVE_AUGMENTATION,
   }
 
-  assert.equal(augmentation.cost, 6e137)
+  assert.equal(augmentation.cost, 3e149)
   assert.equal(isSeedAugmentationVisible(eligibleGame, augmentationId), true)
   const absorptionCost = getNextSeedAugmentationCost(eligibleGame, augmentationId)
-  assert.equal(absorptionCost, 3e140)
+  assert.equal(absorptionCost, 3e149)
   for (const missing of [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
     MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY]) {
     const locked = { ...eligibleGame, crops: absorptionCost,

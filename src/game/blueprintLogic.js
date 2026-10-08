@@ -16,9 +16,10 @@ import {
   INITIAL_BLUEPRINT_SIZE,
   MISFORTUNE_AREA_STATE_VERSION,
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
+  MISFORTUNE_ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   STARTING_CROPS,
 } from './gameConfig.js'
-import { getCropRequirement, getSharedCropProgressionCost } from './cropRequirements.js'
+import { getAreaCropValue } from './cropRequirements.js'
 import { createInitialFortuneState } from './fortuneLogic.js'
 import { createInitialSeedAugmentationState } from './augmentationLogic.js'
 import {
@@ -402,10 +403,11 @@ function getCompletedCropPerfections(game) {
 }
 
 export function getCropPerfectionCost(perfectionId, game) {
-  const cost = CROP_PERFECTIONS[perfectionId]?.cost ?? null
+  const perfection = CROP_PERFECTIONS[perfectionId]
+  const cost = perfection?.cost ?? null
   return getCropPerfectionCurrency(perfectionId) === 'rabbitRelations'
     ? cost
-    : getSharedCropProgressionCost(game, cost)
+    : getAreaCropValue(game, cost, perfection?.misfortuneCost ?? cost)
 }
 
 export function getCropPerfectionCurrency(perfectionId) {
@@ -514,7 +516,7 @@ export function unlockCropPerfection(game, perfectionId) {
 }
 
 export function getRowDuplicatorsUnlockCropCount(game) {
-  return getCropRequirement(game, ROW_DUPLICATORS_UNLOCK_CROP_COUNT)
+  return getAreaCropValue(game, ROW_DUPLICATORS_UNLOCK_CROP_COUNT, MISFORTUNE_ROW_DUPLICATORS_UNLOCK_CROP_COUNT)
 }
 
 export function canUnlockRowDuplicators(game) {

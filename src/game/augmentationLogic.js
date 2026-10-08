@@ -2,7 +2,7 @@ import {
   GAME_AREA_IDS,
   MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
 } from './gameConfig.js'
-import { getCropRequirement, getSharedCropProgressionCost } from './cropRequirements.js'
+import { getAreaCropValue } from './cropRequirements.js'
 
 export const SEED_AUGMENTATION_IDS = Object.freeze({
   LEEK_ENRICHMENT: 'leekEnrichment',
@@ -27,6 +27,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     cropId: 'leek',
     name: 'Layered Enrichment',
     baseCost: 1e66,
+    misfortuneCost: 1e67,
     costGrowth: 2,
     maximumLevel: 5,
   }),
@@ -35,12 +36,13 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     cropId: 'leek',
     name: 'Diagonal Enrichment',
     cost: 1e68,
+    misfortuneCost: 1e69,
   }),
   [SEED_AUGMENTATION_IDS.RICH_SOIL]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.RICH_SOIL,
     cropId: 'leek',
     name: 'Rich Soil',
-    cost: 5e70,
+    cost: 5e71,
     purchaseArea: GAME_AREA_IDS.MISFORTUNE,
     effectArea: GAME_AREA_IDS.MISFORTUNE,
   }),
@@ -49,12 +51,14 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     cropId: 'corn',
     name: 'Safe Handling',
     cost: 2.5e72,
+    misfortuneCost: 2.5e73,
   }),
   [SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS,
     cropId: 'corn',
     name: 'Brighter Reflection',
     baseCost: 4e73,
+    misfortuneCost: 4e74,
     costGrowth: 10,
     maximumLevel: 8,
     }),
@@ -63,12 +67,14 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     cropId: 'corn',
     name: 'Heat-Resistant Crops',
     cost: 1e78,
+    misfortuneCost: 1e79,
   }),
   [SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.SPLITWEED_MONOCROP_LIMIT,
     cropId: 'knotweed',
     name: 'Sterile Symbiosis',
-    baseCost: 1e180,
+    baseCost: 5e184,
+    misfortuneCost: 5e183,
     costGrowth: 50,
     maximumLevel: 4,
     monocropLimitBonusPerAdjacentNonHarvestingCropPerLevel: 1,
@@ -78,7 +84,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     id: SEED_AUGMENTATION_IDS.SWEETER_BOND,
     cropId: 'sweetPotato',
     name: 'Sweeter Bond',
-    baseCost: 7e99,
+    baseCost: 3.5e103,
     costGrowth: 1000,
     maximumLevel: 3,
     growthExponentCapBonusPerLevel: 4,
@@ -88,7 +94,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     id: SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES,
     cropId: 'sweetPotato',
     name: 'Loosened Boundaries',
-    baseCost: 1e105,
+    baseCost: 5e108,
     costGrowth: 500,
     maximumLevel: 4,
     crowdingBaseBonusPerLevel: 0.05,
@@ -98,7 +104,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     id: SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS,
     cropId: 'sweetPotato',
     name: 'Restored Connections',
-    cost: 1e109,
+    cost: 5e112,
     buffDecayDelay: 3,
     requiredMisfortuneUpgradeId: 'adversityGrownTubers',
   }),
@@ -106,7 +112,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     id: SEED_AUGMENTATION_IDS.LEECHING_VINE,
     cropId: 'pumpkin',
     name: 'Leeching Vine',
-    cost: 1e120,
+    cost: 5e144,
     nourishmentExponentPerStrength: 0.1,
     targetsPerNourishmentType: 2,
     baseVineLength: 1,
@@ -117,7 +123,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     id: SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER,
     cropId: 'pumpkin',
     name: 'Branchier Branches',
-    cost: 3e136,
+    cost: 1.5e148,
     targetsPerNourishmentTypeBonus: 1,
     requiredMisfortuneUpgradeIds: ['huntForSomethingGreater', 'nourishingMisery'],
   }),
@@ -125,7 +131,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     id: SEED_AUGMENTATION_IDS.GREATER_ABSORPTION,
     cropId: 'pumpkin',
     name: 'Greater Absorption',
-    cost: 6e137,
+    cost: 3e149,
     splitweedNourishmentStrengthBonus: 1,
     requiredMisfortuneUpgradeIds: ['huntForSomethingGreater', 'nourishingMisery'],
   }),
@@ -362,49 +368,32 @@ export function getLeechingVineTargetsPerType(seedAugmentations) {
 
 export function getSeedAugmentationCost(game, augmentationId) {
   const augmentation = SEED_AUGMENTATIONS[augmentationId]
-  return getScaledAugmentationCost(
-    game,
-    augmentation,
-    augmentation?.cost ?? augmentation?.baseCost,
-  )
+  const cost = augmentation?.cost ?? augmentation?.baseCost ?? null
+  return getAreaCropValue(game, cost, augmentation?.misfortuneCost ?? cost)
 }
 
 export function getNextSeedAugmentationCost(game, augmentationId) {
-  return getScaledAugmentationCost(
-    game,
-    SEED_AUGMENTATIONS[augmentationId],
-    getUnscaledNextSeedAugmentationCost(game, augmentationId),
-  )
-}
-
-function getScaledAugmentationCost(game, augmentation, baseCost) {
-  return augmentation?.purchaseArea
-    ? getCropRequirement(game, baseCost, augmentation.purchaseArea)
-    : getSharedCropProgressionCost(game, baseCost)
-}
-
-function getUnscaledNextSeedAugmentationCost(game, augmentationId) {
   const state = normalizeSeedAugmentationState(game.seedAugmentations)
 
   if (augmentationId === SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT) {
     const augmentation = SEED_AUGMENTATIONS[augmentationId]
     return state.leekEnrichmentLevel >= augmentation.maximumLevel
       ? null
-      : augmentation.baseCost *
+      : getSeedAugmentationCost(game, augmentationId) *
           augmentation.costGrowth ** state.leekEnrichmentLevel
   }
 
   if (augmentationId === SEED_AUGMENTATION_IDS.LEEK_DIAGONAL) {
     return state.leekDiagonalUnlocked
       ? null
-      : SEED_AUGMENTATIONS[augmentationId].cost
+      : getSeedAugmentationCost(game, augmentationId)
   }
 
   if (augmentationId === SEED_AUGMENTATION_IDS.MIRROR_CORN_EFFECTIVENESS) {
     const augmentation = SEED_AUGMENTATIONS[augmentationId]
     return state.mirrorCornEffectivenessLevel >= augmentation.maximumLevel
       ? null
-      : augmentation.baseCost *
+      : getSeedAugmentationCost(game, augmentationId) *
           augmentation.costGrowth ** state.mirrorCornEffectivenessLevel
   }
 
@@ -412,7 +401,7 @@ function getUnscaledNextSeedAugmentationCost(game, augmentationId) {
     const augmentation = SEED_AUGMENTATIONS[augmentationId]
     return state.splitweedMonocropLimitLevel >= augmentation.maximumLevel
       ? null
-      : augmentation.baseCost *
+      : getSeedAugmentationCost(game, augmentationId) *
           augmentation.costGrowth ** state.splitweedMonocropLimitLevel
   }
 
@@ -420,7 +409,7 @@ function getUnscaledNextSeedAugmentationCost(game, augmentationId) {
     const augmentation = SEED_AUGMENTATIONS[augmentationId]
     return state.sweeterBondLevel >= augmentation.maximumLevel
       ? null
-      : augmentation.baseCost *
+      : getSeedAugmentationCost(game, augmentationId) *
           augmentation.costGrowth ** state.sweeterBondLevel
   }
 
@@ -428,7 +417,7 @@ function getUnscaledNextSeedAugmentationCost(game, augmentationId) {
     const augmentation = SEED_AUGMENTATIONS[augmentationId]
     return state.loosenedBoundariesLevel >= augmentation.maximumLevel
       ? null
-      : augmentation.baseCost *
+      : getSeedAugmentationCost(game, augmentationId) *
           augmentation.costGrowth ** state.loosenedBoundariesLevel
   }
 
@@ -451,7 +440,7 @@ function getUnscaledNextSeedAugmentationCost(game, augmentationId) {
   const stateKey = oneTimeAugmentationStateKeys[augmentationId]
 
   return stateKey && !state[stateKey]
-    ? SEED_AUGMENTATIONS[augmentationId].cost
+    ? getSeedAugmentationCost(game, augmentationId)
     : null
 }
 

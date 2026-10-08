@@ -45,14 +45,14 @@ function createEligibleGame(overrides = {}) {
   }
 }
 
-test('Adversity-Grown Tubers costs 7e22 and unlocks only the branch', () => {
+test('Adversity-Grown Tubers stores its final cost and unlocks only the branch', () => {
   const upgrade =
     MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS]
   const lockedGame = createEligibleGame({
     completedMisfortuneUpgrades: [],
   })
 
-  assert.equal(upgrade.cost, 7e22)
+  assert.equal(upgrade.cost, 7e23)
   assert.equal(
     isSeedAugmentationVisible(
       lockedGame,
@@ -117,7 +117,8 @@ test('Sweeter Bond has three levels with 1000x costs and +4 cap each', () => {
 test('Loosened Boundaries has four levels with 500x costs and +0.05 base each', () => {
   const augmentation =
     SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LOOSENED_BOUNDARIES]
-  const costs = [1e105, 5e107, 2.5e110, 1.25e113]
+  const costs = Array.from({ length: augmentation.maximumLevel }, (_, level) =>
+    augmentation.baseCost * augmentation.costGrowth ** level)
   let game = createEligibleGame()
 
   assert.equal(augmentation.maximumLevel, 4)
@@ -190,8 +191,8 @@ test('Restored Connections delays Sweet Potato buff decay by three buffs', () =>
     SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RESTORED_CONNECTIONS]
   const game = createEligibleGame()
 
-  assert.equal(augmentation.cost, 1e109)
-  assert.equal(getNextSeedAugmentationCost(game, augmentation.id), 1e109)
+  assert.equal(augmentation.cost, 5e112)
+  assert.equal(getNextSeedAugmentationCost(game, augmentation.id), augmentation.cost)
 
   const purchased = purchaseSeedAugmentation(
     { ...game, crops: augmentation.cost },

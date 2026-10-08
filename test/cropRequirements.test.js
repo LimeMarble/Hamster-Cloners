@@ -14,9 +14,11 @@ import {
   RABBIT_UNLOCK_IDS,
   RABBIT_UNLOCKS,
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
+  MISFORTUNE_ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   SEED_AUGMENTATION_IDS,
   SEED_AUGMENTATIONS,
   TRADE_ESTABLISHMENT_COST,
+  MISFORTUNE_TRADE_ESTABLISHMENT_COST,
   advanceGameSimulationStep,
   canUnlockCropPerfection,
   canUnlockRowDuplicators,
@@ -26,8 +28,7 @@ import {
   getBlueprintExpansionCost,
   getCapybaraDemonstrationStatus,
   getCropPerfectionCost,
-  getCropRequirement,
-  getCropRequirementMultiplier,
+  getAreaCropValue,
   getGameAreaCostMultiplier,
   getGreaterBlueprintingCost,
   getNextFloorReplicatorCost,
@@ -46,27 +47,19 @@ import {
   unlockGreaterBlueprinting,
 } from '../src/game/gameLogic.js'
 import {
-  APPLE_TREE_UNLOCK_CROP_COUNT,
-  CROP_PERFECTION_UNLOCK_CROP_COUNT,
   CROP_PERFECTIONS,
-  KNOTWEED_UNLOCK_CROP_COUNT,
-  LENTIL_UNLOCK_CROP_COUNT,
-  SUNFLOWER_UNLOCK_CROP_COUNT,
-  TURNIP_UNLOCK_CROP_COUNT,
-  WHEAT_UNLOCK_CROP_COUNT,
   getCropUnlockDescription,
-  getCropUnlockBaseRequirement,
   getCropUnlockRequirement,
 } from '../src/game/crops.js'
 import { exportGame, importGame, normalizeGame } from '../src/game/storage.js'
 import { getCachedFormattedNumber } from '../src/game/numberFormat.js'
 
 const stages = [
-  { area: 'main', demos: [], multiplier: 1 },
-  { area: 'main', demos: ['introduction', 'demonstrationOne'], multiplier: 10 },
-  { area: 'main', demos: ['introduction', 'demonstrationOne', 'misfortuneTrial'], multiplier: 100 },
-  { area: 'misfortune', demos: ['introduction', 'demonstrationOne'], multiplier: 10 },
-  { area: 'misfortune', demos: ['introduction', 'demonstrationOne', 'misfortuneTrial'], multiplier: 10 },
+  { area: 'main', demos: [] },
+  { area: 'main', demos: ['introduction', 'demonstrationOne'] },
+  { area: 'main', demos: ['introduction', 'demonstrationOne', 'misfortuneTrial'] },
+  { area: 'misfortune', demos: ['introduction', 'demonstrationOne'] },
+  { area: 'misfortune', demos: ['introduction', 'demonstrationOne', 'misfortuneTrial'] },
 ]
 
 function stageGame(stage) {
@@ -78,21 +71,17 @@ function stageGame(stage) {
   }
 }
 
-test('progression multipliers follow the active area and completed demonstrations', () => {
-  assert.equal(getCropRequirementMultiplier(), 1)
-  assert.equal(getCropRequirement(undefined, null), null)
+test('the price resolver only selects explicit area values, regardless of demonstrations', () => {
+  assert.equal(getAreaCropValue(undefined, null), null)
   for (const stage of stages) {
     const game = stageGame(stage)
-    assert.equal(getCropRequirementMultiplier(game), stage.multiplier)
-    assert.equal(getCropRequirement(game, 123), 123 * stage.multiplier)
+    assert.equal(getAreaCropValue(game, 123, 456), stage.area === 'misfortune' ? 456 : 123)
+    assert.equal(getAreaCropValue(game, 123), 123)
   }
-  const misfortune = stageGame(stages[4])
-  assert.equal(getCropRequirementMultiplier(misfortune, 'main'), 100)
-  assert.equal(getCropRequirementMultiplier({ activeArea: 'main' }, 'misfortune'), 10)
 })
 
 for (const stage of stages) {
-  const label = `${stage.area} / ${stage.multiplier}× / ${stage.demos.length} demos`
+  const label = `${stage.area} / ${stage.demos.length} demos`
 
   test(`perfection prices and purchase deductions agree in ${label}`, () => {
     const game = {
@@ -103,11 +92,10 @@ for (const stage of stages) {
     for (const perfection of Object.values(CROP_PERFECTIONS).filter(({ cost }) => cost != null)) {
       assert.equal(
         getCropPerfectionCost(perfection.id, game),
-        perfection.cost * (perfection.costCurrency === 'rabbitRelations' ? 1 : stage.multiplier) *
-          (perfection.costCurrency !== 'rabbitRelations' && perfection.cost >= 4e95 ? 500 : 1),
+        stage.area === 'misfortune' ? perfection.misfortuneCost ?? perfection.cost : perfection.cost,
       )
     }
-    const cost = CROP_PERFECTIONS.enrichingLeek.cost * stage.multiplier
+    const cost = getCropPerfectionCost('enrichingLeek', game)
     assert.equal(canUnlockCropPerfection({ ...game, crops: cost * 0.99 }, 'enrichingLeek'), false)
     const purchased = unlockCropPerfection({ ...game, crops: cost }, 'enrichingLeek')
     assert.equal(purchased.crops, 0)
@@ -116,22 +104,16 @@ for (const stage of stages) {
 
   test(`crop thresholds agree between live simulation and save restoration in ${label}`, () => {
     const game = { ...stageGame(stage), hasUnlockedRowDuplicators: true }
-    for (const [flag, base] of [
-      ['hasUnlockedTurnip', TURNIP_UNLOCK_CROP_COUNT],
-      ['hasUnlockedAppleTree', APPLE_TREE_UNLOCK_CROP_COUNT],
-      ['hasUnlockedLentil', LENTIL_UNLOCK_CROP_COUNT],
-      ['hasUnlockedKnotweed', KNOTWEED_UNLOCK_CROP_COUNT],
-      ['hasUnlockedWheat', WHEAT_UNLOCK_CROP_COUNT],
-      ['hasUnlockedSunflower', SUNFLOWER_UNLOCK_CROP_COUNT],
-      ['hasUnlockedCropPerfection', CROP_PERFECTION_UNLOCK_CROP_COUNT],
+    for (const [flag, cropId] of [
+      ['hasUnlockedTurnip', 'turnip'],
+      ['hasUnlockedAppleTree', 'appleTree'],
+      ['hasUnlockedLentil', 'lentil'],
+      ['hasUnlockedKnotweed', 'knotweed'],
+      ['hasUnlockedWheat', 'wheat'],
+      ['hasUnlockedSunflower', 'sunflower'],
+      ['hasUnlockedCropPerfection', 'cropPerfection'],
     ]) {
-      const cropId = flag === 'hasUnlockedAppleTree' ? 'appleTree'
-        : flag === 'hasUnlockedLentil' ? 'lentil'
-        : flag === 'hasUnlockedKnotweed' ? 'knotweed'
-        : flag === 'hasUnlockedWheat' ? 'wheat' : null
-      const threshold = cropId === 'wheat'
-        ? getCropUnlockRequirement(cropId, stage.area, stage.multiplier)
-        : (cropId ? getCropUnlockBaseRequirement(cropId, stage.area) : base) * stage.multiplier
+      const threshold = getCropUnlockRequirement(cropId, stage.area)
       const below = { ...game, crops: threshold * 0.99, [flag]: false }
       const reached = { ...game, crops: threshold, [flag]: false }
       assert.equal(advanceGameSimulationStep(below, 1 / 60)[flag], false, flag)
@@ -149,63 +131,64 @@ for (const stage of stages) {
     }
     const id = SEED_AUGMENTATION_IDS.LEEK_ENRICHMENT
     const augmentation = SEED_AUGMENTATIONS[id]
-    const cost = augmentation.baseCost * stage.multiplier
+    const cost = stage.area === 'misfortune' ? augmentation.misfortuneCost : augmentation.baseCost
     assert.equal(getNextSeedAugmentationCost(game, id), cost)
     assert.equal(purchaseSeedAugmentation({ ...game, crops: cost * 0.99 }, id), null)
     const purchased = purchaseSeedAugmentation({ ...game, crops: cost }, id)
     assert.equal(purchased.crops, 0)
     assert.equal(purchased.seedAugmentations.leekEnrichmentLevel, 1)
-    assert.equal(getNextSeedAugmentationCost(purchased, id), augmentation.baseCost * augmentation.costGrowth * stage.multiplier)
+    assert.equal(getNextSeedAugmentationCost(purchased, id), cost * augmentation.costGrowth)
     const diagonalId = SEED_AUGMENTATION_IDS.LEEK_DIAGONAL
-    assert.equal(getSeedAugmentationCost(game, diagonalId), SEED_AUGMENTATIONS[diagonalId].cost * stage.multiplier)
+    assert.equal(getSeedAugmentationCost(game, diagonalId), stage.area === 'misfortune'
+      ? SEED_AUGMENTATIONS[diagonalId].misfortuneCost : SEED_AUGMENTATIONS[diagonalId].cost)
     assert.equal(getNextSeedAugmentationCost({
       ...game, seedAugmentations: { ...game.seedAugmentations, leekDiagonalUnlocked: true },
     }, diagonalId), null)
   })
 }
 
-test('milestone purchases use their scaled cost, but the Row Duplicator reset remains a threshold', () => {
+test('milestone purchases use fixed area costs, but the Row Duplicator reset remains a threshold', () => {
   for (const stage of stages) {
     const game = { ...stageGame(stage), hasUnlockedSunflower: true }
-    const tradeCost = TRADE_ESTABLISHMENT_COST * stage.multiplier
+    const tradeCost = stage.area === 'misfortune' ? MISFORTUNE_TRADE_ESTABLISHMENT_COST : TRADE_ESTABLISHMENT_COST
     assert.equal(getTradeEstablishmentCost(game), tradeCost)
     assert.equal(establishTradeRelations({ ...game, crops: tradeCost * 0.99 }), null)
     assert.equal(establishTradeRelations({ ...game, crops: tradeCost }).crops, 0)
-    const rowCost = ROW_DUPLICATORS_UNLOCK_CROP_COUNT * stage.multiplier
+    const rowCost = stage.area === 'misfortune' ? MISFORTUNE_ROW_DUPLICATORS_UNLOCK_CROP_COUNT : ROW_DUPLICATORS_UNLOCK_CROP_COUNT
     assert.equal(getRowDuplicatorsUnlockCropCount(game), rowCost)
     assert.equal(canUnlockRowDuplicators({ ...game, crops: rowCost * 0.99 }), false)
     assert.equal(canUnlockRowDuplicators({ ...game, crops: rowCost }), true)
     const precursor = { ...game, activeArea: 'main', completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER] }
     const precursorCost = getGreaterBlueprintingCost(precursor)
     assert.equal(getGreaterBlueprintingCost(game), precursorCost, 'Greater Blueprinting always uses main currency')
-    assert.equal(precursorCost, GREATER_BLUEPRINTING_COST * getCropRequirementMultiplier(precursor) * 500)
+    assert.equal(precursorCost, GREATER_BLUEPRINTING_COST)
     assert.equal(unlockGreaterBlueprinting({ ...precursor, crops: precursorCost }).crops, 0)
   }
 })
 
-test('Misfortune upgrade and assembly requirements receive exactly one 10× increase', () => {
-  assert.equal(MISFORTUNE_UPGRADES.rushedStart.cost, 25_000_000 * 10)
-  assert.equal(MISFORTUNE_UPGRADES.notSoFinalSupport.cost, 1e70 * 10)
+test('Misfortune upgrade and assembly requirements are final values, with no second multiplier', () => {
+  assert.equal(MISFORTUNE_UPGRADES.rushedStart.cost, 250_000_000)
+  assert.equal(MISFORTUNE_UPGRADES.notSoFinalSupport.cost, 1e71)
   const game = stageGame(stages[4])
   const cost = MISFORTUNE_UPGRADES.rushedStart.cost
   assert.equal(purchaseMisfortuneUpgrade({ ...game, crops: cost * 0.99 }, 'rushedStart'), null)
   assert.equal(purchaseMisfortuneUpgrade({ ...game, crops: cost }, 'rushedStart').crops, 0)
   const richSoilId = SEED_AUGMENTATION_IDS.RICH_SOIL
-  assert.equal(getSeedAugmentationCost(game, richSoilId), SEED_AUGMENTATIONS[richSoilId].cost * 10)
-  assert.equal(getSeedAugmentationCost({ ...game, activeArea: 'main' }, richSoilId), SEED_AUGMENTATIONS[richSoilId].cost * 10)
-  assert.equal(CLOVER_ASSEMBLY_PART_REQUIREMENT, 7.77e58 * 10)
+  assert.equal(getSeedAugmentationCost(game, richSoilId), SEED_AUGMENTATIONS[richSoilId].cost)
+  assert.equal(getSeedAugmentationCost({ ...game, activeArea: 'main' }, richSoilId), SEED_AUGMENTATIONS[richSoilId].cost)
+  assert.equal(CLOVER_ASSEMBLY_PART_REQUIREMENT, 7.77e59)
   assert.equal(isCloverAssemblyReady({ progress: 7.77e58 }), false)
   assert.equal(isCloverAssemblyReady({ progress: CLOVER_ASSEMBLY_PART_REQUIREMENT }), true)
 })
 
-test('Demo 2 scales its Misfortune goal, not Demo 0/1 or the development-goal count', () => {
+test('demonstrations store final goals, without applying progression multipliers', () => {
   assert.equal(CAPYBARA_DEMONSTRATIONS[0].target, 2e13)
   assert.equal(CAPYBARA_DEMONSTRATIONS[1].target, 2.5e20)
-  assert.equal(CAPYBARA_DEMONSTRATIONS[2].target, MISFORTUNE_CROP_GOAL * 10)
+  assert.equal(CAPYBARA_DEMONSTRATIONS[2].target, MISFORTUNE_CROP_GOAL)
   assert.equal(CAPYBARA_DEMONSTRATIONS[3].target, 3)
   const game = stageGame(stages[3])
-  assert.equal(getCapybaraDemonstrationStatus({ ...game, crops: MISFORTUNE_CROP_GOAL }, 'misfortuneTrial').hasReachedGoal, false)
-  assert.equal(getCapybaraDemonstrationStatus({ ...game, crops: MISFORTUNE_CROP_GOAL * 10 }, 'misfortuneTrial').hasReachedGoal, true)
+  assert.equal(getCapybaraDemonstrationStatus({ ...game, crops: MISFORTUNE_CROP_GOAL * 0.99 }, 'misfortuneTrial').hasReachedGoal, false)
+  assert.equal(getCapybaraDemonstrationStatus({ ...game, crops: MISFORTUNE_CROP_GOAL }, 'misfortuneTrial').hasReachedGoal, true)
 })
 
 test('machinery, paid blueprint expansions, Rabbit relation prices and contract quantities do not scale', () => {
@@ -243,21 +226,21 @@ test('existing earned unlocks, augmentation levels and completed challenges surv
   assert.equal(restored.seedAugmentations.leekEnrichmentLevel, 3)
   assert.deepEqual(restored.capybara.completedDemonstrations, game.capybara.completedDemonstrations)
   assert.equal(restored.cloverAssembly.assembled, true)
-  assert.equal(getCropRequirementMultiplier(switchGameArea(restored, 'misfortune')), 10)
-  assert.equal(getCropRequirementMultiplier(switchGameArea(switchGameArea(restored, 'misfortune'), 'main')), 100)
+  assert.equal(getCropPerfectionCost('sweetPotato', switchGameArea(restored, 'misfortune')), 2e99)
+  assert.equal(getCropPerfectionCost('sweetPotato', switchGameArea(switchGameArea(restored, 'misfortune'), 'main')), 2e99)
 })
 
-test('the actual progress bar uses the same scaled requirement as the unlock check', () => {
+test('the actual progress bar uses the same fixed area requirement as the unlock check', () => {
   for (const stage of stages) {
     const game = {
       ...stageGame(stage), unionized: true, totalHamstersHired: 1000, hamsters: 125,
       completedBlueprintExpansions: ['firstColumn'],
       completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW, MISFORTUNE_UPGRADE_IDS.RUSHED_START],
-      crops: TURNIP_UNLOCK_CROP_COUNT * stage.multiplier * 0.5,
+      crops: getCropUnlockRequirement('turnip', stage.area) * 0.5,
     }
     const goal = getNextMajorProgressionGoal(game)
     assert.equal(goal.id, 'crop-turnip')
-    assert.equal(goal.target, TURNIP_UNLOCK_CROP_COUNT * stage.multiplier)
+    assert.equal(goal.target, getCropUnlockRequirement('turnip', stage.area))
     assert.equal(goal.progress, 0.5)
     const corn = MAJOR_PROGRESSION_GOALS.find(({ id }) => id === 'crop-corn')
     assert.equal(corn.getTarget(game), stage.area === 'misfortune'
@@ -271,14 +254,15 @@ let Inventions
 let LeekAugmentations
 let CloverAssembly
 before(async () => {
-  server = await createServer({ logLevel: 'silent', server: { middlewareMode: true, hmr: false }, appType: 'custom' })
+  server = await createServer({ logLevel: 'silent', resolve: { preserveSymlinks: true },
+    server: { middlewareMode: true, hmr: false }, appType: 'custom' })
   ;({ Inventions } = await server.ssrLoadModule('/src/tabs/Inventions.jsx'))
   ;({ LeekAugmentations } = await server.ssrLoadModule('/src/tabs/LeekAugmentations.jsx'))
   ;({ CloverAssembly } = await server.ssrLoadModule('/src/tabs/CloverAssembly.jsx'))
 })
 after(async () => { await server?.close() })
 
-test('Inventions, augmentation cards and crop palette descriptions display scaled costs', () => {
+test('Inventions, augmentation cards and crop palette descriptions display fixed final costs', () => {
   for (const stage of stages.slice(1)) {
     const game = { ...stageGame(stage), hasUnlockedCropPerfection: true }
     const format = (value) => getCachedFormattedNumber(value, 0)
@@ -290,7 +274,7 @@ test('Inventions, augmentation cards and crop palette descriptions display scale
     }
     const augmentationHtml = renderToStaticMarkup(createElement(LeekAugmentations, { game }))
     assert.ok(augmentationHtml.includes(format(getSeedAugmentationCost(game, 'leekDiagonal'))))
-    assert.equal(getCropUnlockDescription('sunflower', stage.area, false, game), `Unlocks at ${format(SUNFLOWER_UNLOCK_CROP_COUNT * stage.multiplier)} Crops`)
+    assert.equal(getCropUnlockDescription('sunflower', stage.area, false, game), `Unlocks at ${format(getCropUnlockRequirement('sunflower', stage.area))} Crops`)
     const precursorHtml = renderToStaticMarkup(createElement(CloverAssembly, {
       game: { ...game, completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER] },
     }))

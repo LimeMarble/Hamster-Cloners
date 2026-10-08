@@ -9,12 +9,13 @@ import { getFieldsPlanted } from './cropProduction.js'
 import { getRabbitRelationsMultiplier } from './cropEffects.js'
 import { getFortuneModifiers } from './fortuneLogic.js'
 import { CLOVER_ASSEMBLY_RABBIT_UNLOCK_ID } from './cloverAssemblyLogic.js'
-import { getCropRequirement } from './cropRequirements.js'
+import { getAreaCropValue } from './cropRequirements.js'
 import { hasMisfortuneUpgrade, MISFORTUNE_UPGRADE_IDS } from './misfortuneUpgrades.js'
 
 export const TRADE_ESTABLISHMENT_COST = 1e57
+export const MISFORTUNE_TRADE_ESTABLISHMENT_COST = 1e58
 export function getTradeEstablishmentCost(game) {
-  return getCropRequirement(game, TRADE_ESTABLISHMENT_COST)
+  return getAreaCropValue(game, TRADE_ESTABLISHMENT_COST, MISFORTUNE_TRADE_ESTABLISHMENT_COST)
 }
 export const RABBIT_CONTRACT_MIN_FACTOR = 1e7
 export const RABBIT_CONTRACT_MAX_FACTOR = 5e7

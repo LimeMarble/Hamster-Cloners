@@ -26,6 +26,7 @@ import {
   LeechingVineLines,
 } from './LeechingVineEditor.jsx'
 import { BlueprintBlocks } from './BlueprintBlocks.jsx'
+import { BlueprintPlacementControls, BlueprintSelectionToolbar } from './BlueprintPlacementControls.jsx'
 
 function BlueprintEditContent({
   game,
@@ -159,7 +160,7 @@ function BlueprintEditContent({
         </div>
 
         <div
-          className={`blueprint-editor-overview ${showMonocropLimit && !hasSelectedRootTunnel && !hasSelectedLeechingVine ? 'blueprint-editor-overview-sticky' : ''}`}
+          className={`blueprint-editor-overview ${showMonocropLimit && !hasSelectedRootTunnel && !hasSelectedLeechingVine && !blueprintBlockEditor.isSelecting && !blueprintBlockEditor.activeBlock ? 'blueprint-editor-overview-sticky' : ''}`}
         >
           {showMonocropLimit ? (
             <MonocropStatus
@@ -225,6 +226,9 @@ function BlueprintEditContent({
             </>
           ) : null}
         </p>
+
+        <BlueprintSelectionToolbar editor={blueprintBlockEditor} />
+        <BlueprintPlacementControls game={game} editor={blueprintBlockEditor} />
 
         {pendingMirrorCornPlacement ? (
           <p className="mirror-corn-notice">
@@ -354,10 +358,12 @@ function BlueprintEditContent({
                     aria-label={
                       blueprintBlockEditor.isSelecting
                         ? blueprintBlockEditor.selectionStartIndex === null
-                          ? 'Use this tile as the first block corner and placement anchor'
-                          : 'Use this tile as the opposite block corner'
+                          ? 'Use this tile as the first selection corner and placement anchor'
+                          : 'Use this tile as the opposite selection corner'
                         : blueprintBlockEditor.activeBlock
-                          ? 'Position this blueprint block using this tile as its anchor'
+                          ? blueprintBlockEditor.isUnsavedSelection
+                            ? 'Position the selected crops using this tile as its anchor'
+                            : 'Position this blueprint block using this tile as its anchor'
                       : isPendingMirrorCornTarget
                         ? 'Assign this tile as the Mirror Corn target'
                         : isValidVinePath
@@ -647,6 +653,14 @@ function areBlueprintEditorPropsEqual(previous, next) {
       next.blueprintBlockEditor.selectionIndexSet &&
     previous.blueprintBlockEditor.isSelecting ===
       next.blueprintBlockEditor.isSelecting &&
+    previous.blueprintBlockEditor.isUnsavedSelection ===
+      next.blueprintBlockEditor.isUnsavedSelection &&
+    previous.blueprintBlockEditor.canSaveSelection ===
+      next.blueprintBlockEditor.canSaveSelection &&
+    previous.blueprintBlockEditor.overwriteBlockId ===
+      next.blueprintBlockEditor.overwriteBlockId &&
+    previous.blueprintBlockEditor.activeBlockSourceId ===
+      next.blueprintBlockEditor.activeBlockSourceId &&
     previous.blueprintBlockEditor.activeBlock ===
       next.blueprintBlockEditor.activeBlock &&
     previous.blueprintBlockEditor.placementMode ===

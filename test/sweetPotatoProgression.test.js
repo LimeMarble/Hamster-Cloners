@@ -17,6 +17,7 @@ import {
 let server, Misfortune, MajorProgressionBar
 before(async () => {
   server = await createServer({ logLevel: 'silent',
+    resolve: { preserveSymlinks: true },
     server: { middlewareMode: true, hmr: false }, appType: 'custom' })
   ;({ Misfortune } = await server.ssrLoadModule('/src/tabs/Misfortune.jsx'))
   ;({ MajorProgressionBar } = await server.ssrLoadModule('/src/tabs/MajorProgressionBar.jsx'))

@@ -27,12 +27,8 @@ import {
 } from './gameLogic.js'
 import {
   CROP_PERFECTION_IDS,
-  CROP_PERFECTION_UNLOCK_CROP_COUNT,
-  getCropUnlockBaseRequirement,
   getCropUnlockRequirement,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
-  SUNFLOWER_UNLOCK_CROP_COUNT,
-  TURNIP_UNLOCK_CROP_COUNT,
   hasUnlockedCorn,
   isCropPerfectionTemporarilyUnavailable,
   isCropTemporarilyUnavailable,
@@ -48,7 +44,6 @@ import {
   RUSHED_START_TOTAL_DURATION_SECONDS,
 } from './misfortuneUpgrades.js'
 import { normalizeCloverAssemblyState } from './cloverAssemblyLogic.js'
-import { getCropRequirementMultiplier } from './cropRequirements.js'
 
 export const DEFAULT_SAVE_KEY = 'hamster-cloners-save-v1'
 export const SAVE_KEY =
@@ -95,7 +90,7 @@ function toNonNegativeInteger(value, fallback) {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback
 }
 
-function getAreaCropUnlocks(rawState, includeStoredUnlocks = true, requirementMultiplier = 1, areaId = GAME_AREA_IDS.MAIN) {
+function getAreaCropUnlocks(rawState, includeStoredUnlocks = true, areaId = GAME_AREA_IDS.MAIN) {
   const crops = toNonNegativeNumber(rawState?.crops, 0)
   const hasStoredUnlock = (field) =>
     includeStoredUnlocks && rawState?.[field] === true
@@ -113,24 +108,24 @@ function getAreaCropUnlocks(rawState, includeStoredUnlocks = true, requirementMu
     hasUnlockedTurnip:
       hasStoredUnlock('hasUnlockedTurnip') ||
       (includeStoredUnlocks && rawState?.hasUnlockedPumpkin === true) ||
-      crops >= TURNIP_UNLOCK_CROP_COUNT * requirementMultiplier,
+      crops >= getCropUnlockRequirement('turnip', areaId),
     hasUnlockedAppleTree:
       hasStoredUnlock('hasUnlockedAppleTree') ||
       hasLegacyAppleTreeUnlock ||
-      crops >= getCropUnlockBaseRequirement('appleTree', areaId) * requirementMultiplier,
+      crops >= getCropUnlockRequirement('appleTree', areaId),
     hasUnlockedLentil:
       hasStoredUnlock('hasUnlockedLentil') ||
-      crops >= getCropUnlockBaseRequirement('lentil', areaId) * requirementMultiplier,
+      crops >= getCropUnlockRequirement('lentil', areaId),
     hasUnlockedKnotweed:
       hasStoredUnlock('hasUnlockedKnotweed') ||
-      crops >= getCropUnlockBaseRequirement('knotweed', areaId) * requirementMultiplier,
+      crops >= getCropUnlockRequirement('knotweed', areaId),
     hasUnlockedWheat:
       hasStoredUnlock('hasUnlockedWheat') ||
       (rawState?.hasUnlockedRowDuplicators === true &&
-        crops >= getCropUnlockRequirement('wheat', areaId, requirementMultiplier)),
+        crops >= getCropUnlockRequirement('wheat', areaId)),
     hasUnlockedSunflower:
       hasStoredUnlock('hasUnlockedSunflower') ||
-      crops >= SUNFLOWER_UNLOCK_CROP_COUNT * requirementMultiplier,
+      crops >= getCropUnlockRequirement('sunflower', areaId),
   }
 }
 
@@ -179,7 +174,6 @@ export function normalizeGame(rawGame) {
     ? GAME_AREA_IDS.MISFORTUNE
     : GAME_AREA_IDS.MAIN
   const capybara = normalizeCapybaraState(rawGame.capybara)
-  const cropRequirementMultiplier = getCropRequirementMultiplier({ activeArea, capybara })
   const completedMisfortuneUpgrades = normalizeMisfortuneUpgrades(
     rawGame.completedMisfortuneUpgrades,
   )
@@ -190,12 +184,11 @@ export function normalizeGame(rawGame) {
   const legacySharedAreaCropUnlocks = getAreaCropUnlocks(
     rawGame,
     true,
-    getCropRequirementMultiplier({ capybara }, GAME_AREA_IDS.MAIN),
+    GAME_AREA_IDS.MAIN,
   )
   const activeAreaCropUnlocks = getAreaCropUnlocks(
     rawGame,
     hasSeparatedAreaCropUnlocks || activeArea === GAME_AREA_IDS.MAIN,
-    cropRequirementMultiplier,
     activeArea,
   )
   const hasUnlockedSunflower =
@@ -422,7 +415,7 @@ export function normalizeGame(rawGame) {
       hasUnlockedRootTunnel,
     hasUnlockedCropPerfection:
       rawGame.hasUnlockedCropPerfection === true ||
-      currentCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT * cropRequirementMultiplier,
+      currentCrops >= getCropUnlockRequirement('cropPerfection', activeArea),
     hasUnlockedRowDuplicators: rawGame.hasUnlockedRowDuplicators === true,
     rowDuplicators: toNonNegativeInteger(rawGame.rowDuplicators, 0),
     hasUnlockedFloorReplicators:

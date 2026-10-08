@@ -61,6 +61,8 @@ export function useBlueprintBlocks({
 }) {
   const [selectionStartIndex, setSelectionStartIndex] = useState(null)
   const [selectionHoverIndex, setSelectionHoverIndex] = useState(null)
+  const [selectedRegion, setSelectedRegion] = useState(null)
+  const [isSelecting, setIsSelecting] = useState(false)
   const [selectionName, setSelectionName] = useState('')
   const [overwriteBlockId, setOverwriteBlockId] = useState(null)
   const [activeBlock, setActiveBlock] = useState(null)
@@ -76,23 +78,24 @@ export function useBlueprintBlocks({
   const blocks = Array.isArray(game.blueprintBlocks)
     ? game.blueprintBlocks
     : EMPTY_BLUEPRINT_BLOCKS
-  const isSelecting = overwriteBlockId !== null || selectionStartIndex !== null
-  const isAwaitingFirstCorner =
-    overwriteBlockId !== null && selectionStartIndex === null ||
-    status?.mode === 'select-new' && selectionStartIndex === null
+  const isAwaitingFirstCorner = isSelecting && selectionStartIndex === null
+  const isUnsavedSelection = activeBlock !== null && activeBlockSourceId === null
 
   const selectionIndexes = useMemo(() => {
-    if (selectionStartIndex === null) return []
+    const firstIndex = selectionStartIndex ?? selectedRegion?.firstIndex
+    if (firstIndex === undefined || firstIndex === null) return []
     try {
       return getBlueprintSelectionIndexes(
         game.blueprint,
-        selectionStartIndex,
-        selectionHoverIndex ?? selectionStartIndex,
+        firstIndex,
+        selectionStartIndex !== null
+          ? selectionHoverIndex ?? firstIndex
+          : selectedRegion.secondIndex,
       )
     } catch {
       return []
     }
-  }, [game.blueprint, selectionHoverIndex, selectionStartIndex])
+  }, [game.blueprint, selectedRegion, selectionHoverIndex, selectionStartIndex])
   const selectionIndexSet = useMemo(
     () => new Set(selectionIndexes),
     [selectionIndexes],
@@ -179,7 +182,7 @@ export function useBlueprintBlocks({
       setHoverAnchorIndex(null)
       setStatus({
         type: 'info',
-        message: 'Block transformed. Choose its position.',
+        message: 'Layout transformed. Choose its position.',
       })
     }
 
@@ -200,6 +203,8 @@ export function useBlueprintBlocks({
   function clearInteraction() {
     setSelectionStartIndex(null)
     setSelectionHoverIndex(null)
+    setSelectedRegion(null)
+    setIsSelecting(false)
     setOverwriteBlockId(null)
     setActiveBlock(null)
     setActiveBlockSourceId(null)
@@ -216,34 +221,24 @@ export function useBlueprintBlocks({
     const block = blockId
       ? blocks.find(({ id }) => id === blockId)
       : null
-    if (!block && blocks.length >= MAX_SAVED_BLUEPRINT_BLOCKS) {
-      setStatus({ type: 'error', message: 'The block library is full.' })
+    if (blockId && !block) {
+      setStatus({ type: 'error', message: 'This saved block no longer exists.' })
       return false
     }
 
     clearInteraction()
+    setIsSelecting(true)
     setOverwriteBlockId(block?.id ?? null)
-    if (block) setSelectionName(block.name)
+    setSelectionName(block?.name ?? '')
     setStatus({
       type: 'info',
-      mode: block ? 'select-overwrite' : 'select-new',
-      message: 'Select the first corner of the block.',
+      message: 'Select the first corner of the crop selection.',
     })
     return true
   }
 
   function finishSelection(secondIndex) {
     const currentGame = gameRef.current
-    const currentBlocks = normalizeBlueprintBlocks(currentGame.blueprintBlocks)
-    const existingBlock = overwriteBlockId
-      ? currentBlocks.find(({ id }) => id === overwriteBlockId)
-      : null
-    const blockId = existingBlock?.id ?? createBlockId()
-    const name = getUniqueBlockName(
-      selectionName || existingBlock?.name,
-      currentBlocks,
-      existingBlock?.id,
-    )
 
     try {
       const block = createBlueprintBlockFromSelection(
@@ -251,33 +246,53 @@ export function useBlueprintBlocks({
         selectionStartIndex,
         secondIndex,
         {
-          id: blockId,
-          name,
+          id: 'temporary-selection',
+          name: 'Selected crops',
           completedCropPerfections: currentGame.completedCropPerfections,
           seedAugmentations: currentGame.seedAugmentations,
         },
       )
-      commitBlockLibrary((storedBlocks) =>
-        existingBlock
-          ? storedBlocks.map((storedBlock) =>
-              storedBlock.id === existingBlock.id ? block : storedBlock,
-            )
-          : [...storedBlocks, block],
-      )
+      setActiveBlock(block)
+      setActiveBlockSourceId(null)
+      setSelectedRegion({ firstIndex: selectionStartIndex, secondIndex })
+      setIsSelecting(false)
       setStatus({
-        type: 'success',
-        message: `${block.name} saved as a ${block.rows}×${block.columns} block.`,
+        type: 'info',
+        message: 'Selection ready. Transform or place it, or save it as a block.',
       })
       setSelectionStartIndex(null)
       setSelectionHoverIndex(null)
-      setOverwriteBlockId(null)
-      setSelectionName('')
     } catch (error) {
       setStatus({
         type: 'error',
-        message: error instanceof Error ? error.message : 'The block could not be saved.',
+        message: error instanceof Error ? error.message : 'The crops could not be selected.',
       })
     }
+  }
+
+  function saveSelectionAsBlock() {
+    if (!isUnsavedSelection) return false
+    const currentBlocks = normalizeBlueprintBlocks(gameRef.current.blueprintBlocks)
+    const existingBlock = overwriteBlockId
+      ? currentBlocks.find(({ id }) => id === overwriteBlockId)
+      : null
+    if (!existingBlock && currentBlocks.length >= MAX_SAVED_BLUEPRINT_BLOCKS) {
+      setStatus({ type: 'error', message: 'The block library is full. The selection can still be placed.' })
+      return false
+    }
+    const id = existingBlock?.id ?? createBlockId()
+    const name = getUniqueBlockName(selectionName || existingBlock?.name, currentBlocks, existingBlock?.id)
+    const block = normalizeBlueprintBlock({ ...activeBlock, id, name }, id)
+    commitBlockLibrary((storedBlocks) => existingBlock
+      ? storedBlocks.map((storedBlock) => storedBlock.id === id ? block : storedBlock)
+      : [...storedBlocks, block])
+    setActiveBlock(block)
+    setActiveBlockSourceId(id)
+    setSelectedRegion(null)
+    setOverwriteBlockId(null)
+    setSelectionName('')
+    setStatus({ type: 'success', message: `${name} saved as a ${block.rows}×${block.columns} block.` })
+    return true
   }
 
   function handlePlotClick(index) {
@@ -287,7 +302,7 @@ export function useBlueprintBlocks({
       setStatus({ type: 'info', message: 'Select the opposite corner.' })
       return true
     }
-    if (selectionStartIndex !== null) {
+    if (isSelecting && selectionStartIndex !== null) {
       finishSelection(index)
       return true
     }
@@ -296,7 +311,7 @@ export function useBlueprintBlocks({
       setHoverAnchorIndex(index)
       setStatus({
         type: 'info',
-        message: 'Preview pinned. Confirm placement in the block panel.',
+        message: 'Preview pinned. Confirm placement in the layout panel.',
       })
       return true
     }
@@ -304,7 +319,7 @@ export function useBlueprintBlocks({
   }
 
   function handleTileHover(index) {
-    if (selectionStartIndex !== null) {
+    if (isSelecting && selectionStartIndex !== null) {
       setSelectionHoverIndex(index)
       return true
     } else if (activeBlock && pinnedAnchorIndex === null) {
@@ -333,7 +348,7 @@ export function useBlueprintBlocks({
       setActiveBlock((block) => transformBlueprintBlock(block, transform))
       setPinnedAnchorIndex(null)
       setHoverAnchorIndex(null)
-      setStatus({ type: 'info', message: 'Block transformed. Choose its position.' })
+      setStatus({ type: 'info', message: 'Layout transformed. Choose its position.' })
     } catch (error) {
       setStatus({
         type: 'error',
@@ -351,6 +366,7 @@ export function useBlueprintBlocks({
       return false
     }
     commitBlueprint(placementPreview.blueprint)
+    setSelectedRegion(null)
     setPinnedAnchorIndex(null)
     setHoverAnchorIndex(null)
     setStatus({
@@ -453,11 +469,16 @@ export function useBlueprintBlocks({
 
   return {
     blocks,
+    unlockedCropIds,
     libraryEntries,
     selectionName,
-    selectionStartIndex,
+    selectionStartIndex: selectionStartIndex ?? selectedRegion?.firstIndex ?? null,
     selectionIndexSet,
-    isSelecting: isSelecting || isAwaitingFirstCorner,
+    isSelecting,
+    isUnsavedSelection,
+    overwriteBlockId,
+    canSaveSelection: isUnsavedSelection &&
+      (overwriteBlockId !== null || blocks.length < MAX_SAVED_BLUEPRINT_BLOCKS),
     activeBlock,
     activeBlockSourceId,
     placementMode,
@@ -468,6 +489,7 @@ export function useBlueprintBlocks({
     status,
     onSelectionNameChange: setSelectionName,
     onStartSelection: () => beginSelection(),
+    onSaveSelectionAsBlock: saveSelectionAsBlock,
     onCancelInteraction: cancelInteraction,
     onUseBlock: useBlock,
     onOverwriteBlock: beginSelection,

@@ -3,7 +3,6 @@ import {
   GAME_AREA_IDS,
   MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
 } from './gameConfig.js'
-import { getCropRequirement } from './cropRequirements.js'
 import {
   getUnlockedCropIds,
   getVisibleCropIds,
@@ -30,11 +29,11 @@ export const MISFORTUNE_UPGRADE_IDS = Object.freeze({
   NOT_SO_FINAL_SUPPORT: MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
 })
 
-const BASE_MISFORTUNE_UPGRADES = Object.freeze({
+export const MISFORTUNE_UPGRADES = Object.freeze({
   [MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
     name: 'Unfortunate Row',
-    cost: 250_000,
+    cost: 2_500_000,
     cropProductionMultiplier: 0.8,
   }),
   [MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN]: Object.freeze({
@@ -42,13 +41,13 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
     name: 'Fortunate Column',
     requiredCropPerfectionId: 'sweetPotato',
     requiredMisfortuneUpgradeId: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
-    cost: 7.77e50,
+    cost: 7.77e51,
     cropProductionMultiplier: 1.25,
   }),
   [MISFORTUNE_UPGRADE_IDS.RUSHED_START]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.RUSHED_START,
     name: 'Rushed Start',
-    cost: 25_000_000,
+    cost: 250_000_000,
     boostDurationSeconds: 60,
     boostMultiplier: 10,
     penaltyDurationSeconds: 60,
@@ -58,13 +57,13 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
     name: 'Adversity-Grown Tubers',
     requiredCropPerfectionId: 'sweetPotato',
-    cost: 7e22,
+    cost: 7e23,
   }),
   [MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
     name: 'Burdened Foundations',
     requiredCropPerfectionId: 'sweetPotato',
-    cost: 4.44e29,
+    cost: 4.44e30,
     passiveEffectBonusPerTier: 0.01,
     floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
   }),
@@ -72,7 +71,7 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
     name: 'Hunt for Something Greater',
     requiredCropPerfectionId: 'sweetPotato',
-    cost: 7.77e40,
+    cost: 7.77e41,
     secondsPerTimeMultiplier: 60,
     maximumTimeMultiplier: 10,
   }),
@@ -81,41 +80,30 @@ const BASE_MISFORTUNE_UPGRADES = Object.freeze({
     name: 'Nourishing Misery',
     requiredCropPerfectionId: 'sweetPotato',
     requiredMisfortuneUpgradeId: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
-    cost: 2e37,
+    cost: 2e53,
   }),
   [MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
     name: 'Final Support',
     requiredCropPerfectionId: 'sweetPotato',
     requiredMisfortuneUpgradeId: MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
-    cost: 2.5e62,
+    cost: 2.5e63,
     passiveEffectBonusPerTier: 0.002,
     floorReplicatorsPerTier: FLOOR_REPLICATOR_COST_TIER_SIZE,
   }),
   [MISFORTUNE_UPGRADE_IDS.OILY_TREATS]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.OILY_TREATS,
     name: 'Oily Treats',
-    // Upgrade prices receive the existing Misfortune ×10 requirement factor.
-    cost: 1.8e11,
+    cost: 1.8e12,
   }),
   [MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT]: Object.freeze({
     id: MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
     name: 'Not-So-Final Support',
     requiredCropPerfectionId: 'sweetPotato',
     requiresFiveLeafClover: true,
-    cost: 1e70,
+    cost: 1e71,
   }),
 })
-
-export const MISFORTUNE_UPGRADES = Object.freeze(Object.fromEntries(
-  Object.entries(BASE_MISFORTUNE_UPGRADES).map(([id, upgrade]) => [
-    id,
-    Object.freeze({
-      ...upgrade,
-      cost: getCropRequirement(undefined, upgrade.cost, GAME_AREA_IDS.MISFORTUNE),
-    }),
-  ]),
-))
 
 export const RUSHED_START_TOTAL_DURATION_SECONDS =
   MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.RUSHED_START]

@@ -10,12 +10,8 @@ import {
   getRowDuplicatorExternalMultiplier,
 } from './cropProduction.js'
 import {
-  CROP_PERFECTION_UNLOCK_CROP_COUNT,
-  getCropUnlockBaseRequirement,
   getCropUnlockRequirement,
   ROOT_TUNNEL_UNLOCK_CROP_COUNT,
-  SUNFLOWER_UNLOCK_CROP_COUNT,
-  TURNIP_UNLOCK_CROP_COUNT,
   hasUnlockedCorn,
 } from './crops.js'
 import { advanceFortuneState, getFortuneModifiers } from './fortuneLogic.js'
@@ -45,7 +41,6 @@ import {
   isFloorReplicatorSupportModeActive,
 } from './misfortuneUpgrades.js'
 import { advanceCloverAssemblyState } from './cloverAssemblyLogic.js'
-import { getCropRequirementMultiplier } from './cropRequirements.js'
 import { advanceFalseStartProgress, awardAchievements } from './achievementLogic.js'
 import { getAchievementHamsterMultiplier, getOilyTreatsFloorMultiplier } from './achievementState.js'
 
@@ -232,14 +227,13 @@ export function advanceGameSimulationStep(
   const hasUnlockedRootTunnel =
     currentGame.hasUnlockedRootTunnel ||
     nextCrops >= ROOT_TUNNEL_UNLOCK_CROP_COUNT
-  const cropRequirementMultiplier = getCropRequirementMultiplier(currentGame)
   const hasUnlockedWheat =
     currentGame.hasUnlockedWheat ||
     (currentGame.hasUnlockedRowDuplicators === true &&
-      nextCrops >= getCropUnlockRequirement('wheat', currentGame.activeArea, cropRequirementMultiplier))
+      nextCrops >= getCropUnlockRequirement('wheat', currentGame.activeArea))
   const hasUnlockedSunflower =
     currentGame.hasUnlockedSunflower ||
-    nextCrops >= SUNFLOWER_UNLOCK_CROP_COUNT * cropRequirementMultiplier
+    nextCrops >= getCropUnlockRequirement('sunflower', currentGame.activeArea)
   const currentBlueprintSlots =
     Array.isArray(currentGame.blueprintSlots) &&
     currentGame.blueprintSlots.length > 0
@@ -275,22 +269,22 @@ export function advanceGameSimulationStep(
     hasUnlockedCorn: hasUnlockedCorn(currentGame, nextCrops),
     hasUnlockedTurnip:
       currentGame.hasUnlockedTurnip ||
-      nextCrops >= TURNIP_UNLOCK_CROP_COUNT * cropRequirementMultiplier,
+      nextCrops >= getCropUnlockRequirement('turnip', currentGame.activeArea),
     hasUnlockedAppleTree:
       currentGame.hasUnlockedAppleTree ||
-      nextCrops >= getCropUnlockBaseRequirement('appleTree', currentGame.activeArea) * cropRequirementMultiplier,
+      nextCrops >= getCropUnlockRequirement('appleTree', currentGame.activeArea),
     hasUnlockedLentil:
       currentGame.hasUnlockedLentil ||
-      nextCrops >= getCropUnlockBaseRequirement('lentil', currentGame.activeArea) * cropRequirementMultiplier,
+      nextCrops >= getCropUnlockRequirement('lentil', currentGame.activeArea),
     hasUnlockedKnotweed:
       currentGame.hasUnlockedKnotweed ||
-      nextCrops >= getCropUnlockBaseRequirement('knotweed', currentGame.activeArea) * cropRequirementMultiplier,
+      nextCrops >= getCropUnlockRequirement('knotweed', currentGame.activeArea),
     hasUnlockedWheat,
     hasUnlockedRootTunnel,
     hasUnlockedSunflower,
     hasUnlockedCropPerfection:
       currentGame.hasUnlockedCropPerfection ||
-      nextCrops >= CROP_PERFECTION_UNLOCK_CROP_COUNT * cropRequirementMultiplier,
+      nextCrops >= getCropUnlockRequirement('cropPerfection', currentGame.activeArea),
     manatees: advanceWetlandsConnectionState(
       advanceManateeSurveyState(
         currentGame.manatees,

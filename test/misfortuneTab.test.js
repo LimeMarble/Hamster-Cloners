@@ -4,15 +4,17 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { createServer } from 'vite'
 import {
-  CAPYBARA_DEMONSTRATION_IDS, MISFORTUNE_UPGRADES,
+  CAPYBARA_DEMONSTRATION_IDS, MAJOR_PROGRESSION_GOALS, MISFORTUNE_UPGRADES,
   canUnlockMisfortuneUpgrade, createInitialGame, purchaseMisfortuneUpgrade,
   switchGameArea, isMisfortuneUpgradeVisible,
 } from '../src/game/gameLogic.js'
 import { exportGame, importGame } from '../src/game/storage.js'
+import { getCachedFormattedNumber } from '../src/game/numberFormat.js'
 
 let server, Misfortune, GameNavigation, useGameDerivedState
 before(async () => {
   server = await createServer({ logLevel: 'silent',
+    resolve: { preserveSymlinks: true },
     server: { middlewareMode: true, hmr: false }, appType: 'custom' })
   ;({ Misfortune } = await server.ssrLoadModule('/src/tabs/Misfortune.jsx'))
   ;({ GameNavigation } = await server.ssrLoadModule('/src/tabs/GameNavigation.jsx'))
@@ -128,7 +130,7 @@ test('Hunt precedes Nourishing Misery in both purchase progression and the page'
   const game = { ...createInitialGame(), activeArea: 'misfortune', crops: 1e200,
     completedCropPerfections: ['sweetPotato'] }
   assert.equal(MISFORTUNE_UPGRADES.huntForSomethingGreater.cost, 7.77e41)
-  assert.equal(MISFORTUNE_UPGRADES.nourishingMisery.cost, 2e38)
+  assert.equal(MISFORTUNE_UPGRADES.nourishingMisery.cost, 2e53)
   assert.equal(canUnlockMisfortuneUpgrade(game, 'huntForSomethingGreater'), true)
   assert.equal(isMisfortuneUpgradeVisible(game, 'nourishingMisery'), false)
   assert.equal(canUnlockMisfortuneUpgrade(game, 'nourishingMisery'), false)
@@ -160,4 +162,29 @@ test('older saves keep an already purchased Nourishing Misery even without Hunt'
   const markup = renderToStaticMarkup(createElement(Misfortune,
     upgradeProps({ hasHuntForSomethingGreater: false, hasNourishingMisery: true })))
   assert.match(markup, /Nourishing Misery/)
+})
+
+test('Nourishing Misery charges and displays 2e53 Crops, matching its progression goal', () => {
+  const game = { ...createInitialGame(), activeArea: 'misfortune',
+    completedCropPerfections: ['sweetPotato'],
+    completedMisfortuneUpgrades: ['huntForSomethingGreater'], crops: 2e53 }
+  const below = { ...game, crops: 1.99e53 }
+  assert.equal(canUnlockMisfortuneUpgrade(below, 'nourishingMisery'), false)
+  assert.equal(purchaseMisfortuneUpgrade(below, 'nourishingMisery'), null)
+  assert.equal(canUnlockMisfortuneUpgrade(game, 'nourishingMisery'), true)
+  const purchased = purchaseMisfortuneUpgrade(game, 'nourishingMisery')
+  assert.ok(purchased.completedMisfortuneUpgrades.includes('nourishingMisery'))
+  assert.equal(purchased.crops, 0)
+  const goal = MAJOR_PROGRESSION_GOALS.find(({ id }) =>
+    id === 'misfortune-upgrade-nourishingMisery')
+  assert.equal(goal.target, 2e53)
+
+  const markup = renderToStaticMarkup(createElement(Misfortune, upgradeProps({
+    isMisfortuneAreaActive: true, canUnlockNourishingMisery: false,
+  })))
+  const card = [...markup.matchAll(/<article class="misfortune-upgrade-card">([\s\S]*?)<\/article>/g)]
+    .map(([, content]) => content)
+    .find((content) => content.includes('<h2>Nourishing Misery</h2>'))
+  const displayedCost = getCachedFormattedNumber(2e53)
+  assert.equal(card.split(displayedCost).length - 1, 2)
 })

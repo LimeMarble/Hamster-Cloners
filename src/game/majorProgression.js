@@ -8,7 +8,6 @@ import {
   SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
   hasUnlockedSoybean,
   hasUnlockedCorn,
-  getCropUnlockBaseRequirement,
   getCropUnlockRequirement,
   MISFORTUNE_CORN_UNLOCK_CROP_COUNT,
   hasVisitedMisfortune,
@@ -33,6 +32,7 @@ import {
 import {
   RABBIT_UNLOCK_IDS,
   TRADE_ESTABLISHMENT_COST,
+  getTradeEstablishmentCost,
   hasRabbitUnlock,
 } from './tradeLogic.js'
 import {
@@ -45,8 +45,7 @@ import {
 } from './capybaraLogic.js'
 import { getCompletedManateeDevelopmentGoalCount } from './manateeState.js'
 import { getMisfortuneAreaCrops } from './areaLogic.js'
-import { getCropPerfectionCost, isCropPerfectionVisible } from './blueprintLogic.js'
-import { getCropRequirement, getCropRequirementMultiplier } from './cropRequirements.js'
+import { getCropPerfectionCost, getRowDuplicatorsUnlockCropCount, isCropPerfectionVisible } from './blueprintLogic.js'
 import {
   hasRichSoilAugmentation,
   SEED_AUGMENTATIONS,
@@ -86,8 +85,7 @@ function createCropGoal({
   isComplete,
   getCurrent = (game) => game.crops,
   requiresAction = false,
-  scaleRequirement = unit === 'Crops',
-  getTarget = (game) => scaleRequirement ? getCropRequirement(game, target) : target,
+  getTarget = () => target,
 }) {
   return {
     id,
@@ -211,7 +209,7 @@ export const MAJOR_PROGRESSION_GOALS = [
       (game.activeArea !== GAME_AREA_IDS.MISFORTUNE && hasCompletedExpansion(game, 'firstColumn')),
     getCurrent: (game) => game.crops,
     getTarget: (game) => game.activeArea === GAME_AREA_IDS.MISFORTUNE
-      ? getCropRequirement(game, MISFORTUNE_CORN_UNLOCK_CROP_COUNT)
+      ? MISFORTUNE_CORN_UNLOCK_CROP_COUNT
       : FIRST_COLUMN_EXPANSION_COST,
     getDescription: (game) => game.activeArea === GAME_AREA_IDS.MISFORTUNE
       ? 'Reach the Crop requirement to unlock Corn in Misfortune.'
@@ -252,6 +250,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'crop-turnip',
     title: 'Unlock Turnip',
     target: TURNIP_UNLOCK_CROP_COUNT,
+    getTarget: (game) => getCropUnlockRequirement('turnip', game.activeArea),
     description: 'Reach the Crop threshold to permanently unlock Turnip.',
     isComplete: (game) => game.hasUnlockedTurnip === true,
   }),
@@ -260,7 +259,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     category: 'Milestone',
     title: 'Unlock Crop Perfection',
     target: CROP_PERFECTION_UNLOCK_CROP_COUNT,
-    getTarget: (game) => getCropRequirement(game, CROP_PERFECTION_UNLOCK_CROP_COUNT),
+    getTarget: (game) => getCropUnlockRequirement('cropPerfection', game.activeArea),
     unit: 'Crops',
     description:
       'Reach the Crop threshold to reveal permanent Crop Perfections.',
@@ -291,7 +290,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'crop-apple-tree',
     title: 'Unlock Apple Sapling',
     target: APPLE_TREE_UNLOCK_CROP_COUNT,
-    getTarget: (game) => getCropRequirement(game, getCropUnlockBaseRequirement('appleTree', game.activeArea)),
+    getTarget: (game) => getCropUnlockRequirement('appleTree', game.activeArea),
     description: 'Reach the Crop threshold to permanently unlock Apple Sapling.',
     isComplete: (game) => game.hasUnlockedAppleTree === true,
   }),
@@ -299,7 +298,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'crop-lentil',
     title: 'Unlock Lentil',
     target: LENTIL_UNLOCK_CROP_COUNT,
-    getTarget: (game) => getCropRequirement(game, getCropUnlockBaseRequirement('lentil', game.activeArea)),
+    getTarget: (game) => getCropUnlockRequirement('lentil', game.activeArea),
     description: 'Reach the Crop threshold to permanently unlock Lentil.',
     isComplete: (game) => game.hasUnlockedLentil === true,
   }),
@@ -307,7 +306,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'crop-knotweed',
     title: 'Unlock Knotweed',
     target: KNOTWEED_UNLOCK_CROP_COUNT,
-    getTarget: (game) => getCropRequirement(game, getCropUnlockBaseRequirement('knotweed', game.activeArea)),
+    getTarget: (game) => getCropUnlockRequirement('knotweed', game.activeArea),
     description: 'Reach the Crop threshold to permanently unlock Knotweed.',
     isComplete: (game) => game.hasUnlockedKnotweed === true,
   }),
@@ -325,7 +324,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     category: 'Milestone',
     title: 'Unlock Row Duplicators',
     target: ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
-    getTarget: (game) => getCropRequirement(game, ROW_DUPLICATORS_UNLOCK_CROP_COUNT),
+    getTarget: getRowDuplicatorsUnlockCropCount,
     unit: 'Crops',
     description:
       'Reach the cost, then perform the Row Duplicator reset in Inventions.',
@@ -337,7 +336,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'crop-wheat',
     title: 'Unlock Wheat',
     target: WHEAT_UNLOCK_CROP_COUNT,
-    getTarget: (game) => getCropUnlockRequirement('wheat', game.activeArea, getCropRequirementMultiplier(game)),
+    getTarget: (game) => getCropUnlockRequirement('wheat', game.activeArea),
     description:
       'After unlocking Row Duplicators, reach the Crop threshold to permanently unlock Wheat.',
     isComplete: (game) => game.hasUnlockedWheat === true,
@@ -355,6 +354,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     id: 'crop-sunflower',
     title: 'Unlock Sunflower',
     target: SUNFLOWER_UNLOCK_CROP_COUNT,
+    getTarget: (game) => getCropUnlockRequirement('sunflower', game.activeArea),
     description: 'Reach the Crop threshold to permanently unlock Sunflower.',
     isComplete: (game) => game.hasUnlockedSunflower === true,
   }),
@@ -378,7 +378,7 @@ export const MAJOR_PROGRESSION_GOALS = [
     category: 'Milestone',
     title: 'Establish Trade Relations',
     target: TRADE_ESTABLISHMENT_COST,
-    getTarget: (game) => getCropRequirement(game, TRADE_ESTABLISHMENT_COST),
+    getTarget: getTradeEstablishmentCost,
     unit: 'Crops',
     description:
       'Spend the cost in the Trade tab to establish relations without resetting.',
@@ -487,11 +487,6 @@ export const MAJOR_PROGRESSION_GOALS = [
     category: 'Seed augmentation',
     title: 'Unlock Rich Soil',
     target: SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RICH_SOIL].cost,
-    getTarget: (game) => getCropRequirement(
-      game,
-      SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RICH_SOIL].cost,
-      GAME_AREA_IDS.MISFORTUNE,
-    ),
     unit: 'Misfortune Crops',
     description: 'Purchase Rich Soil for Enriching Leek in the Augmentation tab.',
     isApplicable: (game) =>

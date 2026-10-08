@@ -10,7 +10,6 @@ import {
   isMisfortuneAreaActive,
 } from './areaLogic.js'
 import { GAME_AREA_IDS, MISFORTUNE_CROP_GOAL } from './gameConfig.js'
-import { getCropRequirement } from './cropRequirements.js'
 
 export const CAPYBARA_DEMONSTRATION_IDS = Object.freeze({
   INTRODUCTION: 'introduction',
@@ -64,7 +63,7 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     number: 2,
     name: "Fortune's Wrath",
     goal: 'Reach the listed Crop requirement in the Misfortune area.',
-    target: getCropRequirement(undefined, MISFORTUNE_CROP_GOAL, GAME_AREA_IDS.MISFORTUNE),
+    target: MISFORTUNE_CROP_GOAL,
     unit: 'Misfortune Crops',
     metric: 'misfortuneCrops',
     restrictions: [
