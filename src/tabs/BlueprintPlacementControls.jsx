@@ -1,5 +1,6 @@
 import {
   BLUEPRINT_BLOCK_PLACEMENT_MODES,
+  BLUEPRINT_SELECTION_ACTIONS,
   getBlueprintBlockAnchorName,
   getBlueprintBlockAvailability,
 } from '../game/gameLogic.js'
@@ -12,7 +13,7 @@ export function BlueprintSelectionToolbar({ editor }) {
       <button type="button" className="secondary-button" onClick={editor.onStartSelection}>
         Select crops
       </button>
-      <p>Select any two opposite corners. The selection stays temporary until you save it as a block.</p>
+      <p>Select any two opposite corners to move or copy crops. The selection stays temporary until you save it as a block.</p>
     </div>
   )
 }
@@ -61,6 +62,25 @@ export function BlueprintPlacementControls({ game, editor }) {
           Hover a tile, or tap one to pin the preview.
         </p>
       </div>
+
+      {isSelection && editor.canMoveSelection ? (
+        <div className="blueprint-block-mode" role="group" aria-label="Selection action">
+          <button type="button"
+            className={editor.selectionAction === BLUEPRINT_SELECTION_ACTIONS.MOVE ? 'is-active' : ''}
+            aria-pressed={editor.selectionAction === BLUEPRINT_SELECTION_ACTIONS.MOVE}
+            onClick={() => editor.onSelectionActionChange(BLUEPRINT_SELECTION_ACTIONS.MOVE)}>
+            Move
+            <small>Clear the source only when placement is confirmed.</small>
+          </button>
+          <button type="button"
+            className={editor.selectionAction === BLUEPRINT_SELECTION_ACTIONS.COPY ? 'is-active' : ''}
+            aria-pressed={editor.selectionAction === BLUEPRINT_SELECTION_ACTIONS.COPY}
+            onClick={() => editor.onSelectionActionChange(BLUEPRINT_SELECTION_ACTIONS.COPY)}>
+            Copy
+            <small>Keep the source. Normal planting limits still apply.</small>
+          </button>
+        </div>
+      ) : null}
 
       <div className="blueprint-block-mode" role="group" aria-label={`${isSelection ? 'Selection' : 'Block'} placement mode`}>
         <button type="button"

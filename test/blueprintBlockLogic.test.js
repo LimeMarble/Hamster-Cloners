@@ -254,3 +254,165 @@ test('the normal game save preserves the shared block library', () => {
 
   assert.deepEqual(restored.blueprintBlocks, [block])
 })
+
+function createMultiTileBlueprint(anchorCrop, partCrop, extraSplitweed = false) {
+  const cells = Array(36).fill(null)
+  cells[0] = anchorCrop
+  for (const index of [1, 6, 7]) cells[index] = partCrop
+  if (extraSplitweed) {
+    cells[24] = 'knotweed'
+    for (const index of [25, 30, 31]) cells[index] = 'splitweedPart'
+  }
+  return createBlueprint({ rows: 6, columns: 6, cells,
+    requireSplitweedFootprints: anchorCrop === 'knotweed' })
+}
+
+test('moving Gourd removes the selected original before checking its unique planting limit', () => {
+  const blueprint = createMultiTileBlueprint('leechingGourd', 'leechingGourdPart')
+  const original = JSON.stringify(blueprint)
+  const block = createBlueprintBlockFromSelection(blueprint, 0, 7)
+  const options = { unlockedCropIds: ['pumpkin'], completedCropPerfections: ['leechingGourd'] }
+  const copy = getBlueprintBlockPlacementPreview(blueprint, block, 8, options)
+  assert.equal(copy.canPlace, false, 'copies must not bypass the unique Gourd limit')
+  const move = getBlueprintBlockPlacementPreview(blueprint, block, 8, {
+    ...options, sourceSelection: { firstIndex: 0, secondIndex: 7 },
+  })
+  assert.equal(move.canPlace, true, move.error)
+  assert.equal(move.blueprint.cells.filter((crop) => crop === 'leechingGourd').length, 1)
+  assert.equal(move.blueprint.cells.filter((crop) => crop === 'leechingGourdPart').length, 3)
+  for (const index of [0, 1, 6, 7]) assert.equal(move.blueprint.cells[index], null)
+  assert.equal(move.blueprint.cells[8], 'leechingGourd')
+  assert.deepEqual(move.placedSelection, { firstIndex: 8, secondIndex: 15 })
+  assert.equal(JSON.stringify(blueprint), original, 'previewing must not clear the live source')
+})
+
+for (const [anchorCrop, partCrop, perfection, unlockedCrop] of [
+  ['leechingGourd', 'leechingGourdPart', 'leechingGourd', 'pumpkin'],
+  ['knotweed', 'splitweedPart', 'splitweed', 'knotweed'],
+]) {
+  for (const placementMode of Object.values(BLUEPRINT_BLOCK_PLACEMENT_MODES)) {
+    test(`${placementMode} can shift an overlapping ${perfection} footprint by one tile`, () => {
+      const blueprint = createMultiTileBlueprint(anchorCrop, partCrop, anchorCrop === 'knotweed')
+      const block = createBlueprintBlockFromSelection(blueprint, 0, 7)
+      const move = getBlueprintBlockPlacementPreview(blueprint, block, 1, {
+        placementMode, sourceSelection: { firstIndex: 0, secondIndex: 7 },
+        unlockedCropIds: [unlockedCrop], completedCropPerfections: [perfection],
+        requireSplitweedFootprints: anchorCrop === 'knotweed',
+      })
+      assert.equal(move.canPlace, true, move.error)
+      assert.equal(move.blueprint.cells[0], null)
+      assert.equal(move.blueprint.cells[6], null)
+      assert.equal(move.blueprint.cells[1], anchorCrop)
+      for (const index of [2, 7, 8]) assert.equal(move.blueprint.cells[index], partCrop)
+      if (anchorCrop === 'knotweed') {
+        assert.equal(move.blueprint.cells[24], 'knotweed')
+        for (const index of [25, 30, 31]) assert.equal(move.blueprint.cells[index], 'splitweedPart')
+      }
+      const moveAgain = getBlueprintBlockPlacementPreview(move.blueprint, block, 2, {
+        placementMode, sourceSelection: move.placedSelection,
+        unlockedCropIds: [unlockedCrop], completedCropPerfections: [perfection],
+        requireSplitweedFootprints: anchorCrop === 'knotweed',
+      })
+      assert.equal(moveAgain.canPlace, true, moveAgain.error)
+      assert.equal(moveAgain.blueprint.cells[1], null)
+      assert.equal(moveAgain.blueprint.cells[2], anchorCrop)
+    })
+  }
+}
+
+test('moving a linked selection remaps Mirror targets and Root Tunnel connections without duplication', () => {
+  const blueprint = createLinkedBlueprint()
+  const block = createBlueprintBlockFromSelection(blueprint, 5, 10)
+  const move = getBlueprintBlockPlacementPreview(blueprint, block, 0, {
+    sourceSelection: { firstIndex: 5, secondIndex: 10 },
+    unlockedCropIds: ['turnip', 'corn', 'leek', 'rootTunnel'],
+    completedCropPerfections: ['mirrorCorn'],
+  })
+  assert.equal(move.canPlace, true, move.error)
+  assert.equal(move.blueprint.cells[6], null)
+  assert.equal(move.blueprint.cells[9], null)
+  assert.equal(move.blueprint.cells[10], null)
+  assert.equal(move.blueprint.mirrorCornTargets[6], null)
+  assert.equal(move.blueprint.mirrorCornTargets[1], 4)
+  assert.deepEqual(move.blueprint.rootTunnelConnections, [
+    { tunnelIndex: 5, senderIndex: 0, recipientIndex: 4 },
+  ])
+})
+
+test('moving a complete Gourd and Vine relocates the Vine rather than keeping two copies', () => {
+  const base = createMultiTileBlueprint('leechingGourd', 'leechingGourdPart')
+  const cells = [...base.cells]
+  cells[13] = 'turnip'
+  const blueprint = createBlueprint({ ...base, cells,
+    leechingVines: [{ path: [2, 8, 14], targetIndexes: [13] }] })
+  const seedAugmentations = { leechingVineUnlocked: true }
+  const completedCropPerfections = ['leechingGourd']
+  const block = createBlueprintBlockFromSelection(blueprint, 0, 15, {
+    completedCropPerfections, seedAugmentations,
+  })
+  const move = getBlueprintBlockPlacementPreview(blueprint, block, 18, {
+    sourceSelection: { firstIndex: 0, secondIndex: 15 },
+    unlockedCropIds: ['pumpkin', 'turnip'], completedCropPerfections, seedAugmentations,
+  })
+  assert.equal(move.canPlace, true, move.error)
+  assert.deepEqual(move.blueprint.leechingVines, [{ path: [20, 26, 32], targetIndexes: [31] }])
+  assert.equal(move.blueprint.cells[18], 'leechingGourd')
+  assert.equal(move.blueprint.cells[31], 'turnip')
+})
+
+test('invalid move destinations and partial 2x2 sources leave the original blueprint untouched', () => {
+  const blueprint = createMultiTileBlueprint('leechingGourd', 'leechingGourdPart')
+  const original = JSON.stringify(blueprint)
+  const block = createBlueprintBlockFromSelection(blueprint, 0, 7)
+  const options = { unlockedCropIds: ['pumpkin'], completedCropPerfections: ['leechingGourd'] }
+  for (const [target, sourceSelection] of [
+    [35, { firstIndex: 0, secondIndex: 7 }],
+    [8, { firstIndex: 0, secondIndex: 1 }],
+  ]) {
+    const preview = getBlueprintBlockPlacementPreview(blueprint, block, target, { ...options, sourceSelection })
+    assert.equal(preview.canPlace, false)
+    assert.equal(preview.blueprint, null)
+    assert.equal(JSON.stringify(blueprint), original)
+  }
+})
+
+for (const [anchorCrop, partCrop, perfection, cropId] of [
+  ['leechingGourd', 'leechingGourdPart', 'leechingGourd', 'pumpkin'],
+  ['knotweed', 'splitweedPart', 'splitweed', 'knotweed'],
+]) {
+  test(`rotating a ${perfection} selection preserves its complete footprint when moved`, () => {
+    const blueprint = createMultiTileBlueprint(anchorCrop, partCrop)
+    const block = transformBlueprintBlock(
+      createBlueprintBlockFromSelection(blueprint, 0, 7),
+      BLUEPRINT_BLOCK_TRANSFORMS.ROTATE_CLOCKWISE,
+    )
+    const move = getBlueprintBlockPlacementPreview(blueprint, block, 9, {
+      sourceSelection: { firstIndex: 0, secondIndex: 7 },
+      unlockedCropIds: [cropId], completedCropPerfections: [perfection],
+      requireSplitweedFootprints: cropId === 'knotweed',
+    })
+    assert.equal(move.canPlace, true, move.error)
+    assert.equal(move.blueprint.cells[8], anchorCrop)
+    for (const index of [9, 14, 15]) assert.equal(move.blueprint.cells[index], partCrop)
+    assert.deepEqual(move.placedSelection, { firstIndex: 9, secondIndex: 14 })
+  })
+}
+
+test('moving only Gourd cannot silently discard an unselected Vine', () => {
+  const base = createMultiTileBlueprint('leechingGourd', 'leechingGourdPart')
+  const cells = [...base.cells]
+  cells[13] = 'turnip'
+  const blueprint = createBlueprint({ ...base, cells,
+    leechingVines: [{ path: [2, 8, 14], targetIndexes: [13] }] })
+  const original = JSON.stringify(blueprint)
+  const block = createBlueprintBlockFromSelection(blueprint, 0, 7)
+  const move = getBlueprintBlockPlacementPreview(blueprint, block, 18, {
+    sourceSelection: { firstIndex: 0, secondIndex: 7 },
+    unlockedCropIds: ['pumpkin'], completedCropPerfections: ['leechingGourd'],
+    seedAugmentations: { leechingVineUnlocked: true },
+  })
+  assert.equal(move.canPlace, false)
+  assert.match(move.error, /existing Leeching Vine/)
+  assert.equal(move.blueprint, null)
+  assert.equal(JSON.stringify(blueprint), original)
+})

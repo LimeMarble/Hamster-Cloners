@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createServer } from 'vite'
 import {
   BLUEPRINT_BLOCK_PLACEMENT_MODES,
+  BLUEPRINT_SELECTION_ACTIONS,
   MAX_SAVED_BLUEPRINT_BLOCKS,
   createBlueprint,
   createBlueprintBlockFromSelection,
@@ -29,6 +30,7 @@ function editor(extra = {}) {
   return {
     blocks: [], libraryEntries: [], unlockedCropIds: ['leek'],
     isSelecting: false, isUnsavedSelection: true, canSaveSelection: true,
+    canMoveSelection: true, selectionAction: BLUEPRINT_SELECTION_ACTIONS.MOVE,
     activeBlockSourceId: null, overwriteBlockId: null, selectionName: '',
     activeBlock: createBlueprintBlockFromSelection(blueprint, 1, 0, {
       id: 'temporary-selection', name: 'Selected crops',
@@ -105,6 +107,17 @@ test('the bottom library no longer owns selection, placement, or naming controls
   assert.match(markup, /Saved blueprint blocks/)
   assert.match(markup, /Select crops above the grid/)
   assert.doesNotMatch(markup, /Select rectangle|blueprint-block-placement|blueprint-selection-name/)
+})
+
+test('temporary selections default to Move and offer Copy without changing saved-block controls', () => {
+  const selection = render(BlueprintPlacementControls, editor())
+  assert.match(selection, /aria-label="Selection action"/)
+  assert.match(selection, /aria-pressed="true">Move/)
+  assert.match(selection, /Normal planting limits still apply/)
+  const copying = render(BlueprintPlacementControls, editor({ selectionAction: BLUEPRINT_SELECTION_ACTIONS.COPY }))
+  assert.match(copying, /aria-pressed="true">Copy/)
+  const block = render(BlueprintPlacementControls, editor({ isUnsavedSelection: false }))
+  assert.doesNotMatch(block, /aria-label="Selection action"/)
 })
 
 test('the multi-crop selection trigger is above the blueprint grid, not inside the bottom library', () => {

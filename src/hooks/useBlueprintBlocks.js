@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   BLUEPRINT_BLOCK_PLACEMENT_MODES,
   BLUEPRINT_BLOCK_TRANSFORMS,
+  BLUEPRINT_SELECTION_ACTIONS,
   MAX_SAVED_BLUEPRINT_BLOCKS,
   createBlueprintBlockFromSelection,
   exportBlueprintBlock,
@@ -62,6 +63,7 @@ export function useBlueprintBlocks({
   const [selectionStartIndex, setSelectionStartIndex] = useState(null)
   const [selectionHoverIndex, setSelectionHoverIndex] = useState(null)
   const [selectedRegion, setSelectedRegion] = useState(null)
+  const [selectionAction, setSelectionAction] = useState(BLUEPRINT_SELECTION_ACTIONS.MOVE)
   const [isSelecting, setIsSelecting] = useState(false)
   const [selectionName, setSelectionName] = useState('')
   const [overwriteBlockId, setOverwriteBlockId] = useState(null)
@@ -80,6 +82,8 @@ export function useBlueprintBlocks({
     : EMPTY_BLUEPRINT_BLOCKS
   const isAwaitingFirstCorner = isSelecting && selectionStartIndex === null
   const isUnsavedSelection = activeBlock !== null && activeBlockSourceId === null
+  const canMoveSelection = isUnsavedSelection && selectedRegion !== null
+  const movingSelection = canMoveSelection && selectionAction === BLUEPRINT_SELECTION_ACTIONS.MOVE
 
   const selectionIndexes = useMemo(() => {
     const firstIndex = selectionStartIndex ?? selectedRegion?.firstIndex
@@ -114,6 +118,7 @@ export function useBlueprintBlocks({
               completedCropPerfections: game.completedCropPerfections,
               seedAugmentations: game.seedAugmentations,
               requireSplitweedFootprints: hasSplitweed,
+              sourceSelection: movingSelection ? selectedRegion : null,
             },
           )
         : null,
@@ -123,6 +128,8 @@ export function useBlueprintBlocks({
       game.completedCropPerfections,
       game.seedAugmentations,
       hasSplitweed,
+      movingSelection,
+      selectedRegion,
       placementAnchorIndex,
       placementMode,
       unlockedCropIds,
@@ -204,6 +211,7 @@ export function useBlueprintBlocks({
     setSelectionStartIndex(null)
     setSelectionHoverIndex(null)
     setSelectedRegion(null)
+    setSelectionAction(BLUEPRINT_SELECTION_ACTIONS.MOVE)
     setIsSelecting(false)
     setOverwriteBlockId(null)
     setActiveBlock(null)
@@ -258,7 +266,7 @@ export function useBlueprintBlocks({
       setIsSelecting(false)
       setStatus({
         type: 'info',
-        message: 'Selection ready. Transform or place it, or save it as a block.',
+        message: 'Selection ready to move. Transform it, choose a destination, or save it as a block.',
       })
       setSelectionStartIndex(null)
       setSelectionHoverIndex(null)
@@ -366,12 +374,19 @@ export function useBlueprintBlocks({
       return false
     }
     commitBlueprint(placementPreview.blueprint)
-    setSelectedRegion(null)
+    if (movingSelection) {
+      setSelectedRegion(placementPreview.placedSelection)
+    } else {
+      setSelectedRegion(null)
+      setSelectionAction(BLUEPRINT_SELECTION_ACTIONS.COPY)
+    }
     setPinnedAnchorIndex(null)
     setHoverAnchorIndex(null)
     setStatus({
       type: 'success',
-      message: `${activeBlock.name} placed. It remains selected for reuse.`,
+      message: movingSelection
+        ? 'Selection moved. It remains selected for another move or block saving.'
+        : `${activeBlock.name} placed. It remains selected for reuse.`,
     })
     return true
   }
@@ -476,6 +491,8 @@ export function useBlueprintBlocks({
     selectionIndexSet,
     isSelecting,
     isUnsavedSelection,
+    selectionAction,
+    canMoveSelection,
     overwriteBlockId,
     canSaveSelection: isUnsavedSelection &&
       (overwriteBlockId !== null || blocks.length < MAX_SAVED_BLUEPRINT_BLOCKS),
@@ -490,6 +507,13 @@ export function useBlueprintBlocks({
     onSelectionNameChange: setSelectionName,
     onStartSelection: () => beginSelection(),
     onSaveSelectionAsBlock: saveSelectionAsBlock,
+    onSelectionActionChange: (action) => {
+      if (Object.values(BLUEPRINT_SELECTION_ACTIONS).includes(action) &&
+        (action !== BLUEPRINT_SELECTION_ACTIONS.MOVE || canMoveSelection)) {
+        setSelectionAction(action)
+        setStatus(null)
+      }
+    },
     onCancelInteraction: cancelInteraction,
     onUseBlock: useBlock,
     onOverwriteBlock: beginSelection,

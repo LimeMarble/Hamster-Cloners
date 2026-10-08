@@ -3,8 +3,10 @@ import { CROP_PERFECTIONS } from './crops.js'
 import {
   BLUEPRINT_BLOCK_AUGMENTATION_REQUIREMENTS,
   BLUEPRINT_BLOCK_PLACEMENT_MODES,
+  createBlueprintBlockFromSelection,
   getBlueprintBlockAugmentationLevel,
   getBlueprintBlockBaseCropId,
+  getBlueprintSelectionIndexes,
   normalizeBlueprintBlock,
 } from './blueprintBlockLogic.js'
 import {
@@ -87,6 +89,7 @@ export function getBlueprintBlockPlacementPreview(
     completedCropPerfections = [],
     seedAugmentations = {},
     requireSplitweedFootprints = false,
+    sourceSelection = null,
   } = {},
 ) {
   const block = normalizeBlueprintBlock(rawBlock, rawBlock?.id)
@@ -120,6 +123,26 @@ export function getBlueprintBlockPlacementPreview(
     }
   }
 
+  let sourceIndexes = new Set()
+  if (sourceSelection) {
+    try {
+      // Validate whole footprints before planning any removal. The original
+      // blueprint is never mutated, including when the destination is invalid.
+      createBlueprintBlockFromSelection(
+        blueprint, sourceSelection.firstIndex, sourceSelection.secondIndex,
+      )
+      sourceIndexes = new Set(getBlueprintSelectionIndexes(
+        blueprint, sourceSelection.firstIndex, sourceSelection.secondIndex,
+      ))
+    } catch (error) {
+      return {
+        canPlace: false,
+        error: error instanceof Error ? error.message : 'The source selection is invalid.',
+        availability, tiles: [], blueprint: null,
+      }
+    }
+  }
+
   const missingCropSet = new Set(availability.missingCropIds)
   const missingPerfectionCropSet = new Set(
     availability.missingCropPerfectionIds
@@ -139,7 +162,7 @@ export function getBlueprintBlockPlacementPreview(
     const column = sourceIndex % block.columns
     return (top + row) * blueprint.columns + left + column
   }
-  const cells = [...blueprint.cells]
+  const cells = blueprint.cells.map((crop, index) => sourceIndexes.has(index) ? null : crop)
   const tiles = block.cells.map((crop, sourceIndex) => {
     const targetIndex = mapIndex(sourceIndex)
     const available = isSourceCropAvailable(sourceIndex)
@@ -170,6 +193,9 @@ export function getBlueprintBlockPlacementPreview(
   )
   writtenTargetIndexes.forEach((targetIndex) => {
     mirrorCornTargets[targetIndex] = null
+  })
+  sourceIndexes.forEach((sourceIndex) => {
+    mirrorCornTargets[sourceIndex] = null
   })
   const addedMirrorTargets = []
   block.mirrorCornTargets.forEach((targetIndex, sourceIndex) => {
@@ -202,12 +228,21 @@ export function getBlueprintBlockPlacementPreview(
     : remapLeechingVines(block.leechingVines, mapIndex)
   const expectedRootTunnelConnections = [
     ...(blueprint.rootTunnelConnections ?? []).filter(
-      ({ tunnelIndex }) => !writtenTargetIndexes.has(tunnelIndex),
+      ({ tunnelIndex, senderIndex, recipientIndex }) =>
+        !writtenTargetIndexes.has(tunnelIndex) &&
+        !sourceIndexes.has(tunnelIndex) &&
+        !sourceIndexes.has(senderIndex) &&
+        !sourceIndexes.has(recipientIndex),
     ),
     ...addedRootTunnelConnections,
   ]
+  const sourceGourdIndex = blueprint.cells.indexOf('leechingGourd')
+  const retainedLeechingVines = (blueprint.leechingVines ?? []).filter((vine) =>
+    !(sourceIndexes.has(sourceGourdIndex) &&
+      [...vine.path, ...vine.targetIndexes].every((index) => sourceIndexes.has(index))),
+  )
   const expectedLeechingVines = [
-    ...(blueprint.leechingVines ?? []),
+    ...retainedLeechingVines,
     ...addedLeechingVines,
   ]
   const nextBlueprint = createBlueprint({
@@ -256,13 +291,13 @@ export function getBlueprintBlockPlacementPreview(
     error = 'A Root Tunnel connection in this block conflicts with the destination.'
   } else if (
     !areEqual(
-      (blueprint.leechingVines ?? []).filter((vine) =>
+      retainedLeechingVines.filter((vine) =>
         (nextBlueprint.leechingVines ?? []).some((nextVine) =>
           areEqual(nextVine.path, vine.path) &&
           areEqual(nextVine.targetIndexes, vine.targetIndexes),
         ),
       ),
-      blueprint.leechingVines ?? [],
+      retainedLeechingVines,
     )
   ) {
     error = 'This placement would damage an existing Leeching Vine. Clear that vine first.'
@@ -283,7 +318,17 @@ export function getBlueprintBlockPlacementPreview(
     canPlace: error === null,
     error,
     availability,
-    tiles,
+    tiles: [
+      ...tiles,
+      ...[...sourceIndexes]
+        .filter((index) => blueprint.cells[index] && !writtenTargetIndexes.has(index))
+        .map((targetIndex) => ({ targetIndex, crop: null, originalCrop: blueprint.cells[targetIndex],
+          available: true, action: 'clear' })),
+    ],
+    placedSelection: {
+      firstIndex: targetAnchorIndex,
+      secondIndex: mapIndex(block.cells.length - 1 - block.anchorIndex),
+    },
     blueprint: error === null ? nextBlueprint : null,
   }
 }

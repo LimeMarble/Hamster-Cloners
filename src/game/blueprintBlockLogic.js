@@ -26,6 +26,10 @@ export const BLUEPRINT_BLOCK_PLACEMENT_MODES = Object.freeze({
   STAMP: 'stamp',
   REPLACE: 'replace',
 })
+export const BLUEPRINT_SELECTION_ACTIONS = Object.freeze({
+  MOVE: 'move',
+  COPY: 'copy',
+})
 export const BLUEPRINT_BLOCK_TRANSFORMS = Object.freeze({
   ROTATE_CLOCKWISE: 'rotateClockwise',
   ROTATE_COUNTERCLOCKWISE: 'rotateCounterclockwise',

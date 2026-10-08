@@ -655,6 +655,10 @@ function areBlueprintEditorPropsEqual(previous, next) {
       next.blueprintBlockEditor.isSelecting &&
     previous.blueprintBlockEditor.isUnsavedSelection ===
       next.blueprintBlockEditor.isUnsavedSelection &&
+    previous.blueprintBlockEditor.selectionAction ===
+      next.blueprintBlockEditor.selectionAction &&
+    previous.blueprintBlockEditor.canMoveSelection ===
+      next.blueprintBlockEditor.canMoveSelection &&
     previous.blueprintBlockEditor.canSaveSelection ===
       next.blueprintBlockEditor.canSaveSelection &&
     previous.blueprintBlockEditor.overwriteBlockId ===
