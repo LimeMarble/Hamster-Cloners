@@ -124,6 +124,10 @@ export function LeechingVineEditorPanel({
           <dd><FormattedNumber value={nourishment.variety} maximumFractionDigits={0} /> types</dd>
         </div>
         <div>
+          <dt>Turnips per type</dt>
+          <dd><FormattedNumber value={nourishment.targetsPerType} maximumFractionDigits={0} /></dd>
+        </div>
+        <div>
           <dt>Vine length</dt>
           <dd>
             <FormattedNumber value={vine.path.length} maximumFractionDigits={0} />

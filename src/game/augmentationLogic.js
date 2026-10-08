@@ -16,6 +16,7 @@ export const SEED_AUGMENTATION_IDS = Object.freeze({
   LOOSENED_BOUNDARIES: 'loosenedBoundaries',
   RESTORED_CONNECTIONS: 'restoredConnections',
   LEECHING_VINE: 'leechingVine',
+  // Retain the original ID and save flag for existing Branchier Branches purchases.
   SNEAKY_CRAWLER: 'sneakyCrawler',
   GREATER_ABSORPTION: 'greaterAbsorption',
 })
@@ -107,6 +108,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     name: 'Leeching Vine',
     cost: 1e120,
     nourishmentExponentPerStrength: 0.1,
+    targetsPerNourishmentType: 2,
     baseVineLength: 1,
     maximumVines: 1,
     requiredMisfortuneUpgradeId: 'nourishingMisery',
@@ -114,9 +116,9 @@ export const SEED_AUGMENTATIONS = Object.freeze({
   [SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER]: Object.freeze({
     id: SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER,
     cropId: 'pumpkin',
-    name: 'Sneaky Crawler',
+    name: 'Branchier Branches',
     cost: 3e136,
-    nourishmentVarietyBonus: 1,
+    targetsPerNourishmentTypeBonus: 1,
     requiredMisfortuneUpgradeIds: ['huntForSomethingGreater', 'nourishingMisery'],
   }),
   [SEED_AUGMENTATION_IDS.GREATER_ABSORPTION]: Object.freeze({
@@ -347,11 +349,15 @@ export function getSplitweedVineNourishmentStrengthBonus(seedAugmentations) {
     : 0
 }
 
-export function getLeechingVineNourishmentVarietyBonus(seedAugmentations) {
-  return hasSneakyCrawlerAugmentation(seedAugmentations)
+export function getLeechingVineTargetsPerType(seedAugmentations) {
+  const baseTargets = SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.LEECHING_VINE]
+    .targetsPerNourishmentType
+  const targetBonus = hasSneakyCrawlerAugmentation(seedAugmentations)
     ? SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER]
-      .nourishmentVarietyBonus
+      .targetsPerNourishmentTypeBonus
     : 0
+
+  return baseTargets + targetBonus
 }
 
 export function getSeedAugmentationCost(game, augmentationId) {

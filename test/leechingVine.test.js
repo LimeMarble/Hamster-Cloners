@@ -14,11 +14,17 @@ import {
   getLeechingGourdTurnipEffect,
   getLeechingVineNourishment,
   getLeechingVineStatus,
+  getLeechingVineTargetsPerType,
+  getLeechingVineTurnipMultiplier,
   getNextSeedAugmentationCost,
   isSeedAugmentationVisible,
   purchaseMisfortuneUpgrade,
   purchaseSeedAugmentation,
 } from '../src/game/gameLogic.js'
+import {
+  getCropEffectDescription,
+  getCropPlacementEffectDescription,
+} from '../src/game/crops.js'
 import {
   exportBlueprint,
   importBlueprint,
@@ -66,6 +72,21 @@ function createVineBlueprint() {
   })
 }
 
+function createCrowdedVineBlueprint() {
+  const blueprint = createVineBlueprint()
+  const cells = [...blueprint.cells]
+  const extraTargets = [32, 33, 45, 48]
+  extraTargets.forEach((index) => { cells[index] = 'turnip' })
+  return createBlueprint({
+    ...blueprint,
+    cells,
+    leechingVines: [{
+      ...blueprint.leechingVines[0],
+      targetIndexes: [...blueprint.leechingVines[0].targetIndexes, ...extraTargets],
+    }],
+  })
+}
+
 test('after Hunt, Nourishing Misery unlocks the Leeching Vine augmentation at its configured price', () => {
   const initialGame = {
     ...createInitialGame(),
@@ -108,7 +129,7 @@ test('after Hunt, Nourishing Misery unlocks the Leeching Vine augmentation at it
   assert.equal(getNextSeedAugmentationCost(augmentedGame, augmentationId), null)
 })
 
-test('Hunt and Nourishing Misery are both required to reveal Sneaky Crawler', () => {
+test('Hunt and Nourishing Misery are both required to reveal Branchier Branches', () => {
   const augmentationId = SEED_AUGMENTATION_IDS.SNEAKY_CRAWLER
   const augmentation = SEED_AUGMENTATIONS[augmentationId]
   const hiddenGame = {
@@ -122,6 +143,8 @@ test('Hunt and Nourishing Misery are both required to reveal Sneaky Crawler', ()
   }
 
   assert.equal(augmentation.cost, 3e136)
+  assert.equal(augmentation.name, 'Branchier Branches')
+  assert.equal(augmentation.id, 'sneakyCrawler')
   assert.equal(isSeedAugmentationVisible(hiddenGame, augmentationId), false)
 
   const huntOnlyGame = {
@@ -149,10 +172,11 @@ test('Hunt and Nourishing Misery are both required to reveal Sneaky Crawler', ()
 
   const restored = importGame(exportGame(purchased))
   assert.equal(restored.seedAugmentations.sneakyCrawlerUnlocked, true)
+  assert.equal(getLeechingVineTargetsPerType(restored.seedAugmentations), 3)
 })
 
-test('Sneaky Crawler adds variety without adding nourishment strength', () => {
-  const blueprint = createVineBlueprint()
+test('Branchier Branches raises targets from two to three per actual nourishment type', () => {
+  const blueprint = createCrowdedVineBlueprint()
   const baseAugmentations = { leechingVineUnlocked: true }
   const crawlerAugmentations = {
     ...baseAugmentations,
@@ -179,16 +203,67 @@ test('Sneaky Crawler adds variety without adding nourishment strength', () => {
     crawlerAugmentations,
   )
 
-  assert.equal(crawlerNourishment.baseVariety, baseNourishment.variety)
-  assert.equal(crawlerNourishment.varietyBonus, 1)
-  assert.equal(crawlerNourishment.variety, baseNourishment.variety + 1)
+  assert.equal(baseNourishment.variety, 3)
+  assert.equal(crawlerNourishment.variety, baseNourishment.variety)
+  assert.equal(baseNourishment.targetsPerType, 2)
+  assert.equal(crawlerNourishment.targetsPerType, 3)
+  assert.equal(baseNourishment.targetCapacity, 6)
+  assert.equal(crawlerNourishment.targetCapacity, 9)
   assert.equal(crawlerNourishment.strength, baseNourishment.strength)
   assert.equal(crawlerNourishment.maximumLength, baseNourishment.maximumLength)
   assert.equal(crawlerNourishment.bonusExponent, baseNourishment.bonusExponent)
-  assert.equal(
-    crawlerStatus.activeTargetIndexes.length,
-    baseStatus.activeTargetIndexes.length + 1,
-  )
+  assert.deepEqual(baseStatus.activeTargetIndexes, [30, 37, 41, 46, 32, 33])
+  assert.deepEqual(crawlerStatus.activeTargetIndexes, [30, 37, 41, 46, 32, 33, 45, 48])
+  assert.equal(getLeechingVineTurnipMultiplier(
+    blueprint, 45, 1.5, COMPLETED_PERFECTIONS, baseAugmentations,
+  ), 1)
+  assert.equal(getLeechingVineTurnipMultiplier(
+    blueprint, 45, 1.5, COMPLETED_PERFECTIONS, crawlerAugmentations,
+  ), 1.5 ** 0.4)
+})
+
+test('repeated nourishment types do not grant extra target capacity', () => {
+  const original = createCrowdedVineBlueprint()
+  const cells = [...original.cells]
+  cells[15] = null
+  cells[18] = 'knotweed'
+  const blueprint = createBlueprint({ ...original, cells })
+  // Two debuff crops, but only one type after Splitweed is no longer perfected.
+  const perfections = ['leechingGourd']
+  for (const [owned, targetsPerType] of [[false, 2], [true, 3]]) {
+    const augmentations = { ...ACTIVE_AUGMENTATION, sneakyCrawlerUnlocked: owned }
+    const status = getLeechingVineStatus(blueprint, perfections, augmentations)
+    assert.equal(status.nourishment.sources.length, 2)
+    assert.equal(status.nourishment.variety, 1)
+    assert.equal(status.nourishment.targetCapacity, targetsPerType)
+    assert.equal(status.activeTargetIndexes.length, targetsPerType)
+  }
+})
+
+test('Branchier Branches grants no phantom nourishment types or targets', () => {
+  const original = createVineBlueprint()
+  const cells = [...original.cells]
+  for (const index of [2, 3, 9, 10, 15, 18]) cells[index] = null
+  const blueprint = createBlueprint({ ...original, cells })
+  const status = getLeechingVineStatus(blueprint, COMPLETED_PERFECTIONS, {
+    ...ACTIVE_AUGMENTATION, sneakyCrawlerUnlocked: true,
+  })
+  assert.equal(status.nourishment.variety, 0)
+  assert.equal(status.nourishment.targetCapacity, 0)
+  assert.deepEqual(status.activeTargetIndexes, [])
+})
+
+test('Gourd descriptions use the current two or three targets per type', () => {
+  for (const [owned, targetsPerType] of [[false, 2], [true, 3]]) {
+    const augmentations = { ...ACTIVE_AUGMENTATION, sneakyCrawlerUnlocked: owned }
+    const descriptions = [
+      getCropEffectDescription('leechingGourd', COMPLETED_PERFECTIONS, augmentations),
+      getCropPlacementEffectDescription('pumpkin', COMPLETED_PERFECTIONS, augmentations),
+    ]
+    for (const description of descriptions) {
+      assert.match(description, new RegExp(`adds ${targetsPerType} Turnip targets`))
+    }
+  }
 })
 
 test('Greater Absorption raises each Splitweed from 2 to 3 nourishment strength', () => {
@@ -273,15 +348,23 @@ test('vine nourishment independently controls range, targets, and exponent', () 
   assert.equal(nourishment.strength, 4)
   assert.equal(nourishment.variety, 3)
   assert.equal(nourishment.maximumLength, 5)
-  assert.equal(nourishment.targetCapacity, 3)
+  assert.equal(nourishment.targetsPerType, 2)
+  assert.equal(nourishment.targetCapacity, 6)
   assert.equal(nourishment.bonusExponent, 0.4)
   assert.deepEqual(status.activePath, [31, 38, 39, 40, 47])
   assert.deepEqual(status.eligibleTargetIndexes, [30, 37, 41, 46])
-  assert.deepEqual(status.activeTargetIndexes, [30, 37, 41])
+  assert.deepEqual(status.activeTargetIndexes, [30, 37, 41, 46])
 })
 
 test('the vine adds an exponent only to its selected Turnips', () => {
-  const blueprint = createVineBlueprint()
+  const original = createVineBlueprint()
+  const blueprint = createBlueprint({
+    ...original,
+    leechingVines: [{
+      ...original.leechingVines[0],
+      targetIndexes: [30, 37, 41],
+    }],
+  })
   const gourdMultiplier = getLeechingGourdTurnipEffect(
     blueprint,
     COMPLETED_PERFECTIONS,
@@ -370,7 +453,7 @@ test('blueprint transfer preserves unlocked vines and rejects them while locked'
 })
 
 test('game saves preserve vines in every blueprint slot', () => {
-  const blueprint = createVineBlueprint()
+  const blueprint = createCrowdedVineBlueprint()
   const game = {
     ...createInitialGame(),
     blueprintExpansionAxesSwapped: true,
@@ -393,6 +476,16 @@ test('game saves preserve vines in every blueprint slot', () => {
     restored.blueprintSlots.map((slot) => slot.leechingVines),
     [blueprint.leechingVines, blueprint.leechingVines],
   )
+  assert.equal(getLeechingVineStatus(
+    restored.blueprint, COMPLETED_PERFECTIONS, restored.seedAugmentations,
+  ).activeTargetIndexes.length, 6)
+  const upgraded = importGame(exportGame({ ...game, seedAugmentations: {
+    ...ACTIVE_AUGMENTATION, sneakyCrawlerUnlocked: true,
+  } }))
+  assert.deepEqual(upgraded.blueprint.leechingVines, blueprint.leechingVines)
+  assert.equal(getLeechingVineStatus(
+    upgraded.blueprint, COMPLETED_PERFECTIONS, upgraded.seedAugmentations,
+  ).activeTargetIndexes.length, 8)
 })
 
 test('Root Tunnels can share tiles with a Leeching Vine path', () => {

@@ -229,7 +229,7 @@ function OptionsContent({
         <button type="button" className="hard-reset-button" onClick={onHardReset}>
           {hardResetClicks === 0
             ? 'Hard reset'
-            : `Hard reset — click 5 times within 4 seconds (${hardResetClicks}/5)`}
+            : `Hard reset: click 5 times within 4 seconds (${hardResetClicks}/5)`}
         </button>
       </article>
     </section>

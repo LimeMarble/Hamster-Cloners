@@ -67,7 +67,7 @@ export function RabbitExampleBuildsGuide({ game }) {
             <p>
               Aim all {example.reflectionCount === 2 ? 'two' : 'three'} Mirror
               Corn reflections at the central {leekName}, as shown by the yellow
-              lines—not at the contract crop.
+              lines, not at the contract crop.
             </p>
           ) : (
             <p>Perfect Corn into Mirror Corn to add reflections to this setup.</p>
@@ -94,7 +94,7 @@ export function RabbitExampleBuildsGuide({ game }) {
             ? 'your Mirror Corn tiles also receive diagonal Leek enrichment, so no separate setup is needed.'
             : 'use a separate harvest setup until you have Mirror Corn and Diagonal Enrichment.'}
         </p>
-        <p>Use the contract crop tile for other eligible crops—or Corn while it still needs its own setup.</p>
+        <p>Use the contract crop tile for other eligible crops, or Corn while it still needs its own setup.</p>
       </section>
       <section aria-labelledby="rabbit-example-crops-title">
         <h3 id="rabbit-example-crops-title">Currently eligible recipient crops</h3>

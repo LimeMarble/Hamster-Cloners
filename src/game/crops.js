@@ -1,5 +1,6 @@
 import {
   getLeekAugmentationYieldBonus,
+  getLeechingVineTargetsPerType,
   getMirrorCornEffectivenessBonus,
   getMirrorCornReflectionLimitBonus,
   getSweetPotatoCrowdingBaseBonus,
@@ -471,7 +472,7 @@ export const CROP_PERFECTIONS = {
     id: 'blazingCarrot',
     cropId: 'carrot',
     name: 'Blazing Carrot',
-    cost: 2.5e15,
+    cost: 2.5e16,
     costCurrency: 'rabbitRelations',
     requiresCapybaraDemonstration: 'introduction',
     rabbitRelationsBonusAtZero: 0.1,
@@ -622,7 +623,7 @@ function getPerfectionEffectDescription(
 ) {
   if (cropId === 'pumpkin' && perfection?.id === 'leechingGourd') {
     return hasLeechingVineAugmentation(seedAugmentations)
-      ? `${perfection.effectDescription} · draws one configurable bending vine through empty plots; nourishment strength adds one tile of range and +0.1 extra Gourd exponent per point, while each unique adjacent debuff Crop type adds one Turnip target`
+      ? `${perfection.effectDescription} · draws one configurable bending vine through empty plots; nourishment strength adds one tile of range and +0.1 extra Gourd exponent per point, while each unique adjacent debuff Crop type adds ${getLeechingVineTargetsPerType(seedAugmentations)} Turnip targets`
       : perfection.effectDescription
   }
 
@@ -719,7 +720,7 @@ export function getCropEffectDescription(
     cropId === 'leechingGourd' &&
     hasLeechingVineAugmentation(seedAugmentations)
   ) {
-    return `${cropDefinition.effectDescription} · draws one configurable bending vine through empty plots; nourishment strength adds one tile of range and +0.1 extra Gourd exponent per point, while each unique adjacent debuff Crop type adds one Turnip target`
+    return `${cropDefinition.effectDescription} · draws one configurable bending vine through empty plots; nourishment strength adds one tile of range and +0.1 extra Gourd exponent per point, while each unique adjacent debuff Crop type adds ${getLeechingVineTargetsPerType(seedAugmentations)} Turnip targets`
   }
 
   if (cropId === 'pumpkin' && perfection?.id === 'leechingGourd') {

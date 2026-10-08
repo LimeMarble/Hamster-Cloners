@@ -351,7 +351,7 @@ function CapybaraDemonstrations({
                     <strong>{demonstration.rewardName}</strong>
                     {demonstration.rewardDescription ? (
                       <>
-                        {demonstration.rewardJoiner ?? ' — '}
+                        {demonstration.rewardJoiner ?? ': '}
                         {demonstration.rewardDescription}
                       </>
                     ) : null}
@@ -377,7 +377,7 @@ function CapybaraDemonstrations({
                     </strong>
                   </p>
                   <p>
-                    <strong>{status.secondaryObjective.rewardName}</strong> —{' '}
+                    <strong>{status.secondaryObjective.rewardName}</strong>:{' '}
                     {status.secondaryObjective.rewardDescription}
                   </p>
                 </div>

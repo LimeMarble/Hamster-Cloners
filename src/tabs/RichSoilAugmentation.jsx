@@ -74,7 +74,7 @@ export function RichSoilAugmentation({ game, onPurchaseSeedAugmentation }) {
           : !hasEnrichingLeek
             ? 'Perfect Leek first'
             : <>
-                Augment — <FormattedNumber value={cost} /> Misfortune Crops
+                Augment: <FormattedNumber value={cost} /> Misfortune Crops
               </>}
       </button>
     </article>

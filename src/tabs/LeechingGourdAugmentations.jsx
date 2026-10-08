@@ -1,5 +1,6 @@
 import {
   getNextSeedAugmentationCost,
+  getLeechingVineTargetsPerType,
   getSeedAugmentationCost,
   getSplitweedVineNourishmentStrengthBonus,
   isSeedAugmentationVisible,
@@ -46,6 +47,7 @@ export function LeechingGourdAugmentations({ game, onPurchaseSeedAugmentation })
   const splitweedVineNourishmentStrength =
     CROP_PERFECTIONS.splitweed.vineNourishmentStrength +
     getSplitweedVineNourishmentStrengthBonus(game.seedAugmentations)
+  const vineTargetsPerType = getLeechingVineTargetsPerType(game.seedAugmentations)
 
   return (
     <>
@@ -68,7 +70,7 @@ export function LeechingGourdAugmentations({ game, onPurchaseSeedAugmentation })
             adds one tile of range and +0.1 to the exponent of the extra
             Gourd multiplier. Splitweed provides{' '}
             {splitweedVineNourishmentStrength} strength. Each unique
-            debuff Crop type lets the vine affect one selected Turnip.
+            debuff Crop type lets the vine affect {vineTargetsPerType} selected Turnips.
           </p>
           <p>
             The existing Gourd bonus remains global. A selected Turnip also
@@ -99,7 +101,7 @@ export function LeechingGourdAugmentations({ game, onPurchaseSeedAugmentation })
               : leechingVineCost === null
                 ? 'Augmentation active'
                 : <>
-                    Augment —{' '}
+                    Augment:{' '}
                     <FormattedNumber value={leechingVineCost} /> Crops
                   </>}
           </button>
@@ -120,9 +122,11 @@ export function LeechingGourdAugmentations({ game, onPurchaseSeedAugmentation })
             </div>
           </div>
           <p>
-            Adds +{sneakyCrawler.nourishmentVarietyBonus} nourishment
-            variety to Leeching Vine, allowing it to affect one additional
-            Turnip without adding nourishment strength, range, or exponent.
+            Raises Leeching Vine's affected Turnips from{' '}
+            {leechingVine.targetsPerNourishmentType} to{' '}
+            {leechingVine.targetsPerNourishmentType +
+              sneakyCrawler.targetsPerNourishmentTypeBonus} per nourishment
+            type without adding nourishment strength, range, or exponent.
           </p>
           <dl className='seed-augmentation-stats'>
             <div>
@@ -149,7 +153,7 @@ export function LeechingGourdAugmentations({ game, onPurchaseSeedAugmentation })
               : sneakyCrawlerCost === null
                 ? 'Augmentation active'
                 : <>
-                    Augment —{' '}
+                    Augment:{' '}
                     <FormattedNumber value={sneakyCrawlerCost} /> Crops
                   </>}
           </button>
@@ -203,7 +207,7 @@ export function LeechingGourdAugmentations({ game, onPurchaseSeedAugmentation })
               : greaterAbsorptionCost === null
                 ? 'Augmentation active'
                 : <>
-                    Augment —{' '}
+                    Augment:{' '}
                     <FormattedNumber value={greaterAbsorptionCost} /> Crops
                   </>}
           </button>

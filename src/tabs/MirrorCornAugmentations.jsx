@@ -112,7 +112,7 @@ export function MirrorCornAugmentations({
                 ? 'Restore Hamster debuff'
                 : 'Remove Hamster debuff'
               : <>
-                  Augment —{' '}
+                  Augment:{' '}
                   <FormattedNumber value={cornDebuffRemovalCost} /> Crops
                 </>}
         </button>
@@ -169,7 +169,7 @@ export function MirrorCornAugmentations({
             : cornEffectivenessCost === null
               ? 'Maximum level'
               : <>
-                  Augment —{' '}
+                  Augment:{' '}
                   <FormattedNumber value={cornEffectivenessCost} /> Crops
                 </>}
         </button>
@@ -218,7 +218,7 @@ export function MirrorCornAugmentations({
             : cornReflectionLimitCost === null
               ? 'Augmentation active'
               : <>
-                  Augment —{' '}
+                  Augment:{' '}
                   <FormattedNumber value={cornReflectionLimitCost} /> Crops
                 </>}
         </button>

@@ -106,7 +106,7 @@ export function SplitweedAugmentations({ game, onPurchaseSeedAugmentation }) {
             : splitweedMonocropLimitCost === null
               ? 'Maximum level reached'
               : <>
-                  Augment —{' '}
+                  Augment:{' '}
                   <FormattedNumber value={splitweedMonocropLimitCost} /> Crops
                 </>}
         </button>

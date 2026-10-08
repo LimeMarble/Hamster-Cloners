@@ -97,16 +97,31 @@ test('purchases in Misfortune charge the corrected price, not merely display it'
   assert.equal(restored.seedAugmentations.sweeterBondLevel, 1)
 })
 
-let server, CropPerfectionPurchase, SweetPotatoAugmentations
+let server, CropPerfectionPurchase, SweetPotatoAugmentations, BlazingCarrotPerfection
 before(async () => {
   server = await createServer({ logLevel: 'silent',
     server: { middlewareMode: true, hmr: false }, appType: 'custom' })
   ;({ CropPerfectionPurchase } = await server.ssrLoadModule('/src/tabs/CropPerfectionPurchase.jsx'))
   ;({ SweetPotatoAugmentations } = await server.ssrLoadModule('/src/tabs/SweetPotatoAugmentations.jsx'))
+  ;({ BlazingCarrotPerfection } = await server.ssrLoadModule('/src/tabs/BlazingCarrotPerfection.jsx'))
   const numberFormat = await server.ssrLoadModule('/src/game/numberFormat.js')
   numberFormat.setActiveNumberNotation('suffix', 303)
 })
 after(async () => { setActiveNumberNotation('suffix', 303); await server?.close() })
+
+test('Blazing Carrot purchase and progress labels use 2.5e16 Rabbit relations in either area', () => {
+  for (const activeArea of ['main', 'misfortune']) {
+    const game = progressionGame(activeArea)
+    const markup = renderToStaticMarkup(createElement(BlazingCarrotPerfection, {
+      game, hasUnlocked: false, canUnlock: false,
+    }))
+    const expected = getCachedFormattedNumber(2.5e16, 0, 'suffix', 303)
+    assert.equal(markup.split(expected).length - 1, 2)
+    assert.ok(!markup.includes(getCachedFormattedNumber(2.5e15, 0, 'suffix', 303)))
+    const goal = MAJOR_PROGRESSION_GOALS.find(({ id }) => id === 'perfection-blazingCarrot')
+    assert.equal(goal.getTarget(game), 2.5e16)
+  }
+})
 
 test('Misfortune perfection cards show corrected prices in both purchase and progress text', () => {
   const game = progressionGame()

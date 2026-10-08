@@ -69,7 +69,7 @@ export function LeekAugmentations({ game, onPurchaseSeedAugmentation }) {
             ? 'Perfect Leek first'
             : enrichmentCost === null
               ? 'Maximum level reached'
-              : <>Augment — <FormattedNumber value={enrichmentCost} /> Crops</>}
+              : <>Augment: <FormattedNumber value={enrichmentCost} /> Crops</>}
         </button>
       </article>
 
@@ -113,7 +113,7 @@ export function LeekAugmentations({ game, onPurchaseSeedAugmentation }) {
             ? 'Perfect Leek first'
             : diagonalCost === null
               ? 'Augmentation active'
-              : <>Augment — <FormattedNumber value={diagonalCost} /> Crops</>}
+              : <>Augment: <FormattedNumber value={diagonalCost} /> Crops</>}
         </button>
       </article>
 

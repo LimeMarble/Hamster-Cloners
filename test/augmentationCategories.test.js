@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { createServer } from 'vite'
 import {
   createInitialGame,
+  createBlueprint,
+  getLeechingVineStatus,
   MISFORTUNE_UPGRADE_IDS,
   SEED_AUGMENTATIONS,
   SEED_AUGMENTATION_IDS,
@@ -17,6 +19,7 @@ import {
 
 let server
 let Augmentation
+let LeechingVineEditorPanel
 
 before(async () => {
   server = await createServer({
@@ -25,6 +28,7 @@ before(async () => {
     appType: 'custom',
   })
   ;({ Augmentation } = await server.ssrLoadModule('/src/tabs/Augmentation.jsx'))
+  ;({ LeechingVineEditorPanel } = await server.ssrLoadModule('/src/tabs/LeechingVineEditor.jsx'))
 })
 
 after(async () => { await server?.close() })
@@ -146,11 +150,49 @@ test('every crop category hides cost-growth explanations but keeps effects and p
   for (const category of getVisibleAugmentationCategories(game)) {
     const html = render(game, category.cropId)
     assert.doesNotMatch(html, /increasingly expensive|Each new level costs|times the previous/i)
-    assert.match(html, /Augment —/)
+    assert.match(html, /Augment:/)
     assert.match(html, /Crops/)
     assert.equal(cardCount(html), category.augmentationIds.length)
   }
   assert.match(render(game, 'corn'), /Each level adds \+1 to the multiplier/)
   assert.match(render(game, 'sweetPotato'), /growth exponent cap by 4/)
   assert.match(render(game, 'knotweed'), /adds \+1 to the Monocrop limit per level/)
+})
+
+test('Gourd cards show Branchier Branches and explain two or three targets per type', () => {
+  const game = lateGame()
+  const text = (html) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ')
+  const baseHtml = render(game, 'pumpkin')
+  assert.match(baseHtml, /<h2>Branchier Branches<\/h2>/)
+  assert.doesNotMatch(baseHtml, /Sneaky Crawler|one additional Turnip/)
+  assert.match(text(baseHtml), /vine affect 2 selected Turnips/)
+  assert.match(text(baseHtml), /from 2 to 3 per nourishment type/)
+  const owned = { ...game, seedAugmentations: {
+    ...game.seedAugmentations, sneakyCrawlerUnlocked: true,
+  } }
+  assert.match(text(render(owned, 'pumpkin')), /vine affect 3 selected Turnips/)
+})
+
+test('Vine editor shows actual variety, targets per type, and total target capacity', () => {
+  const blueprint = createBlueprint({
+    rows: 3,
+    columns: 3,
+    cells: ['leechingGourd', 'leechingGourdPart', 'corn',
+      'leechingGourdPart', 'leechingGourdPart', 'appleTree',
+      'knotweed', null, null],
+  })
+  const completedCropPerfections = ['leechingGourd', 'mirrorCorn']
+  for (const [owned, targetsPerType] of [[false, 2], [true, 3]]) {
+    const status = getLeechingVineStatus(blueprint, completedCropPerfections, {
+      leechingVineUnlocked: true, sneakyCrawlerUnlocked: owned,
+    })
+    const html = renderToStaticMarkup(createElement(LeechingVineEditorPanel, {
+      completedCropPerfections,
+      editor: { selectedGourdIndex: 0, status, isDrawing: false },
+    }))
+    const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ')
+    assert.match(text, /Nourishment variety 3 types/)
+    assert.match(text, new RegExp(`Turnips per type ${targetsPerType}`))
+    assert.match(text, new RegExp(`Affected Turnips 0 / ${3 * targetsPerType}`))
+  }
 })

@@ -9,11 +9,17 @@ import {
   getBlueprintCropStats,
   getCarrotHighHarvestEffect,
   getCropProductionPerSecond,
+  getCropPerfectionCost,
   getNextMajorProgressionGoal,
   getRabbitRelationsMultiplier,
   unlockCropPerfection,
 } from '../src/game/gameLogic.js'
-import { CROP_DEFINITIONS, CROP_PERFECTIONS } from '../src/game/crops.js'
+import {
+  CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT,
+  CROP_DEFINITIONS,
+  CROP_PERFECTIONS,
+  SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+} from '../src/game/crops.js'
 
 const BLAZING_CARROT = 'blazingCarrot'
 
@@ -62,7 +68,18 @@ test('Blazing Carrot is gated by Demonstration 0 and spends Rabbit relations', (
     },
   }
 
-  assert.equal(CROP_PERFECTIONS.blazingCarrot.cost, 5e12)
+  assert.equal(CROP_PERFECTIONS.blazingCarrot.cost, 2.5e16)
+  for (const activeArea of ['main', 'misfortune']) {
+    const game = { ...eligibleGame, activeArea }
+    const insufficientGame = {
+      ...game,
+      trade: { ...game.trade, rabbitRelations: 2.49e16 },
+    }
+    assert.equal(getCropPerfectionCost(BLAZING_CARROT, game), 2.5e16)
+    assert.equal(canUnlockCropPerfection(insufficientGame, BLAZING_CARROT), false)
+    assert.equal(unlockCropPerfection(insufficientGame, BLAZING_CARROT), null)
+    assert.equal(canUnlockCropPerfection(game, BLAZING_CARROT), true)
+  }
   assert.equal(
     canUnlockCropPerfection(
       { ...eligibleGame, capybara: { completedDemonstrations: [] } },
@@ -222,7 +239,13 @@ test('major progression places Sweet Potato before the Lentil and Carrot perfect
   const initialGame = createInitialGame()
   const game = {
     ...initialGame,
-    areaProgress: { ...initialGame.areaProgress, misfortune: {} },
+    areaProgress: {
+      ...initialGame.areaProgress,
+      misfortune: { rowDuplicators: CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT },
+    },
+    // Complete intervening milestones so this fixture isolates perfection order.
+    floorReplicators: SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+    cloverAssembly: { ...initialGame.cloverAssembly, assembled: true },
     totalHamstersHired: 1000,
     hamsters: 125,
     unionized: true,
@@ -245,7 +268,7 @@ test('major progression places Sweet Potato before the Lentil and Carrot perfect
     trade: {
       ...initialGame.trade,
       established: true,
-      rabbitRelations: 5e12,
+      rabbitRelations: CROP_PERFECTIONS.blazingCarrot.cost,
       rabbitUnlocks: ['carrot', 'fourLeafClover', 'capybaraContact'],
     },
     capybara: {
@@ -278,6 +301,7 @@ test('major progression places Sweet Potato before the Lentil and Carrot perfect
 
   assert.equal(goal.id, 'perfection-blazingCarrot')
   assert.equal(goal.unit, 'Rabbit relations')
+  assert.equal(goal.target, 2.5e16)
   assert.equal(goal.isReady, true)
   assert.equal(
     getNextMajorProgressionGoal({

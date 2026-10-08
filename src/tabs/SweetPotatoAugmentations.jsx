@@ -38,7 +38,7 @@ function AugmentationButton({
         : isMaximumLevel
           ? completionLabel
           : <>
-              Augment — <FormattedNumber value={cost} /> Crops
+              Augment: <FormattedNumber value={cost} /> Crops
             </>}
     </button>
   )
