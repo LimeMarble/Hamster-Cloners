@@ -22,7 +22,6 @@ import {
   getFiveLeafPointBudget,
   getFortuneEffect,
   getFortuneModifiers,
-  MISFORTUNE_UPGRADE_IDS,
   normalizeFiveLeafState,
   purchaseSeedAugmentation,
   selectFiveLeafLoadout,
@@ -80,19 +79,21 @@ function field(game, modifiers = getFortuneModifiers(game)) {
   )
 }
 
-test('Rich Soil unlocks the cookie directly, leaving every existing loadout at 0% for it', () => {
+test('Leek Cookie remains unavailable even in legacy saves with Rich Soil, retaining its effect definition', () => {
   const initial = createInitialGame()
   const before = {
     ...initial, activeArea: 'misfortune', crops: 5e71,
     completedCropPerfections: ['enrichingLeek'],
-    completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT],
+    completedMisfortuneUpgrades: ['notSoFinalSupport'],
     capybara: { ...initial.capybara, completedDemonstrations: ['introduction'] },
   }
   assert.ok(!getAvailableFiveLeafFortunes(before).some(({ id }) => id === cookieId))
   const unlocked = purchaseSeedAugmentation(before, SEED_AUGMENTATION_IDS.RICH_SOIL)
-  assert.ok(getAvailableFiveLeafFortunes(unlocked).some(({ id }) => id === cookieId))
-  assert.ok(getAvailableFiveLeafFortunes({ ...unlocked, activeArea: 'main' }).some(({ id }) => id === cookieId))
-  for (const loadout of unlocked.fortune.fiveLeaf.loadouts) {
+  assert.equal(unlocked, null)
+  for (const activeArea of ['main', 'misfortune']) {
+    assert.ok(!getAvailableFiveLeafFortunes(createCookieGame(activeArea)).some(({ id }) => id === cookieId))
+  }
+  for (const loadout of before.fortune.fiveLeaf.loadouts) {
     assert.deepEqual(loadout.allocations, DEFAULT_CLOVER_FORTUNE_PERCENTAGES)
     assert.equal(loadout.allocations[cookieId], 0)
   }
@@ -113,20 +114,42 @@ test('older saves gain a zero allocation without overwriting custom loadouts', (
   assert.equal(restored.loadouts[0].batchSize, 3)
 })
 
-test('the cookie costs 3 points per percentage and can only be allocated or rolled after Rich Soil', () => {
+test('legacy Cookie chances become free Mirage on save import without replacing other loadout settings', () => {
+  const game = createCookieGame()
+  const oldLoadout = {
+    name: 'Old Cookie combo', chancePercent: 40, batchSize: 3,
+    allocations: { ...emptyAllocations, opus: 30, [cookieId]: 70 },
+  }
+  game.fortune.fiveLeaf.activeLoadoutIndex = 1
+  game.fortune.fiveLeaf.loadouts[1] = oldLoadout
+  const restored = importGame(exportGame(game))
+  const loadout = restored.fortune.fiveLeaf.loadouts[1]
+  assert.equal(restored.fortune.fiveLeaf.activeLoadoutIndex, 1)
+  assert.equal(loadout.name, oldLoadout.name)
+  assert.equal(loadout.chancePercent, 40)
+  assert.equal(loadout.batchSize, 3)
+  assert.equal(loadout.allocations.opus, 30)
+  assert.equal(loadout.allocations[cookieId], 0)
+  assert.equal(getFiveLeafLoadoutCost(loadout), 30)
+  assert.equal(chooseFiveLeafEffect(loadout, 0.5, restored), FORTUNE_EFFECT_IDS.MIRAGE)
+})
+
+test('the dormant cookie retains its point-cost definition but cannot be allocated or rolled', () => {
   const game = createCookieGame()
   const allocations = { ...emptyAllocations, opus: 33, fortuneOpus: 34, [cookieId]: 33 }
   const configured = updateFiveLeafLoadout(game, 0, { allocations })
   const loadout = configured.fortune.fiveLeaf.loadouts[0]
-  assert.equal(getFiveLeafLoadoutCost(loadout), 200)
-  assert.equal(chooseFiveLeafEffect(loadout, 0.68, game), cookieId)
+  assert.equal(getFiveLeafLoadoutCost({ allocations }), 200)
+  assert.equal(getFiveLeafLoadoutCost(loadout), 101)
+  assert.equal(loadout.allocations[cookieId], 0)
+  assert.equal(chooseFiveLeafEffect(loadout, 0.68, game), FORTUNE_EFFECT_IDS.MIRAGE)
   const locked = { ...game, seedAugmentations: { ...game.seedAugmentations, richSoilUnlocked: false } }
   const rejected = updateFiveLeafLoadout(locked, 0, { allocations })
   assert.equal(rejected.fortune.fiveLeaf.loadouts[0].allocations[cookieId], 0)
   assert.equal(chooseFiveLeafEffect(loadout, 0.68, locked), FORTUNE_EFFECT_IDS.MIRAGE)
   const collected = addRandomFortuneEffect(configured, () => 0.68)
-  assert.equal(collected.fortune.notice.effectId, cookieId)
-  assert.deepEqual(collected.fortune.activeEffects, [{ id: cookieId, remainingSeconds: 55 }])
+  assert.equal(collected.fortune.notice.effectId, FORTUNE_EFFECT_IDS.MIRAGE)
+  assert.deepEqual(collected.fortune.activeEffects, [])
 })
 
 test('4-Leaf Clover never rolls the cookie, even with Rich Soil owned', () => {
@@ -136,17 +159,18 @@ test('4-Leaf Clover never rolls the cookie, even with Rich Soil owned', () => {
   }
 })
 
-test('repeat cookies extend the timer, not the exponent; discovery points are awarded once', () => {
-  const game = updateFiveLeafLoadout(createCookieGame(), 0, {
+test('new rolls cannot extend a legacy Cookie timer while the effect is unobtainable', () => {
+  const game = withCookie(updateFiveLeafLoadout(createCookieGame(), 0, {
     allocations: { ...emptyAllocations, [cookieId]: 100 },
-  })
+  }))
   const once = addRandomFortuneEffect(game, () => 0)
   const twice = addRandomFortuneEffect(once, () => 0)
-  assert.deepEqual(twice.fortune.activeEffects, [{ id: cookieId, remainingSeconds: 110 }])
+  assert.deepEqual(twice.fortune.activeEffects, [{ id: cookieId, remainingSeconds: 55 }])
   assert.equal(getFortuneModifiers(twice).leekEnrichmentExponent, 1.2)
-  assert.equal(getFiveLeafPointBudget(twice), getFiveLeafPointBudget(game) + 25)
-  assert.equal(getFortuneModifiers(advanceFortuneState(twice, 109)).leekEnrichmentExponent, 1.2)
-  assert.equal(getFortuneModifiers(advanceFortuneState(twice, 110)).leekEnrichmentExponent, 1)
+  assert.deepEqual(twice.fortune.discoveredEffects, [])
+  assert.equal(getFiveLeafPointBudget(twice), getFiveLeafPointBudget(game))
+  assert.equal(getFortuneModifiers(advanceFortuneState(twice, 54)).leekEnrichmentExponent, 1.2)
+  assert.equal(getFortuneModifiers(advanceFortuneState(twice, 55)).leekEnrichmentExponent, 1)
 })
 
 test('the exponent applies to the full Leek source before Rich Soil and Apple reception, never to negative effects', () => {
@@ -224,13 +248,13 @@ test('cached snapshots invalidate when the cookie starts or expires, not as its 
   assert.deepEqual(snapshot(advanceFortuneState(withCookie(game), 55)), base)
 })
 
-test('cookie allocations and timers survive save/export/import and clear with loadout switches or Misfortune wipe', () => {
+test('cookie allocations are zeroed while legacy timers survive until expiry, loadout switch or Misfortune wipe', () => {
   const game = withCookie(updateFiveLeafLoadout(createCookieGame(), 0, {
     allocations: { ...emptyAllocations, [cookieId]: 100 },
   }))
   const restored = importGame(exportGame(game))
   assert.equal(restored.seedAugmentations.richSoilUnlocked, true)
-  assert.equal(restored.fortune.fiveLeaf.loadouts[0].allocations[cookieId], 100)
+  assert.equal(restored.fortune.fiveLeaf.loadouts[0].allocations[cookieId], 0)
   assert.deepEqual(restored.fortune.activeEffects, game.fortune.activeEffects)
   const switched = selectFiveLeafLoadout(restored, 1)
   assert.deepEqual(switched.fortune.activeEffects, [])

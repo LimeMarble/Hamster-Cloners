@@ -45,8 +45,8 @@ function createRichSoilGame() {
     blueprintSlots: [blueprint],
     farmland: { rows: 2, columns: 3, floors: 4, farms: 1, otherMultiplier: 1 },
     completedCropPerfections: perfections,
-    completedMisfortuneUpgrades: [MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT],
-    seedAugmentations: { ...initial.seedAugmentations, leekEnrichmentLevel: 5 },
+    completedMisfortuneUpgrades: ['notSoFinalSupport'],
+    seedAugmentations: { ...initial.seedAugmentations, ...richSoil },
     capybara: {
       ...initial.capybara,
       completedDemonstrations: [CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION],
@@ -60,10 +60,11 @@ function fieldSnapshot(blueprint, activeArea, augmentations = richSoil, perfecte
   )
 }
 
-test('Rich Soil spends exactly 5e71 Misfortune crops and requires Seed Augmentation and Enriching Leek', () => {
-  const game = createRichSoilGame()
+test('Rich Soil retains its price definition but cannot be newly purchased while temporarily unavailable', () => {
+  const owned = createRichSoilGame()
+  const game = { ...owned, seedAugmentations: { ...owned.seedAugmentations, richSoilUnlocked: false } }
   assert.equal(getNextSeedAugmentationCost(game, augmentationId), 5e71)
-  assert.equal(isSeedAugmentationVisible(game, augmentationId), true)
+  assert.equal(isSeedAugmentationVisible(game, augmentationId), false)
   assert.equal(isSeedAugmentationVisible({ ...game, activeArea: 'main' }, augmentationId), false)
   assert.equal(purchaseSeedAugmentation({ ...game, activeArea: 'main' }, augmentationId), null)
   assert.equal(purchaseSeedAugmentation({ ...game, completedCropPerfections: [] }, augmentationId), null)
@@ -78,11 +79,9 @@ test('Rich Soil spends exactly 5e71 Misfortune crops and requires Seed Augmentat
     ...game,
     areaProgress: { main: { crops: 1e150 }, misfortune: null },
   }, augmentationId)
-  assert.equal(purchased.crops, 0)
-  assert.equal(purchased.areaProgress.main.crops, 1e150)
-  assert.equal(purchased.seedAugmentations.richSoilUnlocked, true)
-  assert.equal(getNextSeedAugmentationCost(purchased, augmentationId), null)
-  assert.equal(purchaseSeedAugmentation({ ...purchased, crops: 5e71 }, augmentationId), null)
+  assert.equal(purchased, null)
+  assert.equal(getNextSeedAugmentationCost(owned, augmentationId), null)
+  assert.equal(purchaseSeedAugmentation({ ...owned, crops: 5e71 }, augmentationId), null)
 })
 
 test('Rich Soil scales only Leek contributions by unmodified recipient base harvest, with a minimum of one', () => {
@@ -165,7 +164,8 @@ test('Production caches keep Rich Soil isolated to Misfortune, including an othe
 
 test('Live simulation, blueprint income and hover all include Rich Soil under Fortune’s Wrath and floor support', () => {
   const game = {
-    ...purchaseSeedAugmentation(createRichSoilGame(), augmentationId),
+    ...createRichSoilGame(),
+    crops: 0,
     floorReplicators: 100,
     floorReplicatorMode: 'support',
     hasUnlockedFloorReplicators: true,
@@ -187,13 +187,13 @@ test('Live simulation, blueprint income and hover all include Rich Soil under Fo
 })
 
 test('Save round trips and area switches retain ownership without activating Rich Soil in main', () => {
-  const purchased = purchaseSeedAugmentation(createRichSoilGame(), augmentationId)
+  const purchased = createRichSoilGame()
   const restored = importGame(exportGame(purchased))
   assert.equal(restored.seedAugmentations.richSoilUnlocked, true)
   assert.equal(restored.activeArea, 'misfortune')
   const main = switchGameArea(restored, 'main')
   assert.equal(main.seedAugmentations.richSoilUnlocked, true)
-  assert.equal(isSeedAugmentationVisible(main, augmentationId), true)
+  assert.equal(isSeedAugmentationVisible(main, augmentationId), false)
   assert.equal(getRichSoilYieldMultiplier('leek', 100, main.seedAugmentations, main.activeArea), 1)
   const again = switchGameArea(main, 'misfortune')
   assert.equal(again.seedAugmentations.richSoilUnlocked, true)
@@ -203,7 +203,7 @@ test('Save round trips and area switches retain ownership without activating Ric
 })
 
 test('Wiping Misfortune removes Rich Soil from either area while preserving existing shared augmentations', () => {
-  const purchased = purchaseSeedAugmentation(createRichSoilGame(), augmentationId)
+  const purchased = createRichSoilGame()
   for (const game of [purchased, switchGameArea(purchased, 'main')]) {
     const wiped = wipeMisfortuneAreaProgress(game)
     assert.equal(wiped.seedAugmentations.richSoilUnlocked, false)
@@ -211,15 +211,7 @@ test('Wiping Misfortune removes Rich Soil from either area while preserving exis
   }
 })
 
-test('Rich Soil is a Misfortune progression goal after Clover assembly and follows its purchase state', () => {
+test('temporarily unavailable Rich Soil is omitted from progression goals', () => {
   const goalIndex = MAJOR_PROGRESSION_GOALS.findIndex((goal) => goal.id === 'augmentation-rich-soil')
-  const cloverIndex = MAJOR_PROGRESSION_GOALS.findIndex((goal) => goal.id === 'perfection-five-leaf-clover')
-  assert.equal(goalIndex, cloverIndex + 2)
-  const goal = MAJOR_PROGRESSION_GOALS[goalIndex]
-  const game = createRichSoilGame()
-  assert.equal(goal.target, 5e71)
-  assert.equal(goal.isApplicable(game), true)
-  assert.equal(goal.isApplicable({ ...game, activeArea: 'main' }), false)
-  assert.equal(goal.isComplete(game), false)
-  assert.equal(goal.isComplete(purchaseSeedAugmentation(game, augmentationId)), true)
+  assert.equal(goalIndex, -1)
 })

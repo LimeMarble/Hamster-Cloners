@@ -48,7 +48,6 @@ import { getMisfortuneAreaCrops } from './areaLogic.js'
 import { getCropPerfectionCost, getRowDuplicatorsUnlockCropCount, isCropPerfectionVisible } from './blueprintLogic.js'
 import {
   hasLeekOrthogonalSquaredAugmentation,
-  hasRichSoilAugmentation,
   SEED_AUGMENTATIONS,
   SEED_AUGMENTATION_IDS,
 } from './augmentationLogic.js'
@@ -494,23 +493,9 @@ export const MAJOR_PROGRESSION_GOALS = [
   },
   CLOVER_PERFECTION_GOAL,
   createMisfortuneUpgradeGoal(
-    MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
-    'Purchase Not-So-Final Support from the Misfortune tab to unlock Misfortune-only Seed Augmentations.',
+    MISFORTUNE_UPGRADE_IDS.PARTING_GIFT,
+    'Purchase Parting Gift from the Misfortune tab to build Floor Replicators in the main field. Main Support remains +0.2% Crop passives per tier.',
   ),
-  {
-    id: 'augmentation-rich-soil',
-    category: 'Seed augmentation',
-    title: 'Unlock Rich Soil',
-    target: SEED_AUGMENTATIONS[SEED_AUGMENTATION_IDS.RICH_SOIL].cost,
-    unit: 'Misfortune Crops',
-    description: 'Purchase Rich Soil for Enriching Leek in the Augmentation tab.',
-    isApplicable: (game) =>
-      game.activeArea === GAME_AREA_IDS.MISFORTUNE &&
-      hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT),
-    isComplete: (game) => hasRichSoilAugmentation(game.seedAugmentations),
-    getCurrent: (game) => game.crops,
-    requiresAction: true,
-  },
   createPerfectionGoal('samplingLentil'),
   createPerfectionGoal('blazingCarrot'),
   {

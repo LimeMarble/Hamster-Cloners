@@ -168,7 +168,7 @@ test('milestone purchases use fixed area costs, but the Row Duplicator reset rem
 
 test('Misfortune upgrade and assembly requirements are final values, with no second multiplier', () => {
   assert.equal(MISFORTUNE_UPGRADES.rushedStart.cost, 250_000_000)
-  assert.equal(MISFORTUNE_UPGRADES.notSoFinalSupport.cost, 1e71)
+  assert.equal(MISFORTUNE_UPGRADES.partingGift.cost, 1e77)
   const game = stageGame(stages[4])
   const cost = MISFORTUNE_UPGRADES.rushedStart.cost
   assert.equal(purchaseMisfortuneUpgrade({ ...game, crops: cost * 0.99 }, 'rushedStart'), null)

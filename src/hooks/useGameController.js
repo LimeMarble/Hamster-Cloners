@@ -315,18 +315,18 @@ export function useGameController() {
           MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
         ),
         onUnlockFinalSupport: actions.onUnlockFinalSupport,
-        notSoFinalSupport: MISFORTUNE_UPGRADES[
-          MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT
+        partingGift: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.PARTING_GIFT
         ],
-        hasNotSoFinalSupport: hasMisfortuneUpgrade(
+        hasPartingGift: hasMisfortuneUpgrade(
           game,
-          MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
+          MISFORTUNE_UPGRADE_IDS.PARTING_GIFT,
         ),
-        canUnlockNotSoFinalSupport: canUnlockMisfortuneUpgrade(
+        canUnlockPartingGift: canUnlockMisfortuneUpgrade(
           game,
-          MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
+          MISFORTUNE_UPGRADE_IDS.PARTING_GIFT,
         ),
-        onUnlockNotSoFinalSupport: actions.onUnlockNotSoFinalSupport,
+        onUnlockPartingGift: actions.onUnlockPartingGift,
         onLeave: actions.onLeaveMisfortuneArea,
         onEnter: actions.onEnterMisfortuneArea,
       },

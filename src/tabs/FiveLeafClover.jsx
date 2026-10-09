@@ -1,16 +1,24 @@
+import { useState } from 'react'
 import {
+  FIVE_LEAF_FREE_BATCH_SIZE,
+  FIVE_LEAF_MAX_BATCH_SIZE,
   FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR,
   FIVE_LEAF_MINIMUM_ATTEMPT_SECONDS,
   FIVE_LEAF_MINIMUM_INTERVAL_FACTOR,
   FIVE_LEAF_MINIMUM_POINT_TIME_FACTOR,
   FIVE_LEAF_MINIMUM_SPAWN_SECONDS,
   getAvailableFiveLeafFortunes,
+  getFiveLeafBatchEffectCount,
   getFiveLeafLoadoutCost,
   getFiveLeafPointBudget,
   getFiveLeafSchedule,
   normalizeFiveLeafState,
 } from '../game/fiveLeafCloverLogic.js'
-import { getFortuneEffect } from '../game/fortuneLogic.js'
+import {
+  FORTUNE_OVERCHARGE_DURATION_SECONDS,
+  FORTUNE_OVERCHARGE_STRENGTH_STEP,
+  getFortuneEffect,
+} from '../game/fortuneLogic.js'
 import { FormattedNumber } from './ui.jsx'
 
 const durationFormatter = new Intl.NumberFormat(undefined, {
@@ -22,6 +30,40 @@ function formatDuration(seconds) {
   if (seconds >= 3600) return `${durationFormatter.format(seconds / 3600)}h`
   if (seconds >= 60) return `${durationFormatter.format(seconds / 60)}min`
   return `${durationFormatter.format(seconds)}s`
+}
+
+function BatchSizeInput({ value, onCommit }) {
+  const [draft, setDraft] = useState(String(value))
+
+  function commit() {
+    const parsed = Number(draft)
+    const next = draft.trim() !== '' && Number.isFinite(parsed)
+      ? Math.min(FIVE_LEAF_MAX_BATCH_SIZE, Math.max(1, Math.floor(parsed)))
+      : value
+    setDraft(String(next))
+    if (next !== value) onCommit(next)
+  }
+
+  return (
+    <input
+      type="number"
+      aria-label="Base batch size"
+      aria-describedby="five-leaf-batch-help"
+      min="1"
+      max={FIVE_LEAF_MAX_BATCH_SIZE}
+      step="1"
+      inputMode="numeric"
+      value={draft}
+      onChange={(event) => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault()
+          event.currentTarget.blur()
+        }
+      }}
+    />
+  )
 }
 
 export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
@@ -83,10 +125,6 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
           </dd>
         </div>
         <div>
-          <dt>Unassigned chance</dt>
-          <dd>{100 - allocated}%</dd>
-        </div>
-        <div>
           <dt>Loadout overload</dt>
           <dd>
             {schedule.overloadFactor > 1
@@ -96,11 +134,11 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
         </div>
       </dl>
       <p className="five-leaf-help five-leaf-point-help">
-        Earn 50 Fortune points per completed demonstration and 25 per distinct
-        fortune used. Used points set appearance time linearly, down to ×
+        Each earned Hamster Treat grants 1 Fortune point, without spending treats.
+        Used points set appearance time linearly, down to ×
         {FIVE_LEAF_MINIMUM_POINT_TIME_FACTOR}; this loadout is at ×
         <FormattedNumber value={schedule.pointTimeFactor} maximumFractionDigits={3} />.
-        Spending beyond your points adds overload separately.
+        Allocating beyond your points adds overload separately.
       </p>
 
       <section className="five-leaf-section" aria-labelledby="five-leaf-appearance-title">
@@ -130,19 +168,23 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
           </label>
           <label className="five-leaf-control">
             <span className="five-leaf-control-heading">
-              <strong>Bundles per appearance</strong>
+              <strong>Base batch size</strong>
+              <strong><FormattedNumber value={getFiveLeafBatchEffectCount(loadout)} /> effects per batch</strong>
             </span>
-            <select
+            <BatchSizeInput
+              key={`${state.activeLoadoutIndex}:${loadout.batchSize}`}
               value={loadout.batchSize}
-              onChange={(event) => onUpdateLoadout(state.activeLoadoutIndex, {
-                batchSize: Number(event.target.value),
+              onCommit={(batchSize) => onUpdateLoadout(state.activeLoadoutIndex, {
+                batchSize,
               })}
-            >
-              {[1, 2, 3, 4, 5].map((count) => (
-                <option key={count} value={count}>{count}</option>
-              ))}
-            </select>
-            <small>Larger groups take longer to arrive.</small>
+            />
+            <small id="five-leaf-batch-help">
+              Select 1 to <FormattedNumber value={FIVE_LEAF_MAX_BATCH_SIZE} /> base effects,
+              plus <FormattedNumber value={FIVE_LEAF_FREE_BATCH_SIZE} /> free effect per batch.
+              One collectible batch rolls all its effects at once.
+              Waiting time scales linearly with the base size only.
+              Press Enter or leave the input to apply.
+            </small>
           </label>
         </div>
         <dl className="five-leaf-timing">
@@ -162,11 +204,11 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
         <p className="five-leaf-help five-leaf-timing-help">
           The first attempt cannot happen before {FIVE_LEAF_MINIMUM_INTERVAL_FACTOR}×
           the adjusted {formatDuration(schedule.baseSeconds)} base interval or{' '}
-          {FIVE_LEAF_MINIMUM_SPAWN_SECONDS}s, whichever is later. A bundle is
+          {FIVE_LEAF_MINIMUM_SPAWN_SECONDS}s, whichever is later. A batch is
           guaranteed by {FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR}× that interval,
           never sooner than {FIVE_LEAF_MINIMUM_SPAWN_SECONDS}s. Attempts are at
           least {FIVE_LEAF_MINIMUM_ATTEMPT_SECONDS}s apart and pause while a
-          bundle is on screen.
+          batch is on screen.
         </p>
       </section>
 
@@ -181,6 +223,15 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
         <p className="five-leaf-help">
           Assign chance to each effect. Any chance left over becomes Fortune&apos;s
           Mirage at no point cost.
+        </p>
+        <p className="five-leaf-help">
+          Timed fortunes overcharge as their stored duration grows past{' '}
+          <FormattedNumber value={FORTUNE_OVERCHARGE_DURATION_SECONDS} />s.
+          Strength p = duration / <FormattedNumber value={FORTUNE_OVERCHARGE_DURATION_SECONDS} />,
+          rounded down in <FormattedNumber value={FORTUNE_OVERCHARGE_STRENGTH_STEP} /> steps, with a minimum of 1.
+          Multipliers become their base value ^p and timers run at ×2^(p − 1).
+          Leek Cookie instead scales its bonus above 1 linearly: 1 + 0.2 × p.
+          Strength and timer speed fall as duration is consumed. Split and Mirage do not overcharge.
         </p>
         <div className="five-leaf-fortunes">
           {getAvailableFiveLeafFortunes(game).map(({ id, pointCost }) => {

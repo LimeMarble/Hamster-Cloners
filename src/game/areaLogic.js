@@ -338,7 +338,7 @@ export function wipeMisfortuneAreaProgress(game) {
     return {
       ...cleanedCurrentGame,
       floorReplicators: canPurchaseFloorReplicatorsInArea(
-        GAME_AREA_IDS.MAIN,
+        { ...game, activeArea: GAME_AREA_IDS.MAIN },
       )
         ? game.floorReplicators
         : 0,
@@ -356,7 +356,7 @@ export function wipeMisfortuneAreaProgress(game) {
     ...game,
     ...createInitialMisfortuneAreaState(game.rabbitBlueprintExpansions),
     floorReplicators: canPurchaseFloorReplicatorsInArea(
-      GAME_AREA_IDS.MAIN,
+      { ...game, activeArea: GAME_AREA_IDS.MAIN },
     )
       ? game.floorReplicators
       : 0,

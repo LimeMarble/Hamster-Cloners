@@ -224,6 +224,11 @@ dd {
   outline-offset: 2px;
 }
 
+.fortune-effect-overcharged {
+  border-color: #f0d466;
+  box-shadow: 0 0 12px rgb(240 212 102 / 30%), 0 8px 20px rgb(0 0 0 / 45%);
+}
+
 .fortune-effect-icon {
   font-size: 1.45rem;
   font-weight: 700;
@@ -299,6 +304,8 @@ dd {
   bottom: 22px;
   gap: 4px;
   padding: 15px;
+  max-height: min(420px, calc(100dvh - 44px));
+  overflow-y: auto;
 }
 
 .fortune-result-toast strong {
@@ -307,6 +314,22 @@ dd {
 }
 
 .fortune-result-toast > span:last-child {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.fortune-batch-results,
+.fortune-batch-result {
+  display: grid;
+  gap: 4px;
+}
+
+.fortune-batch-results {
+  gap: 10px;
+}
+
+.fortune-batch-result span,
+.fortune-batch-results small {
   color: var(--text-muted);
   font-size: 0.78rem;
 }

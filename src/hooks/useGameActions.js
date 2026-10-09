@@ -547,11 +547,11 @@ export function useGameActions({
     setActiveTab('inventions')
   }
 
-  function unlockNotSoFinalSupport() {
+  function unlockPartingGift() {
     updateGame((currentGame) =>
       purchaseMisfortuneUpgrade(
         currentGame,
-        MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
+        MISFORTUNE_UPGRADE_IDS.PARTING_GIFT,
       ) ?? currentGame,
     )
   }
@@ -760,7 +760,7 @@ export function useGameActions({
     onUnlockNourishingMisery: unlockNourishingMisery,
     onUnlockHuntForSomethingGreater: unlockHuntForSomethingGreater,
     onUnlockFinalSupport: unlockFinalSupport,
-    onUnlockNotSoFinalSupport: unlockNotSoFinalSupport,
+    onUnlockPartingGift: unlockPartingGift,
     options: {
       saveCode,
       onSaveCodeChange: setSaveCode,

@@ -12,7 +12,7 @@ export const GAME_AREA_IDS = Object.freeze({
 export const MISFORTUNE_AREA_STATE_VERSION = 2
 export const MISFORTUNE_CROP_GOAL = 1e301
 export const MISFORTUNE_COST_MULTIPLIER = 100
-export const MISFORTUNE_AUGMENTATION_PREREQUISITE_ID = 'notSoFinalSupport'
+export const PARTING_GIFT_UPGRADE_ID = 'partingGift'
 export const FORTUNES_WRATH_CROP_DIVISOR = 1777
 export const FORTUNES_WRATH_CROP_EXPONENT = 0.5
 export const FORTUNES_WRATH_PASSIVE_MULTIPLIER = 0.63
@@ -55,7 +55,9 @@ export function canPurchaseFloorReplicatorsInArea(gameOrAreaId) {
       ? gameOrAreaId
       : gameOrAreaId?.activeArea
 
-  return FLOOR_REPLICATOR_PURCHASE_AREA_IDS.includes(areaId)
+  return FLOOR_REPLICATOR_PURCHASE_AREA_IDS.includes(areaId) ||
+    (areaId === GAME_AREA_IDS.MAIN &&
+      gameOrAreaId?.completedMisfortuneUpgrades?.includes(PARTING_GIFT_UPGRADE_ID) === true)
 }
 
 export function getGameAreaCostMultiplier(gameOrAreaId) {

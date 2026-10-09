@@ -1,7 +1,4 @@
-import {
-  GAME_AREA_IDS,
-  MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
-} from './gameConfig.js'
+import { GAME_AREA_IDS } from './gameConfig.js'
 import { getAreaCropValue } from './cropRequirements.js'
 
 export const SEED_AUGMENTATION_IDS = Object.freeze({
@@ -43,6 +40,7 @@ export const SEED_AUGMENTATIONS = Object.freeze({
     id: SEED_AUGMENTATION_IDS.RICH_SOIL,
     cropId: 'leek',
     name: 'Rich Soil',
+    temporarilyUnavailable: true,
     cost: 5e71,
     purchaseArea: GAME_AREA_IDS.MISFORTUNE,
     effectArea: GAME_AREA_IDS.MISFORTUNE,
@@ -470,7 +468,7 @@ export function getNextSeedAugmentationCost(game, augmentationId) {
 
 export function isSeedAugmentationVisible(game, augmentationId) {
   const augmentation = SEED_AUGMENTATIONS[augmentationId]
-  if (!augmentation) return false
+  if (!augmentation || augmentation.temporarilyUnavailable) return false
 
   if (
     augmentation.purchaseArea &&
@@ -484,14 +482,7 @@ export function isSeedAugmentationVisible(game, augmentationId) {
   const requiredDemonstrationId = augmentation.requiredDemonstrationId
   const requiredMisfortuneUpgradeIds = augmentation.requiredMisfortuneUpgradeIds ??
     (augmentation.requiredMisfortuneUpgradeId ? [augmentation.requiredMisfortuneUpgradeId] : [])
-  const hasMisfortuneAugmentationAccess =
-    augmentation.purchaseArea !== GAME_AREA_IDS.MISFORTUNE ||
-    game.completedMisfortuneUpgrades?.includes(
-      MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
-    ) === true
-
   return (
-    hasMisfortuneAugmentationAccess &&
     (!requiredDemonstrationId ||
       game.capybara?.completedDemonstrations?.includes(
         requiredDemonstrationId,

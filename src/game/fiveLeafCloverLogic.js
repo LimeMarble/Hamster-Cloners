@@ -1,9 +1,11 @@
+import { getHamsterTreats } from './achievementAwards.js'
 import { hasRichSoilAugmentation } from './augmentationLogic.js'
 
 export const FIVE_LEAF_LOADOUT_COUNT = 3
 export const FIVE_LEAF_MIN_CHANCE_PERCENT = 10
 export const FIVE_LEAF_MAX_BATCH_SIZE = 5
-export const FIVE_LEAF_BASE_INTERVAL_SECONDS = 30
+export const FIVE_LEAF_FREE_BATCH_SIZE = 1
+export const FIVE_LEAF_BASE_INTERVAL_SECONDS = 15
 export const FIVE_LEAF_MINIMUM_INTERVAL_FACTOR = 0.25
 export const FIVE_LEAF_MAXIMUM_INTERVAL_FACTOR = 2
 export const FIVE_LEAF_MINIMUM_SPAWN_SECONDS = 5
@@ -24,12 +26,13 @@ export const FIVE_LEAF_FORTUNES = Object.freeze([
   Object.freeze({ id: 'bounty', pointCost: 1 }),
   Object.freeze({ id: 'mirage', pointCost: 2 }),
   Object.freeze({ id: 'fortuneOpus', pointCost: 2 }),
-  Object.freeze({ id: 'leekFortuneCookie', pointCost: 3 }),
+  Object.freeze({ id: 'leekFortuneCookie', pointCost: 3, temporarilyUnavailable: true }),
 ])
 
 export function getAvailableFiveLeafFortunes(game) {
-  return FIVE_LEAF_FORTUNES.filter(({ id }) =>
-    id !== 'leekFortuneCookie' || hasRichSoilAugmentation(game?.seedAugmentations),
+  return FIVE_LEAF_FORTUNES.filter(({ id, temporarilyUnavailable }) =>
+    !temporarilyUnavailable &&
+    (id !== 'leekFortuneCookie' || hasRichSoilAugmentation(game?.seedAugmentations)),
   )
 }
 
@@ -109,6 +112,9 @@ export function normalizeFiveLeafState(rawState, game) {
           clampInteger(raw.allocations?.[id], 0, 100),
         ]),
       )
+      for (const { id, temporarilyUnavailable } of FIVE_LEAF_FORTUNES) {
+        if (temporarilyUnavailable) allocations[id] = 0
+      }
       if (game !== undefined) {
         const availableIds = new Set(getAvailableFiveLeafFortunes(game).map(({ id }) => id))
         for (const { id } of FIVE_LEAF_FORTUNES) {
@@ -139,13 +145,7 @@ export function normalizeFiveLeafState(rawState, game) {
 }
 
 export function getFiveLeafPointBudget(game) {
-  const demonstrations = new Set(
-    game?.capybara?.completedDemonstrations ?? [],
-  ).size
-  const utilizedFortunes = new Set(
-    game?.fortune?.discoveredEffects ?? [],
-  ).size
-  return demonstrations * 50 + utilizedFortunes * 25
+  return getHamsterTreats(game)
 }
 
 export function getFiveLeafLoadoutCost(loadout) {
@@ -156,8 +156,14 @@ export function getFiveLeafLoadoutCost(loadout) {
   )
 }
 
+export function getFiveLeafBatchEffectCount(loadout) {
+  return clampInteger(loadout?.batchSize, 1, FIVE_LEAF_MAX_BATCH_SIZE) +
+    FIVE_LEAF_FREE_BATCH_SIZE
+}
+
 export function getFiveLeafSchedule(loadout, pointBudget = Infinity) {
-  const batchFactor = 2 ** (loadout.batchSize - 1)
+  // Only the selected base size adds waiting time; the bonus bundle is free.
+  const batchFactor = clampInteger(loadout.batchSize, 1, FIVE_LEAF_MAX_BATCH_SIZE)
   const pointCost = getFiveLeafLoadoutCost(loadout)
   const pointRatio = Number.isFinite(pointBudget)
     ? pointCost / Math.max(1, pointBudget)

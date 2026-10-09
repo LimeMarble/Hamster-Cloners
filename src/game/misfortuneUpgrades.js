@@ -1,7 +1,7 @@
 import {
   FLOOR_REPLICATOR_COST_TIER_SIZE,
   GAME_AREA_IDS,
-  MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
+  PARTING_GIFT_UPGRADE_ID,
 } from './gameConfig.js'
 import {
   getUnlockedCropIds,
@@ -26,7 +26,7 @@ export const MISFORTUNE_UPGRADE_IDS = Object.freeze({
   NOURISHING_MISERY: 'nourishingMisery',
   HUNT_FOR_SOMETHING_GREATER: 'huntForSomethingGreater',
   FINAL_SUPPORT: 'finalSupport',
-  NOT_SO_FINAL_SUPPORT: MISFORTUNE_AUGMENTATION_PREREQUISITE_ID,
+  PARTING_GIFT: PARTING_GIFT_UPGRADE_ID,
 })
 
 export const MISFORTUNE_UPGRADES = Object.freeze({
@@ -96,12 +96,12 @@ export const MISFORTUNE_UPGRADES = Object.freeze({
     name: 'Oily Treats',
     cost: 1.8e12,
   }),
-  [MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT]: Object.freeze({
-    id: MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
-    name: 'Not-So-Final Support',
+  [MISFORTUNE_UPGRADE_IDS.PARTING_GIFT]: Object.freeze({
+    id: MISFORTUNE_UPGRADE_IDS.PARTING_GIFT,
+    name: 'Parting Gift',
     requiredCropPerfectionId: 'sweetPotato',
     requiresFiveLeafClover: true,
-    cost: 1e71,
+    cost: 1e77,
   }),
 })
 

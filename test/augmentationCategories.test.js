@@ -45,7 +45,6 @@ function lateGame() {
       MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
       MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
       MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
-      MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
       MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
     ],
     capybara: { ...initial.capybara, completedDemonstrations: ['introduction', 'demonstrationOne', 'misfortuneTrial'] },
@@ -70,10 +69,12 @@ test('every augmentation belongs to exactly one registered crop category', () =>
   const ids = categories.flatMap(({ augmentationIds }) => augmentationIds)
   assert.deepEqual(categories.map(({ cropId }) => cropId), ['leek', 'corn', 'sweetPotato', 'pumpkin', 'knotweed'])
   assert.equal(new Set(ids).size, ids.length)
-  assert.deepEqual([...ids].sort(), Object.keys(SEED_AUGMENTATIONS).sort())
+  assert.deepEqual([...ids].sort(), Object.values(SEED_AUGMENTATIONS)
+    .filter((augmentation) => !augmentation.temporarilyUnavailable).map(({ id }) => id).sort())
   for (const augmentation of Object.values(SEED_AUGMENTATIONS)) {
     assert.ok(AUGMENTATION_CROP_CATEGORIES.some(({ cropId }) => cropId === augmentation.cropId))
-    assert.ok(categories.find(({ cropId }) => cropId === augmentation.cropId).augmentationIds.includes(augmentation.id))
+    assert.equal(categories.find(({ cropId }) => cropId === augmentation.cropId)
+      .augmentationIds.includes(augmentation.id), !augmentation.temporarilyUnavailable)
   }
 })
 
@@ -97,26 +98,26 @@ test('Orthogonal² is hidden before Final Support and shows its reach, bonus and
   assert.match(markup, /two tiles away/)
   assert.match(markup, /regardless of the intervening tile/)
   assert.ok(markup.indexOf('<h2>Diagonal Enrichment</h2>') < markup.indexOf('<h2>Orthogonal²</h2>'))
-  assert.ok(markup.indexOf('<h2>Orthogonal²</h2>') < markup.indexOf('<h2>Rich Soil</h2>'))
+  assert.doesNotMatch(markup, /<h2>Rich Soil<\/h2>/)
   const owned = render({ ...game, seedAugmentations: {
     ...game.seedAugmentations, leekEnrichmentLevel: 5, leekOrthogonalSquaredUnlocked: true,
   } })
   assert.match(owned, /Extra adjacent boost<\/dt><dd>\+75 Crops/)
-  const newCard = owned.slice(owned.indexOf('<h2>Orthogonal²</h2>'), owned.indexOf('<h2>Rich Soil</h2>'))
+  const newCard = owned.slice(owned.indexOf('<h2>Orthogonal²</h2>'))
   assert.match(newCard, /disabled="">Augmentation active<\/button>/)
   assert.doesNotMatch(markup, /Orthogonal Squared|Orthogonal\^2/)
 })
 
-test('Rich Soil stays inside Leek and keeps its Misfortune precursor and area restrictions', () => {
+test('Rich Soil keeps its Leek category metadata but remains hidden in both areas', () => {
   const game = lateGame()
   const withoutResearch = { ...game, completedMisfortuneUpgrades: [] }
   assert.equal(getVisibleAugmentationCategories(withoutResearch)[0].augmentationIds.length, 2)
   assert.ok(!render(withoutResearch).includes('<h2>Rich Soil</h2>'))
-  assert.ok(getVisibleAugmentationCategories(game)[0].augmentationIds.includes(SEED_AUGMENTATION_IDS.RICH_SOIL))
-  assert.ok(render(game).includes('<h2>Rich Soil</h2>'))
+  assert.ok(!getVisibleAugmentationCategories(game)[0].augmentationIds.includes(SEED_AUGMENTATION_IDS.RICH_SOIL))
+  assert.ok(!render(game).includes('<h2>Rich Soil</h2>'))
   assert.ok(!render({ ...game, activeArea: 'main' }).includes('<h2>Rich Soil</h2>'))
   const owned = { ...game, activeArea: 'main', seedAugmentations: { ...game.seedAugmentations, richSoilUnlocked: true } }
-  assert.ok(render(owned).includes('Inactive outside Misfortune'))
+  assert.ok(!render(owned).includes('<h2>Rich Soil</h2>'))
   assert.ok(!render(game, 'corn').includes('<h2>Rich Soil</h2>'))
 })
 

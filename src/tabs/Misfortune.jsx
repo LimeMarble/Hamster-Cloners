@@ -76,10 +76,10 @@ export function Misfortune({
   hasFinalSupport,
   canUnlockFinalSupport,
   onUnlockFinalSupport,
-  notSoFinalSupport,
-  hasNotSoFinalSupport,
-  canUnlockNotSoFinalSupport,
-  onUnlockNotSoFinalSupport,
+  partingGift,
+  hasPartingGift,
+  canUnlockPartingGift,
+  onUnlockPartingGift,
   onLeave,
   onEnter,
 }) {
@@ -444,29 +444,30 @@ export function Misfortune({
         {hasFiveLeafClover ? (
         <article className="misfortune-upgrade-card">
           <div>
-            <h2>{notSoFinalSupport.name}</h2>
+            <h2>{partingGift.name}</h2>
             <p>
-              Unlocks Misfortune-only Seed Augmentations, beginning with
-              Rich Soil for Enriching Leek. This research does not change
-              Crop effects or Floor Replicator support by itself.
+              Allows Floor Replicators to be purchased in the main field.
+              Main Support mode still grants only Final Support&apos;s{' '}
+              <FormattedNumber value={finalSupport.passiveEffectBonusPerTier * 100} />%
+              Crop passive bonus per tier.
             </p>
             <p className="misfortune-upgrade-note">
-              Cost: <FormattedNumber value={notSoFinalSupport.cost} />{' '}
+              Cost: <FormattedNumber value={partingGift.cost} />{' '}
               Crops.
             </p>
           </div>
           <button
             type="button"
-            className={hasNotSoFinalSupport ? 'secondary-button' : 'primary-button'}
-            onClick={onUnlockNotSoFinalSupport}
-            disabled={!isMisfortuneAreaActive || hasNotSoFinalSupport || !canUnlockNotSoFinalSupport}
+            className={hasPartingGift ? 'secondary-button' : 'primary-button'}
+            onClick={onUnlockPartingGift}
+            disabled={!isMisfortuneAreaActive || hasPartingGift || !canUnlockPartingGift}
           >
-            {hasNotSoFinalSupport
+            {hasPartingGift
               ? 'Accepted'
-              : canUnlockNotSoFinalSupport
-                ? 'Unlock Misfortune augments'
+              : canUnlockPartingGift
+                ? 'Accept Parting Gift'
                 : <>
-                    Need <FormattedNumber value={notSoFinalSupport.cost} />{' '}
+                    Need <FormattedNumber value={partingGift.cost} />{' '}
                     Crops
                   </>}
           </button>

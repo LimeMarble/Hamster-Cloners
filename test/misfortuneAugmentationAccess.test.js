@@ -2,8 +2,11 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   canUnlockMisfortuneUpgrade,
+  canPurchaseFloorReplicatorsInArea,
   createInitialGame,
   getAvailableFiveLeafFortunes,
+  getBulkPurchaseQuote,
+  getMaxFloorReplicatorPurchase,
   getFloorReplicatorSupportPassiveEffectBonus,
   hasMisfortuneUpgrade,
   isSeedAugmentationVisible,
@@ -18,7 +21,7 @@ import {
 } from '../src/game/gameLogic.js'
 import { exportGame, importGame, normalizeGame } from '../src/game/storage.js'
 
-const precursorId = MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT
+const precursorId = MISFORTUNE_UPGRADE_IDS.PARTING_GIFT
 const richSoilId = SEED_AUGMENTATION_IDS.RICH_SOIL
 
 function createAugmentationGame() {
@@ -26,11 +29,12 @@ function createAugmentationGame() {
   return {
     ...initial,
     activeArea: 'misfortune',
-    crops: 1e72,
+    crops: 1e78,
     secondsSinceAreaReset: 345,
     hamsters: 200,
     rowDuplicators: 123,
     floorReplicators: 500,
+    hasUnlockedFloorReplicators: true,
     completedCropPerfections: ['enrichingLeek', 'mirrorCorn', 'sweetPotato'],
     cloverAssembly: { ...initial.cloverAssembly, assembled: true },
     capybara: { ...initial.capybara, completedDemonstrations: ['introduction', 'demonstrationOne'] },
@@ -38,21 +42,21 @@ function createAugmentationGame() {
   }
 }
 
-test('Not-So-Final Support costs exactly 1e71 Misfortune crops, with no support bonus', () => {
-  assert.equal(MISFORTUNE_UPGRADES[precursorId].name, 'Not-So-Final Support')
-  assert.equal(MISFORTUNE_UPGRADES[precursorId].cost, 1e71)
+test('Parting Gift costs exactly 1e77 Misfortune crops, with no support bonus', () => {
+  assert.equal(MISFORTUNE_UPGRADES[precursorId].name, 'Parting Gift')
+  assert.equal(MISFORTUNE_UPGRADES[precursorId].cost, 1e77)
   assert.equal(MISFORTUNE_UPGRADES[precursorId].passiveEffectBonusPerTier, undefined)
   const game = createAugmentationGame()
-  assert.equal(canUnlockMisfortuneUpgrade({ ...game, crops: 9e69 }, precursorId), false)
-  assert.equal(purchaseMisfortuneUpgrade({ ...game, crops: 9e69 }, precursorId), null)
+  assert.equal(canUnlockMisfortuneUpgrade({ ...game, crops: 9e76 }, precursorId), false)
+  assert.equal(purchaseMisfortuneUpgrade({ ...game, crops: 9e76 }, precursorId), null)
   assert.equal(canUnlockMisfortuneUpgrade({ ...game, activeArea: 'main' }, precursorId), false)
   assert.equal(purchaseMisfortuneUpgrade({ ...game, activeArea: 'main' }, precursorId), null)
 })
 
-test('buying the precursor spends current-area crops once and does not reset either area', () => {
-  const game = { ...createAugmentationGame(), crops: 2e71 }
+test('buying Parting Gift spends current-area crops once and does not reset either area', () => {
+  const game = { ...createAugmentationGame(), crops: 2e77 }
   const purchased = purchaseMisfortuneUpgrade(game, precursorId)
-  assert.equal(purchased.crops, 1e71)
+  assert.equal(purchased.crops, 1e77)
   assert.equal(purchased.secondsSinceAreaReset, 345)
   assert.equal(purchased.hamsters, game.hamsters)
   assert.equal(purchased.rowDuplicators, game.rowDuplicators)
@@ -66,7 +70,7 @@ test('buying the precursor spends current-area crops once and does not reset eit
   assert.equal(purchaseMisfortuneUpgrade(purchased, precursorId), null)
 })
 
-test('Misfortune-only augmentations are hidden and cannot be purchased before the precursor', () => {
+test('Rich Soil and Leek Cookie stay unavailable before and after Parting Gift', () => {
   const game = createAugmentationGame()
   for (const augmentation of Object.values(SEED_AUGMENTATIONS).filter((entry) => entry.purchaseArea === 'misfortune')) {
     assert.equal(isSeedAugmentationVisible(game, augmentation.id), false)
@@ -74,13 +78,13 @@ test('Misfortune-only augmentations are hidden and cannot be purchased before th
   }
   assert.ok(!getAvailableFiveLeafFortunes(game).some(({ id }) => id === 'leekFortuneCookie'))
   const researched = purchaseMisfortuneUpgrade(game, precursorId)
-  assert.equal(isSeedAugmentationVisible(researched, richSoilId), true)
-  const richSoil = purchaseSeedAugmentation(researched, richSoilId)
-  assert.equal(richSoil.seedAugmentations.richSoilUnlocked, true)
-  assert.ok(getAvailableFiveLeafFortunes(richSoil).some(({ id }) => id === 'leekFortuneCookie'))
+  assert.equal(isSeedAugmentationVisible(researched, richSoilId), false)
+  assert.equal(purchaseSeedAugmentation(researched, richSoilId), null)
+  const legacyOwned = { ...researched, seedAugmentations: { richSoilUnlocked: true } }
+  assert.ok(!getAvailableFiveLeafFortunes(legacyOwned).some(({ id }) => id === 'leekFortuneCookie'))
 })
 
-test('shared augmentations retain their old prerequisites and do not require Not-So-Final Support', () => {
+test('shared augmentations retain their existing prerequisites', () => {
   for (const activeArea of ['main', 'misfortune']) {
     const game = { ...createAugmentationGame(), activeArea, crops: 1e80 }
     for (const id of [
@@ -94,7 +98,7 @@ test('shared augmentations retain their old prerequisites and do not require Not
   }
 })
 
-test('the precursor leaves existing Floor Replicator support effectiveness unchanged', () => {
+test('Parting Gift leaves support unchanged, including Main at 0.2 percent per tier', () => {
   const game = {
     ...createAugmentationGame(),
     floorReplicatorMode: 'support',
@@ -106,31 +110,67 @@ test('the precursor leaves existing Floor Replicator support effectiveness uncha
   const before = getFloorReplicatorSupportPassiveEffectBonus(game)
   assert.ok(before > 0)
   assert.equal(getFloorReplicatorSupportPassiveEffectBonus(purchaseMisfortuneUpgrade(game, precursorId)), before)
+  const main = { ...purchaseMisfortuneUpgrade(game, precursorId), activeArea: 'main' }
+  assert.equal(getFloorReplicatorSupportPassiveEffectBonus(main), 50 * 0.002)
+  assert.equal(getFloorReplicatorSupportPassiveEffectBonus({ ...main, completedMisfortuneUpgrades: [
+    MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+  ] }), getFloorReplicatorSupportPassiveEffectBonus(main))
 })
 
-test('the precursor survives saving and importing, and is removed by wiping Misfortune', () => {
+test('Parting Gift survives saving and importing, and a Misfortune wipe preserves formerly Main-purchasable Floors', () => {
   const game = purchaseMisfortuneUpgrade(createAugmentationGame(), precursorId)
   const restored = importGame(exportGame(game))
   assert.equal(hasMisfortuneUpgrade(restored, precursorId), true)
-  assert.equal(isSeedAugmentationVisible(restored, richSoilId), true)
+  assert.equal(isSeedAugmentationVisible(restored, richSoilId), false)
   assert.equal(hasMisfortuneUpgrade(wipeMisfortuneAreaProgress(restored), precursorId), false)
   assert.equal(isSeedAugmentationVisible(wipeMisfortuneAreaProgress(restored), richSoilId), false)
   assert.deepEqual(normalizeGame({ completedMisfortuneUpgrades: [precursorId, precursorId, 'invalid'] }).completedMisfortuneUpgrades, [precursorId])
+  for (const activeArea of ['main', 'misfortune']) {
+    const wiped = wipeMisfortuneAreaProgress({ ...restored, activeArea })
+    assert.equal(wiped.floorReplicators, restored.floorReplicators)
+    assert.equal(canPurchaseFloorReplicatorsInArea({ ...wiped, activeArea: 'main' }), false)
+  }
 })
 
-test('the Misfortune goal bar puts the precursor directly before Rich Soil', () => {
+test('the Misfortune goal bar puts Parting Gift after Clover without removed research goals', () => {
   const precursorIndex = MAJOR_PROGRESSION_GOALS.findIndex((goal) => goal.id === `misfortune-upgrade-${precursorId}`)
-  const richSoilIndex = MAJOR_PROGRESSION_GOALS.findIndex((goal) => goal.id === 'augmentation-rich-soil')
-  assert.equal(richSoilIndex, precursorIndex + 1)
+  const cloverIndex = MAJOR_PROGRESSION_GOALS.findIndex((goal) => goal.id === 'perfection-five-leaf-clover')
+  assert.equal(precursorIndex, cloverIndex + 1)
   const precursor = MAJOR_PROGRESSION_GOALS[precursorIndex]
-  const richSoil = MAJOR_PROGRESSION_GOALS[richSoilIndex]
   const game = createAugmentationGame()
-  assert.equal(precursor.target, 1e71)
+  assert.equal(precursor.target, 1e77)
   assert.equal(precursor.isApplicable(game), true)
   assert.equal(precursor.isApplicable({ ...game, activeArea: 'main' }), false)
   assert.equal(precursor.isComplete(game), false)
-  assert.equal(richSoil.isApplicable(game), false)
   const purchased = purchaseMisfortuneUpgrade(game, precursorId)
   assert.equal(precursor.isComplete(purchased), true)
-  assert.equal(richSoil.isApplicable(purchased), true)
+  assert.ok(!MAJOR_PROGRESSION_GOALS.some(({ id }) => [
+    'augmentation-rich-soil', 'misfortune-upgrade-notSoFinalSupport',
+  ].includes(id)))
+})
+
+test('Main single, Buy 10 and Buy Max floor purchases require Parting Gift and use normal area prices', () => {
+  const game = { ...createAugmentationGame(), activeArea: 'main', floorReplicators: 0, crops: 10 }
+  assert.equal(canPurchaseFloorReplicatorsInArea(game), false)
+  assert.equal(getMaxFloorReplicatorPurchase(game, 1).purchased, 0)
+  assert.equal(getMaxFloorReplicatorPurchase(game, 10).purchased, 0)
+  assert.equal(getMaxFloorReplicatorPurchase(game).purchased, 0)
+  const unlocked = { ...game, completedMisfortuneUpgrades: [precursorId] }
+  assert.equal(canPurchaseFloorReplicatorsInArea(unlocked), true)
+  assert.equal(getBulkPurchaseQuote(unlocked, 'floor', 1).cost, 0.01)
+  assert.equal(getMaxFloorReplicatorPurchase(unlocked, 1).purchased, 1)
+  assert.equal(getMaxFloorReplicatorPurchase(unlocked, 10).purchased, 10)
+  assert.ok(getMaxFloorReplicatorPurchase(unlocked).purchased > 10)
+  assert.equal(getBulkPurchaseQuote({ ...unlocked, activeArea: 'misfortune' }, 'floor', 1).cost, 1)
+  assert.equal(getMaxFloorReplicatorPurchase({ ...unlocked, hasUnlockedFloorReplicators: false }, 1).purchased, 0)
+})
+
+test('retired Not-So-Final Support is rejected and never grants Parting Gift when importing old saves', () => {
+  const restored = normalizeGame({
+    ...createAugmentationGame(), completedMisfortuneUpgrades: ['notSoFinalSupport'],
+  })
+  assert.equal(MISFORTUNE_UPGRADES.notSoFinalSupport, undefined)
+  assert.equal(purchaseMisfortuneUpgrade(createAugmentationGame(), 'notSoFinalSupport'), null)
+  assert.deepEqual(restored.completedMisfortuneUpgrades, [])
+  assert.equal(canPurchaseFloorReplicatorsInArea({ ...restored, activeArea: 'main' }), false)
 })

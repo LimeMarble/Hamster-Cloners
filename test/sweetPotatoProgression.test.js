@@ -49,7 +49,7 @@ function afterDemoOne(overrides = {}) {
 
 const laterUpgradeIds = [
   'adversityGrownTubers', 'burdenedFoundations', 'nourishingMisery',
-  'huntForSomethingGreater', 'fortunateColumn', 'finalSupport', 'notSoFinalSupport',
+  'huntForSomethingGreater', 'fortunateColumn', 'finalSupport', 'partingGift',
 ]
 
 test('Sweet Potato is between Demo 1 and Soybean without teasing before Demo 1', () => {
@@ -117,7 +117,7 @@ test('later Misfortune upgrades and their goals stay hidden until Sweet Potato i
     const goal = MAJOR_PROGRESSION_GOALS.find(({ id: goalId }) => goalId === `misfortune-upgrade-${id}`)
     assert.equal(isMisfortuneUpgradeVisible(locked, id), false)
     assert.equal(goal.isApplicable(locked), false)
-    const needsMoreProgress = ['nourishingMisery', 'fortunateColumn', 'finalSupport', 'notSoFinalSupport'].includes(id)
+    const needsMoreProgress = ['nourishingMisery', 'fortunateColumn', 'finalSupport', 'partingGift'].includes(id)
     assert.equal(isMisfortuneUpgradeVisible(perfected, id), !needsMoreProgress)
     assert.equal(goal.isApplicable(perfected), !needsMoreProgress)
     assert.equal(isMisfortuneUpgradeVisible(fullyRevealed, id), true)
@@ -163,20 +163,20 @@ test('Nourishing Misery, Fortunate Column and Final Support require Hunt for bot
   }
 })
 
-test('Not-So-Final Support requires assembled 5-Leaf Clover, not just filled assembly progress', () => {
+test('Parting Gift requires assembled 5-Leaf Clover, not just filled assembly progress', () => {
   const game = afterDemoOne({ activeArea: 'misfortune', crops: 1e200,
     completedCropPerfections: ['sweetPotato'],
     completedMisfortuneUpgrades: ['huntForSomethingGreater'] })
   for (const cloverAssembly of [undefined, { assembled: false, progress: 7.77e58 }]) {
     const locked = { ...game, cloverAssembly }
-    assert.equal(isMisfortuneUpgradeVisible(locked, 'notSoFinalSupport'), false)
-    assert.equal(canUnlockMisfortuneUpgrade(locked, 'notSoFinalSupport'), false)
-    assert.equal(purchaseMisfortuneUpgrade(locked, 'notSoFinalSupport'), null)
+    assert.equal(isMisfortuneUpgradeVisible(locked, 'partingGift'), false)
+    assert.equal(canUnlockMisfortuneUpgrade(locked, 'partingGift'), false)
+    assert.equal(purchaseMisfortuneUpgrade(locked, 'partingGift'), null)
   }
   const ready = { ...game, cloverAssembly: { assembled: true } }
-  assert.equal(isMisfortuneUpgradeVisible(ready, 'notSoFinalSupport'), true)
-  assert.equal(canUnlockMisfortuneUpgrade(ready, 'notSoFinalSupport'), true)
-  assert.ok(purchaseMisfortuneUpgrade(ready, 'notSoFinalSupport'))
+  assert.equal(isMisfortuneUpgradeVisible(ready, 'partingGift'), true)
+  assert.equal(canUnlockMisfortuneUpgrade(ready, 'partingGift'), true)
+  assert.ok(purchaseMisfortuneUpgrade(ready, 'partingGift'))
 })
 
 test('the page reveals Hunt-gated and Clover-gated cards separately, with simple cost wording', () => {
@@ -191,12 +191,15 @@ test('the page reveals Hunt-gated and Clover-gated cards separately, with simple
     afterHunt.indexOf('<h2>Nourishing Misery</h2>'))
   assert.match(afterHunt, /Fortunate Column/)
   assert.match(afterHunt, /Final Support/)
-  assert.doesNotMatch(afterHunt, /Not-So-Final Support/)
+  assert.doesNotMatch(afterHunt, /Parting Gift/)
   const afterClover = renderToStaticMarkup(createElement(Misfortune, {
     ...props, hasHuntForSomethingGreater: true, hasFiveLeafClover: true }))
-  assert.match(afterClover, /Not-So-Final Support/)
-  const precursorCard = afterClover.slice(afterClover.indexOf('<h2>Not-So-Final Support</h2>'))
+  assert.match(afterClover, /Parting Gift/)
+  assert.doesNotMatch(afterClover, /Not-So-Final Support|Unlock Misfortune augments/)
+  const precursorCard = afterClover.slice(afterClover.indexOf('<h2>Parting Gift</h2>'))
   assert.match(precursorCard, /Need .*Crops/)
   assert.doesNotMatch(precursorCard, /Misfortune Crops/)
+  assert.match(precursorCard, /Floor Replicators to be purchased in the main field/)
+  assert.match(precursorCard, /0\.2%/)
   assert.doesNotMatch(afterClover, /This choice is permanent|progress is wiped|Permanent upgrades/)
 })

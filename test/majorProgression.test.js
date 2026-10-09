@@ -53,8 +53,7 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
       'misfortune-upgrade-finalSupport',
       'augmentation-leek-orthogonal-squared',
       'perfection-five-leaf-clover',
-      'misfortune-upgrade-notSoFinalSupport',
-      'augmentation-rich-soil',
+      'misfortune-upgrade-partingGift',
       'perfection-samplingLentil',
       'perfection-blazingCarrot',
       'capybara-demonstration-two',
@@ -399,7 +398,7 @@ test('Misfortune progress includes every permanent Misfortune upgrade', () => {
     MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
     MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
     MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
-    MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT,
+    MISFORTUNE_UPGRADE_IDS.PARTING_GIFT,
   ]
   let game = {
     ...createInitialGame(),
@@ -430,7 +429,7 @@ test('Misfortune progress includes every permanent Misfortune upgrade', () => {
   }
 
   for (const upgradeId of upgradeOrder) {
-    if (upgradeId === MISFORTUNE_UPGRADE_IDS.NOT_SO_FINAL_SUPPORT) {
+    if (upgradeId === MISFORTUNE_UPGRADE_IDS.PARTING_GIFT) {
       assert.equal(getNextMajorProgressionGoal(game).id, 'augmentation-leek-orthogonal-squared')
       game = { ...game, seedAugmentations: { ...game.seedAugmentations, leekOrthogonalSquaredUnlocked: true } }
       assert.equal(getNextMajorProgressionGoal(game).id, 'perfection-five-leaf-clover')
@@ -452,6 +451,6 @@ test('Misfortune progress includes every permanent Misfortune upgrade', () => {
 
   assert.equal(
     getNextMajorProgressionGoal(game).id,
-    'augmentation-rich-soil',
+    'capybara-demonstration-two',
   )
 })
