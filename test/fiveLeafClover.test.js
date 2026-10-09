@@ -317,17 +317,62 @@ test('Misfortune crops per second display includes active 5-Leaf effects', () =>
   assert.ok(Math.abs(boostedRate - actualProduction) < 1e-10)
 })
 
-test('switching 5-Leaf loadouts despawns bundles, clears effects, and restarts the timer', () => {
+test('switching 5-Leaf loadouts despawns bundles and restarts the timer without clearing effects', () => {
   const game = updateFiveLeafLoadout(createPerfectedCloverGame(), 0, { batchSize: 2 })
   const spawned = advanceFortuneState(game, 60, () => 0)
   const collected = collectCloverBundle(spawned, 0, () => 0.1)
-  const switched = selectFiveLeafLoadout(collected, 1)
+  const waiting = {
+    ...collected,
+    fortune: { ...collected.fortune,
+      bundles: [{ x: 25, y: 30, effectCount: 3 }, { x: 55, y: 60, splitBlocked: true }],
+      secondsTowardBundleRoll: 8, nextRollSeconds: 12 },
+  }
+  const switched = selectFiveLeafLoadout(waiting, 1)
 
   assert.equal(switched.fortune.fiveLeaf.activeLoadoutIndex, 1)
   assert.deepEqual(switched.fortune.bundles, [])
-  assert.deepEqual(switched.fortune.activeEffects, [])
+  assert.strictEqual(switched.fortune.activeEffects, waiting.fortune.activeEffects)
+  assert.ok(switched.fortune.activeEffects.length > 0)
+  assert.equal(switched.fortune.notice, null)
   assert.equal(switched.fortune.secondsTowardBundleRoll, 0)
   assert.equal(switched.fortune.nextRollSeconds, 0)
+  assert.deepEqual(importGame(exportGame(switched)).fortune.activeEffects,
+    waiting.fortune.activeEffects)
+})
+
+test('editing loadouts preserves accumulated and overcharged effects without restarting their duration', () => {
+  const initial = createPerfectedCloverGame()
+  const game = {
+    ...initial,
+    fortune: { ...initial.fortune,
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 1850 },
+        { id: FORTUNE_EFFECT_IDS.DEMONSTRATION, remainingSeconds: 1250 },
+      ],
+      bundles: [{ x: 25, y: 30, effectCount: 3 }],
+      secondsTowardBundleRoll: 8, nextRollSeconds: 12 },
+  }
+  for (const changes of [{ chancePercent: 40 }, { batchSize: 5 },
+    { allocations: { opus: 30, bounty: 40, mirage: 0, fortuneOpus: 30 } }]) {
+    const activeEdit = updateFiveLeafLoadout(game, 0, changes)
+    assert.strictEqual(activeEdit.fortune.activeEffects, game.fortune.activeEffects)
+    assert.deepEqual(getFortuneModifiers(activeEdit), getFortuneModifiers(game))
+    assert.deepEqual(activeEdit.fortune.bundles, [])
+    assert.equal(activeEdit.fortune.secondsTowardBundleRoll, 0)
+    assert.equal(activeEdit.fortune.nextRollSeconds, 0)
+
+    const inactiveEdit = updateFiveLeafLoadout(game, 1, changes)
+    assert.strictEqual(inactiveEdit.fortune.activeEffects, game.fortune.activeEffects)
+    assert.strictEqual(inactiveEdit.fortune.bundles, game.fortune.bundles)
+    assert.equal(inactiveEdit.fortune.secondsTowardBundleRoll, 8)
+    assert.equal(inactiveEdit.fortune.nextRollSeconds, 12)
+  }
+  for (const index of [0, -1, 3, 0.5]) {
+    assert.strictEqual(selectFiveLeafLoadout(game, index), game)
+  }
+  const markup = renderToStaticMarkup(createElement(FiveLeafClover, { game,
+    onSelectLoadout() {}, onUpdateLoadout() {} }))
+  assert.match(markup, /keeps active effects and their remaining durations/)
 })
 
 test('natural 5-Leaf Split works, but split-created bundles reroll Split as Mirage', () => {

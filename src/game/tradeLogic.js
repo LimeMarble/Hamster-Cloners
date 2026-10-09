@@ -200,6 +200,7 @@ export function advanceRabbitContractPaceState(
   game,
   productionPerSecondByCrop,
   elapsedSeconds,
+  forceSample = false,
 ) {
   const isBlazing = game.trade?.rabbitContractsBlazing === true
   const hasContractor = hasRabbitUnlock(
@@ -224,7 +225,7 @@ export function advanceRabbitContractPaceState(
     (accumulatedSampleSeconds + 1e-9) /
       RABBIT_CONTRACT_PACE_SAMPLE_SECONDS,
   )
-  const shouldSample = completedSampleIntervals > 0
+  const shouldSample = forceSample || completedSampleIntervals > 0
   const completionRate = shouldSample
     ? getRabbitContractCompletionsPerSecond(
         game,
@@ -622,6 +623,7 @@ export function advanceRabbitContract(
   random = Math.random,
   elapsedSeconds = 0,
   productionIsPerSecond = false,
+  forcePaceSample = false,
 ) {
   if (game.trade?.established !== true) {
     return game.trade
@@ -642,6 +644,7 @@ export function advanceRabbitContract(
     game,
     productionPerSecondByCrop,
     safeElapsedSeconds,
+    forcePaceSample,
   )
   const tradeWithPace = {
     ...game.trade,

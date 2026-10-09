@@ -313,7 +313,7 @@ test('Demonstration 1 allows planted Clover but bans active Breeze effects', () 
   assert.equal(completed.hasUnlockedFloorReplicators, true)
 })
 
-test("Demonstration 2 requires 1e301 Crops inside Fortune's Wrath", () => {
+test("Demonstration 2 requires 4.44e96 Crops inside Fortune's Wrath", () => {
   const game = {
     ...createContactGame(),
     capybara: {
@@ -324,7 +324,7 @@ test("Demonstration 2 requires 1e301 Crops inside Fortune's Wrath", () => {
       completedSecondaryObjectives: [],
     },
     activeArea: 'misfortune',
-    crops: 1e301,
+    crops: 4.44e96,
   }
   const demonstration = CAPYBARA_DEMONSTRATIONS[2]
   const status = getCapybaraDemonstrationStatus(
@@ -332,11 +332,24 @@ test("Demonstration 2 requires 1e301 Crops inside Fortune's Wrath", () => {
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
   )
 
-  assert.equal(demonstration.target, 1e301)
+  assert.equal(demonstration.target, 4.44e96)
+  assert.equal(status.hint, 'Back and forth like a seesaw: Fortune and Misfortune.')
   assert.equal(demonstration.rewardName, 'Establish contact with Manatees')
-  assert.equal(status.current, 1e301)
+  assert.equal(status.current, 4.44e96)
   assert.equal(status.progress, 1)
   assert.equal(status.canComplete, true)
+  const belowGoal = getCapybaraDemonstrationStatus(
+    { ...game, crops: 4.44e96 * 0.999999 },
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
+  assert.equal(belowGoal.hasReachedGoal, false)
+  assert.equal(belowGoal.canComplete, false)
+  const wrongArea = getCapybaraDemonstrationStatus(
+    { ...game, activeArea: 'main', areaProgress: { misfortune: { crops: 4.44e96 } } },
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
+  assert.equal(wrongArea.hasReachedGoal, true)
+  assert.equal(wrongArea.canComplete, false)
 
   const completion = completeCapybaraDemonstration(
     game,

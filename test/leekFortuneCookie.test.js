@@ -248,7 +248,7 @@ test('cached snapshots invalidate when the cookie starts or expires, not as its 
   assert.deepEqual(snapshot(advanceFortuneState(withCookie(game), 55)), base)
 })
 
-test('cookie allocations are zeroed while legacy timers survive until expiry, loadout switch or Misfortune wipe', () => {
+test('cookie allocations are zeroed while legacy timers survive loadout switches until expiry or Misfortune wipe', () => {
   const game = withCookie(updateFiveLeafLoadout(createCookieGame(), 0, {
     allocations: { ...emptyAllocations, [cookieId]: 100 },
   }))
@@ -257,7 +257,7 @@ test('cookie allocations are zeroed while legacy timers survive until expiry, lo
   assert.equal(restored.fortune.fiveLeaf.loadouts[0].allocations[cookieId], 0)
   assert.deepEqual(restored.fortune.activeEffects, game.fortune.activeEffects)
   const switched = selectFiveLeafLoadout(restored, 1)
-  assert.deepEqual(switched.fortune.activeEffects, [])
+  assert.deepEqual(switched.fortune.activeEffects, restored.fortune.activeEffects)
   const wiped = wipeMisfortuneAreaProgress(restored)
   assert.ok(!getAvailableFiveLeafFortunes(wiped).some(({ id }) => id === cookieId))
   assert.equal(wiped.fortune.fiveLeaf.loadouts[0].allocations[cookieId], 0)

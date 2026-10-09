@@ -106,6 +106,7 @@ function CloverFortuneContent({ fortune, isDisabled, onCollect, onRemoveEffect }
                     />{' '}
                     {durationLabel}
                   </time>
+                  <small>Paused while away. Does not boost offline production.</small>
                   <small>Right-click to remove.</small>
                 </div>
               </div>

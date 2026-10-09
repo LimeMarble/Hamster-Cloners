@@ -10,7 +10,7 @@ export const GAME_AREA_IDS = Object.freeze({
   MISFORTUNE: 'misfortune',
 })
 export const MISFORTUNE_AREA_STATE_VERSION = 2
-export const MISFORTUNE_CROP_GOAL = 1e301
+export const MISFORTUNE_CROP_GOAL = 4.44e96
 export const MISFORTUNE_COST_MULTIPLIER = 100
 export const PARTING_GIFT_UPGRADE_ID = 'partingGift'
 export const FORTUNES_WRATH_CROP_DIVISOR = 1777

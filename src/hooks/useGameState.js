@@ -188,10 +188,11 @@ export function useGameState(isEditingBlueprintRef) {
 
   useEffect(() => {
     let worker
-    let fallbackTimeoutId
+    let fallbackTimeoutId = null
     let fallbackLastVisualAt = 0
     let isDisposed = false
     let isUsingFallback = false
+    let fallbackNeedsCatchUp = true
 
     const publishWorkerMessage = (message) => {
       if (!message || message.revision !== revisionRef.current) return
@@ -252,7 +253,8 @@ export function useGameState(isEditingBlueprintRef) {
     }
 
     const runFallbackTick = () => {
-      if (isDisposed || !isUsingFallback) return
+      fallbackTimeoutId = null
+      if (isDisposed || !isUsingFallback || document.hidden) return
 
       const now = Date.now()
       const elapsedSeconds = Math.max(
@@ -265,12 +267,13 @@ export function useGameState(isEditingBlueprintRef) {
           gameRef.current,
           elapsedSeconds,
           {
-            mode: getAdvanceMode(elapsedSeconds),
+            mode: fallbackNeedsCatchUp ? 'catch-up' : getAdvanceMode(elapsedSeconds),
             isEditingBlueprint: isEditingBlueprintRef.current,
           },
         )
         simulatedAtRef.current = now
       }
+      fallbackNeedsCatchUp = false
 
       if (now - fallbackLastVisualAt >= VISUAL_UPDATE_INTERVAL_MS) {
         fallbackLastVisualAt = now
@@ -295,10 +298,12 @@ export function useGameState(isEditingBlueprintRef) {
 
       isUsingFallback = true
       workerRef.current = null
-      fallbackTimeoutId = window.setTimeout(
-        runFallbackTick,
-        SIMULATION_TICK_INTERVAL_MS,
-      )
+      if (!document.hidden) {
+        fallbackTimeoutId = window.setTimeout(
+          runFallbackTick,
+          SIMULATION_TICK_INTERVAL_MS,
+        )
+      }
     }
 
     const handleWorkerError = (event) => {
@@ -354,7 +359,7 @@ export function useGameState(isEditingBlueprintRef) {
             gameRef.current,
             elapsedSeconds,
             {
-              mode: getAdvanceMode(elapsedSeconds),
+              mode: fallbackNeedsCatchUp ? 'catch-up' : getAdvanceMode(elapsedSeconds),
               isEditingBlueprint: isEditingBlueprintRef.current,
             },
           )
@@ -363,6 +368,9 @@ export function useGameState(isEditingBlueprintRef) {
 
         setRenderedGame(gameRef.current)
         saveCurrentGame()
+        window.clearTimeout(fallbackTimeoutId)
+        fallbackTimeoutId = null
+        fallbackNeedsCatchUp = true
         return
       }
 
@@ -371,6 +379,10 @@ export function useGameState(isEditingBlueprintRef) {
         now,
         visible: true,
       })
+      if (isUsingFallback && fallbackTimeoutId === null) {
+        fallbackNeedsCatchUp = true
+        fallbackTimeoutId = window.setTimeout(runFallbackTick, 0)
+      }
       setIsGameReady(false)
       setBackgroundCatchUp(
         createPendingCatchUp(simulatedAtRef.current, now),

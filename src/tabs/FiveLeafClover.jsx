@@ -90,6 +90,10 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
         Configure the fortunes granted by your Clover Bundles. The perfected
         clover can also be planted in Misfortune.
       </p>
+      <p className="five-leaf-help">
+        Fortune durations and Clover appearance timers pause while you are away.
+        Temporary fortunes do not boost offline production.
+      </p>
 
       <section className="five-leaf-section" aria-labelledby="five-leaf-loadouts-title">
         <div className="five-leaf-section-heading">
@@ -112,7 +116,8 @@ export function FiveLeafClover({ game, onSelectLoadout, onUpdateLoadout }) {
           ))}
         </div>
         <p className="five-leaf-help">
-          Switching loadouts clears pending bundles, active effects, and spawn progress.
+          Switching or editing the active loadout clears pending bundles and spawn
+          progress, but keeps active effects and their remaining durations.
         </p>
       </section>
 

@@ -235,7 +235,7 @@ export function updateFiveLeafLoadout(game, loadoutIndex, changes) {
       ...game.fortune,
       fiveLeaf: normalized,
       ...(loadoutIndex === state.activeLoadoutIndex
-        ? { bundles: [], activeEffects: [], notice: null,
+        ? { bundles: [], notice: null,
             secondsTowardBundleRoll: 0, nextRollSeconds: 0 }
         : {}),
     },
@@ -254,7 +254,6 @@ export function selectFiveLeafLoadout(game, loadoutIndex) {
       ...game.fortune,
       fiveLeaf: { ...state, activeLoadoutIndex: loadoutIndex },
       bundles: [],
-      activeEffects: [],
       notice: null,
       secondsTowardBundleRoll: 0,
       nextRollSeconds: 0,

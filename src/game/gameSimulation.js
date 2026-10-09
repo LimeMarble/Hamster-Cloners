@@ -88,12 +88,24 @@ export function advanceGameSimulationStep(
   currentGame,
   elapsedSeconds,
   {
+    mode = 'active',
     isEditingBlueprint = false,
     random = Math.random,
   } = {},
 ) {
   const safeElapsedSeconds = normalizeElapsedSeconds(elapsedSeconds)
   if (safeElapsedSeconds === 0) return currentGame
+
+  const isOffline = mode === 'catch-up'
+  const savedFortune = currentGame.fortune
+  if (isOffline && savedFortune?.activeEffects?.length > 0) {
+    // All offline systems see unbuffed production, including Rabbit rewards
+    // and Manatee modifiers. Restore the untouched fortune state afterward.
+    currentGame = {
+      ...currentGame,
+      fortune: { ...savedFortune, activeEffects: [] },
+    }
+  }
 
   currentGame = awardAchievements(currentGame)
 
@@ -104,12 +116,15 @@ export function advanceGameSimulationStep(
     safeElapsedSeconds
 
   if (isEditingBlueprint) {
+    const nextGame = advanceFalseStartProgress(currentGame, {
+      ...currentGame,
+      playtimeSeconds: nextPlaytimeSeconds,
+      secondsSinceAreaReset: nextSecondsSinceAreaReset,
+    })
+    if (isOffline) return { ...nextGame, fortune: savedFortune }
+
     return advanceFortuneState(
-      advanceFalseStartProgress(currentGame, {
-        ...currentGame,
-        playtimeSeconds: nextPlaytimeSeconds,
-        secondsSinceAreaReset: nextSecondsSinceAreaReset,
-      }),
+      nextGame,
       safeElapsedSeconds,
       random,
     )
@@ -303,6 +318,7 @@ export function advanceGameSimulationStep(
       random,
       safeElapsedSeconds,
       true,
+      isOffline,
     ),
     cloverAssembly: advanceCloverAssemblyState(
       currentGame.cloverAssembly,
@@ -322,8 +338,13 @@ export function advanceGameSimulationStep(
     activeBlueprintSlot,
   }
 
+  const progressedGame = advanceFalseStartProgress(
+    currentGame, nextGame, columnsProducedForTick,
+  )
+  if (isOffline) return { ...progressedGame, fortune: savedFortune }
+
   return advanceFortuneState(
-    advanceFalseStartProgress(currentGame, nextGame, columnsProducedForTick),
+    progressedGame,
     safeElapsedSeconds,
     random,
   )
@@ -342,6 +363,7 @@ export function advanceGameByElapsedTime(
   const stepCount = getSimulationStepCount(safeElapsedSeconds, mode)
 
   return advanceGameByStepCount(game, safeElapsedSeconds, stepCount, {
+    mode,
     isEditingBlueprint,
     random,
   })
@@ -352,6 +374,7 @@ export function advanceGameByStepCount(
   elapsedSeconds,
   stepCount,
   {
+    mode = 'active',
     isEditingBlueprint = false,
     random = Math.random,
   } = {},
@@ -366,6 +389,7 @@ export function advanceGameByStepCount(
 
   for (let stepIndex = 0; stepIndex < safeStepCount; stepIndex += 1) {
     nextGame = advanceGameSimulationStep(nextGame, secondsPerStep, {
+      mode,
       isEditingBlueprint,
       random,
     })

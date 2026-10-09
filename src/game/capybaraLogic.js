@@ -77,8 +77,7 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
     rewardDescription:
       "a species that didn't exactly get the best hand dealt to them by Fortune itself.",
     rewardJoiner: ', ',
-    hint:
-      'Floor Replicators are the only machinery that follows you here and can initially only be purchased here.',
+    hint: 'Back and forth like a seesaw: Fortune and Misfortune.',
     prerequisiteDemonstrationId:
       CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
     challengeArea: GAME_AREA_IDS.MISFORTUNE,

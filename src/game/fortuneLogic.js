@@ -180,7 +180,7 @@ export function advanceFortuneEffectTimer(remainingSeconds, elapsedSeconds) {
   if (level === 0) return Math.max(0, remaining - elapsed)
 
   // Consume the partial starting band, then sum complete bands geometrically.
-  // This also handles compressed catch-up ticks and enormous saved timers in
+  // This also handles long active steps and enormous saved timers in
   // constant time, without using the starting speed for the entire interval.
   const lowerBoundary = FORTUNE_OVERCHARGE_DURATION_SECONDS + level * OVERCHARGE_BAND_SECONDS
   const partialSeconds = Math.max(0, remaining - lowerBoundary) /

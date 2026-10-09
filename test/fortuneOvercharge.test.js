@@ -85,7 +85,7 @@ test('decay crosses strength bands at their lower speeds instead of retaining pe
   assert.deepEqual(getFortuneOvercharge(560), { strengthExponent: 1, timerSpeed: 1 })
 })
 
-test('compressed catch-up timer decay agrees with 60-Hz decay across many bands', () => {
+test('large active timer steps agree with 60-Hz decay across many bands', () => {
   for (const [remaining, elapsed] of [[1250, 400], [1850, 900], [10000, 700]]) {
     let stepped = remaining
     for (let tick = 0; tick < elapsed * 60; tick++) {

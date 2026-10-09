@@ -745,7 +745,7 @@ test('Demonstration 2 progress is saved but can only pass in Misfortune', () => 
     areaProgress: {
       main: null,
       misfortune: {
-        crops: 1e301,
+        crops: 4.44e96,
       },
     },
   }

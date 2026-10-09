@@ -116,10 +116,20 @@ function scheduleSimulationTick() {
   )
 }
 
+function finishOfflineTime(targetTimestamp) {
+  const resumedAt = Math.max(targetTimestamp, Date.now())
+  // Loading time is also offline time, not time spent consuming saved buffs.
+  game = advanceGameByElapsedTime(game, (resumedAt - targetTimestamp) / 1000, {
+    mode: 'catch-up',
+    isEditingBlueprint,
+  })
+  simulatedAt = resumedAt
+}
+
 function finishCatchUp() {
   if (!catchUp) return
 
-  simulatedAt = catchUp.targetTimestamp
+  finishOfflineTime(catchUp.targetTimestamp)
   catchUp = null
   postSnapshot(true)
   postCatchUpComplete()
@@ -148,6 +158,7 @@ function runCatchUpChunk() {
       catchUp.remainingSeconds / catchUp.remainingTicks
 
     game = advanceGameSimulationStep(game, secondsForStep, {
+      mode: 'catch-up',
       isEditingBlueprint,
     })
     catchUp.remainingSeconds = Math.max(
@@ -191,7 +202,7 @@ function startCatchUp(targetTimestamp) {
       mode: 'catch-up',
       isEditingBlueprint,
     })
-    simulatedAt = target
+    finishOfflineTime(target)
     postSnapshot(true)
     postCatchUpComplete()
     scheduleSimulationTick()
