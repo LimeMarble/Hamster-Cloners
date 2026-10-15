@@ -43,6 +43,7 @@ import {
 import { advanceCloverAssemblyState } from './cloverAssemblyLogic.js'
 import { advanceFalseStartProgress, awardAchievements } from './achievementLogic.js'
 import { getAchievementHamsterMultiplier, getOilyTreatsFloorMultiplier } from './achievementState.js'
+import { MANATEES_ENABLED } from './contentAvailability.js'
 
 export const ACTIVE_SIMULATION_STEP_SECONDS =
   SIMULATION_TICK_INTERVAL_MS / 1000
@@ -135,20 +136,20 @@ export function advanceGameSimulationStep(
     getRushedStartExternalMultiplier(currentGame)
   const huntForSomethingGreaterMultiplier =
     getHuntForSomethingGreaterMultiplier(currentGame)
-  const manateeSurveyDurationMultiplier =
+  const manateeSurveyDurationMultiplier = MANATEES_ENABLED ?
     getBlazingCarrotSurveyDurationMultiplier(
       currentGame.blueprint,
       currentGame.completedCropPerfections,
       currentGame.trade?.totalRabbitRelationsEarned ?? 0,
       fortuneModifiers.passiveEffectMultiplier,
       currentGame.seedAugmentations,
-    )
-  const manateeFindValueMultiplier = getMangroveNurseryEffect(
+    ) : 1
+  const manateeFindValueMultiplier = MANATEES_ENABLED ? getMangroveNurseryEffect(
     currentGame.blueprint,
     currentGame.completedCropPerfections,
     fortuneModifiers.passiveEffectMultiplier,
     currentGame.seedAugmentations,
-  ).multiplier
+  ).multiplier : 1
   const productionSnapshotPerSecond = getCropProductionSnapshotPerSecond(
     currentGame.blueprint,
     currentGame.farmland,
@@ -190,8 +191,9 @@ export function advanceGameSimulationStep(
     currentGame.hamsters,
     currentGame.postUnionHamstersHired,
   )
-  const assignedManateeHamsters =
-    getManateeAssignedHamsterCount(currentGame)
+  const assignedManateeHamsters = MANATEES_ENABLED
+    ? getManateeAssignedHamsterCount(currentGame)
+    : 0
   const productiveHamsters = Math.max(
     0,
     Math.floor(Number(currentGame.hamsters) || 0) - assignedManateeHamsters,
@@ -300,7 +302,7 @@ export function advanceGameSimulationStep(
     hasUnlockedCropPerfection:
       currentGame.hasUnlockedCropPerfection ||
       nextCrops >= getCropUnlockRequirement('cropPerfection', currentGame.activeArea),
-    manatees: advanceWetlandsConnectionState(
+    manatees: MANATEES_ENABLED ? advanceWetlandsConnectionState(
       advanceManateeSurveyState(
         currentGame.manatees,
         safeElapsedSeconds,
@@ -311,7 +313,7 @@ export function advanceGameSimulationStep(
         currentGame.testingCheats?.oneSecondManateeSurveysEnabled === true,
       ),
       safeElapsedSeconds,
-    ),
+    ) : currentGame.manatees,
     trade: advanceRabbitContract(
       currentGame,
       productionSnapshotPerSecond.byCrop,

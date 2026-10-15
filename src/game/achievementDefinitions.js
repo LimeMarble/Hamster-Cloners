@@ -1,4 +1,5 @@
 import { hasVisitedMisfortune } from './crops.js'
+import { MANATEES_ENABLED } from './contentAvailability.js'
 
 const side = (id, name, description, condition, treats = 5) => ({
   id, name, description, condition, tier: 1, treats,
@@ -25,8 +26,11 @@ export const ACHIEVEMENTS = Object.freeze([
   side('controlledBurn', 'This is Fine',
     'Burn a crop through excess Mirror Corn reflections.',
     (_game, metrics) => metrics.controlledBurn),
-  side('thisIsFine', 'This is NOT Fine', 'Infest a blueprint with Water Lettuce.',
-    (_game, metrics) => metrics.infested),
+  {
+    ...side('thisIsFine', 'This is NOT Fine', 'Infest a blueprint with Water Lettuce.',
+      (_game, metrics) => metrics.infested),
+    available: MANATEES_ENABLED,
+  },
   side('absolutelyNothing', 'Absolutely Nothing',
     'Collect a bundle from a loadout with no assigned Fortune effects.', () => false),
   side('youGetNothing', 'You get NOTHING',
@@ -91,8 +95,11 @@ export const ACHIEVEMENTS = Object.freeze([
     (game) => game.activeArea === 'misfortune' || Boolean(game.areaProgress?.misfortune) ||
       game.completedMisfortuneUpgrades?.length > 0 ||
       game.capybara?.completedDemonstrations?.includes('misfortuneTrial')),
-  milestone('manatees', 'New Horizons', 'Establish contact with Manatees.', 3,
-    (game) => game.capybara?.completedDemonstrations?.includes('misfortuneTrial')),
+  {
+    ...milestone('manatees', 'New Horizons', 'Establish contact with Manatees.', 3,
+      (game) => game.capybara?.completedDemonstrations?.includes('misfortuneTrial')),
+    available: MANATEES_ENABLED,
+  },
 ])
 
 export const HAMSTER_TREAT_DIVISOR = 100
@@ -111,8 +118,16 @@ export const ACHIEVEMENT_DISPLAY_ORDER = Object.freeze([
   'trade', 'misfortune', 'manatees',
 ])
 
-export function getAchievementsForTier(tier) {
+export function getAvailableAchievements(earnedAchievementIds = []) {
+  const earned = new Set(earnedAchievementIds)
+  return ACHIEVEMENTS.filter((achievement) =>
+    achievement.available !== false || earned.has(achievement.id),
+  )
+}
+
+export function getAchievementsForTier(tier, earnedAchievementIds = []) {
   const order = new Map(ACHIEVEMENT_DISPLAY_ORDER.map((id, index) => [id, index]))
-  return ACHIEVEMENTS.filter((achievement) => achievement.tier === tier)
+  return getAvailableAchievements(earnedAchievementIds)
+    .filter((achievement) => achievement.tier === tier)
     .sort((left, right) => (order.get(left.id) ?? Infinity) - (order.get(right.id) ?? Infinity))
 }

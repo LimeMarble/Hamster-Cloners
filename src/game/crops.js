@@ -486,6 +486,8 @@ export const CROP_PERFECTIONS = {
     maximumRelationHarvestBonus: 19,
     highHarvestThreshold: 1e12,
     highHarvestGlobalHarvestBonus: 0.25,
+    // Retain the dormant survey effect for a future post-Demo-2 augmentation.
+    surveyTimeEffectEnabled: false,
     surveyTimeReductionPerCrop: 0.02,
     maximumSurveyRelationLog: 40,
     maximumSurveyRelations: 1e40,
@@ -649,7 +651,9 @@ function getPerfectionEffectDescription(
       `+${perfection.globalHarvestBonusPerRelationLog * 100}% all Crop harvest per log10(total Rabbit relations earned), capped at +${perfection.maximumRelationHarvestBonus * 100}% · ` +
       `+${perfection.highHarvestGlobalHarvestBonus * 100}% all Crop harvest per Crop type with at least ${getCachedFormattedNumber(perfection.highHarvestThreshold, 0)} harvest`
 
-    if (!revealManateeEffects) return baseDescription
+    if (!revealManateeEffects || perfection.surveyTimeEffectEnabled !== true) {
+      return baseDescription
+    }
 
     return (
       `${baseDescription} · −${perfection.surveyTimeReductionPerCrop * 100}% survey time per active Blazing Carrot, ` +

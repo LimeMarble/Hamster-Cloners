@@ -19,6 +19,7 @@ import { CropVisual } from './CropVisual.jsx'
 import { FormattedNumber } from './ui.jsx'
 import { ManateeRelations } from './ManateeRelations.jsx'
 import { RabbitExampleBuilds } from './RabbitExampleBuilds.jsx'
+import { MANATEES_ENABLED } from '../game/contentAvailability.js'
 
 function EstablishTradeCard({ game, onEstablishTrade }) {
   const cost = getTradeEstablishmentCost(game)
@@ -419,7 +420,7 @@ function CapybaraDemonstrations({
 }
 export function Trade({
   game,
-  activeRelation,
+  activeRelation: requestedRelation,
   activeManateeZone,
   rabbitContractProductionPerSecondByCrop,
   capybaraBlueprintCropYield,
@@ -447,10 +448,13 @@ export function Trade({
     game,
     RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT,
   )
-  const hasManateeContact = hasCompletedCapybaraDemonstration(
+  const hasManateeContact = MANATEES_ENABLED && hasCompletedCapybaraDemonstration(
     game,
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
   )
+  const activeRelation = requestedRelation === 'manatees' && !hasManateeContact
+    ? 'rabbits'
+    : requestedRelation
   const rabbitContracts = game.trade.rabbitContracts ?? []
   const rabbitContractsCompleted =
     game.trade.rabbitContractsCompleted ?? 0

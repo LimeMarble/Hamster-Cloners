@@ -334,9 +334,8 @@ test('major progression advances to the earliest unfinished goal', () => {
     },
   }
   const fourthDemonstrationGoal = getNextMajorProgressionGoal(game)
-  assert.equal(fourthDemonstrationGoal.id, 'capybara-demonstration-three')
-  assert.equal(fourthDemonstrationGoal.current, 0)
-  assert.equal(fourthDemonstrationGoal.target, 3)
+  assert.equal(fourthDemonstrationGoal.id, 'all-current-goals-complete')
+  assert.equal(fourthDemonstrationGoal.isComplete, true)
 
   game = {
     ...game,

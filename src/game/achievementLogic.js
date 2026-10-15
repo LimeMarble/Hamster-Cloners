@@ -158,7 +158,9 @@ function getBlueprintMetrics(game, blueprint, fortune, pendingIds) {
 // crops, farmland and ticking timers are deliberately not cache dependencies.
 export function awardAchievements(game, previousGame = null) {
   const earned = new Set(game.earnedAchievementIds ?? [])
-  const pending = ACHIEVEMENTS.filter((achievement) => !earned.has(achievement.id))
+  const pending = ACHIEVEMENTS.filter((achievement) =>
+    achievement.available !== false && !earned.has(achievement.id),
+  )
   if (pending.length === 0) return game
   const pendingIds = new Set(pending.filter((achievement) => achievement.tier === 1)
     .map((achievement) => achievement.id))

@@ -1791,7 +1791,7 @@ function calculateBlazingCarrotSurveyTimeEffect(
     completedCropPerfections,
   )
 
-  if (perfection?.id !== 'blazingCarrot') {
+  if (perfection?.id !== 'blazingCarrot' || perfection.surveyTimeEffectEnabled !== true) {
     return {
       activeCarrotCount: 0,
       contributingCarrotCount: 0,

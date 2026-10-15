@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { MANATEES_ENABLED } from '../game/contentAvailability.js'
 import {
   getAchievementHamsterMultiplier, getOilyTreatsFloorMultiplier,
 } from '../game/achievementState.js'
@@ -322,10 +323,10 @@ export function useGameDerivedState(game) {
   )
   const surveyingHamsters = useMemo(
     () =>
-      getManateeSurveyingHamsterCount({
+      MANATEES_ENABLED ? getManateeSurveyingHamsterCount({
         hamsters: game.hamsters,
         manatees: game.manatees,
-      }),
+      }) : 0,
     [game.hamsters, game.manatees],
   )
   const columnsBuiltPerSecond = useMemo(

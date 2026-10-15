@@ -41,7 +41,7 @@ test('the Submerged Garden is built empty before its first growing stage', () =>
     [MANATEE_RESOURCE_IDS.WATER_LETTUCE]: 100,
   })
   assert.deepEqual(garden.stages[2].cost, {
-    [MANATEE_RESOURCE_IDS.PETE]: 2000,
+    [MANATEE_RESOURCE_IDS.PETE]: 450,
     [MANATEE_RESOURCE_IDS.MANGROVE_ROOTS]: 175,
     [MANATEE_RESOURCE_IDS.MANGROVE_LEAVES]: 250,
     [MANATEE_RESOURCE_IDS.MANGROVE_TWIG]: 500,
@@ -277,7 +277,8 @@ test('Shoal Grass tending always uses 10 hamsters for 300 seconds', () => {
     () => 0,
     0.1,
   )
-  assert.equal(almostFinished.activeSurveys[0].workCompleted, 599)
+  assert.equal(almostFinished.activeSurveys[0].workCompleted,
+    MANATEE_GARDEN_TENDING_DURATION_SECONDS - 1)
 
   const completed = advanceManateeSurveyState(
     almostFinished,

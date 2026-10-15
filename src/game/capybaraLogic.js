@@ -10,6 +10,7 @@ import {
   isMisfortuneAreaActive,
 } from './areaLogic.js'
 import { GAME_AREA_IDS, MISFORTUNE_CROP_GOAL } from './gameConfig.js'
+import { MANATEES_ENABLED } from './contentAvailability.js'
 
 export const CAPYBARA_DEMONSTRATION_IDS = Object.freeze({
   INTRODUCTION: 'introduction',
@@ -73,10 +74,11 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
       'Breezes of Fortune are disabled',
       "Fortune's Wrath divides Crop production by 1777, raises the result to ^0.5, and reduces Crop passives by 37%",
     ],
-    rewardName: 'Establish contact with Manatees',
-    rewardDescription:
-      "a species that didn't exactly get the best hand dealt to them by Fortune itself.",
-    rewardJoiner: ', ',
+    rewardName: MANATEES_ENABLED ? 'Establish contact with Manatees' : 'End of current content',
+    rewardDescription: MANATEES_ENABLED
+      ? "a species that didn't exactly get the best hand dealt to them by Fortune itself."
+      : 'Further progression is being developed. Thank you for playing!',
+    rewardJoiner: MANATEES_ENABLED ? ', ' : ': ',
     hint: 'Back and forth like a seesaw: Fortune and Misfortune.',
     prerequisiteDemonstrationId:
       CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
@@ -85,6 +87,7 @@ export const CAPYBARA_DEMONSTRATIONS = Object.freeze([
   {
     id: CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
     number: 3,
+    available: MANATEES_ENABLED,
     name: 'Estuary Development',
     goal: 'Complete 3 Manatee Development Goals.',
     target: 3,
@@ -175,6 +178,7 @@ export function isCapybaraDemonstrationVisible(game, demonstrationId) {
   const index = CAPYBARA_DEMONSTRATIONS.findIndex(({ id }) => id === demonstrationId)
   if (index < 0) return false
   const demonstration = CAPYBARA_DEMONSTRATIONS[index]
+  if (demonstration.available === false) return false
   // New demonstrations default to the previous demonstration as their gate.
   // An explicit null prerequisite can opt out if a later design calls for it.
   const prerequisiteId = demonstration.prerequisiteDemonstrationId === undefined
@@ -340,7 +344,7 @@ export function completeCapybaraDemonstration(
 export function completeNextCapybaraDemonstrationForTesting(game) {
   const capybara = normalizeCapybaraState(game?.capybara)
   const nextDemonstration = CAPYBARA_DEMONSTRATIONS.find(
-    ({ id }) => !capybara.completedDemonstrations.includes(id),
+    ({ id, available }) => available !== false && !capybara.completedDemonstrations.includes(id),
   )
 
   if (!game || !nextDemonstration) return null

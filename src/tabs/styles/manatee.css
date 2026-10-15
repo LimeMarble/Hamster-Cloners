@@ -304,6 +304,20 @@
   justify-self: start;
 }
 
+.manatee-touch-help {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .manatee-mouse-help {
+    display: none;
+  }
+
+  .manatee-touch-help {
+    display: inline;
+  }
+}
+
 .manatee-survey-progress {
   display: grid;
   gap: 11px;

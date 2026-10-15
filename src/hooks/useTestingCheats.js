@@ -153,7 +153,8 @@ export function useTestingCheats({
   }
 
   const completedDemonstrationCount = CAPYBARA_DEMONSTRATIONS.filter(
-    ({ id }) => game.capybara?.completedDemonstrations?.includes(id),
+    ({ id, available }) => available !== false &&
+      game.capybara?.completedDemonstrations?.includes(id),
   ).length
   const columnTrack = blueprintExpansionTracks.find(
     (track) => track.id === 'column',
@@ -185,7 +186,9 @@ export function useTestingCheats({
           oneSecondManateeSurveysEnabled:
             game.testingCheats?.oneSecondManateeSurveysEnabled === true,
           completedDemonstrationCount,
-          maximumDemonstrationCount: CAPYBARA_DEMONSTRATIONS.length,
+          maximumDemonstrationCount: CAPYBARA_DEMONSTRATIONS.filter(
+            ({ available }) => available !== false,
+          ).length,
           columnExpansionCount: columnTrack?.completedStageCount ?? 0,
           maximumColumnExpansions: columnTrack?.stages.length ?? 0,
           rowExpansionCount: rowTrack?.completedStageCount ?? 0,

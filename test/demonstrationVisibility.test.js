@@ -13,6 +13,7 @@ import {
 let server, Trade
 before(async () => {
   server = await createServer({ logLevel: 'silent',
+    resolve: { preserveSymlinks: true },
     server: { middlewareMode: true, hmr: false }, appType: 'custom' })
   ;({ Trade } = await server.ssrLoadModule('/src/tabs/Trade.jsx'))
 })
@@ -41,18 +42,19 @@ test('only Demo 0 is initially visible and unknown demonstrations stay hidden', 
 
 test('each completion reveals exactly the next demonstration, keeping completed ones visible', () => {
   let game = contactGame()
-  for (let completedCount = 0; completedCount <= CAPYBARA_DEMONSTRATIONS.length; completedCount += 1) {
+  const availableCount = CAPYBARA_DEMONSTRATIONS.filter(({ available }) => available !== false).length
+  for (let completedCount = 0; completedCount <= availableCount; completedCount += 1) {
     assert.deepEqual(CAPYBARA_DEMONSTRATIONS.map(({ id }) =>
       isCapybaraDemonstrationVisible(game, id)),
-    CAPYBARA_DEMONSTRATIONS.map((_demo, index) => index <= completedCount))
+    CAPYBARA_DEMONSTRATIONS.map((demo, index) => demo.available !== false && index <= completedCount))
     const markup = renderToStaticMarkup(createElement(Trade, {
       game, activeRelation: 'capybaras', capybaraBlueprintCropYield: 0,
     }))
-    CAPYBARA_DEMONSTRATIONS.forEach(({ name }, index) => {
+    CAPYBARA_DEMONSTRATIONS.forEach(({ name, available }, index) => {
       assert.equal(markup.includes(`<h3>${name.replaceAll("'", '&#x27;')}</h3>`),
-        index <= completedCount, `Demo ${index}: ${name}`)
+        available !== false && index <= completedCount, `Demo ${index}: ${name}`)
     })
-    if (completedCount < CAPYBARA_DEMONSTRATIONS.length) {
+    if (completedCount < availableCount) {
       game = completeNextCapybaraDemonstrationForTesting(game)
     }
   }
@@ -78,4 +80,29 @@ test('the major goal bar does not expose a demonstration whose predecessor is in
   assert.notEqual(goal.id, 'capybara-demonstration-one')
   assert.notEqual(goal.id, 'capybara-demonstration-two')
   assert.notEqual(goal.id, 'capybara-demonstration-three')
+})
+
+test('Demo 2 remains available but advertises the content endpoint instead of Manatees', () => {
+  const game = contactGame()
+  game.capybara.completedDemonstrations = ['introduction', 'demonstrationOne']
+  const markup = renderToStaticMarkup(createElement(Trade, {
+    game, activeRelation: 'capybaras', capybaraBlueprintCropYield: 0,
+  }))
+  assert.match(markup, /Fortune&#x27;s Wrath/)
+  assert.match(markup, /End of current content/)
+  assert.doesNotMatch(markup, /Establish contact with Manatees|Estuary Development/)
+})
+
+test('legacy Manatee tab requests fall back to Rabbits even after Demo 2 or Demo 3', () => {
+  for (const completed of [3, 4]) {
+    const game = contactGame()
+    game.capybara.completedDemonstrations = CAPYBARA_DEMONSTRATIONS.slice(0, completed)
+      .map(({ id }) => id)
+    for (const activeRelation of ['rabbits', 'manatees']) {
+      const markup = renderToStaticMarkup(createElement(Trade, { game, activeRelation }))
+      assert.match(markup, /<h2 id="rabbits-title">Rabbits<\/h2>/)
+      assert.doesNotMatch(markup, />Manatees<|manatee-relations|manatees-title/)
+      assert.doesNotMatch(markup, /shortens survey time/)
+    }
+  }
 })

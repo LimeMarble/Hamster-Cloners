@@ -1,4 +1,5 @@
 import { CROP_PERFECTIONS } from '../game/crops.js'
+import { MANATEES_ENABLED } from '../game/contentAvailability.js'
 import {
   CAPYBARA_DEMONSTRATION_IDS,
   hasCompletedCapybaraDemonstration,
@@ -15,7 +16,7 @@ export function BlazingCarrotPerfection({
     game,
     CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
   )
-  const revealSurveyEffect = hasCompletedCapybaraDemonstration(
+  const revealSurveyEffect = MANATEES_ENABLED && hasCompletedCapybaraDemonstration(
     game,
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
   )

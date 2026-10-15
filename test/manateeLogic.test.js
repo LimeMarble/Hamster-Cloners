@@ -90,34 +90,47 @@ test('legacy Musk Grass Manatee progress migrates to Shoal Grass', () => {
 })
 
 test('Search the Marsh matches the requested Hamster Coordination calibration', () => {
-  const baselineDuration = getMarshSurveyDurationSeconds(1875, 1e24)
-  const threeOctillionDuration = getMarshSurveyDurationSeconds(1875, 3e27)
+  const survey = MANATEE_SURVEYS[MANATEE_SURVEY_IDS.SEARCH_MARSH]
+  const baselineDuration = getMarshSurveyDurationSeconds(1875, 1e32)
+  const fasterDuration = getMarshSurveyDurationSeconds(1875, 3e35)
 
-  assert.ok(Math.abs(baselineDuration - 60) < 1e-10)
-  assert.ok(threeOctillionDuration > 15)
-  assert.ok(threeOctillionDuration < 16)
-  assert.ok(baselineDuration / threeOctillionDuration > 3.8)
+  assert.equal(survey.referenceCoordination, 1e32)
+  assert.ok(Math.abs(baselineDuration - 20) < 1e-10)
+  assert.ok(Math.abs(fasterDuration - 20 * (32 / Math.log10(3e35)) ** 10) < 1e-10)
+  assert.ok(fasterDuration < baselineDuration)
+  assert.ok(Math.abs(getMarshSurveyDurationSeconds(1875, 1e24) -
+    20 * (32 / 24) ** 10) < 1e-9)
 })
 
-test('the testing override completes every Manatee survey in one second', () => {
+test('all variable surveys use the new reference while fixed garden timers stay unchanged', () => {
+  for (const survey of Object.values(MANATEE_SURVEYS)) {
+    assert.equal(survey.referenceCoordination, 1e32)
+    const duration = (coordination, hamsters = survey.referenceHamsters) =>
+      getManateeSurveyDurationSeconds(hamsters, coordination, survey.id)
+    assert.ok(Math.abs(duration(1e32) - survey.referenceDurationSeconds) < 1e-10)
+    if (survey.fixedDurationSeconds) {
+      assert.equal(duration(1e24, survey.fixedHamsterAllocation), 300)
+      assert.equal(duration(1e100, survey.fixedHamsterAllocation), 300)
+    } else {
+      assert.ok(Math.abs(duration(1e32, survey.referenceHamsters * 2) -
+        survey.referenceDurationSeconds / 2) < 1e-10)
+      assert.ok(duration(1e24) > duration(1e32))
+    }
+  }
+})
+
+test('the retained Manatee survey helper supports the one-second testing override', () => {
   const game = {
     ...createInitialGame(),
     hamsters: 1875,
   }
   const started = startManateeSurvey(game, MANATEE_SURVEY_IDS.SEARCH_MARSH)
-  const cheatGame = {
-    ...started,
-    testingCheats: {
-      ...started.testingCheats,
-      oneSecondManateeSurveysEnabled: true,
-    },
-  }
-  const halfway = advanceGameSimulationStep(cheatGame, 0.5, {
-    random: () => 0,
-  })
-  const completed = advanceGameSimulationStep(halfway, 0.5, {
-    random: () => 0,
-  })
+  const halfway = { manatees: advanceManateeSurveyState(
+    started.manatees, 0.5, 1, () => 0, 1, 1, true,
+  ) }
+  const completed = { manatees: advanceManateeSurveyState(
+    halfway.manatees, 0.5, 1, () => 0, 1, 1, true,
+  ) }
 
   assert.equal(halfway.manatees.activeSurveys.length, 1)
   assert.equal(halfway.manatees.pendingFinds.length, 0)
@@ -132,20 +145,20 @@ test('underwater expeditions have three reward tiers and configurable default ti
   assert.equal(
     getManateeSurveyDurationSeconds(
       1875,
-      1e24,
+      MANATEE_SURVEYS[mangroveSurveyId].referenceCoordination,
       mangroveSurveyId,
       MANATEE_SURVEY_LENGTH_IDS.STANDARD,
     ),
-    1,
+    1 / 3,
   )
   assert.equal(
     getManateeSurveyDurationSeconds(
       1875,
-      1e24,
+      MANATEE_SURVEYS[sedimentSurveyId].referenceCoordination,
       sedimentSurveyId,
       MANATEE_SURVEY_LENGTH_IDS.STANDARD,
     ),
-    2,
+    2 / 3,
   )
   assert.equal(
     getManateeSurveyDurationMultiplier(
@@ -478,8 +491,8 @@ test('a completed marsh survey creates individually collectible branches and peb
   })
   const completedState = advanceManateeSurveyState(
     game.manatees,
-    60,
-    1e24,
+    MANATEE_SURVEYS[MANATEE_SURVEY_IDS.SEARCH_MARSH].referenceDurationSeconds,
+    MANATEE_SURVEYS[MANATEE_SURVEY_IDS.SEARCH_MARSH].referenceCoordination,
     () => 0,
   )
   const branches = completedState.pendingFinds.filter(
@@ -610,7 +623,7 @@ test('the Diving Cabin upgrades into a 200-capacity Diving Hub', () => {
   )
 })
 
-test('surveying removes hamsters from Columns per second without reducing Coordination', () => {
+test('survey allocation math is retained but disabled Manatee activity does not reduce Columns', () => {
   const coordinationHamsters = 1875
   const productiveHamsters = 1775
   const expectedRate =
@@ -638,11 +651,8 @@ test('surveying removes hamsters from Columns per second without reducing Coordi
     ACTIVE_SIMULATION_STEP_SECONDS,
   )
 
-  assert.equal(advancedGame.farmland.columns, game.farmland.columns)
-  assert.ok(
-    advancedGame.manatees.activeSurveys[0].workCompleted >
-      game.manatees.activeSurveys[0].workCompleted,
-  )
+  assert.ok(advancedGame.farmland.columns > game.farmland.columns)
+  assert.strictEqual(advancedGame.manatees, game.manatees)
 })
 
 test('Manatee resources, survey progress, finds, and buildings survive save normalization', () => {

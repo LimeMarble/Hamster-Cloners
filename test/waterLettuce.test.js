@@ -215,7 +215,7 @@ test('more than eleven Water Lettuces infest and disable the entire field', () =
   ])
 })
 
-test('Water Lettuce cannot push Blazing Carrot survey reduction past its hard cap', () => {
+test('Water Lettuce cannot reactivate the disabled Blazing Carrot survey bonus', () => {
   const cells = Array(15 * 15).fill(null)
   const spacedIndexes = cells.flatMap((_, index) => {
     const row = Math.floor(index / 15)
@@ -237,9 +237,9 @@ test('Water Lettuce cannot push Blazing Carrot survey reduction past its hard ca
     1e40,
   )
 
-  assert.equal(effect.activeCarrotCount, 40)
-  assert.ok(Math.abs(effect.reduction - 0.8) < 1e-12)
-  assert.ok(Math.abs(effect.multiplier - 0.2) < 1e-12)
+  assert.equal(effect.activeCarrotCount, 0)
+  assert.equal(effect.reduction, 0)
+  assert.equal(effect.multiplier, 1)
 })
 
 test('Water Lettuce only appears in the palette after its garden unlock', () => {

@@ -139,7 +139,7 @@ test('Nothing checks one blueprint, independently of having zero planted fields'
   const game = withBlueprint(createBlueprint({ rows: 4, columns: 4,
     cells: Array(12).fill('waterLettuce') }))
   const awarded = awardAchievements(game)
-  assert.ok(awarded.earnedAchievementIds.includes('thisIsFine'))
+  assert.ok(!awarded.earnedAchievementIds.includes('thisIsFine'))
   assert.ok(!awarded.earnedAchievementIds.includes('youGetNothing'))
   const useless = withBlueprint(createBlueprint({ rows: 4, columns: 4,
     cells: ['corn', 'knotweed'] }), { floorReplicators: 1000000,

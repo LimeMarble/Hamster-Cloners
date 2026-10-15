@@ -18,6 +18,8 @@ import {
   CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT,
   CROP_DEFINITIONS,
   CROP_PERFECTIONS,
+  getCropEffectDescription,
+  getCropPlacementEffectDescription,
   SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
 } from '../src/game/crops.js'
 
@@ -214,25 +216,26 @@ test('orthogonally adjacent Blazing Carrots retain their harvest and passives', 
   assert.ok(stats.passiveStats.length > 0)
 })
 
-test('Blazing Carrot survey reduction is lifetime-relation-limited and caps at 80 percent', () => {
+test('Blazing Carrot has no survey reduction while its future augmentation is unimplemented', () => {
   const blueprint = createSpacedCarrotBlueprint(40)
-  const earlyEffect = getBlazingCarrotSurveyTimeEffect(
-    blueprint,
-    [BLAZING_CARROT],
-    1e4,
-  )
-  const cappedEffect = getBlazingCarrotSurveyTimeEffect(
-    blueprint,
-    [BLAZING_CARROT],
-    1e40,
-  )
-
-  assert.equal(earlyEffect.activeCarrotCount, 40)
-  assert.equal(earlyEffect.contributingCarrotCount, 4)
-  assert.ok(Math.abs(earlyEffect.multiplier - 0.92) < 1e-12)
-  assert.equal(cappedEffect.contributingCarrotCount, 40)
-  assert.ok(Math.abs(cappedEffect.reduction - 0.8) < 1e-12)
-  assert.ok(Math.abs(cappedEffect.multiplier - 0.2) < 1e-12)
+  assert.equal(CROP_PERFECTIONS.blazingCarrot.surveyTimeEffectEnabled, false)
+  for (const relationAmount of [1e4, 1e40, 1e100]) {
+    for (const passiveMultiplier of [1, 1e6]) {
+      const effect = getBlazingCarrotSurveyTimeEffect(
+        blueprint, [BLAZING_CARROT], relationAmount, passiveMultiplier,
+      )
+      assert.deepEqual(effect, {
+        activeCarrotCount: 0, contributingCarrotCount: 0, relationLog: 0,
+        reduction: 0, multiplier: 1,
+      })
+    }
+  }
+  for (const describe of [getCropEffectDescription, getCropPlacementEffectDescription]) {
+    const text = describe('carrot', [BLAZING_CARROT], {}, true)
+    assert.doesNotMatch(text, /survey/i)
+    assert.match(text, /Rabbit relations/)
+    assert.match(text, /all Crop harvest/)
+  }
 })
 
 test('major progression places Sweet Potato before the Lentil and Carrot perfections', () => {

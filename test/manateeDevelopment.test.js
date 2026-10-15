@@ -8,6 +8,7 @@ import {
   MANATEE_RESOURCE_IDS,
   MANATEE_SURVEY_IDS,
   MANATEE_SURVEY_LENGTH_IDS,
+  MANATEE_SURVEYS,
   advanceManateeSurveyState,
   canCompleteManateeDevelopmentGoal,
   collectManateeFind,
@@ -115,20 +116,20 @@ test('Clean out Human Waste has Standard and Extended lengths with its configure
   assert.equal(
     getManateeSurveyDurationSeconds(
       1875,
-      1e24,
+      MANATEE_SURVEYS[surveyId].referenceCoordination,
       surveyId,
       MANATEE_SURVEY_LENGTH_IDS.STANDARD,
     ),
-    10,
+    10 / 3,
   )
   assert.equal(
     getManateeSurveyDurationSeconds(
       1875,
-      1e24,
+      MANATEE_SURVEYS[surveyId].referenceCoordination,
       surveyId,
       MANATEE_SURVEY_LENGTH_IDS.EXTENDED,
     ),
-    150,
+    50,
   )
   assert.deepEqual(
     getManateeSurveyLengths(surveyId).map((length) => length.id),

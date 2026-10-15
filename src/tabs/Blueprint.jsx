@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { MANATEES_ENABLED } from '../game/contentAvailability.js'
 import {
   CAPYBARA_DEMONSTRATION_IDS,
   GAME_AREA_IDS,
@@ -68,7 +69,7 @@ function BlueprintPanel({
   ]
   const plantedCrops = getBlueprintCropSummary(game.blueprint.cells)
   const fieldInfested = isWaterLettuceFieldInfested(game.blueprint)
-  const hasUnlockedManatees = hasCompletedCapybaraDemonstration(
+  const hasUnlockedManatees = MANATEES_ENABLED && hasCompletedCapybaraDemonstration(
     game,
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
   )

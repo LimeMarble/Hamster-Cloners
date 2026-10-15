@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   MANATEE_DEVELOPMENT_GOALS,
   MANATEE_RESOURCES,
 } from '../game/gameLogic.js'
 import { FormattedNumber, WholeNumber } from './ui.jsx'
+import { createSurveyFindCollector } from './surveyFindCollection.js'
 
 export function SurveyTime({ seconds }) {
   if (!Number.isFinite(seconds)) {
@@ -21,9 +22,6 @@ export function SurveyTime({ seconds }) {
   )
 }
 
-const FIND_HOLD_DELAY_MS = 300
-const FIND_HOLD_REPEAT_MS = 70
-
 function MarshFind({ find, onCollect, onHoldStart }) {
   const resourceName =
     MANATEE_RESOURCES[find.resourceId]?.name ??
@@ -35,13 +33,14 @@ function MarshFind({ find, onCollect, onHoldStart }) {
     <button
       type="button"
       className={`manatee-find manatee-find-${find.kind}`}
+      data-manatee-find-id={find.id}
       style={{
         left: `${find.x}%`,
         top: `${find.y}%`,
         '--find-rotation': `${find.rotation}deg`,
       }}
       onPointerDown={(event) => onHoldStart(event, find.id)}
-      onClick={() => onCollect(find.id)}
+      onClick={(event) => onCollect(find.id, event)}
       aria-label={`Clear ${findName} worth ${find.amount} ${resourceName}`}
     >
       <span className="manatee-find-shape" aria-hidden="true" />
@@ -55,75 +54,31 @@ function MarshFind({ find, onCollect, onHoldStart }) {
 
 export function SurveyResults({ finds, survey, onCollectFind }) {
   const rowCount = Math.max(1, Math.ceil(finds.length / 6))
-  const holdDelayRef = useRef(null)
-  const holdRepeatRef = useRef(null)
-  const suppressClickRef = useRef(false)
-
-  const stopHeldCollection = useCallback(() => {
-    window.clearTimeout(holdDelayRef.current)
-    window.clearInterval(holdRepeatRef.current)
-    holdDelayRef.current = null
-    holdRepeatRef.current = null
-  }, [])
+  const sceneRef = useRef(null)
+  const collectorRef = useRef(null)
+  const onCollectRef = useRef(onCollectFind)
 
   useEffect(() => {
-    window.addEventListener('pointerup', stopHeldCollection)
-    window.addEventListener('pointercancel', stopHeldCollection)
-    window.addEventListener('blur', stopHeldCollection)
+    onCollectRef.current = onCollectFind
+  }, [onCollectFind])
 
-    return () => {
-      stopHeldCollection()
-      window.removeEventListener('pointerup', stopHeldCollection)
-      window.removeEventListener('pointercancel', stopHeldCollection)
-      window.removeEventListener('blur', stopHeldCollection)
-    }
-  }, [stopHeldCollection])
+  useEffect(() => {
+    const collector = createSurveyFindCollector({
+      browserWindow: window,
+      browserDocument: document,
+      getScene: () => sceneRef.current,
+      onCollect: (findId) => onCollectRef.current(findId),
+    })
+    collectorRef.current = collector
+    return () => collector.destroy()
+  }, [])
 
   function startHeldCollection(event, startingFindId) {
-    if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) {
-      return
-    }
-
-    stopHeldCollection()
-    suppressClickRef.current = false
-
-    const startingIndex = finds.findIndex(({ id }) => id === startingFindId)
-    if (startingIndex < 0) return
-
-    const orderedFindIds = [
-      ...finds.slice(startingIndex),
-      ...finds.slice(0, startingIndex),
-    ].map(({ id }) => id)
-
-    holdDelayRef.current = window.setTimeout(() => {
-      let nextFindIndex = 0
-      suppressClickRef.current = true
-
-      const collectNextFind = () => {
-        if (nextFindIndex >= orderedFindIds.length) {
-          stopHeldCollection()
-          return
-        }
-
-        onCollectFind(orderedFindIds[nextFindIndex])
-        nextFindIndex += 1
-      }
-
-      collectNextFind()
-      holdRepeatRef.current = window.setInterval(
-        collectNextFind,
-        FIND_HOLD_REPEAT_MS,
-      )
-    }, FIND_HOLD_DELAY_MS)
+    collectorRef.current?.start(event, startingFindId, finds)
   }
 
-  function collectSingleFind(findId) {
-    if (suppressClickRef.current) {
-      suppressClickRef.current = false
-      return
-    }
-
-    onCollectFind(findId)
+  function collectSingleFind(findId, event) {
+    collectorRef.current?.collectSingle(findId, event)
   }
 
   return (
@@ -146,6 +101,7 @@ export function SurveyResults({ finds, survey, onCollectFind }) {
       </div>
       <div
         className="manatee-marsh-scene"
+        ref={sceneRef}
         style={{ minHeight: `${Math.max(350, rowCount * 82)}px` }}
       >
         <div className="manatee-marsh-water" aria-hidden="true" />
@@ -159,8 +115,13 @@ export function SurveyResults({ finds, survey, onCollectFind }) {
         ))}
       </div>
       <p className="manatee-interaction-note">
-        Select an object to collect it, or press and hold one to keep
-        collecting.
+        Select an object to collect it.{' '}
+        <span className="manatee-mouse-help">
+          Hold the left mouse button and move over objects to collect them.
+        </span>
+        <span className="manatee-touch-help">
+          Press and hold an object to keep collecting.
+        </span>
       </p>
     </section>
   )

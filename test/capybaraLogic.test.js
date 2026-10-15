@@ -36,20 +36,21 @@ function createContactGame() {
   }
 }
 
-test('testing completes each configured Capybara demonstration in order', () => {
+test('testing completes only available Capybara demonstrations in order', () => {
   let game = createInitialGame()
+  const demonstrations = CAPYBARA_DEMONSTRATIONS.filter(({ available }) => available !== false)
 
-  CAPYBARA_DEMONSTRATIONS.forEach((demonstration, index) => {
+  demonstrations.forEach((demonstration, index) => {
     game = completeNextCapybaraDemonstrationForTesting(game)
 
     assert.deepEqual(
       game.capybara.completedDemonstrations,
-      CAPYBARA_DEMONSTRATIONS.slice(0, index + 1).map(({ id }) => id),
+      demonstrations.slice(0, index + 1).map(({ id }) => id),
     )
     assert.ok(game.capybara.completedDemonstrations.includes(demonstration.id))
   })
 
-  assert.equal(game.hasUnlockedRootTunnel, true)
+  assert.equal(game.hasUnlockedRootTunnel, false)
   assert.equal(completeNextCapybaraDemonstrationForTesting(game), null)
 })
 
@@ -334,7 +335,7 @@ test("Demonstration 2 requires 4.44e96 Crops inside Fortune's Wrath", () => {
 
   assert.equal(demonstration.target, 4.44e96)
   assert.equal(status.hint, 'Back and forth like a seesaw: Fortune and Misfortune.')
-  assert.equal(demonstration.rewardName, 'Establish contact with Manatees')
+  assert.equal(demonstration.rewardName, 'End of current content')
   assert.equal(status.current, 4.44e96)
   assert.equal(status.progress, 1)
   assert.equal(status.canComplete, true)
@@ -362,7 +363,7 @@ test("Demonstration 2 requires 4.44e96 Crops inside Fortune's Wrath", () => {
   )
 })
 
-test('Demonstration 3 tracks Manatee Development Goals and rewards Root Tunnel', () => {
+test('Demonstration 3 retains its configuration but cannot award Root Tunnel while disabled', () => {
   const game = {
     ...createContactGame(),
     capybara: {
@@ -398,10 +399,5 @@ test('Demonstration 3 tracks Manatee Development Goals and rewards Root Tunnel',
     CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
     { manateeDevelopmentGoalsCompleted: 3 },
   )
-  assert.equal(futureCompletion.hasUnlockedRootTunnel, true)
-  assert.ok(
-    futureCompletion.capybara.completedDemonstrations.includes(
-      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
-    ),
-  )
+  assert.equal(futureCompletion, null)
 })

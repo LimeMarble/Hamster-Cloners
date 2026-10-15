@@ -10,6 +10,8 @@ import {
   FLOOR_REPLICATOR_MODES,
   FORTUNE_EFFECT_IDS,
   getFortuneModifiers,
+  getHamsterCoordinationMultiplier,
+  getMarshSurveyDurationSeconds,
   MANATEE_SURVEY_IDS,
   MISFORTUNE_UPGRADE_IDS,
   RABBIT_UNLOCK_IDS,
@@ -139,7 +141,7 @@ test('active play resumes the preserved effects and clocks, including during blu
   }
 })
 
-test('automatic Rabbit rewards and Manatee work use the unbuffed offline view', () => {
+test('automatic Rabbit rewards use the unbuffed offline view while Manatee work stays paused', () => {
   const initial = fortuneGame()
   const game = startManateeSurvey({
     ...initial,
@@ -162,12 +164,14 @@ test('automatic Rabbit rewards and Manatee work use the unbuffed offline view', 
   }, MANATEE_SURVEY_IDS.SEARCH_MARSH)
   assert.ok(game)
   const options = { mode: 'catch-up', random: () => 0.5 }
-  const advanced = advanceGameByElapsedTime(game, 120, options)
-  const baseline = advanceGameByElapsedTime(withoutEffects(game), 120, options)
+  const elapsed = getMarshSurveyDurationSeconds(game.hamsters,
+    getHamsterCoordinationMultiplier(game.hamsters, game.postUnionHamstersHired)) * 2
+  const advanced = advanceGameByElapsedTime(game, elapsed, options)
+  const baseline = advanceGameByElapsedTime(withoutEffects(game), elapsed, options)
   assert.deepEqual(advanced.trade, baseline.trade)
   assert.deepEqual(advanced.manatees, baseline.manatees)
   assert.ok(advanced.trade.rabbitRelations > 0)
-  assert.ok(advanced.manatees.pendingFinds.length > 0)
+  assert.strictEqual(advanced.manatees, game.manatees)
   assert.strictEqual(advanced.fortune, game.fortune)
 })
 

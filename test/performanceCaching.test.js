@@ -157,7 +157,7 @@ test('Rabbit relation multiplier reuses cached blueprint analysis', () => {
   assert.ok(readsAfterFirstCalculation > 1)
   assert.equal(cellReads - readsAfterFirstCalculation, 1)
 })
-test('Blazing Carrot survey effects reuse cached blueprint analysis between simulation ticks', () => {
+test('disabled Blazing Carrot survey effects reuse the cached result between simulation ticks', () => {
   const baseBlueprint = createBlueprint({
     rows: 1,
     columns: 2,
@@ -187,6 +187,7 @@ test('Blazing Carrot survey effects reuse cached blueprint analysis between simu
   )
 
   assert.strictEqual(repeated, first)
-  assert.ok(readsAfterFirstCalculation > 1)
+  assert.equal(first.multiplier, 1)
+  assert.equal(first.reduction, 0)
   assert.equal(cellReads - readsAfterFirstCalculation, 1)
 })

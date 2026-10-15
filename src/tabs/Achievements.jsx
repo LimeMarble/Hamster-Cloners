@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
-import { ACHIEVEMENTS, getAchievementsForTier } from '../game/achievementDefinitions.js'
+import { getAvailableAchievements, getAchievementsForTier } from '../game/achievementDefinitions.js'
 import { getAchievementHamsterMultiplier, getHamsterTreats } from '../game/achievementState.js'
 import { FormattedNumber } from './ui.jsx'
 
@@ -102,7 +102,7 @@ export function AchievementTier({ tier, earnedAchievementIds = [] }) {
     <section className="achievement-tier" role="tabpanel" id={`achievement-tier-${tier}`}
       aria-labelledby={`achievement-tier-tab-${tier}`}>
       <div className="achievement-grid">
-        {getAchievementsForTier(tier).map((achievement) => (
+        {getAchievementsForTier(tier, earnedAchievementIds).map((achievement) => (
           <AchievementCard key={achievement.id} achievement={achievement} isEarned={earned.has(achievement.id)} />
         ))}
       </div>
@@ -121,7 +121,7 @@ export const Achievements = memo(function Achievements({ earnedAchievementIds = 
       <div className="section-heading">
         <div><p className="eyebrow">Rewards for progress and experimentation</p>
           <h2 id="achievements-title">Achievements</h2></div>
-        <span>{earned.size} / {ACHIEVEMENTS.length} earned</span>
+        <span>{earned.size} / {getAvailableAchievements(earnedAchievementIds).length} earned</span>
       </div>
       <dl className="achievement-summary field-stats">
         <div><dt>Hamster Treats</dt><dd><FormattedNumber value={getHamsterTreats(earnedAchievementIds)} /></dd></div>

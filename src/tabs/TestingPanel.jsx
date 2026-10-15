@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { MANATEES_ENABLED } from '../game/contentAvailability.js'
 function TestingPanelContent({
   isVisible,
   cropMultiplierEnabled,
@@ -74,7 +75,7 @@ function TestingPanelContent({
             >
               ×10 Hamster efficiency: {hamsterEfficiencyEnabled ? 'On' : 'Off'}
             </button>
-            <button
+            {MANATEES_ENABLED ? <button
               type="button"
               className={`testing-toggle ${oneSecondManateeSurveysEnabled ? 'testing-toggle-active' : ''}`}
               onClick={onToggleOneSecondManateeSurveys}
@@ -82,7 +83,7 @@ function TestingPanelContent({
             >
               1-second Manatee surveys:{' '}
               {oneSecondManateeSurveysEnabled ? 'On' : 'Off'}
-            </button>
+            </button> : null}
             <button
               type="button"
               className="testing-action"
@@ -94,13 +95,13 @@ function TestingPanelContent({
               Complete next Capybara demonstration (
               {completedDemonstrationCount}/{maximumDemonstrationCount})
             </button>
-            <button
+            {MANATEES_ENABLED ? <button
               type="button"
               className="testing-action"
               onClick={onMultiplyCurrentManateeMaterials}
             >
               ×10 current Manatee materials
-            </button>
+            </button> : null}
             <button
               type="button"
               className="testing-action"

@@ -7,6 +7,7 @@ import { createServer } from 'vite'
 let server, Achievements, AchievementTier, AchievementDetails, GameNavigation, GameScreen, setActiveNumberNotation, ACHIEVEMENTS
 before(async () => {
   server = await createServer({ logLevel: 'silent',
+    resolve: { preserveSymlinks: true },
     server: { middlewareMode: true, hmr: false }, appType: 'custom' })
   ;({ Achievements, AchievementTier, AchievementDetails } = await server.ssrLoadModule('/src/tabs/Achievements.jsx'))
   ;({ ACHIEVEMENTS } = await server.ssrLoadModule('/src/game/achievementDefinitions.js'))
@@ -48,7 +49,7 @@ test('all three tiers are selectable with only the active tier rendered', () => 
   const phases = renderToStaticMarkup(createElement(AchievementTier, { tier: 3 }))
   assert.match(phases, /Open for Business/)
   assert.match(phases, /Against the Odds/)
-  assert.match(phases, /New Horizons/)
+  assert.doesNotMatch(phases, /New Horizons/)
   assert.doesNotMatch(phases, /Crop Rotation|A Bright Idea/)
 })
 
@@ -57,7 +58,8 @@ test('every tile uses its full name as an artwork placeholder, without extra lab
     const markup = renderToStaticMarkup(createElement(AchievementTier, { tier }))
     const names = [...markup.matchAll(/<span class="achievement-tile-name">([^<]+)<\/span>/g)]
       .map((match) => match[1].replaceAll('&#x27;', "'"))
-    const expected = ACHIEVEMENTS.filter((achievement) => achievement.tier === tier)
+    const expected = ACHIEVEMENTS.filter((achievement) =>
+      achievement.tier === tier && achievement.available !== false)
       .map((achievement) => achievement.name)
     assert.deepEqual(names.sort(), expected.sort())
     assert.doesNotMatch(markup, /<img|role="tooltip"|Hamster Treats|✓/)
@@ -104,7 +106,11 @@ test('revised achievement names and Potato threshold display in tiles and hover 
   setActiveNumberNotation('suffix', 303)
   const tiles = renderToStaticMarkup(createElement(AchievementTier, { tier: 1 }))
   assert.match(tiles, /This is Fine/)
-  assert.match(tiles, /This is NOT Fine/)
+  assert.doesNotMatch(tiles, /This is NOT Fine/)
+  const archivedTiles = renderToStaticMarkup(createElement(AchievementTier, {
+    tier: 1, earnedAchievementIds: ['thisIsFine'],
+  }))
+  assert.match(archivedTiles, /This is NOT Fine/)
   assert.doesNotMatch(tiles, /Controlled Burn/)
   const potato = ACHIEVEMENTS.find(({ id }) => id === 'potato100')
   const potatoDetails = renderToStaticMarkup(createElement(AchievementDetails, { achievement: potato }))

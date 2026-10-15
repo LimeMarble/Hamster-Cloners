@@ -192,7 +192,7 @@ export const MANATEE_MANGROVE_TENDING_HAMSTER_COUNT = 30
 export const MANATEE_GARDEN_TENDING_DURATION_SECONDS = 300
 
 const MARSH_REFERENCE_HAMSTERS = 1875
-const MARSH_REFERENCE_COORDINATION = 1e24
+const MARSH_REFERENCE_COORDINATION = 1e32
 const MARSH_REFERENCE_COORDINATION_LOG = Math.log10(
   MARSH_REFERENCE_COORDINATION,
 )
@@ -303,7 +303,7 @@ export const MANATEE_SURVEYS = Object.freeze({
     name: 'Search the Marsh',
     description:
       'Survey the marshland close to the water for construction materials.',
-    referenceDurationSeconds: 60,
+    referenceDurationSeconds: 20,
     rewards: [
       createReward('branch', MANATEE_RESOURCE_IDS.MANGROVE_TWIG, 5, 7, 20, 30),
       createReward('pebble', MANATEE_RESOURCE_IDS.LIMESTONE, 3, 4, 10, 12),
@@ -315,7 +315,7 @@ export const MANATEE_SURVEYS = Object.freeze({
     name: 'Survey Mangrove Roots',
     description:
       'Search beneath the tangled mangrove roots for useful plant matter and buried Pete.',
-    referenceDurationSeconds: 1,
+    referenceDurationSeconds: 1 / 3,
     isUnderwater: true,
     rewards: [
       createReward('mangrove-root', MANATEE_RESOURCE_IDS.MANGROVE_ROOTS, 4, 5, 1, 2),
@@ -329,7 +329,7 @@ export const MANATEE_SURVEYS = Object.freeze({
     name: 'Survey Sediment',
     description:
       'Comb through underwater sediment for dense deposits and marsh plants.',
-    referenceDurationSeconds: 2,
+    referenceDurationSeconds: 2 / 3,
     isUnderwater: true,
     rewards: [
       createReward('pete', MANATEE_RESOURCE_IDS.PETE, 10, 12, 8, 10),
@@ -343,7 +343,7 @@ export const MANATEE_SURVEYS = Object.freeze({
     name: 'Clean out Human Waste',
     description:
       'Search the estuary and manually clear the waste objects brought in by human activity.',
-    referenceDurationSeconds: 10,
+    referenceDurationSeconds: 10 / 3,
     isUnderwater: true,
     supportsTimeLengths: true,
     maximumLengthTier: 1,

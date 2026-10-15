@@ -18,7 +18,9 @@ test('crop thresholds follow crop order and later side mechanics appear later', 
     'leek1000', 'potato100', 'turnip3', 'apple10B', 'sunflower400K', 'canola800',
   ])
   const ids = achievements.map(({ id }) => id)
-  assert.ok(ids.indexOf('absolutelyNothing') < ids.indexOf('thisIsFine'))
+  assert.equal(ids.includes('thisIsFine'), false)
+  const archivedIds = getAchievementsForTier(1, ['thisIsFine']).map(({ id }) => id)
+  assert.ok(archivedIds.indexOf('absolutelyNothing') < archivedIds.indexOf('thisIsFine'))
   assert.ok(ids.indexOf('backUnderControl') < ids.indexOf('controlledBurn'))
 })
 
@@ -27,7 +29,9 @@ test('milestones follow the current unlock order and phase shifts remain linear'
     'inventions', 'firstExpansion', 'unionized', 'firstPerfection', 'rowDuplicators', 'seedAugmentation',
     'supportingCast',
   ])
-  assert.deepEqual(getAchievementsForTier(3).map(({ id }) => id), ['trade', 'misfortune', 'manatees'])
+  assert.deepEqual(getAchievementsForTier(3).map(({ id }) => id), ['trade', 'misfortune'])
+  assert.deepEqual(getAchievementsForTier(3, ['manatees']).map(({ id }) => id),
+    ['trade', 'misfortune', 'manatees'])
 })
 
 test('perfecting Sweet Potato is listed before forming a Sweet Potato bed', () => {
