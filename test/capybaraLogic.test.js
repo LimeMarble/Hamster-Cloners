@@ -1,0 +1,403 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import {
+  CAPYBARA_DEMONSTRATION_IDS,
+  CAPYBARA_DEMONSTRATIONS,
+  CAPYBARA_SECONDARY_OBJECTIVE_IDS,
+  FORTUNE_EFFECT_IDS,
+  RABBIT_UNLOCK_IDS,
+  completeCapybaraDemonstration,
+  completeNextCapybaraDemonstrationForTesting,
+  createBlueprint,
+  createInitialGame,
+  getCapybaraBlueprintCropYield,
+  getCapybaraDemonstrationStatus,
+  getCapybaraHamsterEfficiencyMultiplier,
+  hasSeedAugmentation,
+  normalizeCapybaraState,
+} from '../src/game/gameLogic.js'
+import { normalizeGame } from '../src/game/storage.js'
+
+function createContactGame() {
+  const game = createInitialGame()
+
+  return {
+    ...game,
+    blueprint: createBlueprint({
+      rows: 2,
+      columns: 2,
+      cells: ['leek', null, null, null],
+    }),
+    trade: {
+      ...game.trade,
+      established: true,
+      rabbitUnlocks: [RABBIT_UNLOCK_IDS.CAPYBARA_CONTACT],
+    },
+  }
+}
+
+test('testing completes only available Capybara demonstrations in order', () => {
+  let game = createInitialGame()
+  const demonstrations = CAPYBARA_DEMONSTRATIONS.filter(({ available }) => available !== false)
+
+  demonstrations.forEach((demonstration, index) => {
+    game = completeNextCapybaraDemonstrationForTesting(game)
+
+    assert.deepEqual(
+      game.capybara.completedDemonstrations,
+      demonstrations.slice(0, index + 1).map(({ id }) => id),
+    )
+    assert.ok(game.capybara.completedDemonstrations.includes(demonstration.id))
+  })
+
+  assert.equal(game.hasUnlockedRootTunnel, false)
+  assert.equal(completeNextCapybaraDemonstrationForTesting(game), null)
+})
+
+test('Capybara blueprint yield excludes Fields and testing multipliers but includes fortune', () => {
+  const game = {
+    ...createContactGame(),
+    farmland: {
+      rows: 1e20,
+      columns: 1e20,
+      floors: 1e20,
+      farms: 1e20,
+      otherMultiplier: 1e20,
+    },
+    testingCheats: {
+      cropMultiplierEnabled: true,
+      hamsterEfficiencyEnabled: false,
+    },
+  }
+  const bountyGame = {
+    ...game,
+    fortune: {
+      ...game.fortune,
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 10 },
+      ],
+    },
+  }
+  const opusGame = {
+    ...game,
+    fortune: {
+      ...game.fortune,
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.OPUS, remainingSeconds: 10 },
+      ],
+    },
+  }
+
+  assert.equal(getCapybaraBlueprintCropYield(game), 1)
+  assert.equal(getCapybaraBlueprintCropYield(bountyGame), 17.77)
+  assert.equal(getCapybaraBlueprintCropYield(opusGame), 7.77)
+})
+
+test('Demonstration 0 requires Capybara contact and 500B blueprint yield', () => {
+  const target = CAPYBARA_DEMONSTRATIONS[0].target
+  const noContactGame = createInitialGame()
+  const contactGame = createContactGame()
+
+  assert.equal(target, 2e13)
+  assert.equal(
+    completeCapybaraDemonstration(
+      noContactGame,
+      CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+      { blueprintCropYield: target },
+    ),
+    null,
+  )
+  assert.equal(
+    completeCapybaraDemonstration(
+      contactGame,
+      CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+      { blueprintCropYield: target - 1 },
+    ),
+    null,
+  )
+
+  assert.equal(
+    getCapybaraDemonstrationStatus(
+      contactGame,
+      CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+      { blueprintCropYield: target },
+    ).secondaryVisible,
+    false,
+  )
+
+  const completed = completeCapybaraDemonstration(
+    contactGame,
+    CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+    { blueprintCropYield: target },
+  )
+
+  assert.deepEqual(completed.capybara.completedDemonstrations, [
+    CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+  ])
+  assert.deepEqual(completed.capybara.completedSecondaryObjectives, [
+    CAPYBARA_SECONDARY_OBJECTIVE_IDS.INTRODUCTION_NO_CLOVER,
+  ])
+  assert.equal(getCapybaraHamsterEfficiencyMultiplier(completed), 2)
+  assert.equal(hasSeedAugmentation(completed), true)
+  assert.equal(
+    completeCapybaraDemonstration(
+      completed,
+      CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+      { blueprintCropYield: target },
+    ),
+    null,
+  )
+})
+
+test('Capybara progress persists and legacy saves receive safe defaults', () => {
+  assert.deepEqual(
+    normalizeCapybaraState({
+      completedDemonstrations: ['introduction', 'invalid', 'introduction'],
+    }),
+    {
+      completedDemonstrations: ['introduction'],
+      completedSecondaryObjectives: [],
+    },
+  )
+  assert.deepEqual(normalizeGame({}).capybara, {
+    completedDemonstrations: [],
+    completedSecondaryObjectives: [],
+  })
+  assert.deepEqual(
+    normalizeGame({
+      capybara: { completedDemonstrations: ['introduction'] },
+    }).capybara,
+    {
+      completedDemonstrations: ['introduction'],
+      completedSecondaryObjectives: [],
+    },
+  )
+})
+
+test('the hidden secondary reward allows planted Clover but blocks active Breeze effects', () => {
+  const target = CAPYBARA_DEMONSTRATIONS[0].target
+  const cloverGame = {
+    ...createContactGame(),
+    blueprint: createBlueprint({
+      rows: 2,
+      columns: 2,
+      cells: ['leek', 'fourLeafClover', null, null],
+    }),
+    fortune: {
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 10 },
+      ],
+    },
+  }
+
+  const firstPass = completeCapybaraDemonstration(
+    cloverGame,
+    CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+    { blueprintCropYield: target },
+  )
+
+  assert.deepEqual(firstPass.capybara.completedSecondaryObjectives, [])
+  assert.equal(getCapybaraHamsterEfficiencyMultiplier(firstPass), 1)
+
+  const revealed = getCapybaraDemonstrationStatus(
+    firstPass,
+    CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+    { blueprintCropYield: target },
+  )
+  assert.equal(revealed.secondaryVisible, true)
+  assert.equal(revealed.secondaryConditionMet, false)
+  assert.equal(revealed.canComplete, false)
+
+  const cleanRetryGame = {
+    ...firstPass,
+    fortune: { activeEffects: [] },
+  }
+  const cleanRetry = completeCapybaraDemonstration(
+    cleanRetryGame,
+    CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+    { blueprintCropYield: target },
+  )
+
+  assert.deepEqual(cleanRetry.capybara.completedSecondaryObjectives, [
+    CAPYBARA_SECONDARY_OBJECTIVE_IDS.INTRODUCTION_NO_CLOVER,
+  ])
+  assert.equal(getCapybaraHamsterEfficiencyMultiplier(cleanRetry), 2)
+})
+
+test('active Breeze effects fail Demonstration 0 secondary condition', () => {
+  const game = {
+    ...createContactGame(),
+    fortune: {
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 10 },
+      ],
+    },
+  }
+  const completed = completeCapybaraDemonstration(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+    { blueprintCropYield: CAPYBARA_DEMONSTRATIONS[0].target },
+  )
+
+  assert.deepEqual(completed.capybara.completedSecondaryObjectives, [])
+})
+
+test('Demonstration 1 allows planted Clover but bans active Breeze effects', () => {
+  const target = CAPYBARA_DEMONSTRATIONS[1].target
+  const introductionCompleteGame = {
+    ...createContactGame(),
+    capybara: {
+      completedDemonstrations: [CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION],
+      completedSecondaryObjectives: [],
+    },
+  }
+
+  assert.equal(target, 2.5e20)
+  assert.equal(getCapybaraDemonstrationStatus(
+    introductionCompleteGame,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+    { blueprintCropYield: 1e20 },
+  ).canComplete, false)
+  assert.equal(
+    CAPYBARA_DEMONSTRATIONS[1].rewardName,
+    'Floor Replicators',
+  )
+  assert.equal(
+    CAPYBARA_DEMONSTRATIONS[1].hint,
+    'Augmentations are your best friend here.',
+  )
+  assert.deepEqual(CAPYBARA_DEMONSTRATIONS[1].restrictions, [
+    'No Breeze of Fortune effects may be active',
+  ])
+
+  const cloverGame = {
+    ...introductionCompleteGame,
+    blueprint: createBlueprint({
+      rows: 2,
+      columns: 2,
+      cells: ['leek', 'fourLeafClover', null, null],
+    }),
+  }
+  const cloverStatus = getCapybaraDemonstrationStatus(
+    cloverGame,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+    { blueprintCropYield: target },
+  )
+  assert.equal(cloverStatus.restrictionsMet, true)
+  assert.equal(cloverStatus.canComplete, true)
+
+  const breezeGame = {
+    ...introductionCompleteGame,
+    fortune: {
+      activeEffects: [
+        { id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 10 },
+      ],
+    },
+  }
+  const breezeStatus = getCapybaraDemonstrationStatus(
+    breezeGame,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+    { blueprintCropYield: target },
+  )
+  assert.equal(breezeStatus.restrictionsMet, false)
+  assert.equal(breezeStatus.canComplete, false)
+
+  const completed = completeCapybaraDemonstration(
+    introductionCompleteGame,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+    { blueprintCropYield: target },
+  )
+  assert.deepEqual(completed.capybara.completedDemonstrations, [
+    CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+  ])
+  assert.equal(completed.hasUnlockedFloorReplicators, true)
+})
+
+test("Demonstration 2 requires 4.44e96 Crops inside Fortune's Wrath", () => {
+  const game = {
+    ...createContactGame(),
+    capybara: {
+      completedDemonstrations: [
+        CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+      ],
+      completedSecondaryObjectives: [],
+    },
+    activeArea: 'misfortune',
+    crops: 4.44e96,
+  }
+  const demonstration = CAPYBARA_DEMONSTRATIONS[2]
+  const status = getCapybaraDemonstrationStatus(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
+
+  assert.equal(demonstration.target, 4.44e96)
+  assert.equal(status.hint, 'Back and forth like a seesaw: Fortune and Misfortune.')
+  assert.equal(demonstration.rewardName, 'End of current content')
+  assert.equal(status.current, 4.44e96)
+  assert.equal(status.progress, 1)
+  assert.equal(status.canComplete, true)
+  const belowGoal = getCapybaraDemonstrationStatus(
+    { ...game, crops: 4.44e96 * 0.999999 },
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
+  assert.equal(belowGoal.hasReachedGoal, false)
+  assert.equal(belowGoal.canComplete, false)
+  const wrongArea = getCapybaraDemonstrationStatus(
+    { ...game, activeArea: 'main', areaProgress: { misfortune: { crops: 4.44e96 } } },
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
+  assert.equal(wrongArea.hasReachedGoal, true)
+  assert.equal(wrongArea.canComplete, false)
+
+  const completion = completeCapybaraDemonstration(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
+  assert.ok(
+    completion.capybara.completedDemonstrations.includes(
+      CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+    ),
+  )
+})
+
+test('Demonstration 3 retains its configuration but cannot award Root Tunnel while disabled', () => {
+  const game = {
+    ...createContactGame(),
+    capybara: {
+      completedDemonstrations: [
+        CAPYBARA_DEMONSTRATION_IDS.INTRODUCTION,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+      ],
+      completedSecondaryObjectives: [],
+    },
+    manatees: {
+      ...createInitialGame().manatees,
+      completedDevelopmentGoals: [
+        'restoreFeedingGrounds',
+        'cleanHumanWaste',
+      ],
+    },
+  }
+  const demonstration = CAPYBARA_DEMONSTRATIONS[3]
+  const status = getCapybaraDemonstrationStatus(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
+  )
+
+  assert.equal(demonstration.target, 3)
+  assert.equal(demonstration.rewardName, 'Root Tunnel')
+  assert.equal(status.current, 2)
+  assert.equal(status.progress, 2 / 3)
+  assert.equal(status.canComplete, false)
+
+  const futureCompletion = completeCapybaraDemonstration(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_THREE,
+    { manateeDevelopmentGoalsCompleted: 3 },
+  )
+  assert.equal(futureCompletion, null)
+})

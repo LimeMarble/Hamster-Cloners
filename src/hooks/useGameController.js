@@ -1,7 +1,22 @@
 import { useRef } from 'react'
-import { INVENTIONS_HAMSTER_UNLOCK_COUNT } from '../game/gameLogic.js'
+import {
+  canUnlockGreaterBlueprinting,
+  canPurchaseFloorReplicatorsInArea,
+  canUnlockMisfortuneUpgrade,
+  collectCloverBundle,
+  removeActiveFortuneEffect,
+  getHuntForSomethingGreaterMultiplier,
+  getAchievementHamsterMultiplier,
+  getAchievementTreatExponent,
+  getMissingMisfortuneCropTypeIds,
+  hasMisfortuneUpgrade,
+  isFloorReplicatorSupportModeAvailable,
+  isCloverAssemblyReady,
+  INVENTIONS_HAMSTER_UNLOCK_COUNT,
+  MISFORTUNE_UPGRADE_IDS,
+  MISFORTUNE_UPGRADES,
+} from '../game/gameLogic.js'
 import { useBlueprintEditor } from './useBlueprintEditor.js'
-import { useCropUnlockNotifications } from './useCropUnlockNotifications.js'
 import { useGameActions } from './useGameActions.js'
 import { useGameDerivedState } from './useGameDerivedState.js'
 import { useGameState } from './useGameState.js'
@@ -9,24 +24,34 @@ import { useTestingCheats } from './useTestingCheats.js'
 
 export function useGameController() {
   const isEditingBlueprintRef = useRef(false)
-  const { game, gameRef, setGame, updateGame } = useGameState(
-    isEditingBlueprintRef,
-  )
+  const {
+    game,
+    gameRef,
+    setGame,
+    updateGame,
+    saveCurrentGame,
+    lastSavedAt,
+    setSimulationPaused,
+    backgroundCatchUp,
+    isGameReady,
+    compressBackgroundCatchUp,
+    skipBackgroundCatchUp,
+  } = useGameState(isEditingBlueprintRef)
   const derived = useGameDerivedState(game)
-  const notifications = useCropUnlockNotifications(
-    derived.visibleUnlockedCropIds,
-  )
   const blueprintEditor = useBlueprintEditor({
     game,
     gameRef,
     updateGame,
     isEditingBlueprintRef,
+    onEditingChange: setSimulationPaused,
     unlockedCropIds: derived.unlockedCropIds,
     visibleCropIds: derived.visibleCropIds,
     unlockedBlueprintSlotCount: derived.unlockedBlueprintSlotCount,
     hasMirrorCorn: derived.hasMirrorCorn,
     hasLeechingGourd: derived.hasLeechingGourd,
+    hasSplitweed: derived.hasSplitweed,
     rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
+    rabbitContractsCompleted: game.trade?.rabbitContractsCompleted ?? 0,
     showMonocropLimit: derived.showMonocropLimit,
     monocropLimit: derived.monocropLimit,
     monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
@@ -35,41 +60,67 @@ export function useGameController() {
     gameRef,
     setGame,
     updateGame,
+    saveGameNow: saveCurrentGame,
     areInventionsUnlocked: derived.areInventionsUnlocked,
+    isTradeTabVisible: derived.isTradeTabVisible,
+    isAugmentationTabVisible: derived.isAugmentationTabVisible,
+    isCloverTabVisible: game.cloverAssembly?.assembled === true,
     resetBlueprintEditor: blueprintEditor.resetBlueprintEditor,
-    clearCropUnlockNotices: notifications.clearCropUnlockNotices,
   })
   const testing = useTestingCheats({
     game,
     updateGame,
     blueprintExpansionTracks: derived.blueprintExpansionTracks,
   })
+  const canPurchaseFloorReplicators =
+    canPurchaseFloorReplicatorsInArea(game)
+  const shouldShowFloorReplicators =
+    game.hasUnlockedFloorReplicators &&
+    (canPurchaseFloorReplicators || game.floorReplicators >= 1)
+  const activeTab = (actions.activeTab === 'clover' &&
+    game.cloverAssembly?.assembled !== true) ||
+    (actions.activeTab === 'misfortune' && !derived.isMisfortuneTabVisible)
+      ? 'field'
+      : actions.activeTab
 
   return {
+    isGameReady,
     progression: {
       goal: derived.majorProgressionGoal,
+      numberNotation: game.numberNotation,
+      suffixScientificExponent: game.suffixScientificExponent,
     },
     navigation: {
-      activeTab: actions.activeTab,
+      activeTab,
       areInventionsUnlocked: derived.areInventionsUnlocked,
+      isCloverTabVisible: game.cloverAssembly?.assembled === true,
+      isTradeTabVisible: derived.isTradeTabVisible,
+      isAugmentationTabVisible: derived.isAugmentationTabVisible,
+      isMisfortuneTabVisible: derived.isMisfortuneTabVisible,
       showInventionsUnlockPrompt: derived.showInventionsUnlockPrompt,
       inventionsUnlockCount: INVENTIONS_HAMSTER_UNLOCK_COUNT,
       ...actions.navigationActions,
     },
     screen: {
-      activeTab: actions.activeTab,
+      activeTab,
       field: {
         game,
         productionPerSecond: derived.productionPerSecond,
         blueprint: {
           game,
+          fieldIncomePerSecond: derived.capybaraBlueprintCropYield,
+          columnsBuiltPerSecond: derived.columnsBuiltPerSecond,
+          rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
+          floorsBuiltPerSecond: derived.floorsBuiltPerSecond,
           showMonocropLimit: derived.showMonocropLimit,
           monocropLimit: derived.monocropLimit,
           monocropPenaltyMultiplier: derived.monocropPenaltyMultiplier,
           blueprintSlots: derived.blueprintSlots,
           unlockedBlueprintSlotCount: derived.unlockedBlueprintSlotCount,
+          visibleCropIds: derived.visibleCropIds,
           onSelectBlueprintSlot: blueprintEditor.onSelectBlueprintSlot,
           onOpenEditor: blueprintEditor.onOpenEditor,
+          onRestartFields: actions.onRestartFields,
         },
         hamsterPurchase: {
           game,
@@ -81,8 +132,8 @@ export function useGameController() {
             derived.cropHamsterEfficiencyMultiplier,
           hamsterExternalMultiplier: derived.hamsterExternalMultiplier,
           unionStatus: derived.unionStatus,
-          canHireMax: derived.canHireMax,
           onBuyHamster: actions.purchaseActions.onBuyHamster,
+          onBuyTenHamsters: actions.purchaseActions.onBuyTenHamsters,
           onBuyMaxHamsters: actions.purchaseActions.onBuyMaxHamsters,
         },
         duplicatorPurchase: game.hasUnlockedRowDuplicators
@@ -98,10 +149,186 @@ export function useGameController() {
               rowsBuiltPerSecond: derived.rowsBuiltPerSecond,
               onBuyRowDuplicator:
                 actions.purchaseActions.onBuyRowDuplicator,
+              onBuyTenRowDuplicators:
+                actions.purchaseActions.onBuyTenRowDuplicators,
               onBuyMaxRowDuplicators:
                 actions.purchaseActions.onBuyMaxRowDuplicators,
             }
           : null,
+        floorReplicatorPurchase: shouldShowFloorReplicators
+          ? {
+              game,
+              canPurchaseFloorReplicators,
+              nextFloorReplicatorCost: derived.nextFloorReplicatorCost,
+              floorReplicatorCoordinationMultiplier:
+                derived.floorReplicatorCoordinationMultiplier,
+              floorReplicatorEffectivenessMultiplier:
+                derived.floorReplicatorEffectivenessMultiplier,
+              floorReplicatorExternalMultiplier:
+                derived.floorReplicatorExternalMultiplier,
+              isFloorReplicatorSupportMode:
+                derived.isFloorReplicatorSupportMode,
+              floorReplicatorSupportPassiveEffectBonus:
+                derived.floorReplicatorSupportPassiveEffectBonus,
+              hasFloorReplicatorSupport:
+                isFloorReplicatorSupportModeAvailable(game),
+              floorsBuiltPerSecond: derived.floorsBuiltPerSecond,
+              onBuyFloorReplicator:
+                actions.purchaseActions.onBuyFloorReplicator,
+              onBuyTenFloorReplicators:
+                actions.purchaseActions.onBuyTenFloorReplicators,
+              onBuyMaxFloorReplicators:
+                actions.purchaseActions.onBuyMaxFloorReplicators,
+              onToggleFloorReplicatorMode:
+                actions.purchaseActions.onToggleFloorReplicatorMode,
+            }
+          : null,
+      },
+      clover: {
+        game,
+        ...actions.cloverActions,
+      },
+      trade: {
+        game,
+        capybaraBlueprintCropYield:
+          derived.capybaraBlueprintCropYield,
+        canUnlockBlazingCarrot: derived.canUnlockBlazingCarrot,
+        hasBlazingCarrot: derived.hasBlazingCarrot,
+        rabbitContractProductionPerSecondByCrop:
+          derived.rabbitContractProductionPerSecondByCrop,
+        ...actions.tradeActions,
+      },
+      augmentation: {
+        game,
+        ...actions.augmentationActions,
+      },
+      misfortune: {
+        isMisfortuneAreaActive: derived.isMisfortuneAreaActive,
+        unfortunateRow: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW
+        ],
+        hasUnfortunateRow: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+        ),
+        canUnlockUnfortunateRow: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+        ),
+        onUnlockUnfortunateRow: actions.onUnlockUnfortunateRow,
+        fortunateColumn: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN
+        ],
+        hasFortunateColumn: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+        ),
+        canUnlockFortunateColumn: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+        ),
+        onUnlockFortunateColumn: actions.onUnlockFortunateColumn,
+        rushedStart: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.RUSHED_START
+        ],
+        hasRushedStart: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.RUSHED_START,
+        ),
+        canUnlockRushedStart: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.RUSHED_START,
+        ),
+        onUnlockRushedStart: actions.onUnlockRushedStart,
+        oilyTreats: MISFORTUNE_UPGRADES[MISFORTUNE_UPGRADE_IDS.OILY_TREATS],
+        hasOilyTreats: hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.OILY_TREATS),
+        canUnlockOilyTreats: canUnlockMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.OILY_TREATS),
+        hasSweetPotato: derived.hasSweetPotato,
+        hasFiveLeafClover: game.cloverAssembly?.assembled === true,
+        onUnlockOilyTreats: actions.onUnlockOilyTreats,
+        onVisitSweetPotatoInMain: actions.onVisitSweetPotatoInMain,
+        adversityGrownTubers: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS
+        ],
+        hasAdversityGrownTubers: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
+        ),
+        canUnlockAdversityGrownTubers: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
+        ),
+        onUnlockAdversityGrownTubers:
+          actions.onUnlockAdversityGrownTubers,
+        burdenedFoundations: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS
+        ],
+        hasBurdenedFoundations: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+        ),
+        canUnlockBurdenedFoundations: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+        ),
+        onUnlockBurdenedFoundations:
+          actions.onUnlockBurdenedFoundations,
+        nourishingMisery: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY
+        ],
+        hasNourishingMisery: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+        ),
+        canUnlockNourishingMisery: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+        ),
+        onUnlockNourishingMisery:
+          actions.onUnlockNourishingMisery,
+        huntForSomethingGreater: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER
+        ],
+        hasHuntForSomethingGreater: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+        ),
+        canUnlockHuntForSomethingGreater: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+        ),
+        huntForSomethingGreaterMultiplier:
+          getHuntForSomethingGreaterMultiplier(game),
+        missingMisfortuneCropTypeCount:
+          getMissingMisfortuneCropTypeIds(game).length,
+        onUnlockHuntForSomethingGreater:
+          actions.onUnlockHuntForSomethingGreater,
+        finalSupport: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT
+        ],
+        hasFinalSupport: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+        ),
+        canUnlockFinalSupport: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+        ),
+        onUnlockFinalSupport: actions.onUnlockFinalSupport,
+        partingGift: MISFORTUNE_UPGRADES[
+          MISFORTUNE_UPGRADE_IDS.PARTING_GIFT
+        ],
+        hasPartingGift: hasMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.PARTING_GIFT,
+        ),
+        canUnlockPartingGift: canUnlockMisfortuneUpgrade(
+          game,
+          MISFORTUNE_UPGRADE_IDS.PARTING_GIFT,
+        ),
+        onUnlockPartingGift: actions.onUnlockPartingGift,
+        onLeave: actions.onLeaveMisfortuneArea,
+        onEnter: actions.onEnterMisfortuneArea,
       },
       inventions: {
         game,
@@ -112,30 +339,70 @@ export function useGameController() {
         canUnlockMirrorCorn: derived.canUnlockMirrorCorn,
         canUnlockLeechingGourd: derived.canUnlockLeechingGourd,
         canUnlockSweetPotato: derived.canUnlockSweetPotato,
+        canUnlockSamplingLentil: derived.canUnlockSamplingLentil,
         canUnlockSplitweed: derived.canUnlockSplitweed,
+        canUnlockGreaterBlueprinting: canUnlockGreaterBlueprinting(game),
+        isCloverAssemblyReady: isCloverAssemblyReady(game.cloverAssembly),
+        cloverAssemblyProductionPerSecond:
+          derived.cloverAssemblyProductionPerSecond,
         canUnlockRows: derived.canUnlockRows,
         hasEnrichingLeek: derived.hasEnrichingLeek,
         hasMirrorCorn: derived.hasMirrorCorn,
         hasLeechingGourd: derived.hasLeechingGourd,
         hasSweetPotato: derived.hasSweetPotato,
+        hasSamplingLentil: derived.hasSamplingLentil,
         hasSplitweed: derived.hasSplitweed,
         pendingBlueprintExpansion: actions.pendingBlueprintExpansion,
         isRowDuplicatorUnlockPending:
           actions.isRowDuplicatorUnlockPending,
         ...actions.inventionsActions,
       },
+      achievements: {
+        earnedAchievementIds: game.earnedAchievementIds,
+        hamsterTreatMultiplier: getAchievementHamsterMultiplier(game),
+        hamsterTreatExponent: getAchievementTreatExponent(game),
+        numberNotation: game.numberNotation,
+        suffixScientificExponent: game.suffixScientificExponent,
+      },
       statistics: {
         game,
         unlockedCropIds: derived.unlockedCropIds,
+        cloverBundleChancePerMinute: derived.cloverBundleChancePerMinute,
       },
       options: {
         ...actions.options,
+        lastSavedAt,
         numberNotation: game.numberNotation,
+        suffixScientificExponent: game.suffixScientificExponent,
         codeEntry: testing.codeEntry,
       },
     },
     overlays: {
-      blueprintEditor: blueprintEditor.blueprintEditor,
+      achievementNotifications: {
+        earnedAchievementIds: game.earnedAchievementIds,
+        numberNotation: game.numberNotation,
+        suffixScientificExponent: game.suffixScientificExponent,
+        onOpenAchievements: actions.navigationActions.onShowAchievements,
+      },
+      backgroundCatchUp: backgroundCatchUp
+        ? {
+            ...backgroundCatchUp,
+            onCompress: compressBackgroundCatchUp,
+            onSkip: skipBackgroundCatchUp,
+          }
+        : null,
+      blueprintEditor: blueprintEditor.blueprintEditor
+        ? {
+            ...blueprintEditor.blueprintEditor,
+            fieldIncomePerSecond: derived.capybaraBlueprintCropYield,
+            hamsterEfficiencyMultiplier:
+              derived.cropHamsterEfficiencyMultiplier,
+            duplicatorEfficiencyMultiplier:
+              derived.rowDuplicatorEffectivenessMultiplier,
+            replicatorEfficiencyMultiplier:
+              derived.floorReplicatorEffectivenessMultiplier,
+          }
+        : null,
       monocropWarning: blueprintEditor.monocropWarning,
       blueprintMastery: {
         isOpen:
@@ -144,8 +411,21 @@ export function useGameController() {
         onClose: actions.onCloseBlueprintMastery,
       },
       unionConfirmation: actions.unionConfirmation,
-      cropUnlockNotice: notifications.cropUnlockNotice,
+      misfortuneWipeConfirmation: testing.misfortuneWipeConfirmation,
       testingPanel: testing.testingPanel,
+      fortune: {
+        fortune: game.fortune,
+        isDisabled: derived.isMisfortuneAreaActive &&
+          game.cloverAssembly?.assembled !== true,
+        numberNotation: game.numberNotation,
+        suffixScientificExponent: game.suffixScientificExponent,
+        onCollect: (bundleIndex) =>
+          updateGame((currentGame) =>
+            collectCloverBundle(currentGame, bundleIndex),
+          ),
+        onRemoveEffect: (effectId) =>
+          updateGame((currentGame) => removeActiveFortuneEffect(currentGame, effectId)),
+      },
     },
   }
 }

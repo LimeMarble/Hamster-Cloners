@@ -1,17 +1,38 @@
 import { useMemo } from 'react'
+import { MANATEES_ENABLED } from '../game/contentAvailability.js'
 import {
+  getAchievementHamsterMultiplier, getOilyTreatsFloorMultiplier,
+} from '../game/achievementState.js'
+import { hasVisitedMisfortune } from '../game/crops.js'
+import {
+  CAPYBARA_DEMONSTRATION_IDS,
   canUnlockCropPerfection,
   canUnlockRowDuplicators,
+  getCapybaraBlueprintCropYield,
+  getCapybaraHamsterEfficiencyMultiplier,
   getBlueprintExpansionTrackProgress,
+  getFloorReplicatorSupportPassiveEffectBonus,
   getBlueprintMonocropMultiplier,
   getBlueprintSlots,
   getColumnsProducedPerSecond,
   getCropHamsterEfficiencyMultiplier,
-  getCropProductionPerSecond,
-
+  getCropProductionSnapshotPerSecond,
+  getCloverAssemblyProductionPerSecond,
+  getCloverBundleChancePerMinute,
+  getFortuneModifiers,
+  getGameAreaCostMultiplier,
   getHamsterCoordinationMultiplier,
   getHamsterExternalMultiplier,
+  hasCompletedCapybaraDemonstration,
+  isMisfortuneAreaActive,
+  getFloorReplicatorCoordinationMultiplier,
+  getFloorReplicatorExternalMultiplier,
+  getFloorsProducedPerSecond,
+  getHuntForSomethingGreaterMultiplier,
+  getManateeSurveyingHamsterCount,
+  getUnlockedManateeCropIds,
   getNextHamsterCost,
+  getNextFloorReplicatorCost,
   getNextMajorProgressionGoal,
   getNextRowDuplicatorCost,
   getMonocropThresholdBonus,
@@ -19,34 +40,141 @@ import {
   getRowDuplicatorExternalMultiplier,
   getRowsProducedPerSecond,
   getRowDuplicatorCoordinationMultiplier,
+  getSoybeanMachineryEffect,
   getUnlockedBlueprintSlotCount,
+  getRushedStartExternalMultiplier,
+  isFloorReplicatorSupportModeActive,
   hasReachedMonocropLimit,
+  hasRabbitUnlock,
+  hasSeedAugmentation,
   INVENTIONS_HAMSTER_UNLOCK_COUNT,
+  RABBIT_UNLOCK_IDS,
   UNIONIZATION_HAMSTER_COUNT,
   UNION_STATUS_RETIRE_HIRE_COUNT,
 } from '../game/gameLogic.js'
-import { getUnlockedCropIds, getVisibleCropIds } from '../game/crops.js'
+import {
+  getUnlockedCropIds,
+  getVisibleCropIds,
+  hasUnlockedCanolaInMisfortune,
+  hasUnlockedCorn,
+} from '../game/crops.js'
 import { getMonocropThreshold } from '../game/monocropPenalty.js'
-import { getCachedFormattedNumber } from '../game/numberFormat.js'
+import { formatWholeNumber } from '../game/numberFormat.js'
 
 export function useGameDerivedState(game) {
-  const nextHamsterCost = useMemo(
-    () => getNextHamsterCost(game.hamsters, game.unionized),
-    [game.hamsters, game.unionized],
+  const rushedStartExternalMultiplier =
+    getRushedStartExternalMultiplier(game)
+  const huntForSomethingGreaterMultiplier =
+    getHuntForSomethingGreaterMultiplier(game)
+  const fortuneModifiers = useMemo(
+    () => getFortuneModifiers({
+      fortune: game.fortune,
+      activeArea: game.activeArea,
+      cloverAssembly: game.cloverAssembly,
+      completedMisfortuneUpgrades: game.completedMisfortuneUpgrades,
+      floorReplicators: game.floorReplicators,
+      floorReplicatorMode: game.floorReplicatorMode,
+    }),
+    [
+      game.activeArea,
+      game.cloverAssembly,
+      game.completedMisfortuneUpgrades,
+      game.floorReplicatorMode,
+      game.floorReplicators,
+      game.fortune,
+    ],
   )
-  const productionPerSecond = useMemo(
+  const nextHamsterCost = useMemo(
     () =>
-      getCropProductionPerSecond(
+      getNextHamsterCost(
+        game.hamsters,
+        game.unionized,
+        getGameAreaCostMultiplier(game.activeArea),
+      ),
+    [game.activeArea, game.hamsters, game.unionized],
+  )
+  const cropProductionSnapshot = useMemo(
+    () =>
+      getCropProductionSnapshotPerSecond(
         game.blueprint,
         game.farmland,
         game.completedCropPerfections,
         game.testingCheats?.cropMultiplierEnabled ? 10 : 1,
+        game.trade?.rabbitContractsCompleted ?? 0,
+        fortuneModifiers,
+        game.seedAugmentations,
+        game.trade?.totalRabbitRelationsEarned ?? 0,
       ),
     [
       game.blueprint,
       game.farmland,
       game.completedCropPerfections,
       game.testingCheats?.cropMultiplierEnabled,
+      game.trade?.rabbitContractsCompleted,
+      game.trade?.totalRabbitRelationsEarned,
+      fortuneModifiers,
+      game.seedAugmentations,
+    ],
+  )
+  const productionPerSecond = cropProductionSnapshot.total
+  const cloverAssemblyProductionPerSecond =
+    isMisfortuneAreaActive(game) &&
+    game.hasUnlockedGreaterBlueprinting === true &&
+    hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.RABBITS_CHARM) &&
+    game.cloverAssembly?.assembled !== true
+      ? getCloverAssemblyProductionPerSecond(cropProductionSnapshot.byCrop)
+      : 0
+  const cloverBundleChancePerMinute = useMemo(
+    () =>
+      getCloverBundleChancePerMinute({
+        blueprint: game.blueprint,
+        activeArea: game.activeArea,
+        cloverAssembly: game.cloverAssembly,
+        completedCropPerfections: game.completedCropPerfections,
+        farmland: game.farmland,
+        fortune: game.fortune,
+        seedAugmentations: game.seedAugmentations,
+      }),
+    [
+      game.blueprint,
+      game.activeArea,
+      game.cloverAssembly,
+      game.completedCropPerfections,
+      game.farmland,
+      game.fortune,
+      game.seedAugmentations,
+    ],
+  )
+  const capybaraBlueprintCropYield = useMemo(
+    () =>
+      getCapybaraBlueprintCropYield({
+        blueprint: game.blueprint,
+        completedCropPerfections: game.completedCropPerfections,
+        fortune: game.fortune,
+        activeArea: game.activeArea,
+        completedMisfortuneUpgrades:
+          game.completedMisfortuneUpgrades,
+        floorReplicators: game.floorReplicators,
+        floorReplicatorMode: game.floorReplicatorMode,
+        seedAugmentations: game.seedAugmentations,
+        trade: {
+          rabbitContractsCompleted:
+            game.trade?.rabbitContractsCompleted ?? 0,
+          totalRabbitRelationsEarned:
+            game.trade?.totalRabbitRelationsEarned ?? 0,
+        },
+      }),
+    [
+      game.blueprint,
+      game.activeArea,
+      game.completedCropPerfections,
+      game.completedMisfortuneUpgrades,
+      game.floorReplicatorMode,
+      game.floorReplicators,
+      game.fortune,
+      game.seedAugmentations,
+      game.trade?.rabbitContractsCompleted,
+      game.trade?.totalRabbitRelationsEarned,
     ],
   )
 
@@ -59,11 +187,77 @@ export function useGameDerivedState(game) {
     [game.hamsters, game.postUnionHamstersHired],
   )
   const hamsterExternalMultiplier = getHamsterExternalMultiplier(
-    game.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1,
+    (game.testingCheats?.hamsterEfficiencyEnabled ? 10 : 1) *
+      (hasRabbitUnlock(game, RABBIT_UNLOCK_IDS.HAMSTER_EFFICIENCY)
+        ? 3
+        : 1) *
+      getCapybaraHamsterEfficiencyMultiplier(game) *
+      getAchievementHamsterMultiplier(game, fortuneModifiers.passiveEffectMultiplier) *
+      rushedStartExternalMultiplier *
+      huntForSomethingGreaterMultiplier,
   )
   const nextRowDuplicatorCost = useMemo(
-    () => getNextRowDuplicatorCost(game.rowDuplicators),
-    [game.rowDuplicators],
+    () =>
+      getNextRowDuplicatorCost(
+        game.rowDuplicators,
+        getGameAreaCostMultiplier(game.activeArea),
+      ),
+    [game.activeArea, game.rowDuplicators],
+  )
+  const nextFloorReplicatorCost = useMemo(
+    () =>
+      getNextFloorReplicatorCost(
+        game.floorReplicators,
+        getGameAreaCostMultiplier(game.activeArea),
+      ),
+    [game.activeArea, game.floorReplicators],
+  )
+  const floorReplicatorCoordinationMultiplier = useMemo(
+    () =>
+      getFloorReplicatorCoordinationMultiplier(game.floorReplicators),
+    [game.floorReplicators],
+  )
+  const floorReplicatorEffectivenessMultiplier = useMemo(
+    () =>
+      getSoybeanMachineryEffect(
+        game.blueprint,
+        game.completedCropPerfections,
+        fortuneModifiers.passiveEffectMultiplier,
+        game.seedAugmentations,
+      ).floorProductionMultiplier,
+    [
+      game.blueprint,
+      game.completedCropPerfections,
+      fortuneModifiers.passiveEffectMultiplier,
+      game.seedAugmentations,
+    ],
+  )
+  const floorReplicatorExternalMultiplier =
+    getFloorReplicatorExternalMultiplier(
+      rushedStartExternalMultiplier * huntForSomethingGreaterMultiplier *
+        getOilyTreatsFloorMultiplier(game, fortuneModifiers.passiveEffectMultiplier),
+    )
+  const isFloorReplicatorSupportMode =
+    isFloorReplicatorSupportModeActive(game)
+  const floorReplicatorSupportPassiveEffectBonus =
+    getFloorReplicatorSupportPassiveEffectBonus(game)
+  const floorsBuiltPerSecond = useMemo(
+    () =>
+      game.hasUnlockedFloorReplicators
+        && !isFloorReplicatorSupportMode
+          ? getFloorsProducedPerSecond(
+            game.floorReplicators,
+            floorReplicatorExternalMultiplier,
+            floorReplicatorEffectivenessMultiplier,
+          )
+        : 0,
+    [
+      floorReplicatorExternalMultiplier,
+      floorReplicatorEffectivenessMultiplier,
+      game.floorReplicators,
+      game.hasUnlockedFloorReplicators,
+      isFloorReplicatorSupportMode,
+    ],
   )
   const rowDuplicatorEffectivenessMultiplier = useMemo(
     () =>
@@ -71,15 +265,31 @@ export function useGameDerivedState(game) {
         game.blueprint,
         game.completedCropPerfections,
         game.hamsters,
+        fortuneModifiers.passiveEffectMultiplier,
+        game.seedAugmentations,
       ),
-    [game.blueprint, game.completedCropPerfections, game.hamsters],
+    [
+      game.blueprint,
+      game.completedCropPerfections,
+      game.hamsters,
+      fortuneModifiers.passiveEffectMultiplier,
+      game.seedAugmentations,
+    ],
   )
   const rowDuplicatorCoordinationMultiplier = useMemo(
     () => getRowDuplicatorCoordinationMultiplier(game.rowDuplicators),
     [game.rowDuplicators],
   )
   const rowDuplicatorExternalMultiplier =
-    getRowDuplicatorExternalMultiplier()
+    getRowDuplicatorExternalMultiplier(
+      (hasRabbitUnlock(
+        game,
+        RABBIT_UNLOCK_IDS.ROW_DUPLICATOR_EFFICIENCY,
+      )
+        ? 2
+        : 1) * rushedStartExternalMultiplier *
+      huntForSomethingGreaterMultiplier,
+    )
   const rowsBuiltPerSecond = useMemo(
     () =>
       getRowsProducedPerSecond(
@@ -100,23 +310,56 @@ export function useGameDerivedState(game) {
         game.blueprint,
         game.completedCropPerfections,
         rowsBuiltPerSecond,
+        fortuneModifiers.passiveEffectMultiplier,
+        game.seedAugmentations,
       ),
-    [game.blueprint, game.completedCropPerfections, rowsBuiltPerSecond],
+    [
+      game.blueprint,
+      game.completedCropPerfections,
+      rowsBuiltPerSecond,
+      fortuneModifiers.passiveEffectMultiplier,
+      game.seedAugmentations,
+    ],
+  )
+  const surveyingHamsters = useMemo(
+    () =>
+      MANATEES_ENABLED ? getManateeSurveyingHamsterCount({
+        hamsters: game.hamsters,
+        manatees: game.manatees,
+      }) : 0,
+    [game.hamsters, game.manatees],
   )
   const columnsBuiltPerSecond = useMemo(
     () =>
       getColumnsProducedPerSecond(
-        game.hamsters,
+        Math.max(0, game.hamsters - surveyingHamsters),
         game.postUnionHamstersHired,
         cropHamsterEfficiencyMultiplier,
         hamsterExternalMultiplier,
+        game.hamsters,
       ),
     [
       game.hamsters,
       game.postUnionHamstersHired,
+      surveyingHamsters,
       cropHamsterEfficiencyMultiplier,
       hamsterExternalMultiplier,
     ],
+  )
+  const hasUnlockedCarrot = hasRabbitUnlock(
+    game,
+    RABBIT_UNLOCK_IDS.CARROT,
+  )
+  const hasMisfortuneCanola = hasUnlockedCanolaInMisfortune(game)
+  const cornUnlocked = hasUnlockedCorn(game)
+  const hasMisfortuneVisit = hasVisitedMisfortune(game)
+  const hasUnlockedFourLeafClover = hasRabbitUnlock(
+    game,
+    RABBIT_UNLOCK_IDS.FOUR_LEAF_CLOVER,
+  ) && (!isMisfortuneAreaActive(game) || game.cloverAssembly?.assembled === true)
+  const unlockedManateeCropIds = useMemo(
+    () => getUnlockedManateeCropIds({ manatees: game.manatees }),
+    [game.manatees],
   )
   const unlockedCropIds = useMemo(
     () =>
@@ -131,6 +374,14 @@ export function useGameDerivedState(game) {
         game.hasUnlockedRootTunnel,
         game.hasUnlockedSunflower,
         game.rowDuplicators,
+        hasUnlockedCarrot,
+        hasUnlockedFourLeafClover,
+        game.hasUnlockedWheat,
+        unlockedManateeCropIds,
+        game.floorReplicators,
+        game.earnedAchievementIds?.includes('makingPeanuts') === true,
+        hasMisfortuneCanola,
+        cornUnlocked,
       ),
     [
       game.blueprint,
@@ -143,22 +394,53 @@ export function useGameDerivedState(game) {
       game.hasUnlockedRootTunnel,
       game.hasUnlockedSunflower,
       game.rowDuplicators,
+      hasUnlockedCarrot,
+      hasUnlockedFourLeafClover,
+      game.hasUnlockedWheat,
+      unlockedManateeCropIds,
+      game.floorReplicators,
+      game.earnedAchievementIds,
+      hasMisfortuneCanola,
+      cornUnlocked,
     ],
   )
   const visibleCropIds = useMemo(
-    () => getVisibleCropIds(unlockedCropIds, game.totalHamstersHired),
-    [unlockedCropIds, game.totalHamstersHired],
+    () =>
+      getVisibleCropIds(
+        unlockedCropIds,
+        game.totalHamstersHired,
+        game.hasUnlockedRowDuplicators,
+        hasMisfortuneCanola,
+        hasMisfortuneVisit,
+        game.activeArea,
+      ),
+    [
+      unlockedCropIds,
+      game.totalHamstersHired,
+      game.hasUnlockedRowDuplicators,
+      hasMisfortuneCanola,
+      hasMisfortuneVisit,
+      game.activeArea,
+    ],
   )
   const visibleUnlockedCropIds = useMemo(
     () =>
       visibleCropIds.filter((cropId) => unlockedCropIds.includes(cropId)),
     [visibleCropIds, unlockedCropIds],
   )
-  const blueprintSlots = useMemo(() => getBlueprintSlots(game), [game])
+  const blueprintSlots = useMemo(
+    () =>
+      getBlueprintSlots({
+        blueprint: game.blueprint,
+        blueprintSlots: game.blueprintSlots,
+      }),
+    [game.blueprint, game.blueprintSlots],
+  )
   const unlockedBlueprintSlotCount = getUnlockedBlueprintSlotCount(game)
   const monocropThresholdBonus = getMonocropThresholdBonus(
     game.blueprint,
     game.completedCropPerfections,
+    game.seedAugmentations,
   )
   const monocropLimit = Math.ceil(
     getMonocropThreshold(
@@ -169,17 +451,16 @@ export function useGameDerivedState(game) {
   const monocropPenaltyMultiplier = getBlueprintMonocropMultiplier(
     game.blueprint,
     game.completedCropPerfections,
+    game.seedAugmentations,
   )
   const showMonocropLimit =
     game.hasSeenMonocropLimit ||
     hasReachedMonocropLimit(
       game.blueprint,
       game.completedCropPerfections,
+      game.seedAugmentations,
     )
-  const formattedTotalHamstersHired = getCachedFormattedNumber(
-    game.totalHamstersHired,
-    0,
-  )
+  const formattedTotalHamstersHired = formatWholeNumber(game.totalHamstersHired)
   const unionStatus =
     game.unionized &&
     game.postUnionHamstersHired >= UNION_STATUS_RETIRE_HIRE_COUNT
@@ -191,22 +472,48 @@ export function useGameDerivedState(game) {
           : game.totalHamstersHired >= 100
             ? `???: ${formattedTotalHamstersHired} / ${UNIONIZATION_HAMSTER_COUNT}`
             : null
-  const blueprintExpansionTracks = getBlueprintExpansionTrackProgress(game)
+  const blueprintExpansionTracks = useMemo(
+    () =>
+      getBlueprintExpansionTrackProgress({
+        completedBlueprintExpansions:
+          game.completedBlueprintExpansions,
+      }),
+    [game.completedBlueprintExpansions],
+  )
   const completedCropPerfections = game.completedCropPerfections
   const majorProgressionGoal = useMemo(
-    () => getNextMajorProgressionGoal(game),
-    [game],
+    () =>
+      getNextMajorProgressionGoal(game, {
+        cloverAssemblyProductionPerSecond,
+      }),
+    [cloverAssemblyProductionPerSecond, game],
   )
 
   return {
+    isMisfortuneAreaActive: isMisfortuneAreaActive(game),
+    isMisfortuneTabVisible: hasVisitedMisfortune(game) ||
+      hasCompletedCapybaraDemonstration(game, CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE),
     nextHamsterCost,
     majorProgressionGoal,
+    cloverAssemblyProductionPerSecond,
     productionPerSecond,
+    cloverBundleChancePerMinute,
+    rabbitContractProductionPerSecondByCrop: cropProductionSnapshot.byCrop,
+    capybaraBlueprintCropYield,
+    isTradeTabVisible: game.hasUnlockedSunflower === true,
+    isAugmentationTabVisible: hasSeedAugmentation(game),
     cropHamsterEfficiencyMultiplier,
     hamsterCoordinationMultiplier,
     hamsterExternalMultiplier,
     columnsBuiltPerSecond,
     nextRowDuplicatorCost,
+    nextFloorReplicatorCost,
+    floorReplicatorCoordinationMultiplier,
+    floorReplicatorEffectivenessMultiplier,
+    floorReplicatorExternalMultiplier,
+    isFloorReplicatorSupportMode,
+    floorReplicatorSupportPassiveEffectBonus,
+    floorsBuiltPerSecond,
     rowDuplicatorEffectivenessMultiplier,
     rowDuplicatorCoordinationMultiplier,
     rowDuplicatorExternalMultiplier,
@@ -237,12 +544,16 @@ export function useGameDerivedState(game) {
     canUnlockMirrorCorn: canUnlockCropPerfection(game, 'mirrorCorn'),
     canUnlockLeechingGourd: canUnlockCropPerfection(game, 'leechingGourd'),
     canUnlockSweetPotato: canUnlockCropPerfection(game, 'sweetPotato'),
+    canUnlockBlazingCarrot: canUnlockCropPerfection(game, 'blazingCarrot'),
+    canUnlockSamplingLentil: canUnlockCropPerfection(game, 'samplingLentil'),
     canUnlockSplitweed: canUnlockCropPerfection(game, 'splitweed'),
     canUnlockRows: canUnlockRowDuplicators(game),
     hasEnrichingLeek: completedCropPerfections.includes('enrichingLeek'),
     hasMirrorCorn: completedCropPerfections.includes('mirrorCorn'),
     hasLeechingGourd: completedCropPerfections.includes('leechingGourd'),
     hasSweetPotato: completedCropPerfections.includes('sweetPotato'),
+    hasBlazingCarrot: completedCropPerfections.includes('blazingCarrot'),
+    hasSamplingLentil: completedCropPerfections.includes('samplingLentil'),
     hasSplitweed: completedCropPerfections.includes('splitweed'),
   }
 }

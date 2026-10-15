@@ -1,4 +1,5 @@
-export function GameHeader() {
+import { memo } from 'react'
+function GameHeaderContent() {
   return (
     <header className="topbar">
       <a className="brand" href="#main" aria-label="Hamster Cloners home">
@@ -10,14 +11,23 @@ export function GameHeader() {
   )
 }
 
-export function GameNavigation({
+function GameNavigationContent({
   activeTab,
   areInventionsUnlocked,
+  isCloverTabVisible,
   showInventionsUnlockPrompt,
   inventionsUnlockCount,
+  isTradeTabVisible,
+  isAugmentationTabVisible,
+  isMisfortuneTabVisible,
   onShowField,
+  onShowClover,
   onOpenInventions,
+  onShowTrade,
+  onShowAugmentation,
+  onShowMisfortune,
   onShowStatistics,
+  onShowAchievements,
   onOpenOptions,
 }) {
   return (
@@ -29,6 +39,15 @@ export function GameNavigation({
       >
         Field
       </button>
+      {isCloverTabVisible ? (
+        <button
+          type="button"
+          className={`game-tab ${activeTab === 'clover' ? 'game-tab-active' : ''}`}
+          onClick={onShowClover}
+        >
+          Clover
+        </button>
+      ) : null}
       <div className="inventions-tab-wrap">
         <button
           type="button"
@@ -54,12 +73,44 @@ export function GameNavigation({
           </aside>
         ) : null}
       </div>
+      {isTradeTabVisible ? (
+        <button
+          type="button"
+          className={`game-tab ${activeTab === 'trade' ? 'game-tab-active' : ''}`}
+          onClick={onShowTrade}
+        >
+          Trade
+        </button>
+      ) : null}
+      {isAugmentationTabVisible ? (
+        <button
+          type="button"
+          className={`game-tab ${activeTab === 'augmentation' ? 'game-tab-active' : ''}`}
+          onClick={onShowAugmentation}
+        >
+          Augmentation
+        </button>
+      ) : null}
+      {isMisfortuneTabVisible ? (
+        <button
+          type="button"
+          className={`game-tab game-tab-misfortune ${activeTab === 'misfortune' ? 'game-tab-active' : ''}`}
+          onClick={onShowMisfortune}
+        >
+          Misfortune
+        </button>
+      ) : null}
       <button
         type="button"
         className={`game-tab ${activeTab === 'statistics' ? 'game-tab-active' : ''}`}
         onClick={onShowStatistics}
       >
         Statistics
+      </button>
+      <button type="button"
+        className={`game-tab ${activeTab === 'achievements' ? 'game-tab-active' : ''}`}
+        onClick={onShowAchievements}>
+        Achievements
       </button>
       <button
         type="button"
@@ -71,3 +122,26 @@ export function GameNavigation({
     </nav>
   )
 }
+
+const NAVIGATION_DISPLAY_KEYS = [
+  'activeTab',
+  'areInventionsUnlocked',
+  'isCloverTabVisible',
+  'showInventionsUnlockPrompt',
+  'inventionsUnlockCount',
+  'isTradeTabVisible',
+  'isAugmentationTabVisible',
+  'isMisfortuneTabVisible',
+]
+
+function areNavigationPropsEqual(previous, next) {
+  return NAVIGATION_DISPLAY_KEYS.every(
+    (key) => Object.is(previous[key], next[key]),
+  )
+}
+
+export const GameHeader = memo(GameHeaderContent)
+export const GameNavigation = memo(
+  GameNavigationContent,
+  areNavigationPropsEqual,
+)

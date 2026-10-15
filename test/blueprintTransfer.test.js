@@ -39,19 +39,179 @@ test('exports and imports a blueprint with persistent Mirror Corn tile links', (
   )
 })
 
-test('rejects blueprint codes with a different grid size', () => {
-  const blueprintCode = exportBlueprint(
-    createBlueprint({ rows: 2, columns: 2, cells: ['leek'] }),
+test('exports, imports, and resizes configured Root Tunnel connections', () => {
+  const blueprint = createBlueprint({
+    rows: 3,
+    columns: 4,
+    cells: [
+      'turnip', null, null, null,
+      null, 'rootTunnel', null, null,
+      null, null, 'leek', null,
+    ],
+    rootTunnelConnections: [
+      { tunnelIndex: 5, senderIndex: 0, recipientIndex: 10 },
+    ],
+  })
+  const importedBlueprint = importBlueprint(exportBlueprint(blueprint), {
+    rows: 3,
+    columns: 3,
+    unlockedCropIds: ['leek', 'turnip', 'rootTunnel'],
+  })
+
+  assert.deepEqual(importedBlueprint.rootTunnelConnections, [
+    { tunnelIndex: 4, senderIndex: 0, recipientIndex: 8 },
+  ])
+})
+
+test('imports legacy Musk Grass blueprint tiles as Shoal Grass', () => {
+  const blueprintCode = encodePayload({
+    rows: 3,
+    columns: 3,
+    cells: ['leek', 'muskGrass', null, null, null, null, null, null, null],
+    mirrorCornTargets: Array(9).fill(null),
+  })
+  const importedBlueprint = importBlueprint(blueprintCode, {
+    rows: 3,
+    columns: 3,
+    unlockedCropIds: ['leek', 'shoalGrass'],
+  })
+
+  assert.deepEqual(
+    importedBlueprint.cells,
+    ['leek', 'shoalGrass', null, null, null, null, null, null, null],
   )
+})
+
+test('exports and imports a valid 2x2 Splitweed footprint', () => {
+  const blueprint = createBlueprint({
+    rows: 2,
+    columns: 2,
+    cells: [
+      'knotweed',
+      'splitweedPart',
+      'splitweedPart',
+      'splitweedPart',
+    ],
+    requireSplitweedFootprints: true,
+  })
+  const blueprintCode = exportBlueprint(blueprint)
+  const importedBlueprint = importBlueprint(blueprintCode, {
+    rows: 2,
+    columns: 2,
+    unlockedCropIds: ['knotweed'],
+    hasSplitweed: true,
+  })
+
+  assert.deepEqual(importedBlueprint, blueprint)
+})
+
+test('rejects malformed Splitweed footprints after perfection', () => {
+  const blueprintCode = encodePayload({
+    rows: 2,
+    columns: 2,
+    cells: ['knotweed', null, null, null],
+    mirrorCornTargets: [null, null, null, null],
+  })
 
   assert.throws(
     () =>
       importBlueprint(blueprintCode, {
-        rows: 3,
+        rows: 2,
         columns: 2,
-        unlockedCropIds: ['leek'],
+        unlockedCropIds: ['knotweed'],
+        hasSplitweed: true,
       }),
-    /2×2.*3×2/,
+    /invalid crop layout/,
+  )
+})
+
+test('crops larger blueprints from the top left and remaps tile links', () => {
+  const blueprintCode = exportBlueprint(
+    createBlueprint({
+      rows: 3,
+      columns: 4,
+      cells: [
+        'leek',
+        'corn',
+        'lentil',
+        null,
+        'potato',
+        'pumpkin',
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ],
+      mirrorCornTargets: [
+        null,
+        4,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ],
+    }),
+  )
+  const importedBlueprint = importBlueprint(blueprintCode, {
+    rows: 2,
+    columns: 2,
+    unlockedCropIds: ['leek', 'corn', 'potato', 'pumpkin'],
+    hasMirrorCorn: true,
+  })
+
+  assert.deepEqual(
+    importedBlueprint,
+    createBlueprint({
+      rows: 2,
+      columns: 2,
+      cells: ['leek', 'corn', 'potato', 'pumpkin'],
+      mirrorCornTargets: [null, 2, null, null],
+    }),
+  )
+})
+
+test('pads smaller blueprints with empty bottom and right plots', () => {
+  const blueprintCode = exportBlueprint(
+    createBlueprint({
+      rows: 2,
+      columns: 2,
+      cells: ['corn', 'leek', 'potato', 'pumpkin'],
+      mirrorCornTargets: [3, null, null, null],
+    }),
+  )
+  const importedBlueprint = importBlueprint(blueprintCode, {
+    rows: 3,
+    columns: 3,
+    unlockedCropIds: ['leek', 'corn', 'potato', 'pumpkin'],
+    hasMirrorCorn: true,
+  })
+
+  assert.deepEqual(
+    importedBlueprint,
+    createBlueprint({
+      rows: 3,
+      columns: 3,
+      cells: [
+        'corn',
+        'leek',
+        null,
+        'potato',
+        'pumpkin',
+        null,
+        null,
+        null,
+        null,
+      ],
+      mirrorCornTargets: [4, null, null, null, null, null, null, null, null],
+    }),
   )
 })
 
@@ -136,22 +296,19 @@ test('rejects invalid and unsupported blueprint codes', () => {
   )
 })
 
-test('rejects blueprints that reflect three Mirror Corns onto one tile', () => {
-  const overlinkedBlueprintCode = encodePayload({
+test('imports excess Mirror Corn reflections so overload behavior persists', () => {
+  const overlinkedBlueprint = {
     rows: 3,
     columns: 3,
     cells: ['corn', null, 'corn', null, 'leek', null, 'corn', null, null],
     mirrorCornTargets: [4, null, 4, null, null, null, 4, null, null],
+  }
+  const importedBlueprint = importBlueprint(encodePayload(overlinkedBlueprint), {
+    rows: 3,
+    columns: 3,
+    unlockedCropIds: ['leek', 'corn'],
+    hasMirrorCorn: true,
   })
 
-  assert.throws(
-    () =>
-      importBlueprint(overlinkedBlueprintCode, {
-        rows: 3,
-        columns: 3,
-        unlockedCropIds: ['leek', 'corn'],
-        hasMirrorCorn: true,
-      }),
-    /invalid crop layout or tile link/,
-  )
+  assert.deepEqual(importedBlueprint, createBlueprint(overlinkedBlueprint))
 })

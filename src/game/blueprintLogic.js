@@ -1,66 +1,82 @@
 import {
-  CROP_DEFINITIONS,
   CROP_PERFECTIONS,
   CROP_PERFECTION_IDS,
   SWEET_POTATO_UNLOCK_HAMSTER_COUNT,
   hasCropPerfection,
+  hasUnlockedSoybean,
+  isCropPerfectionTemporarilyUnavailable,
   isKnownCrop,
+  normalizeCropId,
 } from './crops.js'
 import {
   BLUEPRINT_EXPANSIONS,
   BLUEPRINT_EXPANSION_TRACKS,
+  FIELD_RESET_STARTING_COLUMNS,
+  GAME_AREA_IDS,
   INITIAL_BLUEPRINT_SIZE,
+  MISFORTUNE_AREA_STATE_VERSION,
   ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
+  MISFORTUNE_ROW_DUPLICATORS_UNLOCK_CROP_COUNT,
   STARTING_CROPS,
 } from './gameConfig.js'
+import { getAreaCropValue } from './cropRequirements.js'
+import { createInitialFortuneState } from './fortuneLogic.js'
+import { createInitialSeedAugmentationState } from './augmentationLogic.js'
+import {
+  createInitialManateeState,
+  MANATEE_BUILDING_IDS,
+} from './manateeLogic.js'
+import { normalizeMultiTileCropCells } from './cropFootprintLogic.js'
+import {
+  normalizeRootTunnelConnections,
+  remapRootTunnelConnections,
+} from './rootTunnelLogic.js'
+import {
+  normalizeLeechingVines,
+  remapLeechingVines,
+} from './leechingVineLogic.js'
+import {
+  createInitialMisfortuneUpgradeState,
+  FLOOR_REPLICATOR_MODES,
+  hasMisfortuneUpgrade,
+  MISFORTUNE_UPGRADE_IDS,
+} from './misfortuneUpgrades.js'
+import { createInitialCloverAssemblyState } from './cloverAssemblyLogic.js'
 
-export function isLeechingGourdAnchor(crop) {
-  return CROP_DEFINITIONS[crop]?.isLeechingGourdAnchor === true
+export const BLUEPRINT_SLOT_UNLOCK_HINTS = Object.freeze([
+  null,
+  'Unlocks with Potato',
+  'Unlocks with Sunflower',
+  'Unlocks with Peanuts',
+  'Unlocks with Mangrove Sapling',
+])
+
+const MISFORTUNE_BLUEPRINT_SLOT_UNLOCK_HINTS = Object.freeze([
+  null,
+  'Unlocks with Peanuts',
+  'Unlocks with Sunflower',
+  'Unlocks with Soybean',
+  'Unlocks with Mangrove Sapling',
+])
+
+export const MAX_BLUEPRINT_SLOT_COUNT = BLUEPRINT_SLOT_UNLOCK_HINTS.length
+
+export function getBlueprintSlotUnlockHints(game) {
+  return game?.activeArea === GAME_AREA_IDS.MISFORTUNE
+    ? MISFORTUNE_BLUEPRINT_SLOT_UNLOCK_HINTS
+    : BLUEPRINT_SLOT_UNLOCK_HINTS
 }
 
-function isLeechingGourdPart(crop) {
-  return CROP_DEFINITIONS[crop]?.isLeechingGourdPart === true
-}
+function normalizeUniqueCloverCells(cells) {
+  let hasClover = false
 
-export function isLeechingGourdCell(crop) {
-  return isLeechingGourdAnchor(crop) || isLeechingGourdPart(crop)
-}
+  return cells.map((crop) => {
+    if (crop !== 'fourLeafClover') return crop
+    if (hasClover) return null
 
-function normalizeLeechingGourdCells(cells, rows, columns) {
-  const anchorIndexes = cells.flatMap((crop, index) =>
-    isLeechingGourdAnchor(crop) ? [index] : [],
-  )
-  const clearGourdCells = () =>
-    cells.map((crop) => (isLeechingGourdCell(crop) ? null : crop))
-
-  if (anchorIndexes.length === 0) {
-    return cells.some(isLeechingGourdPart) ? clearGourdCells() : cells
-  }
-
-  if (anchorIndexes.length !== 1) {
-    return clearGourdCells()
-  }
-
-  const anchorIndex = anchorIndexes[0]
-  const row = Math.floor(anchorIndex / columns)
-  const column = anchorIndex % columns
-
-  if (row >= rows - 1 || column >= columns - 1) {
-    return clearGourdCells()
-  }
-
-  const footprint = [
-    anchorIndex,
-    anchorIndex + 1,
-    anchorIndex + columns,
-    anchorIndex + columns + 1,
-  ]
-  const hasValidFootprint = footprint.every((index, footprintIndex) =>
-    cells[index] ===
-    (footprintIndex === 0 ? 'leechingGourd' : 'leechingGourdPart'),
-  )
-
-  return hasValidFootprint ? cells : clearGourdCells()
+    hasClover = true
+    return crop
+  })
 }
 
 export function createBlueprint({
@@ -68,42 +84,66 @@ export function createBlueprint({
   columns = INITIAL_BLUEPRINT_SIZE.columns,
   cells,
   mirrorCornTargets,
+  rootTunnelConnections,
+  leechingVines,
+  requireSplitweedFootprints = false,
 } = {}) {
   const safeRows = Math.max(1, Math.floor(Number(rows) || 1))
   const safeColumns = Math.max(1, Math.floor(Number(columns) || 1))
   const totalCells = safeRows * safeColumns
   const sourceCells = Array.isArray(cells) ? cells : []
-  const normalizedCells = normalizeLeechingGourdCells(Array.from(
-    { length: totalCells },
-    (_, index) => (isKnownCrop(sourceCells[index]) ? sourceCells[index] : null),
-  ), safeRows, safeColumns)
+  const normalizedCells = normalizeUniqueCloverCells(
+    normalizeMultiTileCropCells(
+      Array.from(
+        { length: totalCells },
+        (_, index) => {
+          const cropId = normalizeCropId(sourceCells[index])
+          return isKnownCrop(cropId) ? cropId : null
+        },
+      ),
+      safeRows,
+      safeColumns,
+      { requireSplitweedFootprints },
+    ),
+  )
   const sourceMirrorCornTargets = Array.isArray(mirrorCornTargets)
     ? mirrorCornTargets
     : []
-  const mirrorCornTargetCounts = new Map()
-  const maximumReflectionsPerTile =
-    CROP_PERFECTIONS.mirrorCorn.maximumReflectionsPerTile
+  const blueprintShape = {
+    rows: safeRows,
+    columns: safeColumns,
+    cells: normalizedCells,
+  }
+  const normalizedRootTunnelConnections = normalizeRootTunnelConnections(
+    blueprintShape,
+    rootTunnelConnections,
+  )
+  const normalizedLeechingVines = normalizeLeechingVines(
+    blueprintShape,
+    leechingVines,
+  )
   const normalizedMirrorCornTargets = normalizedCells.map((crop, sourceIndex) => {
     const targetIndex = sourceMirrorCornTargets[sourceIndex]
     const sourceRow = Math.floor(sourceIndex / safeColumns)
     const sourceColumn = sourceIndex % safeColumns
     const targetRow = Math.floor(targetIndex / safeColumns)
     const targetColumn = targetIndex % safeColumns
-    const hasValidTarget =
+    const hasDirectDiagonalTarget =
       crop === 'corn' &&
       Number.isInteger(targetIndex) &&
       targetIndex >= 0 &&
       targetIndex < totalCells &&
       Math.abs(sourceRow - targetRow) === 1 &&
       Math.abs(sourceColumn - targetColumn) === 1
+    const hasRootTunnelTarget =
+      crop === 'corn' &&
+      normalizedRootTunnelConnections.some(
+        (connection) =>
+          connection.senderIndex === sourceIndex &&
+          connection.recipientIndex === targetIndex,
+      )
 
-    if (!hasValidTarget) return null
-
-    const currentTargetCount = mirrorCornTargetCounts.get(targetIndex) ?? 0
-    if (currentTargetCount >= maximumReflectionsPerTile) return null
-
-    mirrorCornTargetCounts.set(targetIndex, currentTargetCount + 1)
-    return targetIndex
+    return hasDirectDiagonalTarget || hasRootTunnelTarget ? targetIndex : null
   })
 
   return {
@@ -111,34 +151,20 @@ export function createBlueprint({
     columns: safeColumns,
     cells: normalizedCells,
     mirrorCornTargets: normalizedMirrorCornTargets,
+    ...(normalizedRootTunnelConnections.length > 0
+      ? { rootTunnelConnections: normalizedRootTunnelConnections }
+      : {}),
+    ...(normalizedLeechingVines.length > 0
+      ? { leechingVines: normalizedLeechingVines }
+      : {}),
   }
 }
 
-export function getLeechingGourdFootprint(blueprint, anchorIndex) {
-  const { rows, columns } = blueprint
-  const safeAnchorIndex = Number(anchorIndex)
-
-  if (
-    !Number.isInteger(safeAnchorIndex) ||
-    safeAnchorIndex < 0 ||
-    safeAnchorIndex >= rows * columns
-  ) {
-    return []
-  }
-
-  const row = Math.floor(safeAnchorIndex / columns)
-  const column = safeAnchorIndex % columns
-
-  if (row >= rows - 1 || column >= columns - 1) {
-    return []
-  }
-
-  return [
-    safeAnchorIndex,
-    safeAnchorIndex + 1,
-    safeAnchorIndex + columns,
-    safeAnchorIndex + columns + 1,
-  ]
+export function clearBlueprint(blueprint) {
+  return createBlueprint({
+    rows: blueprint?.rows,
+    columns: blueprint?.columns,
+  })
 }
 
 export function createInitialGame() {
@@ -147,7 +173,10 @@ export function createInitialGame() {
   return {
     crops: STARTING_CROPS,
     totalCropsMade: 0,
+    earnedAchievementIds: [],
     playtimeSeconds: 0,
+    secondsSinceAreaReset: 0,
+    falseStartEligible: false,
     hamsters: 0,
     totalHamstersHired: 0,
     unionized: false,
@@ -155,35 +184,106 @@ export function createInitialGame() {
     hasSeenMonocropLimit: false,
     hasSeenBlueprintMastery: false,
     hasVisitedInventions: false,
+    hasUnlockedCorn: false,
     hasUnlockedTurnip: false,
     hasUnlockedAppleTree: false,
     hasUnlockedLentil: false,
     hasUnlockedKnotweed: false,
+    hasUnlockedWheat: false,
     hasUnlockedRootTunnel: false,
     hasUnlockedSunflower: false,
     hasUnlockedCropPerfection: false,
     hasUnlockedRowDuplicators: false,
     rowDuplicators: 0,
+    hasUnlockedFloorReplicators: false,
+    floorReplicators: 0,
+    floorReplicatorMode: FLOOR_REPLICATOR_MODES.CONSTRUCTION,
+    fortune: createInitialFortuneState(),
+    capybara: {
+      completedDemonstrations: [],
+      completedSecondaryObjectives: [],
+    },
+    seedAugmentations: createInitialSeedAugmentationState(),
+    manatees: createInitialManateeState(),
+    trade: {
+      established: false,
+      rabbitRelations: 0,
+      totalRabbitRelationsEarned: 0,
+      rabbitContractsCompleted: 0,
+      rabbitContracts: [],
+      rabbitUnlocks: [],
+    },
     numberNotation: 'suffix',
+    suffixScientificExponent: 303,
     testingPanelUnlocked: false,
+    testingPanelVisible: false,
     testingCheats: {
       cropMultiplierEnabled: false,
       hamsterEfficiencyEnabled: false,
+      oneSecondManateeSurveysEnabled: false,
     },
     completedCropPerfections: [],
+    hasUnlockedGreaterBlueprinting: false,
+    cloverAssembly: createInitialCloverAssemblyState(),
     blueprintExpansionAxesSwapped: true,
     completedBlueprintExpansions: [],
+    rabbitBlueprintExpansions: {
+      row: 0,
+      column: 0,
+    },
     blueprint,
     blueprintSlots: [blueprint],
+    blueprintBlocks: [],
     activeBlueprintSlot: 0,
     hamstersBuildColumns: true,
-    farmland: createFarmlandMultipliers({ columns: 0 }),
+    areaCropUnlocksSeparated: true,
+    misfortuneAreaStateVersion: MISFORTUNE_AREA_STATE_VERSION,
+    activeArea: 'main',
+    areaProgress: {
+      main: null,
+      misfortune: null,
+    },
+    completedMisfortuneUpgrades: createInitialMisfortuneUpgradeState(),
+    farmland: createFarmlandMultipliers({
+      columns: FIELD_RESET_STARTING_COLUMNS,
+    }),
   }
 }
 
 export function getUnlockedBlueprintSlotCount(game) {
+  const submergedGardenStage = Math.max(
+    0,
+    Math.floor(
+      Number(
+        game.manatees?.buildingStages?.[
+          MANATEE_BUILDING_IDS.SUBMERGED_GARDEN
+        ],
+      ) || 0,
+    ),
+  )
+  if (
+    game.manatees?.completedBuildings?.includes(
+      MANATEE_BUILDING_IDS.SUBMERGED_GARDEN,
+    ) === true &&
+    submergedGardenStage >= 3
+  ) {
+    return 5
+  }
+
+  const hasUnlockedPeanuts =
+    game.earnedAchievementIds?.includes('makingPeanuts') === true
+  const isMisfortune = game.activeArea === GAME_AREA_IDS.MISFORTUNE
+
+  if (isMisfortune ? hasUnlockedSoybean(game) : hasUnlockedPeanuts) {
+    return 4
+  }
+
   if (game.hasUnlockedSunflower === true) {
     return 3
+  }
+
+  if (isMisfortune) {
+    return hasUnlockedPeanuts ? 2 : 1
   }
 
   return game.unionized === true &&
@@ -199,34 +299,72 @@ export function getBlueprintSlots(game) {
     ? game.blueprintSlots
     : []
   const slots = storedSlots
-    .slice(0, 3)
+    .slice(0, MAX_BLUEPRINT_SLOT_COUNT)
     .filter((slot) => slot && typeof slot === 'object')
     .map((slot) => createBlueprint(slot))
 
   return slots.length > 0 ? slots : [fallbackBlueprint]
 }
 
-export function createFarmlandMultipliers({
-  rows = 1,
-  columns = 1,
-  floors = 1,
-  farms = 1,
-  otherMultiplier = 1,
-} = {}) {
+const FARMLAND_UNIT_DEFAULT_VALUES = Object.freeze({
+  rows: 1,
+  columns: 1,
+  floors: 1,
+  farms: 1,
+})
+
+const FIELD_RESET_UNIT_OVERRIDES = Object.freeze({
+  columns: FIELD_RESET_STARTING_COLUMNS,
+})
+
+export function createFarmlandMultipliers(values = {}) {
   const toNonNegativeValue = (value, fallback) => {
     const parsed = Number(value)
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
   }
+  const fieldUnits = Object.fromEntries(
+    Object.entries(FARMLAND_UNIT_DEFAULT_VALUES).map(([unit, defaultValue]) => [
+      unit,
+      toNonNegativeValue(values[unit], defaultValue),
+    ]),
+  )
 
   return {
-    rows: toNonNegativeValue(rows, 0),
-    columns: toNonNegativeValue(columns, 1),
-    floors: toNonNegativeValue(floors, 1),
-    farms: toNonNegativeValue(farms, 1),
-    otherMultiplier: toNonNegativeValue(otherMultiplier, 1),
+    ...fieldUnits,
+    otherMultiplier: toNonNegativeValue(values.otherMultiplier, 1),
   }
 }
 
+// Keep every field reset routed through this helper. A future unit added to the
+// shared field-unit schema automatically resets to its default unless it needs
+// a special reset value like Columns.
+export function resetFarmlandUnits(farmland) {
+  const currentFarmland = createFarmlandMultipliers(farmland)
+
+  return createFarmlandMultipliers({
+    ...FARMLAND_UNIT_DEFAULT_VALUES,
+    ...FIELD_RESET_UNIT_OVERRIDES,
+    otherMultiplier: currentFarmland.otherMultiplier,
+  })
+}
+
+export function resetFieldProgress(game) {
+  return {
+    ...game,
+    crops: 0,
+    secondsSinceAreaReset: 0,
+    falseStartEligible: canRestartFields(game),
+    farmland: resetFarmlandUnits(game.farmland),
+  }
+}
+
+export function canRestartFields(game) {
+  return hasMisfortuneUpgrade(game, MISFORTUNE_UPGRADE_IDS.RUSHED_START)
+}
+
+export function restartFields(game) {
+  return canRestartFields(game) ? resetFieldProgress(game) : null
+}
 
 export function getBlueprintExpansion(expansionId) {
   return BLUEPRINT_EXPANSIONS.find(
@@ -240,6 +378,17 @@ function getCompletedBlueprintExpansions(game) {
     : []
 }
 
+export function getRabbitBlueprintExpansionCounts(game) {
+  const storedCounts = game.rabbitBlueprintExpansions
+  const toNonNegativeInteger = (value) =>
+    Math.max(0, Math.floor(Number(value) || 0))
+
+  return {
+    row: toNonNegativeInteger(storedCounts?.row),
+    column: toNonNegativeInteger(storedCounts?.column),
+  }
+}
+
 export function hasCompletedBlueprintExpansion(game, expansionId) {
   return getCompletedBlueprintExpansions(game).includes(expansionId)
 }
@@ -247,49 +396,133 @@ export function hasCompletedBlueprintExpansion(game, expansionId) {
 function getCompletedCropPerfections(game) {
   return Array.isArray(game.completedCropPerfections)
     ? game.completedCropPerfections.filter((perfectionId) =>
-        CROP_PERFECTION_IDS.includes(perfectionId),
+        CROP_PERFECTION_IDS.includes(perfectionId) &&
+        !isCropPerfectionTemporarilyUnavailable(perfectionId),
       )
     : []
 }
 
-export function getCropPerfectionCost(perfectionId) {
-  return CROP_PERFECTIONS[perfectionId]?.cost ?? null
+export function getCropPerfectionCost(perfectionId, game) {
+  const perfection = CROP_PERFECTIONS[perfectionId]
+  const cost = perfection?.cost ?? null
+  return getCropPerfectionCurrency(perfectionId) === 'rabbitRelations'
+    ? cost
+    : getAreaCropValue(game, cost, perfection?.misfortuneCost ?? cost)
+}
+
+export function getCropPerfectionCurrency(perfectionId) {
+  return CROP_PERFECTIONS[perfectionId]?.costCurrency === 'rabbitRelations'
+    ? 'rabbitRelations'
+    : 'crops'
+}
+
+function hasRequiredPerfectionDemonstration(game, perfectionId) {
+  const requiredDemonstration =
+    CROP_PERFECTIONS[perfectionId]?.requiresCapybaraDemonstration
+
+  return (
+    !requiredDemonstration ||
+    game.capybara?.completedDemonstrations?.includes(
+      requiredDemonstration,
+    ) === true
+  )
+}
+
+function getCropPerfectionBalance(game, perfectionId) {
+  return getCropPerfectionCurrency(perfectionId) === 'rabbitRelations'
+    ? Math.max(0, Number(game.trade?.rabbitRelations) || 0)
+    : Math.max(0, Number(game.crops) || 0)
+}
+
+export function isCropPerfectionVisible(game, perfectionId) {
+  const perfection = CROP_PERFECTIONS[perfectionId]
+  if (!perfection || isCropPerfectionTemporarilyUnavailable(perfectionId)) {
+    return false
+  }
+  // Previously perfected crops stay usable when a new prerequisite is added.
+  if (hasCropPerfection(game?.completedCropPerfections ?? [], perfectionId)) return true
+  if (perfection.requiredMisfortuneUpgradeId &&
+      !game?.completedMisfortuneUpgrades?.includes(perfection.requiredMisfortuneUpgradeId)) {
+    return false
+  }
+
+  return (
+    perfection.requiresMisfortune !== true ||
+    hasCropPerfection(game?.completedCropPerfections ?? [], perfectionId) ||
+    game?.activeArea === GAME_AREA_IDS.MISFORTUNE ||
+    game?.areaProgress?.misfortune != null ||
+    (Array.isArray(game?.completedMisfortuneUpgrades) &&
+      game.completedMisfortuneUpgrades.length > 0)
+  )
 }
 
 export function canUnlockCropPerfection(game, perfectionId) {
-  const cost = getCropPerfectionCost(perfectionId)
+  const cost = getCropPerfectionCost(perfectionId, game)
 
   return (
     game.hasUnlockedCropPerfection === true &&
     cost !== null &&
+    isCropPerfectionVisible(game, perfectionId) &&
+    !isCropPerfectionTemporarilyUnavailable(perfectionId) &&
     (CROP_PERFECTIONS[perfectionId]?.requiresRowDuplicators !== true ||
       game.hasUnlockedRowDuplicators === true) &&
+    hasRequiredPerfectionDemonstration(game, perfectionId) &&
     !hasCropPerfection(getCompletedCropPerfections(game), perfectionId) &&
-    Math.max(0, Number(game.crops) || 0) >= cost
+    getCropPerfectionBalance(game, perfectionId) >= cost
   )
 }
 
 export function unlockCropPerfection(game, perfectionId) {
-  const cost = getCropPerfectionCost(perfectionId)
+  const cost = getCropPerfectionCost(perfectionId, game)
 
   if (!canUnlockCropPerfection(game, perfectionId) || cost === null) {
     return null
   }
 
+  const completedCropPerfections = [
+    ...getCompletedCropPerfections(game),
+    perfectionId,
+  ]
+  const perfectionCurrency = getCropPerfectionCurrency(perfectionId)
+  const paymentState =
+    perfectionCurrency === 'rabbitRelations'
+      ? {
+          trade: {
+            ...game.trade,
+            rabbitRelations:
+              getCropPerfectionBalance(game, perfectionId) - cost,
+          },
+        }
+      : { crops: game.crops - cost }
+  const shouldNormalizeSplitweed = perfectionId === 'splitweed'
+  const normalizeUnlockedBlueprint = (blueprint) =>
+    shouldNormalizeSplitweed && blueprint
+      ? createBlueprint({ ...blueprint, requireSplitweedFootprints: true })
+      : blueprint
+
   return {
     ...game,
-    crops: game.crops - cost,
-    completedCropPerfections: [
-      ...getCompletedCropPerfections(game),
-      perfectionId,
-    ],
+    ...paymentState,
+    completedCropPerfections,
+    ...(game.blueprint
+      ? { blueprint: normalizeUnlockedBlueprint(game.blueprint) }
+      : {}),
+    ...(Array.isArray(game.blueprintSlots)
+      ? {
+          blueprintSlots: game.blueprintSlots.map(normalizeUnlockedBlueprint),
+        }
+      : {}),
   }
+}
+
+export function getRowDuplicatorsUnlockCropCount(game) {
+  return getAreaCropValue(game, ROW_DUPLICATORS_UNLOCK_CROP_COUNT, MISFORTUNE_ROW_DUPLICATORS_UNLOCK_CROP_COUNT)
 }
 
 export function canUnlockRowDuplicators(game) {
   return (
     game.hasUnlockedRowDuplicators !== true &&
-    Math.max(0, Number(game.crops) || 0) >= ROW_DUPLICATORS_UNLOCK_CROP_COUNT
+    Math.max(0, Number(game.crops) || 0) >= getRowDuplicatorsUnlockCropCount(game)
   )
 }
 
@@ -299,14 +532,8 @@ export function resetForRowDuplicators(game) {
   }
 
   return {
-    ...game,
-    crops: 0,
+    ...resetFieldProgress(game),
     hasUnlockedRowDuplicators: true,
-    farmland: {
-      ...createFarmlandMultipliers(game.farmland),
-      rows: 1,
-      columns: 0,
-    },
   }
 }
 
@@ -380,16 +607,26 @@ function addBlueprintColumn(blueprint) {
       remappedMirrorCornTargets[remapIndex(sourceIndex)] = remapIndex(targetIndex)
     }
   })
+  const rootTunnelConnections = remapRootTunnelConnections(
+    blueprint.rootTunnelConnections,
+    remapIndex,
+  )
+  const leechingVines = remapLeechingVines(
+    blueprint.leechingVines,
+    remapIndex,
+  )
 
   return {
     ...blueprint,
     columns: blueprint.columns + 1,
     cells: expandedCells,
     mirrorCornTargets: remappedMirrorCornTargets,
+    ...(rootTunnelConnections.length > 0 ? { rootTunnelConnections } : {}),
+    ...(leechingVines.length > 0 ? { leechingVines } : {}),
   }
 }
 
-function removeBlueprintRow(blueprint) {
+function removeBlueprintRow(blueprint, requireSplitweedFootprints = false) {
   if (blueprint.rows <= 1) {
     return blueprint
   }
@@ -401,10 +638,13 @@ function removeBlueprintRow(blueprint) {
     columns: blueprint.columns,
     cells: blueprint.cells.slice(0, totalCells),
     mirrorCornTargets: blueprint.mirrorCornTargets.slice(0, totalCells),
+    rootTunnelConnections: blueprint.rootTunnelConnections,
+    leechingVines: blueprint.leechingVines,
+    requireSplitweedFootprints,
   })
 }
 
-function removeBlueprintColumn(blueprint) {
+function removeBlueprintColumn(blueprint, requireSplitweedFootprints = false) {
   if (blueprint.columns <= 1) {
     return blueprint
   }
@@ -412,6 +652,13 @@ function removeBlueprintColumn(blueprint) {
   const nextColumnCount = blueprint.columns - 1
   const cells = []
   const mirrorCornTargets = []
+  const remapIndex = (index) => {
+    if (!Number.isInteger(index)) return null
+
+    const row = Math.floor(index / blueprint.columns)
+    const column = index % blueprint.columns
+    return column < nextColumnCount ? row * nextColumnCount + column : null
+  }
 
   blueprint.cells.forEach((crop, sourceIndex) => {
     const sourceColumn = sourceIndex % blueprint.columns
@@ -437,12 +684,30 @@ function removeBlueprintColumn(blueprint) {
     columns: nextColumnCount,
     cells,
     mirrorCornTargets,
+    rootTunnelConnections: remapRootTunnelConnections(
+      blueprint.rootTunnelConnections,
+      remapIndex,
+    ),
+    leechingVines: remapLeechingVines(
+      blueprint.leechingVines,
+      remapIndex,
+    ),
+    requireSplitweedFootprints,
   })
 }
 
-function applyBlueprintExpansion(game, expansion) {
-  const currentBlueprint = createBlueprint(game.blueprint)
-  const storedBlueprintSlots = getBlueprintSlots(game)
+function applyBlueprintSpace(game, direction) {
+  const requireSplitweedFootprints = hasCropPerfection(
+    getCompletedCropPerfections(game),
+    'splitweed',
+  )
+  const currentBlueprint = createBlueprint({
+    ...game.blueprint,
+    requireSplitweedFootprints,
+  })
+  const storedBlueprintSlots = getBlueprintSlots(game).map((blueprint) =>
+    createBlueprint({ ...blueprint, requireSplitweedFootprints }),
+  )
   const activeBlueprintSlot = Math.min(
     Math.max(0, Math.floor(Number(game.activeBlueprintSlot) || 0)),
     storedBlueprintSlots.length - 1,
@@ -450,8 +715,7 @@ function applyBlueprintExpansion(game, expansion) {
   const currentBlueprintSlots = storedBlueprintSlots.map((blueprint, slotIndex) =>
     slotIndex === activeBlueprintSlot ? currentBlueprint : blueprint,
   )
-  const expandBlueprint =
-    expansion.direction === 'row' ? addBlueprintRow : addBlueprintColumn
+  const expandBlueprint = direction === 'row' ? addBlueprintRow : addBlueprintColumn
   const expandedBlueprintSlots = currentBlueprintSlots.map(expandBlueprint)
   const nextBlueprint = expandedBlueprintSlots[activeBlueprintSlot] ??
     expandBlueprint(currentBlueprint)
@@ -461,13 +725,32 @@ function applyBlueprintExpansion(game, expansion) {
   })
 
   while (expandedBlueprintSlots.length < nextBlueprintSlotCount) {
-    expandedBlueprintSlots.push(createBlueprint(nextBlueprint))
+    expandedBlueprintSlots.push(
+      createBlueprint({ ...nextBlueprint, requireSplitweedFootprints }),
+    )
   }
 
   return {
     blueprint: nextBlueprint,
     blueprintSlots: expandedBlueprintSlots,
     activeBlueprintSlot,
+  }
+}
+
+export function grantBlueprintSpace(game, direction) {
+  if (direction !== 'row' && direction !== 'column') {
+    return null
+  }
+
+  return {
+    ...game,
+    ...applyBlueprintSpace(game, direction),
+  }
+}
+
+function applyBlueprintExpansion(game, expansion) {
+  return {
+    ...applyBlueprintSpace(game, expansion.direction),
     completedBlueprintExpansions: [
       ...getCompletedBlueprintExpansions(game),
       expansion.id,
@@ -491,22 +774,39 @@ export function grantNextBlueprintExpansion(game, trackId) {
     : null
 }
 
-export function revokeLastBlueprintExpansion(game, trackId) {
+export function grantFreeBlueprintExpansion(game, trackId) {
   const track = BLUEPRINT_EXPANSION_TRACKS.find(
     (candidateTrack) => candidateTrack.id === trackId,
   )
-  const completedExpansion = [...(track?.stages ?? [])]
-    .reverse()
-    .find((stage) => hasCompletedBlueprintExpansion(game, stage.id))
 
-  if (!completedExpansion) {
+  if (!track) {
     return null
   }
 
+  const rabbitBlueprintExpansions = getRabbitBlueprintExpansionCounts(game)
+
+  return {
+    ...game,
+    ...applyBlueprintSpace(game, trackId),
+    rabbitBlueprintExpansions: {
+      ...rabbitBlueprintExpansions,
+      [trackId]: rabbitBlueprintExpansions[trackId] + 1,
+    },
+  }
+}
+
+function removeBlueprintSpace(game, trackId) {
+  if (trackId !== 'row' && trackId !== 'column') return null
   const shrinkBlueprint =
     trackId === 'row' ? removeBlueprintRow : removeBlueprintColumn
+  const requireSplitweedFootprints = hasCropPerfection(
+    getCompletedCropPerfections(game),
+    'splitweed',
+  )
   const currentSlots = getBlueprintSlots(game)
-  const shrunkSlots = currentSlots.map(shrinkBlueprint)
+  const shrunkSlots = currentSlots.map((blueprint) =>
+    shrinkBlueprint(blueprint, requireSplitweedFootprints),
+  )
   const previousActiveSlot = Math.min(
     Math.max(0, Math.floor(Number(game.activeBlueprintSlot) || 0)),
     shrunkSlots.length - 1,
@@ -523,10 +823,38 @@ export function revokeLastBlueprintExpansion(game, trackId) {
   )
 
   return {
-    ...game,
     blueprint: blueprintSlots[activeBlueprintSlot],
     blueprintSlots,
     activeBlueprintSlot,
+  }
+}
+
+export function revokeBlueprintSpace(game, trackId) {
+  const removedSpace = removeBlueprintSpace(game, trackId)
+
+  return removedSpace
+    ? {
+        ...game,
+        ...removedSpace,
+      }
+    : null
+}
+
+export function revokeLastBlueprintExpansion(game, trackId) {
+  const track = BLUEPRINT_EXPANSION_TRACKS.find(
+    (candidateTrack) => candidateTrack.id === trackId,
+  )
+  const completedExpansion = [...(track?.stages ?? [])]
+    .reverse()
+    .find((stage) => hasCompletedBlueprintExpansion(game, stage.id))
+
+  if (!completedExpansion) {
+    return null
+  }
+
+  return {
+    ...game,
+    ...removeBlueprintSpace(game, trackId),
     completedBlueprintExpansions: getCompletedBlueprintExpansions(game).filter(
       (expansionId) => expansionId !== completedExpansion.id,
     ),
@@ -543,12 +871,7 @@ export function resetForBlueprintExpansion(game, expansionId) {
   }
 
   return {
-    ...game,
+    ...resetFieldProgress(game),
     ...applyBlueprintExpansion(game, expansion),
-    crops: 0,
-    farmland: {
-      ...createFarmlandMultipliers(game.farmland),
-      columns: 0,
-    },
   }
 }

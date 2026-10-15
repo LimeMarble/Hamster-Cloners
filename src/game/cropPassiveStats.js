@@ -1,0 +1,272 @@
+import * as cropEffects from './cropEffects.js'
+
+export function getCropPassiveStats({
+  blueprint,
+  index,
+  crop,
+  definition,
+  baseHamsterEfficiencyBonus,
+  hamsterEfficiencyBonus,
+  monocropMultiplier,
+  passiveEffectMultiplier,
+  allPassiveEffectMultiplier,
+  completedCropPerfections,
+  rabbitContractsCompleted,
+  totalRabbitRelationsEarned,
+  globalRowProductionEffects,
+  globalHamsterEfficiencyEffects,
+  baseGlobalPassiveEffectMultiplier,
+  seedAugmentations,
+  leekEnrichmentExponent = 1,
+}) {
+  const adjustForMonocrop = (bonus) =>
+    bonus > 0 ? bonus * monocropMultiplier : bonus / monocropMultiplier
+  const passiveStats = []
+  if (crop === 'peanuts') {
+    const peanutEffect = cropEffects.getPeanutTreatEffect(blueprint,
+      completedCropPerfections, passiveEffectMultiplier, seedAugmentations)
+    passiveStats.push({
+      id: 'peanut-treat-exponent',
+      label: 'Hamster Treat exponent',
+      format: 'exponent-bonus',
+      value: peanutEffect.bonusPerPeanut,
+    })
+  }
+
+  if (baseHamsterEfficiencyBonus !== 0) {
+    passiveStats.push({
+      id: 'hamster-efficiency',
+      label: 'Hamster efficiency',
+      format: 'percentage',
+      value: hamsterEfficiencyBonus,
+    })
+  }
+  const baseRowDuplicatorEffectivenessBonus =
+    definition.rowDuplicatorEffectivenessBonus ?? 0
+  if (baseRowDuplicatorEffectivenessBonus !== 0) {
+    passiveStats.push({
+      id: 'row-duplicator-efficiency',
+      label: 'Row Duplicator efficiency',
+      format: 'percentage',
+      value:
+        adjustForMonocrop(baseRowDuplicatorEffectivenessBonus) *
+        allPassiveEffectMultiplier *
+        cropEffects.getAdjacentCropEffectMultiplier(
+          blueprint,
+          index,
+          crop,
+          baseRowDuplicatorEffectivenessBonus < 0,
+          completedCropPerfections,
+          passiveEffectMultiplier,
+          seedAugmentations,
+        ) *
+        cropEffects.getMirrorCornEffectMultiplier(
+          blueprint,
+          index,
+          completedCropPerfections,
+          passiveEffectMultiplier,
+          seedAugmentations,
+        ),
+    })
+  }
+  if (definition.adjacentCropEffectModifier !== undefined) {
+    passiveStats.push({
+      id: 'adjacent-crop-effects',
+      label: 'Adjacent Crop effects',
+      format: 'multiplier',
+      value: cropEffects.getAdjacentCropEffectModifier(
+        blueprint,
+        crop,
+        'leek',
+        0,
+        false,
+        completedCropPerfections,
+        passiveEffectMultiplier,
+        seedAugmentations,
+        index,
+      ),
+    })
+  }
+  const ownAdjacentHarvestBonus = cropEffects.getCropHarvestEffectStrength(
+    blueprint,
+    index,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+    leekEnrichmentExponent,
+  )
+  if (ownAdjacentHarvestBonus !== 0) {
+    passiveStats.push({
+      id: 'adjacent-crop-yield',
+      label: 'Adjacent Crop yield',
+      format: 'crop-yield',
+      value: ownAdjacentHarvestBonus,
+    })
+  }
+  const ownGlobalHarvestEffect = cropEffects.getGlobalHarvestEffects(
+    blueprint,
+    completedCropPerfections,
+    rabbitContractsCompleted,
+    passiveEffectMultiplier,
+    totalRabbitRelationsEarned,
+    seedAugmentations,
+  ).find((effect) => effect.sourceIndex === index)
+  if (
+    crop === 'lentil' &&
+    completedCropPerfections.includes('samplingLentil')
+  ) {
+    const patternEffect = cropEffects.getSamplingLentilPatternEffect(
+      blueprint,
+      index,
+      completedCropPerfections,
+    )
+
+    passiveStats.push({
+      id: 'sampling-lentil-pattern',
+      label:
+        `Neighbor pattern (${patternEffect.uniqueNonTradedCropTypeCount} ` +
+        `non-traded, ${patternEffect.uniqueTradedCropTypeCount} traded)`,
+      format: 'multiplier',
+      value: patternEffect.multiplier,
+    })
+  }
+  if (ownGlobalHarvestEffect) {
+    passiveStats.push({
+      id: 'global-crop-harvest',
+      label: 'Global Crop harvest',
+      format: 'percentage',
+      value: ownGlobalHarvestEffect.bonus,
+    })
+  }
+  const ownGlobalRowEffect = globalRowProductionEffects.find(
+    (effect) => effect.sourceCropId === crop,
+  )
+  if (crop === 'soybean') {
+    const soybeanEffect = cropEffects.getSoybeanMachineryEffect(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    )
+
+    passiveStats.push({
+      id: 'soybean-row-production',
+      label:
+        `Row production (${soybeanEffect.horizontalConnectionCount} ` +
+        `horizontal connection${soybeanEffect.horizontalConnectionCount === 1 ? '' : 's'})`,
+      format: 'percentage',
+      value: soybeanEffect.rowProductionBonus,
+    })
+    passiveStats.push({
+      id: 'soybean-floor-production',
+      label:
+        `Floor production (${soybeanEffect.squareCount} complete ` +
+        `square${soybeanEffect.squareCount === 1 ? '' : 's'})`,
+      format: 'percentage',
+      value: soybeanEffect.floorProductionBonus,
+    })
+  } else if (ownGlobalRowEffect) {
+    passiveStats.push({
+      id: 'global-row-production',
+      label: 'Global Row production',
+      format: 'percentage',
+      value: ownGlobalRowEffect.bonus / ownGlobalRowEffect.count,
+    })
+  }
+
+  const ownGlobalHamsterEffect = globalHamsterEfficiencyEffects.find(
+    (effect) => effect.sourceCropId === crop,
+  )
+  if (ownGlobalHamsterEffect) {
+    passiveStats.push({
+      id: 'global-hamster-efficiency',
+      label: 'Global Hamster efficiency',
+      format: 'percentage',
+      value: ownGlobalHamsterEffect.bonus / ownGlobalHamsterEffect.count,
+    })
+  }
+  const rabbitRelationsEffect = cropEffects.getRabbitRelationsEffects(
+    blueprint,
+    completedCropPerfections,
+    passiveEffectMultiplier,
+    seedAugmentations,
+  ).find((effect) => effect.sourceCropId === crop)
+  if (rabbitRelationsEffect) {
+    passiveStats.push({
+      id: 'rabbit-relations',
+      label: 'Total Rabbit relations',
+      format: 'percentage',
+      value: rabbitRelationsEffect.bonus,
+    })
+  }
+
+  if (crop === 'knotweed' && baseGlobalPassiveEffectMultiplier !== 1) {
+    passiveStats.push({
+      id: 'global-crop-passives',
+      label: 'Global Crop passives',
+      format: 'multiplier',
+      value: baseGlobalPassiveEffectMultiplier,
+    })
+
+    const splitweedCount = cropEffects.getPlantedCropCount(
+      blueprint,
+      'knotweed',
+    )
+    const mirrorCornEffectivenessBonus =
+      cropEffects.getSplitweedMirrorCornEffectivenessBonus(
+        blueprint,
+        completedCropPerfections,
+        seedAugmentations,
+      )
+
+    if (splitweedCount > 0 && mirrorCornEffectivenessBonus > 0) {
+      passiveStats.push({
+        id: 'mirror-corn-effectiveness',
+        label: 'Mirror Corn effectiveness',
+        format: 'multiplier',
+        value: 1 + mirrorCornEffectivenessBonus / splitweedCount,
+      })
+    }
+  }
+  if (crop === 'waterLettuce') {
+    const waterLettuceEffect = cropEffects.getWaterLettucePassiveEffect(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    ).effects.find((effect) => effect.index === index)
+
+    if (waterLettuceEffect) {
+      passiveStats.push({
+        id: 'water-lettuce-passive-bonus',
+        label: 'Global Crop passives',
+        format: 'percentage',
+        value: waterLettuceEffect.cropPassiveBonus,
+      })
+      passiveStats.push({
+        id: 'water-lettuce-insect-penalty',
+        label: 'Insect passive loss',
+        format: 'percentage',
+        value: waterLettuceEffect.insectPenalty,
+      })
+    }
+  }
+  if (crop === 'leechingGourd') {
+    const gourdEffect = cropEffects.getLeechingGourdTurnipEffect(
+      blueprint,
+      completedCropPerfections,
+      passiveEffectMultiplier,
+      seedAugmentations,
+    )
+
+    if (gourdEffect.multiplier !== 1) {
+      passiveStats.push({
+        id: 'turnip-effectiveness',
+        label: 'Turnip effectiveness',
+        format: 'multiplier',
+        value: gourdEffect.multiplier,
+      })
+    }
+  }
+  return passiveStats
+}

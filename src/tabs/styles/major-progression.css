@@ -110,3 +110,53 @@
     white-space: normal;
   }
 }
+
+.major-progression-bar-minimized {
+  width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.major-progression-toggle {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  width: 92px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  filter: drop-shadow(0 -3px 5px rgb(0 0 0 / 55%));
+  transform: translateX(-50%);
+}
+
+.major-progression-toggle::before {
+  position: absolute;
+  inset: 4px 5px;
+  background: var(--field-green);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  content: '';
+  transition:
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+
+.major-progression-bar-minimized .major-progression-toggle::before {
+  transform: rotate(180deg);
+}
+
+.major-progression-toggle:hover::before {
+  background: #93f0ae;
+}
+
+.major-progression-toggle:focus-visible {
+  outline: 2px solid var(--text-strong);
+  outline-offset: 2px;
+}
+
+.game-shell:has(.major-progression-bar-minimized) {
+  padding-bottom: 42px;
+}

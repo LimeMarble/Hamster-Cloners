@@ -15,8 +15,23 @@
   border-left: 3px solid var(--hamster-purple);
 }
 
+.replicator-mode-control {
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
+}
+
+.replicator-mode-control .card-copy {
+  margin-bottom: 0;
+}
+
 .row-duplicator-upgrade-card {
   border-left-color: #e4bf42;
+}
+
+.floor-replicator-upgrade-card {
+  border-left-color: #5ca8d8;
 }
 
 .size-pill,
@@ -36,7 +51,12 @@
 }
 
 .blueprint-heading {
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.blueprint-heading .monocrop-status {
+  flex: 1 1 380px;
 }
 
 .blueprint-slots {
@@ -74,29 +94,18 @@
   opacity: 0.55;
 }
 
-.monocrop-pill {
-  display: inline-flex;
-  flex-direction: column;
-  max-width: 250px;
-  padding: 5px 8px;
-  border: 1px solid #bd9b4f;
-  color: #e7c773;
-  font-size: 0.65rem;
-  font-weight: 700;
-  line-height: 1.2;
-  text-transform: uppercase;
+.monocrop-status {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: min(100%, 430px);
+  margin: 0;
 }
 
-.monocrop-pill strong {
-  color: var(--text-strong);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.74rem;
-}
-
-.monocrop-penalty-label {
-  margin-top: 5px;
-  padding-top: 5px;
-  border-top: 1px solid rgb(189 155 79 / 45%);
+.monocrop-status > div {
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  background: var(--panel-raised);
 }
 
 .hamster-badge {
@@ -247,7 +256,9 @@
 }
 
 .plot-knotweed,
-.editor-plot-knotweed {
+.plot-splitweedPart,
+.editor-plot-knotweed,
+.editor-plot-splitweedPart {
   border-color: #8ca153;
   background: #263617;
 }
@@ -256,6 +267,12 @@
 .editor-plot-rootTunnel {
   border-color: #817666;
   background: #25201b;
+}
+
+.plot-wheat,
+.editor-plot-wheat {
+  border-color: #d6b44f;
+  background: #433715;
 }
 
 .plot-sunflower,
@@ -270,12 +287,65 @@
   background: #3d3a11;
 }
 
+.plot-carrot,
+.editor-plot-carrot {
+  border-color: #e58437;
+  background: #41250f;
+}
+
+.plot-fourLeafClover,
+.editor-plot-fourLeafClover {
+  border-color: #68d67a;
+  background: #123a20;
+}
+
+.plot-shoalGrass,
+.editor-plot-shoalGrass {
+  border-color: #4fa988;
+  background: #12322a;
+}
+
+.plot-waterLettuce,
+.editor-plot-waterLettuce {
+  border-color: #73bfa1;
+  background: #16392f;
+}
+
+.plot-mangroveSapling,
+.editor-plot-mangroveSapling {
+  border-color: #a56f45;
+  background: #2f2519;
+}
+
 .plot-leechingGourd,
 .plot-leechingGourdPart,
 .editor-plot-leechingGourd,
 .editor-plot-leechingGourdPart {
   border-color: #cf6d2c;
   background: #4b2512;
+}
+
+.editor-plot-leek,
+.editor-plot-corn,
+.editor-plot-sweetPotato,
+.editor-plot-turnip,
+.editor-plot-pumpkin,
+.editor-plot-appleTree,
+.editor-plot-lentil,
+.editor-plot-knotweed,
+.editor-plot-wheat,
+.editor-plot-rootTunnel,
+.editor-plot-sunflower,
+.editor-plot-leechingGourd,
+.editor-plot-leechingGourdPart,
+.editor-plot-splitweedPart,
+.editor-plot-canola,
+.editor-plot-carrot,
+.editor-plot-fourLeafClover,
+.editor-plot-shoalGrass,
+.editor-plot-waterLettuce,
+.editor-plot-mangroveSapling {
+  border-color: #315a38;
 }
 
 .plot span,
@@ -314,14 +384,46 @@
   color: #e6c878;
 }
 
+.plot-carrot span,
+.editor-plot-carrot span {
+  color: #f3a45a;
+}
+
+.plot-fourLeafClover span,
+.editor-plot-fourLeafClover span {
+  color: #8ef0a0;
+}
+
+.plot-shoalGrass span,
+.editor-plot-shoalGrass span {
+  color: #79d8ae;
+}
+
+.plot-waterLettuce span,
+.editor-plot-waterLettuce span {
+  color: #9ce6ba;
+}
+
+.plot-mangroveSapling span,
+.editor-plot-mangroveSapling span {
+  color: #d4a66f;
+}
+
 .plot-knotweed span,
-.editor-plot-knotweed span {
+.plot-splitweedPart span,
+.editor-plot-knotweed span,
+.editor-plot-splitweedPart span {
   color: #c4d57d;
 }
 
 .plot-rootTunnel span,
 .editor-plot-rootTunnel span {
   color: #b7a996;
+}
+
+.plot-wheat span,
+.editor-plot-wheat span {
+  color: #f2d56c;
 }
 
 .plot-sunflower span,
@@ -356,6 +458,38 @@
   margin: 0;
 }
 
+.field-stats {
+  flex-wrap: wrap;
+}
+
+.field-stats > div {
+  min-width: min(145px, 100%);
+}
+
+.field-restart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.field-restart-controls p {
+  flex: 1 1 220px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.percentage-gain {
+  display: block;
+  margin-top: 4px;
+  color: var(--percentage-gain-color, var(--field-green));
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .field-stats div,
 .replicator-stats div {
   flex: 1;
@@ -372,4 +506,3 @@ dt {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-

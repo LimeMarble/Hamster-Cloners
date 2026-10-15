@@ -1,10 +1,29 @@
 export const SIMULATION_TICK_INTERVAL_MS = 1000 / 60
 export const VISUAL_UPDATE_INTERVAL_MS = 100
+export const AUTOSAVE_INTERVAL_MS = 2 * 60 * 1000
 export const BASE_CROP_YIELD_PER_PLOT = 1
 export const INITIAL_BLUEPRINT_SIZE = { rows: 1, columns: 1 }
 export const STARTING_CROPS = 10
+export const FIELD_RESET_STARTING_COLUMNS = 0.9
+export const GAME_AREA_IDS = Object.freeze({
+  MAIN: 'main',
+  MISFORTUNE: 'misfortune',
+})
+export const MISFORTUNE_AREA_STATE_VERSION = 2
+export const MISFORTUNE_CROP_GOAL = 4.44e96
+export const MISFORTUNE_COST_MULTIPLIER = 100
+export const PARTING_GIFT_UPGRADE_ID = 'partingGift'
+export const FORTUNES_WRATH_CROP_DIVISOR = 1777
+export const FORTUNES_WRATH_CROP_EXPONENT = 0.5
+export const FORTUNES_WRATH_PASSIVE_MULTIPLIER = 0.63
+export const MISFORTUNE_BLUEPRINT_EXPANSION_MODIFIER = Object.freeze({
+  row: -1,
+  column: -1,
+})
 export const HAMSTER_BASE_COST = 5
 export const HAMSTER_COST_GROWTH = 1.1
+export const HAMSTER_ACCELERATED_COST_SCALING_START = 1500
+export const HAMSTER_COST_GROWTH_INCREASE_PER_HAMSTER = 0.0005
 export const COLUMNS_PER_HAMSTER_PER_SECOND = 0.1
 export const ROWS_PER_ROW_DUPLICATOR_PER_SECOND = 0.1
 export const POST_UNION_HAMSTER_EFFICIENCY_GROWTH = 1.03
@@ -16,8 +35,42 @@ export const HIRE_MAX_UNLOCK_COUNT = 10
 export const UNION_STATUS_RETIRE_HIRE_COUNT = 20
 export const INVENTIONS_HAMSTER_UNLOCK_COUNT = 50
 export const ROW_DUPLICATORS_UNLOCK_CROP_COUNT = 4.04e23
+export const MISFORTUNE_ROW_DUPLICATORS_UNLOCK_CROP_COUNT = 4.04e24
 export const ROW_DUPLICATOR_BASE_COST = 1e12
 export const ROW_DUPLICATOR_COST_GROWTH = 1.2
+export const FLOOR_REPLICATOR_BASE_COST = 0.01
+export const FLOOR_REPLICATOR_COST_GROWTH = 10
+export const FLOOR_REPLICATOR_COST_TIER_SIZE = 10
+export const FLOOR_REPLICATOR_ACCELERATED_COST_SCALING_START = 500
+export const FLOOR_REPLICATOR_ACCELERATED_COST_GROWTH_STEP = 5
+export const FLOORS_PER_FLOOR_REPLICATOR_PER_SECOND = 0.1
+export const FLOOR_REPLICATOR_COORDINATION_GROWTH = 2
+export const FLOOR_REPLICATOR_PURCHASE_AREA_IDS = Object.freeze([
+  GAME_AREA_IDS.MISFORTUNE,
+])
+
+export function canPurchaseFloorReplicatorsInArea(gameOrAreaId) {
+  const areaId =
+    typeof gameOrAreaId === 'string'
+      ? gameOrAreaId
+      : gameOrAreaId?.activeArea
+
+  return FLOOR_REPLICATOR_PURCHASE_AREA_IDS.includes(areaId) ||
+    (areaId === GAME_AREA_IDS.MAIN &&
+      gameOrAreaId?.completedMisfortuneUpgrades?.includes(PARTING_GIFT_UPGRADE_ID) === true)
+}
+
+export function getGameAreaCostMultiplier(gameOrAreaId) {
+  const areaId =
+    typeof gameOrAreaId === 'string'
+      ? gameOrAreaId
+      : gameOrAreaId?.activeArea
+
+  return areaId === GAME_AREA_IDS.MISFORTUNE
+    ? MISFORTUNE_COST_MULTIPLIER
+    : 1
+}
+
 export const BLUEPRINT_EXPANSION_CONFIG = [
   {
     id: 'column',

@@ -1,0 +1,319 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import {
+  canUnlockCropPerfection,
+  createBlueprint,
+  createFarmlandMultipliers,
+  createInitialGame,
+  getBlazingCarrotSurveyTimeEffect,
+  getBlueprintCropStats,
+  getCarrotHighHarvestEffect,
+  getCropProductionPerSecond,
+  getCropPerfectionCost,
+  getNextMajorProgressionGoal,
+  getRabbitRelationsMultiplier,
+  unlockCropPerfection,
+} from '../src/game/gameLogic.js'
+import {
+  CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT,
+  CROP_DEFINITIONS,
+  CROP_PERFECTIONS,
+  getCropEffectDescription,
+  getCropPlacementEffectDescription,
+  SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+} from '../src/game/crops.js'
+
+const BLAZING_CARROT = 'blazingCarrot'
+
+test('Carrot has a base yield of 10 with its existing passive bonuses', () => {
+  const blueprint = createBlueprint({ cells: ['carrot'] })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(CROP_DEFINITIONS.carrot.baseYield, 10)
+  assert.match(CROP_DEFINITIONS.carrot.effectDescription, /^10 Crops per slot/)
+  assert.equal(CROP_PERFECTIONS.blazingCarrot.baseEffectDescription, '10 Crops per slot')
+  assert.equal(getCropProductionPerSecond(blueprint, farmland), 11)
+  assert.equal(getRabbitRelationsMultiplier(blueprint), 1.04)
+})
+
+function createSpacedCarrotBlueprint(count) {
+  const rows = 20
+  const columns = 20
+  const cells = Array(rows * columns).fill(null)
+  let planted = 0
+
+  for (let row = 0; row < rows && planted < count; row += 1) {
+    for (let column = 0; column < columns && planted < count; column += 1) {
+      if ((row + column) % 2 === 0) {
+        cells[row * columns + column] = 'carrot'
+        planted += 1
+      }
+    }
+  }
+
+  return createBlueprint({ rows, columns, cells })
+}
+
+test('Blazing Carrot is gated by Demonstration 0 and spends Rabbit relations', () => {
+  const initialGame = createInitialGame()
+  const eligibleGame = {
+    ...initialGame,
+    crops: 123,
+    hasUnlockedCropPerfection: true,
+    capybara: {
+      completedDemonstrations: ['introduction'],
+    },
+    trade: {
+      ...initialGame.trade,
+      rabbitRelations: CROP_PERFECTIONS.blazingCarrot.cost,
+      totalRabbitRelationsEarned: CROP_PERFECTIONS.blazingCarrot.cost,
+    },
+  }
+
+  assert.equal(CROP_PERFECTIONS.blazingCarrot.cost, 2.5e16)
+  for (const activeArea of ['main', 'misfortune']) {
+    const game = { ...eligibleGame, activeArea }
+    const insufficientGame = {
+      ...game,
+      trade: { ...game.trade, rabbitRelations: 2.49e16 },
+    }
+    assert.equal(getCropPerfectionCost(BLAZING_CARROT, game), 2.5e16)
+    assert.equal(canUnlockCropPerfection(insufficientGame, BLAZING_CARROT), false)
+    assert.equal(unlockCropPerfection(insufficientGame, BLAZING_CARROT), null)
+    assert.equal(canUnlockCropPerfection(game, BLAZING_CARROT), true)
+  }
+  assert.equal(
+    canUnlockCropPerfection(
+      { ...eligibleGame, capybara: { completedDemonstrations: [] } },
+      BLAZING_CARROT,
+    ),
+    false,
+  )
+  assert.equal(canUnlockCropPerfection(eligibleGame, BLAZING_CARROT), true)
+
+  const perfectedGame = unlockCropPerfection(eligibleGame, BLAZING_CARROT)
+  assert.equal(perfectedGame.crops, 123)
+  assert.equal(perfectedGame.trade.rabbitRelations, 0)
+  assert.equal(
+    perfectedGame.trade.totalRabbitRelationsEarned,
+    CROP_PERFECTIONS.blazingCarrot.cost,
+  )
+  assert.ok(perfectedGame.completedCropPerfections.includes(BLAZING_CARROT))
+})
+
+test('Blazing Carrot relation-log harvest bonus caps at +1900 percent', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 1,
+    cells: ['carrot'],
+  })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      farmland,
+      [BLAZING_CARROT],
+      1,
+      0,
+      {},
+      {},
+      1e12,
+    ),
+    70,
+  )
+  assert.equal(
+    getCropProductionPerSecond(
+      blueprint,
+      farmland,
+      [BLAZING_CARROT],
+      1,
+      0,
+      {},
+      {},
+      1e40,
+    ),
+    200,
+  )
+
+  const stats = getBlueprintCropStats(
+    blueprint,
+    0,
+    [BLAZING_CARROT],
+    0,
+    0,
+    0,
+    {},
+    {},
+    1e12,
+  )
+  assert.equal(
+    stats.passiveStats.find((passive) => passive.id === 'global-crop-harvest')
+      ?.value,
+    6,
+  )
+  assert.equal(
+    stats.passiveStats.find((passive) => passive.id === 'rabbit-relations')
+      ?.value,
+    0.1,
+  )
+})
+
+test('Blazing Carrot grants +25 percent per crop type reaching 1T harvest', () => {
+  const blueprint = createSpacedCarrotBlueprint(1)
+  const effect = getCarrotHighHarvestEffect(
+    blueprint,
+    [
+      { cropId: 'leek', amount: 1e12 },
+      { cropId: 'corn', amount: 1e12 - 1 },
+      { cropId: 'leek', amount: 4 },
+    ],
+    1,
+    [BLAZING_CARROT],
+  )
+
+  assert.equal(effect.activeCarrotCount, 1)
+  assert.equal(effect.qualifyingCropTypeCount, 1)
+  assert.equal(effect.multiplier, 1.25)
+})
+
+test('orthogonally adjacent Blazing Carrots retain their harvest and passives', () => {
+  const blueprint = createBlueprint({
+    rows: 1,
+    columns: 2,
+    cells: ['carrot', 'carrot'],
+  })
+  const farmland = createFarmlandMultipliers({ rows: 1, columns: 1 })
+  const stats = getBlueprintCropStats(
+    blueprint,
+    0,
+    [BLAZING_CARROT],
+    0,
+    0,
+    0,
+    {},
+    {},
+    1e40,
+  )
+
+  assert.equal(
+    getRabbitRelationsMultiplier(blueprint, [BLAZING_CARROT]),
+    1.2,
+  )
+  assert.ok(
+    getCropProductionPerSecond(
+      blueprint,
+      farmland,
+      [BLAZING_CARROT],
+      1,
+      0,
+      {},
+      {},
+      1e40,
+    ) > 0,
+  )
+  assert.ok(stats.harvestYield > 0)
+  assert.ok(stats.passiveStats.length > 0)
+})
+
+test('Blazing Carrot has no survey reduction while its future augmentation is unimplemented', () => {
+  const blueprint = createSpacedCarrotBlueprint(40)
+  assert.equal(CROP_PERFECTIONS.blazingCarrot.surveyTimeEffectEnabled, false)
+  for (const relationAmount of [1e4, 1e40, 1e100]) {
+    for (const passiveMultiplier of [1, 1e6]) {
+      const effect = getBlazingCarrotSurveyTimeEffect(
+        blueprint, [BLAZING_CARROT], relationAmount, passiveMultiplier,
+      )
+      assert.deepEqual(effect, {
+        activeCarrotCount: 0, contributingCarrotCount: 0, relationLog: 0,
+        reduction: 0, multiplier: 1,
+      })
+    }
+  }
+  for (const describe of [getCropEffectDescription, getCropPlacementEffectDescription]) {
+    const text = describe('carrot', [BLAZING_CARROT], {}, true)
+    assert.doesNotMatch(text, /survey/i)
+    assert.match(text, /Rabbit relations/)
+    assert.match(text, /all Crop harvest/)
+  }
+})
+
+test('major progression places Sweet Potato before the Lentil and Carrot perfections', () => {
+  const initialGame = createInitialGame()
+  const game = {
+    ...initialGame,
+    areaProgress: {
+      ...initialGame.areaProgress,
+      misfortune: { rowDuplicators: CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT },
+    },
+    // Complete intervening milestones so this fixture isolates perfection order.
+    floorReplicators: SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT,
+    cloverAssembly: { ...initialGame.cloverAssembly, assembled: true },
+    totalHamstersHired: 1000,
+    hamsters: 125,
+    unionized: true,
+    completedBlueprintExpansions: ['firstColumn'],
+    completedCropPerfections: [
+      'enrichingLeek',
+      'mirrorCorn',
+      'leechingGourd',
+      'splitweed',
+    ],
+    hasUnlockedTurnip: true,
+    hasUnlockedCropPerfection: true,
+    hasUnlockedAppleTree: true,
+    hasUnlockedLentil: true,
+    hasUnlockedKnotweed: true,
+    hasUnlockedRowDuplicators: true,
+    hasUnlockedWheat: true,
+    hasUnlockedSunflower: true,
+    rowDuplicators: 500,
+    trade: {
+      ...initialGame.trade,
+      established: true,
+      rabbitRelations: CROP_PERFECTIONS.blazingCarrot.cost,
+      rabbitUnlocks: ['carrot', 'fourLeafClover', 'capybaraContact'],
+    },
+    capybara: {
+      completedDemonstrations: ['introduction', 'demonstrationOne'],
+    },
+  }
+  assert.equal(
+    getNextMajorProgressionGoal(game).id,
+    'perfection-sweetPotato',
+  )
+  const sweetPotatoCompleteGame = {
+    ...game,
+    completedCropPerfections: [
+      ...game.completedCropPerfections,
+      'sweetPotato',
+    ],
+  }
+  assert.equal(
+    getNextMajorProgressionGoal(sweetPotatoCompleteGame).id,
+    'perfection-samplingLentil',
+  )
+  const samplingCompleteGame = {
+    ...sweetPotatoCompleteGame,
+    completedCropPerfections: [
+      ...sweetPotatoCompleteGame.completedCropPerfections,
+      'samplingLentil',
+    ],
+  }
+  const goal = getNextMajorProgressionGoal(samplingCompleteGame)
+
+  assert.equal(goal.id, 'perfection-blazingCarrot')
+  assert.equal(goal.unit, 'Rabbit relations')
+  assert.equal(goal.target, 2.5e16)
+  assert.equal(goal.isReady, true)
+  assert.equal(
+    getNextMajorProgressionGoal({
+      ...samplingCompleteGame,
+      completedCropPerfections: [
+        ...samplingCompleteGame.completedCropPerfections,
+        BLAZING_CARROT,
+      ],
+    }).id,
+    'capybara-demonstration-two',
+  )
+})

@@ -1,17 +1,39 @@
+import { memo, useEffect, useRef } from 'react'
 import {
-  CROP_DEFINITIONS,
   getCropName,
   getCropPlacementEffectDescription,
+  getCropUnlockDescription,
 } from '../game/crops.js'
 import {
+  CAPYBARA_DEMONSTRATION_IDS,
+  getMirrorCornMaximumReflections,
+  hasCompletedCapybaraDemonstration,
+  isWaterLettuceFieldInfested,
+} from '../game/gameLogic.js'
+import {
   CropHoverInspector,
+  FormattedNumber,
   MirrorCornConnectionLines,
   MonocropStatus,
 } from './ui.jsx'
-import { getCropMark } from './uiHelpers.js'
+import { CropVisual } from './CropVisual.jsx'
+import {
+  RootTunnelConnectionLines,
+  RootTunnelEditorPanel,
+} from './RootTunnelEditor.jsx'
+import {
+  LeechingVineEditorPanel,
+  LeechingVineLines,
+} from './LeechingVineEditor.jsx'
+import { BlueprintBlocks } from './BlueprintBlocks.jsx'
+import { BlueprintPlacementControls, BlueprintSelectionToolbar } from './BlueprintPlacementControls.jsx'
 
-export function BlueprintEdit({
+function BlueprintEditContent({
   game,
+  fieldIncomePerSecond,
+  hamsterEfficiencyMultiplier,
+  duplicatorEfficiencyMultiplier,
+  replicatorEfficiencyMultiplier,
   selectedCrop,
   onSelectCrop,
   pendingMirrorCornPlacement,
@@ -19,21 +41,101 @@ export function BlueprintEdit({
   visibleCropIds,
   unlockedCropIds,
   rowsBuiltPerSecond,
+  rabbitContractsCompleted,
   showMonocropLimit,
   monocropLimit,
   monocropPenaltyMultiplier,
   mirrorCornLinks,
   pendingMirrorCornLinks,
   hasMirrorCorn,
+  rootTunnelEditor,
+  leechingVineEditor,
+  blueprintBlockEditor,
   getDisplayedCropName,
   onClose,
   onResume,
+  onClearBlueprint,
   onEditorPlotClick,
   onEditorPlotContextMenu,
+  onRapidPlaceCrop,
+  onRapidEraseCrop,
   blueprintTransfer,
   onUpdateHoveredEditorCrop,
   onClearHoveredEditorCrop,
 }) {
+  const safeMirrorCornReflectionLimit = getMirrorCornMaximumReflections(
+    game.seedAugmentations,
+  )
+  const revealManateeEffects = hasCompletedCapybaraDemonstration(
+    game,
+    CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO,
+  )
+  const fieldInfested = isWaterLettuceFieldInfested(game.blueprint)
+  const hasSelectedRootTunnel =
+    rootTunnelEditor.selectedTunnelIndex !== null &&
+    Boolean(rootTunnelEditor.connectionState)
+  const hasSelectedLeechingVine =
+    leechingVineEditor.selectedGourdIndex !== null
+  const rapidEditRef = useRef(false)
+
+  useEffect(() => {
+    let releaseTimer = null
+    const releaseRapidEdit = () => {
+      window.clearTimeout(releaseTimer)
+      releaseTimer = window.setTimeout(() => {
+        rapidEditRef.current = false
+      }, 0)
+    }
+    const cancelRapidEdit = () => {
+      rapidEditRef.current = false
+    }
+
+    window.addEventListener('pointerup', releaseRapidEdit)
+    window.addEventListener('blur', cancelRapidEdit)
+    return () => {
+      window.clearTimeout(releaseTimer)
+      window.removeEventListener('pointerup', releaseRapidEdit)
+      window.removeEventListener('blur', cancelRapidEdit)
+    }
+  }, [])
+
+  function handleRapidPointerEdit(index, event) {
+    if (event.pointerType !== 'mouse' || !event.shiftKey) return false
+
+    const isErasing = (event.buttons & 2) !== 0
+    const isPlacing = (event.buttons & 1) !== 0
+    const handled = isErasing
+      ? onRapidEraseCrop(index)
+      : isPlacing
+        ? onRapidPlaceCrop(index)
+        : false
+
+    if (handled) {
+      event.preventDefault()
+      rapidEditRef.current = true
+      onClearHoveredEditorCrop()
+    }
+    return handled
+  }
+
+  function handlePlotClick(index, crop, event) {
+    if (rapidEditRef.current) {
+      event.preventDefault()
+      rapidEditRef.current = false
+      return
+    }
+    onEditorPlotClick(index, crop, event)
+  }
+
+  function handlePlotContextMenu(index, crop, event) {
+    if (rapidEditRef.current) {
+      event.preventDefault()
+      rapidEditRef.current = false
+      return
+    }
+    onEditorPlotContextMenu(index, crop, event)
+  }
+
   return (
     <div className="modal-backdrop" role="presentation">
       <section
@@ -57,17 +159,76 @@ export function BlueprintEdit({
           </button>
         </div>
 
-        {showMonocropLimit ? (
-          <MonocropStatus
-            limit={monocropLimit}
-            multiplier={monocropPenaltyMultiplier}
-          />
-        ) : null}
+        <div
+          className={`blueprint-editor-overview ${showMonocropLimit && !hasSelectedRootTunnel && !hasSelectedLeechingVine && !blueprintBlockEditor.isSelecting && !blueprintBlockEditor.activeBlock ? 'blueprint-editor-overview-sticky' : ''}`}
+        >
+          {showMonocropLimit ? (
+            <MonocropStatus
+              limit={monocropLimit}
+              multiplier={monocropPenaltyMultiplier}
+            />
+          ) : null}
+
+          <dl className="field-stats blueprint-editor-income">
+            <div>
+              <dt>Field income / sec</dt>
+              <dd>
+                <FormattedNumber value={fieldIncomePerSecond} /> Crops
+              </dd>
+            </div>
+            <div>
+              <dt>Hamster efficiency</dt>
+              <dd>
+                ×<FormattedNumber value={hamsterEfficiencyMultiplier} maximumFractionDigits={2} />
+              </dd>
+            </div>
+            {game.hasUnlockedSunflower ? (
+              <div>
+                <dt>Duplicator efficiency</dt>
+                <dd>
+                  ×<FormattedNumber value={duplicatorEfficiencyMultiplier} maximumFractionDigits={2} />
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+          {unlockedCropIds.includes('soybean') ? (
+            <dl className="field-stats blueprint-editor-income">
+              <div>
+                <dt>Replicator efficiency</dt>
+                <dd>
+                  ×<FormattedNumber
+                    value={replicatorEfficiencyMultiplier}
+                    maximumFractionDigits={2}
+                  />
+                </dd>
+              </div>
+            </dl>
+          ) : null}
+        </div>
 
         <p className="editing-notice">
           Harvesting is paused while you modify this blueprint. Right-click a
           planted crop to remove it.
+          <span className="rapid-edit-mouse-hint">
+            {' '}Hold Shift and drag with the left mouse button to paint the
+            selected Crop, or the right mouse button to erase.
+          </span>
+          {game.hasUnlockedRootTunnel ? (
+            <>
+              {' '}Select a Root Tunnel to configure it; tunnels can only be
+              removed from their configuration panel.
+            </>
+          ) : null}
+          {leechingVineEditor.status.unlocked ? (
+            <>
+              {' '}Select the Leeching Gourd with no Crop selected to
+              configure its vine.
+            </>
+          ) : null}
         </p>
+
+        <BlueprintSelectionToolbar editor={blueprintBlockEditor} />
+        <BlueprintPlacementControls game={game} editor={blueprintBlockEditor} />
 
         {pendingMirrorCornPlacement ? (
           <p className="mirror-corn-notice">
@@ -77,13 +238,29 @@ export function BlueprintEdit({
         ) : hasMirrorCorn && selectedCrop === 'corn' ? (
           <p className="mirror-corn-notice">
             Place Mirror Corn where it has a diagonal tile, then choose that
-            tile. The link remains when its crop changes, but each tile can
-            receive at most two reflections.
+            tile. The link remains when its crop changes. A tile safely takes
+            up to {safeMirrorCornReflectionLimit} reflections; exceeding that
+            destroys its harvest and every passive effect.
           </p>
         ) : null}
 
+        <RootTunnelEditorPanel
+          blueprint={game.blueprint}
+          completedCropPerfections={game.completedCropPerfections}
+          editor={rootTunnelEditor}
+        />
+
+        <LeechingVineEditorPanel
+          completedCropPerfections={game.completedCropPerfections}
+          editor={leechingVineEditor}
+        />
+
         <div className="blueprint-editor-layout">
-          <div className="editor-grid-wrapper">
+          <div className="editor-grid-scroll">
+            <div
+              className="editor-grid-wrapper"
+              style={{ minWidth: `${game.blueprint.columns * 64}px` }}
+            >
             <MirrorCornConnectionLines
               blueprint={game.blueprint}
               links={mirrorCornLinks}
@@ -92,6 +269,11 @@ export function BlueprintEdit({
               blueprint={game.blueprint}
               links={pendingMirrorCornLinks}
               pending
+            />
+            <RootTunnelConnectionLines blueprint={game.blueprint} />
+            <LeechingVineLines
+              blueprint={game.blueprint}
+              editor={leechingVineEditor}
             />
             <div
               className="editor-grid"
@@ -104,18 +286,62 @@ export function BlueprintEdit({
                   pendingMirrorCornPlacement?.sourceIndex === index
                 const isPendingMirrorCornTarget =
                   pendingMirrorCornPlacement?.targetIndexes.includes(index)
+                const isSelectedRootTunnel =
+                  rootTunnelEditor.selectedTunnelIndex === index
+                const isSelectedRootSender =
+                  rootTunnelEditor.connectionDraft?.senderIndex === index
+                const isValidRootSender =
+                  rootTunnelEditor.validSenderIndexes.includes(index)
+                const isValidRootRecipient =
+                  rootTunnelEditor.validRecipientIndexes.includes(index)
+                const isSelectedVineGourd =
+                  leechingVineEditor.selectedGourdIndex !== null &&
+                  (crop === 'leechingGourd' || crop === 'leechingGourdPart')
+                const isActiveVinePath =
+                  leechingVineEditor.status.activePath.includes(index)
+                const isInactiveVinePath =
+                  leechingVineEditor.status.inactivePath.includes(index)
+                const isValidVinePath =
+                  leechingVineEditor.validPathIndexes.includes(index)
+                const isEligibleVineTarget =
+                  hasSelectedLeechingVine &&
+                  leechingVineEditor.status.eligibleTargetIndexes.includes(index)
+                const isSelectedVineTarget =
+                  leechingVineEditor.status.activeTargetIndexes.includes(index)
+                const isBlockSelectionTile =
+                  blueprintBlockEditor.selectionIndexSet.has(index)
+                const isBlockSelectionAnchor =
+                  blueprintBlockEditor.selectionStartIndex === index
+                const blockPreviewTile =
+                  blueprintBlockEditor.previewTileMap.get(index)
+                const isBlockPlacementAnchor =
+                  blueprintBlockEditor.placementAnchorIndex === index
+                const isInvalidBlockPreview =
+                  Boolean(blockPreviewTile) &&
+                  blueprintBlockEditor.placementPreview?.canPlace === false
 
                 return (
                   <button
                     type="button"
-                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''}`}
+                    className={`editor-plot ${crop ? `editor-plot-${crop}` : ''} ${isPendingMirrorCornSource ? 'editor-plot-mirror-source' : ''} ${isPendingMirrorCornTarget ? 'editor-plot-mirror-target' : ''} ${fieldInfested && crop ? 'editor-plot-water-lettuce-infested' : ''} ${isSelectedRootTunnel ? 'editor-plot-root-selected' : ''} ${isSelectedRootSender ? 'editor-plot-root-sender-selected' : ''} ${isValidRootSender ? 'editor-plot-root-sender-option' : ''} ${isValidRootRecipient ? 'editor-plot-root-recipient-option' : ''} ${isSelectedVineGourd ? 'editor-plot-vine-gourd-selected' : ''} ${isActiveVinePath ? 'editor-plot-vine-path' : ''} ${isInactiveVinePath ? 'editor-plot-vine-path-inactive' : ''} ${isValidVinePath ? 'editor-plot-vine-path-option' : ''} ${isEligibleVineTarget ? 'editor-plot-vine-target-option' : ''} ${isSelectedVineTarget ? 'editor-plot-vine-target-selected' : ''} ${isBlockSelectionTile ? 'editor-plot-block-selection' : ''} ${isBlockSelectionAnchor ? 'editor-plot-block-anchor' : ''} ${blockPreviewTile ? 'editor-plot-block-preview' : ''} ${isBlockPlacementAnchor ? 'editor-plot-block-anchor' : ''} ${isInvalidBlockPreview ? 'editor-plot-block-preview-invalid' : ''}`}
                     key={index}
-                    onClick={() => onEditorPlotClick(index, crop)}
+                    onClick={(event) => handlePlotClick(index, crop, event)}
                     onContextMenu={(event) =>
-                      onEditorPlotContextMenu(index, crop, event)
+                      handlePlotContextMenu(index, crop, event)
                     }
-                    onPointerEnter={(event) => onUpdateHoveredEditorCrop(index, event)}
-                    onPointerMove={(event) => onUpdateHoveredEditorCrop(index, event)}
+                    onPointerDown={(event) =>
+                      handleRapidPointerEdit(index, event)
+                    }
+                    onPointerEnter={(event) => {
+                      if (!handleRapidPointerEdit(index, event)) {
+                        onUpdateHoveredEditorCrop(index, event)
+                      }
+                    }}
+                    onPointerMove={(event) => {
+                      if (!handleRapidPointerEdit(index, event)) {
+                        onUpdateHoveredEditorCrop(index, event)
+                      }
+                    }}
                     onPointerLeave={onClearHoveredEditorCrop}
                     onFocus={(event) => {
                       if (!crop) {
@@ -130,31 +356,87 @@ export function BlueprintEdit({
                     }}
                     onBlur={onClearHoveredEditorCrop}
                     aria-label={
-                      isPendingMirrorCornTarget
+                      blueprintBlockEditor.isSelecting
+                        ? blueprintBlockEditor.selectionStartIndex === null
+                          ? 'Use this tile as the first selection corner and placement anchor'
+                          : 'Use this tile as the opposite selection corner'
+                        : blueprintBlockEditor.activeBlock
+                          ? blueprintBlockEditor.isUnsavedSelection
+                            ? 'Position the selected crops using this tile as its anchor'
+                            : 'Position this blueprint block using this tile as its anchor'
+                      : isPendingMirrorCornTarget
                         ? 'Assign this tile as the Mirror Corn target'
+                        : isValidVinePath
+                          ? 'Extend the Leeching Vine into this tile'
+                        : isSelectedVineTarget
+                          ? 'Release this Turnip from the Leeching Vine'
+                        : isEligibleVineTarget
+                          ? 'Assign this Turnip to the Leeching Vine'
+                        : isSelectedVineGourd
+                          ? 'Selected Leeching Gourd'
+                        : crop === 'rootTunnel'
+                          ? 'Configure this Root Tunnel'
+                        : isValidRootSender
+                          ? `Use ${getCropName(crop, game.completedCropPerfections)} as the Root Tunnel sender`
+                        : isValidRootRecipient
+                          ? `Use ${getCropName(crop, game.completedCropPerfections)} as the Root Tunnel recipient`
+                        : selectedCrop === null && crop
+                          ? `View ${getCropName(crop, game.completedCropPerfections)} information`
+                        : selectedCrop === null
+                          ? 'Empty blueprint plot'
                         : crop === 'leechingGourd' || crop === 'leechingGourdPart'
                           ? 'Remove Leeching Gourd from blueprint'
+                          : crop === 'splitweedPart' ||
+                              (crop === 'knotweed' &&
+                                game.completedCropPerfections.includes('splitweed'))
+                            ? 'Remove Splitweed from blueprint'
                           : crop === selectedCrop
                             ? `Remove ${getCropName(crop, game.completedCropPerfections)} from plot`
                             : `Plant ${getDisplayedCropName(selectedCrop)} in plot`
                     }
                   >
                     {crop ? (
-                      <span aria-hidden="true">{getCropMark(crop)}</span>
+                      <CropVisual
+                        cropId={crop}
+                        completedCropPerfections={
+                          game.completedCropPerfections
+                        }
+                        className="editor-crop-visual"
+                      />
                     ) : (
-                      <span>Plant</span>
+                      <span>{selectedCrop ? 'Plant' : 'Empty'}</span>
                     )}
+                    {blockPreviewTile && blockPreviewTile.action !== 'unchanged' ? (
+                      <span
+                        className={`blueprint-block-tile-preview blueprint-block-tile-preview-${blockPreviewTile.action} ${blockPreviewTile.available ? '' : 'blueprint-block-tile-preview-missing'}`}
+                        aria-hidden="true"
+                      >
+                        {blockPreviewTile.crop ? (
+                          <CropVisual
+                            cropId={blockPreviewTile.crop}
+                            completedCropPerfections={
+                              game.completedCropPerfections
+                            }
+                            className="editor-crop-visual"
+                          />
+                        ) : (
+                          <span>Clear</span>
+                        )}
+                      </span>
+                    ) : null}
                   </button>
                 )
               })}
+              </div>
             </div>
           </div>
 
           <div className="crop-palette" aria-label="Crop selection">
-            <p className="eyebrow">Selected crop</p>
+            <p className="eyebrow">
+              {selectedCrop ? 'Selected crop' : 'No crop selected'}
+            </p>
             <div className="crop-options">
               {visibleCropIds.map((cropId) => {
-                const crop = CROP_DEFINITIONS[cropId]
                 const unlocked = unlockedCropIds.includes(cropId)
 
                 return (
@@ -166,18 +448,32 @@ export function BlueprintEdit({
                     disabled={!unlocked}
                   >
                     <span className="crop-option-name">
-                      <span className="crop-option-icon" aria-hidden="true">
-                        {crop.icon}
-                      </span>
+                      <CropVisual
+                        cropId={cropId}
+                        completedCropPerfections={
+                          game.completedCropPerfections
+                        }
+                        className="crop-option-icon"
+                      />
                       {getDisplayedCropName(cropId)}
                     </span>
                     <small>
                       {unlocked
-                        ? getCropPlacementEffectDescription(
+                        ? cropId === 'fourLeafClover' &&
+                          game.cloverAssembly?.assembled === true
+                          ? 'Destroys its own harvest · brings your chosen 5-Leaf Clover fortunes, including in Misfortune · one per blueprint'
+                          : getCropPlacementEffectDescription(
                             cropId,
                             game.completedCropPerfections,
+                            game.seedAugmentations,
+                            revealManateeEffects,
                           )
-                        : crop.unlockDescription}
+                        : getCropUnlockDescription(
+                            cropId,
+                            game.activeArea,
+                            game.cloverAssembly?.assembled === true,
+                            game,
+                          )}
                     </small>
                   </button>
                 )
@@ -186,6 +482,8 @@ export function BlueprintEdit({
           </div>
         </div>
 
+        <BlueprintBlocks game={game} editor={blueprintBlockEditor} />
+
         <section
           className="blueprint-transfer-card"
           aria-labelledby="blueprint-transfer-title"
@@ -193,12 +491,13 @@ export function BlueprintEdit({
           <div>
             <p className="eyebrow">Blueprint transfer</p>
             <h3 id="blueprint-transfer-title">
-              Blueprint {game.activeBlueprintSlot + 1}
+              Blueprint <FormattedNumber value={game.activeBlueprintSlot + 1} maximumFractionDigits={0} />
             </h3>
             <p>
-              Export or replace only this slot. Imports must match the current{' '}
-              {game.blueprint.rows}×{game.blueprint.columns} grid and your crop
-              unlocks.
+              Export or replace only this slot. The current grid is{' '}
+              <FormattedNumber value={game.blueprint.rows} maximumFractionDigits={0} />×<FormattedNumber value={game.blueprint.columns} maximumFractionDigits={0} />;
+              imported blueprints are cropped or padded from the top-left and
+              must use your unlocked Crops.
             </p>
           </div>
           <div className="blueprint-transfer-actions">
@@ -243,16 +542,31 @@ export function BlueprintEdit({
 
         {hoveredEditorCrop ? (
           <CropHoverInspector
+            game={game}
             blueprint={game.blueprint}
             index={hoveredEditorCrop.index}
             completedCropPerfections={game.completedCropPerfections}
             rowsProducedPerSecond={rowsBuiltPerSecond}
             activeHamsters={game.hamsters}
+            rabbitContractsCompleted={rabbitContractsCompleted}
+            totalRabbitRelationsEarned={
+              game.trade?.totalRabbitRelationsEarned ?? 0
+            }
+            revealManateeEffects={revealManateeEffects}
+            seedAugmentations={game.seedAugmentations}
             cursor={hoveredEditorCrop}
           />
         ) : null}
 
         <div className="modal-actions">
+          <button
+            type="button"
+            className="secondary-button blueprint-clear-button"
+            onClick={onClearBlueprint}
+            disabled={!game.blueprint.cells.some(Boolean)}
+          >
+            Clear blueprint
+          </button>
           <button type="button" className="primary-button" onClick={onResume}>
             Resume harvest
           </button>
@@ -261,3 +575,119 @@ export function BlueprintEdit({
     </div>
   )
 }
+
+function areBlueprintEditorPropsEqual(previous, next) {
+  const previousGame = previous.game
+  const nextGame = next.game
+  const previousTransfer = previous.blueprintTransfer
+  const nextTransfer = next.blueprintTransfer
+
+  return (
+    previousGame.blueprint === nextGame.blueprint &&
+    previousGame.completedCropPerfections ===
+      nextGame.completedCropPerfections &&
+    previousGame.seedAugmentations === nextGame.seedAugmentations &&
+    previousGame.numberNotation === nextGame.numberNotation &&
+    previousGame.suffixScientificExponent ===
+      nextGame.suffixScientificExponent &&
+    previousGame.fortune === nextGame.fortune &&
+    previousGame.hasUnlockedSunflower === nextGame.hasUnlockedSunflower &&
+    previousGame.hasUnlockedRootTunnel ===
+      nextGame.hasUnlockedRootTunnel &&
+    previousGame.activeBlueprintSlot === nextGame.activeBlueprintSlot &&
+    previousGame.blueprintBlocks === nextGame.blueprintBlocks &&
+    previousGame.hamsters === nextGame.hamsters &&
+    Object.is(previous.fieldIncomePerSecond, next.fieldIncomePerSecond) &&
+    Object.is(
+      previous.hamsterEfficiencyMultiplier,
+      next.hamsterEfficiencyMultiplier,
+    ) &&
+    Object.is(
+      previous.duplicatorEfficiencyMultiplier,
+      next.duplicatorEfficiencyMultiplier,
+    ) &&
+    Object.is(
+      previous.replicatorEfficiencyMultiplier,
+      next.replicatorEfficiencyMultiplier,
+    ) &&
+    previous.selectedCrop === next.selectedCrop &&
+    previous.pendingMirrorCornPlacement ===
+      next.pendingMirrorCornPlacement &&
+    previous.hoveredEditorCrop === next.hoveredEditorCrop &&
+    previous.visibleCropIds === next.visibleCropIds &&
+    previous.unlockedCropIds === next.unlockedCropIds &&
+    Object.is(previous.rowsBuiltPerSecond, next.rowsBuiltPerSecond) &&
+    previous.rabbitContractsCompleted === next.rabbitContractsCompleted &&
+    previous.showMonocropLimit === next.showMonocropLimit &&
+    Object.is(previous.monocropLimit, next.monocropLimit) &&
+    Object.is(
+      previous.monocropPenaltyMultiplier,
+      next.monocropPenaltyMultiplier,
+    ) &&
+    previous.mirrorCornLinks === next.mirrorCornLinks &&
+    previous.pendingMirrorCornLinks === next.pendingMirrorCornLinks &&
+    previous.hasMirrorCorn === next.hasMirrorCorn &&
+    previous.rootTunnelEditor.selectedTunnelIndex ===
+      next.rootTunnelEditor.selectedTunnelIndex &&
+    previous.rootTunnelEditor.connectionDraft ===
+      next.rootTunnelEditor.connectionDraft &&
+    previous.rootTunnelEditor.connectionState ===
+      next.rootTunnelEditor.connectionState &&
+    previous.rootTunnelEditor.validSenderIndexes ===
+      next.rootTunnelEditor.validSenderIndexes &&
+    previous.rootTunnelEditor.validRecipientIndexes ===
+      next.rootTunnelEditor.validRecipientIndexes &&
+    previous.leechingVineEditor.selectedGourdIndex ===
+      next.leechingVineEditor.selectedGourdIndex &&
+    previous.leechingVineEditor.isDrawing ===
+      next.leechingVineEditor.isDrawing &&
+    previous.leechingVineEditor.status ===
+      next.leechingVineEditor.status &&
+    previous.leechingVineEditor.validPathIndexes ===
+      next.leechingVineEditor.validPathIndexes &&
+    previous.blueprintBlockEditor.selectionName ===
+      next.blueprintBlockEditor.selectionName &&
+    previous.blueprintBlockEditor.selectionStartIndex ===
+      next.blueprintBlockEditor.selectionStartIndex &&
+    previous.blueprintBlockEditor.selectionIndexSet ===
+      next.blueprintBlockEditor.selectionIndexSet &&
+    previous.blueprintBlockEditor.isSelecting ===
+      next.blueprintBlockEditor.isSelecting &&
+    previous.blueprintBlockEditor.isUnsavedSelection ===
+      next.blueprintBlockEditor.isUnsavedSelection &&
+    previous.blueprintBlockEditor.selectionAction ===
+      next.blueprintBlockEditor.selectionAction &&
+    previous.blueprintBlockEditor.canMoveSelection ===
+      next.blueprintBlockEditor.canMoveSelection &&
+    previous.blueprintBlockEditor.canSaveSelection ===
+      next.blueprintBlockEditor.canSaveSelection &&
+    previous.blueprintBlockEditor.overwriteBlockId ===
+      next.blueprintBlockEditor.overwriteBlockId &&
+    previous.blueprintBlockEditor.activeBlockSourceId ===
+      next.blueprintBlockEditor.activeBlockSourceId &&
+    previous.blueprintBlockEditor.activeBlock ===
+      next.blueprintBlockEditor.activeBlock &&
+    previous.blueprintBlockEditor.placementMode ===
+      next.blueprintBlockEditor.placementMode &&
+    previous.blueprintBlockEditor.placementPreview ===
+      next.blueprintBlockEditor.placementPreview &&
+    previous.blueprintBlockEditor.placementAnchorIndex ===
+      next.blueprintBlockEditor.placementAnchorIndex &&
+    previous.blueprintBlockEditor.previewTileMap ===
+      next.blueprintBlockEditor.previewTileMap &&
+    previous.blueprintBlockEditor.blockCode ===
+      next.blueprintBlockEditor.blockCode &&
+    previous.blueprintBlockEditor.status ===
+      next.blueprintBlockEditor.status &&
+    previous.blueprintBlockEditor.libraryEntries ===
+      next.blueprintBlockEditor.libraryEntries &&
+    previousTransfer.blueprintCode === nextTransfer.blueprintCode &&
+    previousTransfer.blueprintTransferStatus ===
+      nextTransfer.blueprintTransferStatus
+  )
+}
+
+export const BlueprintEdit = memo(
+  BlueprintEditContent,
+  areBlueprintEditorPropsEqual,
+)

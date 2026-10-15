@@ -1,29 +1,72 @@
 import { useEffect, useState } from 'react'
 import {
+  CAPYBARA_DEMONSTRATION_IDS,
+  canRestartFields,
+  cancelManateeSurvey,
+  claimRabbitContract,
+  clearWetlandsConnectionObstructions,
+  collectManateeFind,
+  completeCloverAssembly,
+  completeManateeDevelopmentGoal,
+  constructManateeBuilding,
+  completeCapybaraDemonstration,
   createInitialGame,
+  establishTradeRelations,
   getBlueprintExpansion,
+  getGameAreaCostMultiplier,
   getHamsterStateAfterHire,
   getMaxDuplicatorPurchase,
+  getMaxFloorReplicatorPurchase,
+  canPurchaseFloorReplicatorsInArea,
   getMaxHamsterPurchase,
+  getMisfortuneUpgradeCost,
   getNextHamsterCost,
+  getNextFloorReplicatorCost,
   getNextRowDuplicatorCost,
+  GAME_AREA_IDS,
+  hasCompletedCapybaraDemonstration,
+  MANATEE_ZONE_IDS,
+  MISFORTUNE_UPGRADE_IDS,
   resetForBlueprintExpansion,
   resetForRowDuplicators,
+  restartFields,
+  switchGameArea,
+  selectFiveLeafLoadout,
+  startManateeSurvey,
+  purchaseRabbitUnlock,
+  purchaseMisfortuneUpgrade,
+  purchaseSeedAugmentation,
+  toggleFloorReplicatorMode,
+  toggleSeedAugmentation,
+  toggleWetlandsConnectionObstruction,
   UNIONIZATION_HAMSTER_COUNT,
   unlockCropPerfection,
+  unlockGreaterBlueprinting,
+  updateFiveLeafLoadout,
+  upgradeManateeBuilding,
 } from '../game/gameLogic.js'
 import { exportGame, importGame } from '../game/storage.js'
+import { createGameSaveFile, downloadSaveFile } from '../game/saveFile.js'
+import { getCachedFormattedNumber } from '../game/numberFormat.js'
 
 export function useGameActions({
   gameRef,
   setGame,
   updateGame,
+  saveGameNow,
   areInventionsUnlocked,
+  isTradeTabVisible,
+  isAugmentationTabVisible,
+  isCloverTabVisible,
   resetBlueprintEditor,
-  clearCropUnlockNotices,
 }) {
   const [activeTab, setActiveTab] = useState('field')
   const [activeInventionsTab, setActiveInventionsTab] = useState('blueprint')
+  const [activeAugmentationCrop, setActiveAugmentationCrop] = useState('leek')
+  const [activeTradeRelation, setActiveTradeRelation] = useState('rabbits')
+  const [activeManateeZone, setActiveManateeZone] = useState(
+    MANATEE_ZONE_IDS.MARSH,
+  )
   const [isUnionConfirmationOpen, setIsUnionConfirmationOpen] = useState(false)
   const [pendingBlueprintExpansionId, setPendingBlueprintExpansionId] =
     useState(null)
@@ -33,6 +76,7 @@ export function useGameActions({
   const [lastHardResetClickAt, setLastHardResetClickAt] = useState(0)
   const [saveCode, setSaveCode] = useState('')
   const [saveTransferStatus, setSaveTransferStatus] = useState(null)
+  const [manualSaveStatus, setManualSaveStatus] = useState(null)
 
   useEffect(() => {
     if (hardResetClicks === 0) {
@@ -46,11 +90,13 @@ export function useGameActions({
     return () => window.clearTimeout(timeoutId)
   }, [hardResetClicks, lastHardResetClickAt])
 
+
   function completeHamsterHire() {
     updateGame((currentGame) => {
       const currentCost = getNextHamsterCost(
         currentGame.hamsters,
         currentGame.unionized,
+        getGameAreaCostMultiplier(currentGame),
       )
       if (currentGame.crops < currentCost) {
         return currentGame
@@ -69,6 +115,7 @@ export function useGameActions({
     const currentHamsterCost = getNextHamsterCost(
       currentGame.hamsters,
       currentGame.unionized,
+      getGameAreaCostMultiplier(currentGame),
     )
 
     if (currentGame.crops < currentHamsterCost) {
@@ -86,11 +133,19 @@ export function useGameActions({
     completeHamsterHire()
   }
 
-  function buyMaxHamsters() {
+  function buyBulkMachinery(purchase, quantity = Infinity) {
     updateGame((currentGame) => {
-      const { purchased, ...nextGame } = getMaxHamsterPurchase(currentGame)
+      const { purchased, ...nextGame } = purchase(currentGame, quantity)
       return purchased > 0 ? { ...currentGame, ...nextGame } : currentGame
     })
+  }
+
+  function buyTenHamsters() {
+    buyBulkMachinery(getMaxHamsterPurchase, 10)
+  }
+
+  function buyMaxHamsters() {
+    buyBulkMachinery(getMaxHamsterPurchase)
   }
 
   function buyRowDuplicator() {
@@ -99,7 +154,10 @@ export function useGameActions({
         return currentGame
       }
 
-      const cost = getNextRowDuplicatorCost(currentGame.rowDuplicators)
+      const cost = getNextRowDuplicatorCost(
+        currentGame.rowDuplicators,
+        getGameAreaCostMultiplier(currentGame),
+      )
 
       if (currentGame.crops < cost) {
         return currentGame
@@ -114,11 +172,47 @@ export function useGameActions({
     })
   }
 
+  function buyTenRowDuplicators() {
+    buyBulkMachinery(getMaxDuplicatorPurchase, 10)
+  }
+
   function buyMaxRowDuplicators() {
+    buyBulkMachinery(getMaxDuplicatorPurchase)
+  }
+
+  function buyFloorReplicator() {
     updateGame((currentGame) => {
-      const { purchased, ...nextGame } = getMaxDuplicatorPurchase(currentGame)
-      return purchased > 0 ? { ...currentGame, ...nextGame } : currentGame
+      if (
+        !currentGame.hasUnlockedFloorReplicators ||
+        !canPurchaseFloorReplicatorsInArea(currentGame)
+      ) {
+        return currentGame
+      }
+
+      const cost = getNextFloorReplicatorCost(
+        currentGame.floorReplicators,
+        getGameAreaCostMultiplier(currentGame),
+      )
+      if (currentGame.crops < cost) return currentGame
+
+      return {
+        ...currentGame,
+        crops: currentGame.crops - cost,
+        floorReplicators:
+          Math.max(
+            0,
+            Math.floor(Number(currentGame.floorReplicators) || 0),
+          ) + 1,
+      }
     })
+  }
+
+  function buyTenFloorReplicators() {
+    buyBulkMachinery(getMaxFloorReplicatorPurchase, 10)
+  }
+
+  function buyMaxFloorReplicators() {
+    buyBulkMachinery(getMaxFloorReplicatorPurchase)
   }
 
   function confirmBlueprintExpansionReset() {
@@ -146,6 +240,18 @@ export function useGameActions({
     setActiveTab('field')
   }
 
+  function restartCurrentFields() {
+    if (!canRestartFields(gameRef.current)) return
+    const didConfirm = window.confirm(
+      'Restart Fields? This resets the current area’s Crops and accumulated Columns, Rows, Floors and Farms. Your machinery, blueprints, expansions and unlocks stay. Rushed Start begins again.',
+    )
+    if (!didConfirm) return
+
+    updateGame((currentGame) => restartFields(currentGame) ?? currentGame)
+    resetBlueprintEditor()
+    setActiveTab('field')
+  }
+
   function unlockPerfection(perfectionId) {
     updateGame((currentGame) => {
       const nextGame = unlockCropPerfection(currentGame, perfectionId)
@@ -163,7 +269,6 @@ export function useGameActions({
       setActiveTab('field')
       setActiveInventionsTab('blueprint')
       resetBlueprintEditor()
-      clearCropUnlockNotices()
       setHardResetClicks(0)
       setLastHardResetClickAt(0)
       return
@@ -177,7 +282,24 @@ export function useGameActions({
     setHardResetClicks(0)
     setLastHardResetClickAt(0)
     setSaveTransferStatus(null)
+    setManualSaveStatus(null)
     setActiveTab('options')
+  }
+
+  function manuallySaveGame() {
+    const didSave = saveGameNow()
+
+    setManualSaveStatus(
+      didSave
+        ? {
+            type: 'success',
+            message: 'Game saved locally.',
+          }
+        : {
+            type: 'error',
+            message: 'The game could not access local storage.',
+          },
+    )
   }
 
   async function exportSave() {
@@ -194,6 +316,24 @@ export function useGameActions({
       setSaveTransferStatus({
         type: 'success',
         message: 'Save code is ready below. Copy it somewhere safe.',
+      })
+    }
+  }
+
+  function exportSaveToFile() {
+    const saveFile = createGameSaveFile(gameRef.current)
+    setSaveCode(saveFile.contents)
+
+    try {
+      downloadSaveFile(saveFile)
+      setSaveTransferStatus({
+        type: 'success',
+        message: 'Save file download started.',
+      })
+    } catch {
+      setSaveTransferStatus({
+        type: 'error',
+        message: 'The file could not be downloaded. Copy the save code below instead.',
       })
     }
   }
@@ -224,6 +364,289 @@ export function useGameActions({
     }
   }
 
+  function establishTrade() {
+    updateGame((currentGame) =>
+      establishTradeRelations(currentGame) ?? currentGame,
+    )
+  }
+
+  function claimRabbitDelivery(contractIndex) {
+    updateGame((currentGame) =>
+      claimRabbitContract(currentGame, contractIndex) ?? currentGame,
+    )
+  }
+
+  function buyRabbitUnlock(unlockId) {
+    updateGame((currentGame) =>
+      purchaseRabbitUnlock(currentGame, unlockId) ?? currentGame,
+    )
+  }
+
+  function completeCapybaraDemo(demonstrationId) {
+    updateGame((currentGame) => {
+      const completedGame = completeCapybaraDemonstration(
+        currentGame,
+        demonstrationId,
+      )
+
+      if (!completedGame) return currentGame
+
+      return demonstrationId ===
+        CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_TWO
+        ? switchGameArea(completedGame, GAME_AREA_IDS.MAIN)
+        : completedGame
+    })
+  }
+
+  function enterMisfortuneArea() {
+    updateGame((currentGame) => {
+      const canEnter =
+        hasCompletedCapybaraDemonstration(
+          currentGame,
+          CAPYBARA_DEMONSTRATION_IDS.DEMONSTRATION_ONE,
+        )
+
+      return canEnter
+        ? switchGameArea(currentGame, GAME_AREA_IDS.MISFORTUNE)
+        : currentGame
+    })
+    resetBlueprintEditor()
+    setActiveTab('field')
+  }
+
+  function leaveMisfortuneArea() {
+    updateGame((currentGame) =>
+      switchGameArea(currentGame, GAME_AREA_IDS.MAIN),
+    )
+    resetBlueprintEditor()
+    setActiveTab('field')
+  }
+
+  function unlockUnfortunateRow() {
+    const cost = getCachedFormattedNumber(
+      getMisfortuneUpgradeCost(MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW),
+      0,
+      gameRef.current.numberNotation,
+      gameRef.current.suffixScientificExponent,
+    )
+    const didConfirm = window.confirm(
+      `Accept Unfortunate Row for ${cost} Crops? This resets Crops and field growth in both the main and Misfortune areas, then grants the blueprints in both areas one permanent Row.`,
+    )
+
+    if (!didConfirm) {
+      return
+    }
+
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+      ) ?? currentGame,
+    )
+  }
+
+  function unlockFortunateColumn() {
+    const cost = getCachedFormattedNumber(
+      getMisfortuneUpgradeCost(MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN),
+      0,
+      gameRef.current.numberNotation,
+      gameRef.current.suffixScientificExponent,
+    )
+    const didConfirm = window.confirm(
+      `Accept Fortunate Column for ${cost} Crops? This resets Crops and field growth in both the main and Misfortune areas, then grants the blueprints in both areas one permanent Column.`,
+    )
+
+    if (!didConfirm) {
+      return
+    }
+
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+      ) ?? currentGame,
+    )
+  }
+
+  function unlockRushedStart() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.RUSHED_START,
+      ) ?? currentGame,
+    )
+  }
+
+  function unlockAdversityGrownTubers() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
+      ) ?? currentGame,
+    )
+  }
+
+  function unlockBurdenedFoundations() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+      ) ?? currentGame,
+    )
+  }
+
+  function unlockNourishingMisery() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+      ) ?? currentGame,
+    )
+  }
+
+  function unlockHuntForSomethingGreater() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+      ) ?? currentGame,
+    )
+  }
+
+  function unlockFinalSupport() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+      ) ?? currentGame,
+    )
+  }
+
+  function buyGreaterBlueprinting() {
+    updateGame((currentGame) =>
+      unlockGreaterBlueprinting(currentGame) ?? currentGame,
+    )
+  }
+
+  function assembleFiveLeafClover() {
+    updateGame((currentGame) =>
+      completeCloverAssembly(currentGame) ?? currentGame,
+    )
+  }
+
+  function unlockOilyTreats() {
+    updateGame((currentGame) => purchaseMisfortuneUpgrade(
+      currentGame, MISFORTUNE_UPGRADE_IDS.OILY_TREATS,
+    ) ?? currentGame)
+  }
+
+  function visitSweetPotatoInMain() {
+    updateGame((currentGame) => switchGameArea(currentGame, GAME_AREA_IDS.MAIN))
+    resetBlueprintEditor()
+    setActiveInventionsTab('cropPerfection')
+    setActiveTab('inventions')
+  }
+
+  function unlockPartingGift() {
+    updateGame((currentGame) =>
+      purchaseMisfortuneUpgrade(
+        currentGame,
+        MISFORTUNE_UPGRADE_IDS.PARTING_GIFT,
+      ) ?? currentGame,
+    )
+  }
+
+  function selectCloverLoadout(index) {
+    updateGame((currentGame) => selectFiveLeafLoadout(currentGame, index))
+  }
+
+  function updateCloverLoadout(index, changes) {
+    updateGame((currentGame) =>
+      updateFiveLeafLoadout(currentGame, index, changes),
+    )
+  }
+
+  function switchFloorReplicatorMode() {
+    updateGame((currentGame) =>
+      toggleFloorReplicatorMode(currentGame) ?? currentGame,
+    )
+  }
+
+  function startMarshSurvey(surveyId, lengthId, allocatedHamsters) {
+    updateGame((currentGame) =>
+      startManateeSurvey(
+        currentGame,
+        surveyId,
+        lengthId,
+        allocatedHamsters,
+      ) ?? currentGame,
+    )
+  }
+
+  function collectMarshFind(findId) {
+    updateGame((currentGame) =>
+      collectManateeFind(currentGame, findId) ?? currentGame,
+    )
+  }
+
+  function cancelMarshSurvey(surveyId) {
+    updateGame((currentGame) =>
+      cancelManateeSurvey(currentGame, surveyId) ?? currentGame,
+    )
+  }
+
+  function buildManateeBuilding(buildingId) {
+    updateGame((currentGame) =>
+      constructManateeBuilding(currentGame, buildingId) ?? currentGame,
+    )
+  }
+
+  function improveManateeBuilding(buildingId) {
+    updateGame((currentGame) =>
+      upgradeManateeBuilding(currentGame, buildingId) ?? currentGame,
+    )
+  }
+
+  function completeManateeGoal(goalId) {
+    updateGame((currentGame) =>
+      completeManateeDevelopmentGoal(currentGame, goalId) ?? currentGame,
+    )
+  }
+
+  function toggleWetlandsObstruction(tileId) {
+    updateGame((currentGame) =>
+      toggleWetlandsConnectionObstruction(currentGame, tileId) ?? currentGame,
+    )
+  }
+
+  function clearWetlandsObstructions() {
+    updateGame((currentGame) =>
+      clearWetlandsConnectionObstructions(currentGame) ?? currentGame,
+    )
+  }
+
+  function buySeedAugmentation(augmentationId) {
+    updateGame((currentGame) =>
+      purchaseSeedAugmentation(currentGame, augmentationId) ?? currentGame,
+    )
+  }
+
+  function togglePurchasedSeedAugmentation(augmentationId) {
+    updateGame((currentGame) =>
+      toggleSeedAugmentation(currentGame, augmentationId) ?? currentGame,
+    )
+  }
+
+  function openAugmentation() {
+    if (isAugmentationTabVisible) {
+      setActiveTab('augmentation')
+    }
+  }
+  function openTrade() {
+    if (isTradeTabVisible) {
+      setActiveTab('trade')
+    }
+  }
   function openInventions() {
     if (!areInventionsUnlocked) {
       return
@@ -236,28 +659,77 @@ export function useGameActions({
     setActiveTab('inventions')
   }
 
+  function openClover() {
+    if (isCloverTabVisible) {
+      setActiveTab('clover')
+    }
+  }
+
   return {
     activeTab,
+    onRestartFields: restartCurrentFields,
     activeInventionsTab,
     setActiveInventionsTab,
     navigationActions: {
       onShowField: () => setActiveTab('field'),
+      onShowClover: openClover,
+      onShowTrade: openTrade,
+      onShowAugmentation: openAugmentation,
+      onShowMisfortune: () => setActiveTab('misfortune'),
       onOpenInventions: openInventions,
       onShowStatistics: () => setActiveTab('statistics'),
+      onShowAchievements: () => setActiveTab('achievements'),
       onOpenOptions: openOptions,
     },
     purchaseActions: {
       onBuyHamster: buyHamster,
+      onBuyTenHamsters: buyTenHamsters,
       onBuyMaxHamsters: buyMaxHamsters,
       onBuyRowDuplicator: buyRowDuplicator,
+      onBuyTenRowDuplicators: buyTenRowDuplicators,
       onBuyMaxRowDuplicators: buyMaxRowDuplicators,
+      onBuyFloorReplicator: buyFloorReplicator,
+      onBuyTenFloorReplicators: buyTenFloorReplicators,
+      onBuyMaxFloorReplicators: buyMaxFloorReplicators,
+      onToggleFloorReplicatorMode: switchFloorReplicatorMode,
+    },
+    tradeActions: {
+      activeRelation: activeTradeRelation,
+      onActiveRelationChange: setActiveTradeRelation,
+      activeManateeZone,
+      onActiveManateeZoneChange: setActiveManateeZone,
+      onEstablishTrade: establishTrade,
+      onClaimRabbitContract: claimRabbitDelivery,
+      onPurchaseRabbitUnlock: buyRabbitUnlock,
+      onUnlockBlazingCarrot: () => unlockPerfection('blazingCarrot'),
+      onCompleteCapybaraDemonstration: completeCapybaraDemo,
+      onEnterMisfortuneArea: enterMisfortuneArea,
+      onLeaveMisfortuneArea: leaveMisfortuneArea,
+      onStartManateeSurvey: startMarshSurvey,
+      onCancelManateeSurvey: cancelMarshSurvey,
+      onCollectManateeFind: collectMarshFind,
+      onConstructManateeBuilding: buildManateeBuilding,
+      onUpgradeManateeBuilding: improveManateeBuilding,
+      onCompleteManateeDevelopmentGoal: completeManateeGoal,
+      onToggleWetlandsObstruction: toggleWetlandsObstruction,
+      onClearWetlandsObstructions: clearWetlandsObstructions,
+    },
+    augmentationActions: {
+      activeCropId: activeAugmentationCrop,
+      onActiveCropChange: setActiveAugmentationCrop,
+      onPurchaseSeedAugmentation: buySeedAugmentation,
+      onToggleSeedAugmentation: togglePurchasedSeedAugmentation,
     },
     inventionsActions: {
       onUnlockEnrichingLeek: () => unlockPerfection('enrichingLeek'),
       onUnlockMirrorCorn: () => unlockPerfection('mirrorCorn'),
       onUnlockLeechingGourd: () => unlockPerfection('leechingGourd'),
       onUnlockSweetPotato: () => unlockPerfection('sweetPotato'),
+      onUnlockSamplingLentil: () => unlockPerfection('samplingLentil'),
       onUnlockSplitweed: () => unlockPerfection('splitweed'),
+      onUnlockGreaterBlueprinting: buyGreaterBlueprinting,
+      onCompleteCloverAssembly: assembleFiveLeafClover,
+      onOpenClover: openClover,
       onRequestRowDuplicatorUnlock: () =>
         setIsRowDuplicatorUnlockPending(true),
       onRequestBlueprintExpansion: setPendingBlueprintExpansionId,
@@ -268,14 +740,33 @@ export function useGameActions({
         setIsRowDuplicatorUnlockPending(false),
       onConfirmRowDuplicatorUnlock: confirmRowDuplicatorReset,
     },
+    cloverActions: {
+      onSelectLoadout: selectCloverLoadout,
+      onUpdateLoadout: updateCloverLoadout,
+    },
     pendingBlueprintExpansion: pendingBlueprintExpansionId
       ? getBlueprintExpansion(pendingBlueprintExpansionId)
       : null,
     isRowDuplicatorUnlockPending,
+    onEnterMisfortuneArea: enterMisfortuneArea,
+    onLeaveMisfortuneArea: leaveMisfortuneArea,
+    onUnlockUnfortunateRow: unlockUnfortunateRow,
+    onUnlockFortunateColumn: unlockFortunateColumn,
+    onUnlockRushedStart: unlockRushedStart,
+    onUnlockOilyTreats: unlockOilyTreats,
+    onVisitSweetPotatoInMain: visitSweetPotatoInMain,
+    onUnlockAdversityGrownTubers: unlockAdversityGrownTubers,
+    onUnlockBurdenedFoundations: unlockBurdenedFoundations,
+    onUnlockNourishingMisery: unlockNourishingMisery,
+    onUnlockHuntForSomethingGreater: unlockHuntForSomethingGreater,
+    onUnlockFinalSupport: unlockFinalSupport,
+    onUnlockPartingGift: unlockPartingGift,
     options: {
       saveCode,
       onSaveCodeChange: setSaveCode,
       saveTransferStatus,
+      manualSaveStatus,
+      onSaveNow: manuallySaveGame,
       hardResetClicks,
       onNumberNotationChange: (numberNotation) =>
         updateGame((currentGame) => ({
@@ -283,7 +774,17 @@ export function useGameActions({
           numberNotation:
             numberNotation === 'scientific' ? 'scientific' : 'suffix',
         })),
+      onSuffixScientificExponentChange: (suffixScientificExponent) =>
+        updateGame((currentGame) => ({
+          ...currentGame,
+          suffixScientificExponent: [33, 303, 3003].includes(
+            Number(suffixScientificExponent),
+          )
+            ? Number(suffixScientificExponent)
+            : 303,
+        })),
       onExportSave: exportSave,
+      onExportSaveToFile: exportSaveToFile,
       onImportSave: importSave,
       onHardReset: handleHardReset,
     },

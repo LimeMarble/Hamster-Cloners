@@ -1,5 +1,7 @@
+import { BackgroundCatchUpOverlay } from './BackgroundCatchUpOverlay.jsx'
 import { BlueprintEdit } from './BlueprintEdit.jsx'
 import { TestingPanel } from './TestingPanel.jsx'
+import { AchievementNotifications } from './AchievementNotifications.jsx'
 
 function MonocropWarning({ onClose }) {
   return (
@@ -89,16 +91,53 @@ function UnionConfirmation({ onCancel, onConfirm }) {
   )
 }
 
+function MisfortuneWipeConfirmation({ onCancel, onConfirm }) {
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section
+        className="union-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="misfortune-wipe-title"
+      >
+        <p className="eyebrow">Irreversible Misfortune reset</p>
+        <h2 id="misfortune-wipe-title">Wipe all Misfortune progress?</h2>
+        <p>
+          This clears Misfortune&apos;s Crops, Hamsters, Row Duplicators,
+          field growth, paid expansions, Crop unlocks, blueprints, and
+          permanent Misfortune upgrades.
+        </p>
+        <p>
+          Floor Replicators are also removed while they can only be purchased
+          in Misfortune. Main-field progress, completed demonstrations, and
+          other permanent progression will be preserved.
+        </p>
+        <div className="union-modal-actions">
+          <button type="button" className="secondary-button" onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" className="hard-reset-button" onClick={onConfirm}>
+            Wipe Misfortune
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 export function GameOverlays({
+  achievementNotifications,
+  backgroundCatchUp,
   blueprintEditor,
   monocropWarning,
   blueprintMastery,
   unionConfirmation,
-  cropUnlockNotice,
+  misfortuneWipeConfirmation,
   testingPanel,
 }) {
   return (
     <>
+      {achievementNotifications ? <AchievementNotifications {...achievementNotifications} /> : null}
       {blueprintEditor ? <BlueprintEdit {...blueprintEditor} /> : null}
       {testingPanel ? <TestingPanel {...testingPanel} /> : null}
       {monocropWarning.isOpen ? (
@@ -113,12 +152,14 @@ export function GameOverlays({
           onConfirm={unionConfirmation.onConfirm}
         />
       ) : null}
-      {cropUnlockNotice ? (
-        <aside className="crop-unlock-toast" role="status" aria-live="polite">
-          <span className="crop-unlock-label">New crop unlocked</span>
-          <strong>{cropUnlockNotice.crop}</strong>
-          <span>{cropUnlockNotice.message}</span>
-        </aside>
+      {misfortuneWipeConfirmation.isOpen ? (
+        <MisfortuneWipeConfirmation
+          onCancel={misfortuneWipeConfirmation.onCancel}
+          onConfirm={misfortuneWipeConfirmation.onConfirm}
+        />
+      ) : null}
+      {backgroundCatchUp ? (
+        <BackgroundCatchUpOverlay {...backgroundCatchUp} />
       ) : null}
     </>
   )

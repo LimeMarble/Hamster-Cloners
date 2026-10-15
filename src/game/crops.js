@@ -1,15 +1,96 @@
+import {
+  getLeekAugmentationYieldBonus,
+  getLeechingVineTargetsPerType,
+  getMirrorCornEffectivenessBonus,
+  getMirrorCornReflectionLimitBonus,
+  getSweetPotatoCrowdingBaseBonus,
+  getSweetPotatoBuffDecayDelay,
+  getSweetPotatoGrowthExponentCapBonus,
+  getSplitweedMonocropLimitLevel,
+  hasLeechingVineAugmentation,
+  hasLeekDiagonalAugmentation,
+  hasLeekOrthogonalSquaredAugmentation,
+  hasRichSoilAugmentation,
+  isMirrorCornDebuffRemovalEnabled,
+} from './augmentationLogic.js'
+import { getAreaCropValue } from './cropRequirements.js'
+import {
+  formatWholeNumber,
+  getCachedFormattedNumber,
+} from './numberFormat.js'
 export const SWEET_POTATO_UNLOCK_HAMSTER_COUNT = 125
 export const TURNIP_UNLOCK_CROP_COUNT = 1e8
 export const CROP_PERFECTION_UNLOCK_CROP_COUNT = 1e9
 export const APPLE_TREE_UNLOCK_CROP_COUNT = 1e15
 export const LENTIL_UNLOCK_CROP_COUNT = 8e16
 export const KNOTWEED_UNLOCK_CROP_COUNT = 2e19
+export const WHEAT_UNLOCK_CROP_COUNT = 1.25e32
 export const SUNFLOWER_UNLOCK_CROP_COUNT = 1.42e44
 export const CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT = 500
-// The requested 1.8e308 cost exceeds the native Number range.
+export const SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT = 555
 export const ROOT_TUNNEL_UNLOCK_CROP_COUNT = Number.POSITIVE_INFINITY
 export const CORN_REVEAL_HAMSTER_COUNT = 50
+export const MISFORTUNE_CORN_UNLOCK_CROP_COUNT = 2.5e6
 export const PUMPKIN_REVEAL_HAMSTER_COUNT = 500
+
+// Final requirements per area, without global or demonstration-based scaling.
+export const AREA_CROP_UNLOCK_REQUIREMENTS = Object.freeze({
+  corn: Object.freeze({ main: null, misfortune: MISFORTUNE_CORN_UNLOCK_CROP_COUNT }),
+  turnip: Object.freeze({ main: TURNIP_UNLOCK_CROP_COUNT, misfortune: 1e9 }),
+  appleTree: Object.freeze({ main: APPLE_TREE_UNLOCK_CROP_COUNT, misfortune: 1e18 }),
+  lentil: Object.freeze({ main: LENTIL_UNLOCK_CROP_COUNT, misfortune: 8e20 }),
+  knotweed: Object.freeze({ main: KNOTWEED_UNLOCK_CROP_COUNT, misfortune: 2e22 }),
+  wheat: Object.freeze({ main: WHEAT_UNLOCK_CROP_COUNT, misfortune: 1.25e36 }),
+  sunflower: Object.freeze({ main: SUNFLOWER_UNLOCK_CROP_COUNT, misfortune: 1.42e45 }),
+  cropPerfection: Object.freeze({ main: CROP_PERFECTION_UNLOCK_CROP_COUNT, misfortune: 1e10 }),
+})
+
+export function getCropUnlockBaseRequirement(cropId, activeArea = 'main') {
+  const requirements = AREA_CROP_UNLOCK_REQUIREMENTS[cropId]
+  return requirements ? getAreaCropValue(activeArea, requirements.main, requirements.misfortune) : null
+}
+
+export function getCropUnlockRequirement(cropId, activeArea = 'main') {
+  return getCropUnlockBaseRequirement(cropId, activeArea)
+}
+
+export function hasUnlockedCorn(game, crops = game?.crops) {
+  return game?.activeArea === 'misfortune'
+    ? game.hasUnlockedCorn === true ||
+      Number(crops) >= MISFORTUNE_CORN_UNLOCK_CROP_COUNT
+    : Number(game?.blueprint?.columns) > 1
+}
+
+export function hasUnlockedCarrotInMisfortune(game) {
+  return (
+    hasVisitedMisfortune(game) &&
+    Array.isArray(game?.trade?.rabbitUnlocks) &&
+    game.trade.rabbitUnlocks.includes('carrot')
+  )
+}
+
+export function hasUnlockedCanolaInMisfortune(game) {
+  const misfortune = game?.activeArea === 'misfortune'
+    ? game
+    : game?.areaProgress?.misfortune
+  return Math.max(0, Math.floor(Number(misfortune?.rowDuplicators) || 0)) >=
+    CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT
+}
+
+export function hasUnlockedSoybean(game) {
+  return (
+    hasUnlockedCanolaInMisfortune(game) &&
+    Math.max(0, Math.floor(Number(game?.floorReplicators) || 0)) >=
+      SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT
+  )
+}
+
+export function hasVisitedMisfortune(game) {
+  return game?.activeArea === 'misfortune' || Boolean(game?.areaProgress?.misfortune) ||
+    game?.earnedAchievementIds?.includes('misfortune') === true ||
+    game?.completedMisfortuneUpgrades?.length > 0 ||
+    game?.capybara?.completedDemonstrations?.includes('misfortuneTrial') === true
+}
 
 export const CROP_EFFECT_BYPASS_TIERS = Object.freeze({
   STANDARD: 1,
@@ -20,6 +101,7 @@ export const CROP_DEFINITIONS = {
   leek: {
     name: 'Leek',
     icon: '🥬',
+    image: new URL('../assets/leek.png', import.meta.url).href,
     baseYield: 1,
     hamsterEfficiencyBonus: 0,
     effectDescription: '1 Crop per slot',
@@ -28,6 +110,7 @@ export const CROP_DEFINITIONS = {
   corn: {
     name: 'Corn',
     icon: '🌽',
+    image: new URL('../assets/corn.png', import.meta.url).href,
     baseYield: 2,
     hamsterEfficiencyBonus: -0.1,
     hasDebuff: true,
@@ -57,6 +140,7 @@ export const CROP_DEFINITIONS = {
   turnip: {
     name: 'Turnip',
     icon: '🥕',
+    image: new URL('../assets/turnip.png', import.meta.url).href,
     baseYield: 0.5,
     hamsterEfficiencyBonus: 0,
     adjacentCropEffectModifier: 2,
@@ -65,7 +149,7 @@ export const CROP_DEFINITIONS = {
     unlockDescription: `Unlocks at ${TURNIP_UNLOCK_CROP_COUNT.toLocaleString()} Crops`,
   },
   appleTree: {
-    name: 'Apple Tree',
+    name: 'Apple Sapling',
     icon: '🍎',
     baseYield: 10,
     hamsterEfficiencyBonus: 0,
@@ -98,6 +182,17 @@ export const CROP_DEFINITIONS = {
     effectDescription: '0 Crops per slot · −10 adjacent Crop harvest',
     unlockDescription: 'Unlocks at 20 Qn Crops',
   },
+  wheat: {
+    name: 'Wheat',
+    icon: '🌾',
+    baseYield: 100,
+    hamsterEfficiencyBonus: 0,
+    hasUnboostableRowsPerSecondMultiplier: true,
+    canBeMirrorCornTarget: false,
+    effectDescription:
+      '100 Crops per slot · globally multiplies Hamster Efficiency by 1 + Wheat × log10(Rows/sec) · global multiplier cannot be boosted',
+    unlockDescription: 'Unlocks at 1.25e32 Crops after Row Duplicators',
+  },
   rootTunnel: {
     name: 'Root Tunnel',
     icon: '🕳️',
@@ -106,10 +201,10 @@ export const CROP_DEFINITIONS = {
     doesNotHarvest: true,
     transfersAdjacencies: true,
     canBeMirrorCornTarget: false,
-    temporarilyUnavailable: true,
+    isRewardCrop: true,
     effectDescription:
-      'Transfers crop adjacencies at ×0.8 strength per tunnel tile; carries all effects except Mirror Corn.',
-    unlockDescription: 'Unlocks at 1.8e308 Crops',
+      'Connects up to 2 surrounding sender-recipient pairs, including diagonals; Mirror Corn routes do not use a pair.',
+    unlockDescription: 'Reward for Capybara Demonstration 2',
   },
   sunflower: {
     name: 'Sunflower',
@@ -124,14 +219,114 @@ export const CROP_DEFINITIONS = {
   canola: {
     name: 'Canola',
     icon: '🌼',
-    baseYield: 1,
+    baseYield: 0,
     hamsterEfficiencyBonus: 0,
     monocropCountWeight: 5,
-    globalRowProductionBonusPerHamster: 0.01,
+    globalRowProductionBonusPerHamster: 0.1,
     hasUnboostableActiveHamsterRowMultiplier: true,
     effectDescription:
-      '1 Crop per slot · +1% global Row production per active Hamster · counts as 5 crops toward its Monocrop limit · global Row boost cannot be boosted',
+      '1 Crop per slot · +10% global Row production per active Hamster · counts as 5 crops toward its Monocrop limit · global Row boost cannot be boosted',
     unlockDescription: `Unlocks at ${CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT.toLocaleString()} Row Duplicators`,
+  },
+  carrot: {
+    name: 'Carrot',
+    icon: '🥕',
+    baseYield: 10,
+    hamsterEfficiencyBonus: 0,
+    canBeMirrorCornTarget: false,
+    tradeFaction: 'rabbits',
+    rabbitRelationsBonusAtZero: 0.04,
+    globalHarvestBonusAtZero: 0.1,
+    globalHarvestBonusPerContract: 0.004,
+    highHarvestThreshold: 1e4,
+    highHarvestGlobalHarvestBonus: 0.04,
+    maximumRabbitContractBonus: 1,
+    effectDescription:
+      '10 Crops per slot · +4% Rabbit relations · +10% all Crop harvest, plus +0.4% per completed Rabbit contract (caps at +100%) · +4% all Crop harvest per crop type with more than 10,000 total harvest',
+    unlockDescription: 'Unlock with 500 Rabbit relations',
+  },
+  fourLeafClover: {
+    name: '4-Leaf Clover',
+    icon: '🍀',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    tradeFaction: 'rabbits',
+    effectDescription:
+      'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · only one can be planted per blueprint',
+    unlockDescription: 'Unlock with 77,777 Rabbit relations',
+  },
+  peanuts: {
+    name: 'Peanuts',
+    icon: '🥜',
+    baseYield: 150,
+    hamsterEfficiencyBonus: 0,
+    treatExponentBonus: 0.5,
+    monocropCountExponent: 2,
+    passiveProtectionTier: 2,
+    canBeMirrorCornTarget: false,
+    isRewardCrop: true,
+    displayBeforeCropId: 'soybean',
+    effectDescription:
+      '150 Crops per slot · +0.5 to the Hamster Treat multiplier exponent per Peanut · n Peanuts count as n² crops toward their Monocrop limit · exponent bonus cannot be boosted by adjacent crops',
+    unlockDescription:
+      'Make at least 5 Crops/sec from one field blueprint in Misfortune (Making Peanuts)',
+  },
+  soybean: {
+    name: 'Soybean',
+    icon: '🌱',
+    baseYield: 1,
+    hamsterEfficiencyBonus: 0,
+    machineryPatternBonus: 4.44,
+    effectDescription:
+      '1 Crop per slot · +444% global Row production per horizontal Soybean connection · +444% global Floor production per complete 2×2 Soybean square',
+    unlockDescription: `Unlocks at ${SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT.toLocaleString()} Floor Replicators after Canola in Misfortune`,
+  },
+  shoalGrass: {
+    name: 'Shoal Grass',
+    icon: '🍃',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    isManateeCrop: true,
+    monocropCountWeight: 1,
+    effectDescription:
+      'Destroys its own harvest · can fill at most one third of the Monocrop limit · each connected network multiplies its Leeching Gourd adjacency contribution · a complete orthogonal and diagonal surround nullifies that Crop\'s debuffs, limited to one Crop of each type per connected network',
+    unlockDescription: 'Unlock through the Shoal Grass Bed in the Submerged Garden',
+  },
+  waterLettuce: {
+    name: 'Water Lettuce',
+    icon: '🥬',
+    baseYield: 1,
+    hamsterEfficiencyBonus: 0,
+    isManateeCrop: true,
+    hasDebuff: true,
+    passiveProtectionTier: 2,
+    canBeMirrorCornTarget: false,
+    globalPassiveEffectBonus: 0.2,
+    globalPassiveEffectDebuff: -0.175,
+    infestationThreshold: 11,
+    effectDescription:
+      '1 Crop per slot · +20% to all Crop passive effects except other passive-effect buffs; this bonus is immune to all boosts · −17.5% global Crop passive effects from insects, which can be nullified by Shoal Grass · planting more than 11 infests the entire field and disables every harvest and Crop passive',
+    unlockDescription:
+      'Unlock through the Water Lettuce Bed in the Submerged Garden',
+  },
+  mangroveSapling: {
+    name: 'Mangrove Sapling',
+    icon: '🌳',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    isManateeCrop: true,
+    passiveProtectionTier: 2,
+    canBeMirrorCornTarget: false,
+    maximumPlacementsPerBlueprint: 4,
+    nurseryBonusPerCropType: 0.04,
+    nurseryBonusCap: 3,
+    effectDescription:
+      'Destroys its own harvest · up to four per blueprint · unique Crop types in all surrounding nurseries increase Manatee survey and garden-find value by +4%; perfected types count ×2 and Manatee types count ×3 · field-wide passive modifiers apply, but tile-effect modifiers do not · bonus caps at +300%',
+    unlockDescription:
+      'Unlock through the Mangrove Sapling Bed in the Submerged Garden',
   },
   leechingGourd: {
     name: 'Leeching Gourd',
@@ -156,9 +351,30 @@ export const CROP_DEFINITIONS = {
     internalOnly: true,
     effectDescription: 'Part of a Leeching Gourd',
   },
+  splitweedPart: {
+    name: 'Splitweed',
+    icon: '',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    adjacentHarvestModifier: -10,
+    doesNotHarvest: true,
+    hasDebuff: true,
+    canBeMirrorCornTarget: false,
+    internalOnly: true,
+    isSplitweedPart: true,
+    effectDescription: 'Part of a Splitweed',
+  },
 }
 
 const KNOWN_CROP_IDS = Object.keys(CROP_DEFINITIONS)
+const LEGACY_CROP_IDS = Object.freeze({
+  muskGrass: 'shoalGrass',
+})
+
+export function normalizeCropId(cropId) {
+  return LEGACY_CROP_IDS[cropId] ?? cropId
+}
+
 export const CROP_IDS = KNOWN_CROP_IDS.filter(
   (cropId) =>
     CROP_DEFINITIONS[cropId].internalOnly !== true &&
@@ -171,68 +387,178 @@ export const CROP_PERFECTIONS = {
     cropId: 'leek',
     name: 'Enriching Leek',
     cost: 2e10,
+    misfortuneCost: 2e11,
     adjacentCropYieldBonus: 5,
-    effectDescription: '+5 Crop yield to adjacent crops',
+    effectDescription: '+5 Crop yield to itself and adjacent crops',
   },
   mirrorCorn: {
     id: 'mirrorCorn',
     cropId: 'corn',
     name: 'Mirror Corn',
     cost: 4e12,
+    misfortuneCost: 4e13,
     baseYield: 5,
     hamsterEfficiencyBonus: -0.5,
     diagonalTargetEffectMultiplier: 4,
     maximumReflectionsPerTile: 2,
     baseEffectDescription: '5 Crops per slot · −50% Hamster efficiency',
     effectDescription:
-      'Multiplies one diagonally adjacent crop effect by ×4 · each tile can receive at most two reflections; harsh sunlight reflected by three or more Mirror Corns would burn any crop to a crisp',
+      'Multiplies one diagonally adjacent crop effect by ×4 · each tile safely receives up to two reflections; excess reflected sunlight destroys that crop\'s harvest and passive effects',
+  },
+  fourLeafClover: {
+    name: '4-Leaf Clover',
+    icon: '🍀',
+    baseYield: 0,
+    hamsterEfficiencyBonus: 0,
+    doesNotHarvest: true,
+    effectDescription:
+      'Destroys its own harvest · +(7 + 0.7 × log10(Fields Planted))% Clover Bundle chance per minute, capped at 77% · Only one can be planted per blueprint (allegedly this would ruin its "luck")',
+    unlockDescription: 'Unlock with 77,777 Rabbit relations',
   },
   leechingGourd: {
     id: 'leechingGourd',
     cropId: 'pumpkin',
     name: 'Leeching Gourd',
     cost: 2e19,
+    misfortuneCost: 2e20,
     baseEffectDescription: 'Occupies one 2×2 block and produces no Crops',
     effectDescription:
-      'Nullifies adjacent crop debuffs · +5% all Turnip effectiveness per adjacent debuff; harmful crops count twice',
+      'Nullifies adjacent crop debuffs · +5% all Turnip effectiveness per adjacent debuff; harmful crops count twice · Too destructive on soil integrity to plant multiple in a single field',
   },
   sweetPotato: {
     id: 'sweetPotato',
     cropId: 'sweetPotato',
     name: 'Sweet Potato',
-    cost: 1.25e33,
-    hamsterEfficiencyBonus: 1.25,
-    hasUnboostableRowsPerSecondMultiplier: true,
+    cost: 2e99,
+    hamsterEfficiencyBonus: 0,
+    bedHamsterEfficiencyBonusPerCrop: 2,
+    bedGrowthMultiplier: 2,
+    bedGrowthExponentCap: 11,
+    bedBuffCrowdingMultiplier: 0.5,
     requiresRowDuplicators: true,
-    baseEffectDescription: '1 Crop per slot · +125% Hamster Efficiency',
+    requiresMisfortune: true,
+    requiredMisfortuneUpgradeId: 'oilyTreats',
+    baseEffectDescription: '1 Crop per slot',
     effectDescription:
-      'Globally multiplies Hamster Efficiency by 1 + Sweet Potatoes × log10(Rows/sec) · this multiplier cannot be boosted',
+      'Orthogonally connected Sweet Potatoes form one bed · each bed gives +2 × n × 1.5^min(n − 1, 11) Hamster Efficiency · every unique connected Turnip or Mirror Corn buffs the whole bed once, followed by a ×0.5^(m(m − 1) / 2) crowding penalty',
+  },
+  samplingLentil: {
+    id: 'samplingLentil',
+    cropId: 'lentil',
+    name: 'Sampling Lentil',
+    cost: 2.5e140,
+    requiresMisfortune: true,
+    globalHarvestMultiplier: 1.8,
+    nonTradedNeighborEffectMultiplier: 3,
+    tradedNeighborEffectMultiplier: 6,
+    baseEffectDescription: '25 Crops per slot · ×1.8 all Crop harvest',
+    effectDescription:
+      'Each Sampling Lentil\'s +80% all Crop harvest is multiplied by ×1.5 per unique non-traded Crop type and ×2 per unique traded Crop type among its orthogonal and diagonal neighbors',
   },
   splitweed: {
     id: 'splitweed',
     cropId: 'knotweed',
     name: 'Splitweed',
-    cost: 6e39,
+    cost: 3e38,
+    misfortuneCost: 3e39,
     hasDebuff: true,
     isHarmful: false,
     globalPassiveEffectMultiplier: 0,
-    gourdAdjacencyContribution: 4,
+    gourdAdjacencyContribution: 8,
+    vineNourishmentStrength: 2,
+    mirrorCornEffectivenessBonus: 0.5,
     requiresRowDuplicators: true,
-    monocropThresholdBonusPerCrop: 1,
-    baseEffectDescription: '0 Crops per slot · −10 adjacent Crop harvest',
+    monocropThresholdBonusPerCrop: 2,
+    baseEffectDescription:
+      'Occupies one 2×2 block · 0 Crops · −10 adjacent Crop harvest',
     effectDescription:
-      '×0 global Crop passive effects unless nullified by Leeching Gourd · counts as 4 debuff crops for Leeching Gourd adjacency · +1 Monocrop limit per Splitweed · cannot be boosted',
+      '×0 global Crop passive effects unless nullified by Leeching Gourd · counts as 8 debuff crops for Leeching Gourd adjacency · +2 Monocrop limit and +0.5× Mirror Corn effectiveness per Splitweed · cannot be boosted',
+  },
+  blazingCarrot: {
+    id: 'blazingCarrot',
+    cropId: 'carrot',
+    name: 'Blazing Carrot',
+    cost: 2.5e16,
+    costCurrency: 'rabbitRelations',
+    requiresCapybaraDemonstration: 'introduction',
+    rabbitRelationsBonusAtZero: 0.1,
+    globalHarvestBonusPerRelationLog: 0.5,
+    maximumRelationHarvestBonus: 19,
+    highHarvestThreshold: 1e12,
+    highHarvestGlobalHarvestBonus: 0.25,
+    // Retain the dormant survey effect for a future post-Demo-2 augmentation.
+    surveyTimeEffectEnabled: false,
+    surveyTimeReductionPerCrop: 0.02,
+    maximumSurveyRelationLog: 40,
+    maximumSurveyRelations: 1e40,
+    maximumSurveyTimeReduction: 0.8,
+    baseEffectDescription: '10 Crops per slot',
+    effectDescription:
+      '+10% Rabbit relations · +50% all Crop harvest per log10(total Rabbit relations earned), capped at +1,900% · +25% all Crop harvest per Crop type with at least 1T harvest',
+    manateeEffectDescription:
+      '−2% survey time per active Blazing Carrot, with contributing Carrots limited by log10(total Rabbit relations earned) and capped at 10DDc relations',
   },
 }
 
 export const CROP_PERFECTION_IDS = Object.keys(CROP_PERFECTIONS)
 
+export function getCropUnlockDescription(
+  cropId,
+  activeArea = 'main',
+  hasFiveLeafClover = false,
+) {
+  const format = (value) => getCachedFormattedNumber(value, 0)
+  const formatRequirement = (id) => format(getCropUnlockRequirement(id, activeArea))
+  const formatCounter = (value) => formatWholeNumber(value)
+
+  switch (cropId) {
+    case 'corn':
+      return activeArea === 'misfortune'
+        ? `Unlocks at ${formatRequirement('corn')} Crops`
+        : CROP_DEFINITIONS.corn.unlockDescription
+    case 'sweetPotato':
+      return `Unlocks at ${formatCounter(SWEET_POTATO_UNLOCK_HAMSTER_COUNT)} Hamsters` +
+        (activeArea === 'misfortune' ? '' : ' after Pumpkin')
+    case 'turnip':
+      return `Unlocks at ${formatRequirement('turnip')} Crops`
+    case 'appleTree':
+      return `Unlocks at ${formatRequirement(cropId)} Crops`
+    case 'lentil':
+      return `Unlocks at ${formatRequirement(cropId)} Crops`
+    case 'knotweed':
+      return `Unlocks at ${formatRequirement(cropId)} Crops`
+    case 'wheat':
+      return `Unlocks at ${formatRequirement(cropId)} Crops after Row Duplicators`
+    case 'rootTunnel':
+      return 'Reward for Capybara Demonstration 2'
+    case 'sunflower':
+      return `Unlocks at ${formatRequirement('sunflower')} Crops`
+    case 'canola':
+      return `Unlocks at ${formatCounter(CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT)} Row Duplicators`
+    case 'carrot':
+      return `Unlock with ${format(500)} Rabbit relations`
+    case 'fourLeafClover':
+      if (activeArea === 'misfortune' && !hasFiveLeafClover) {
+        return 'This clover is too fragile to stand against misfortune, try to find a way to perfect it'
+      }
+      return `Unlock with ${format(27777)} Rabbit relations`
+    case 'soybean':
+      return `Unlocks at ${formatCounter(SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT)} Floor Replicators after Canola in Misfortune`
+    default:
+      return CROP_DEFINITIONS[cropId]?.unlockDescription ?? ''
+  }
+}
+
 export function isKnownCrop(crop) {
-  return KNOWN_CROP_IDS.includes(crop)
+  return KNOWN_CROP_IDS.includes(normalizeCropId(crop))
 }
 
 export function isCropTemporarilyUnavailable(cropId) {
   return CROP_DEFINITIONS[cropId]?.temporarilyUnavailable === true
+}
+
+export function isCropPerfectionTemporarilyUnavailable(perfectionId) {
+  return CROP_PERFECTIONS[perfectionId]?.temporarilyUnavailable === true
 }
 
 export function hasCropPerfection(completedCropPerfections, perfectionId) {
@@ -246,10 +572,16 @@ export function getCropPerfection(cropId, completedCropPerfections) {
   return Object.values(CROP_PERFECTIONS).find(
     (perfection) =>
       perfection.cropId === cropId &&
+      !isCropPerfectionTemporarilyUnavailable(perfection.id) &&
       hasCropPerfection(completedCropPerfections, perfection.id),
   )
 }
 
+export function getCropImage(cropId, completedCropPerfections) {
+  const perfection = getCropPerfection(cropId, completedCropPerfections)
+
+  return perfection?.image ?? CROP_DEFINITIONS[cropId]?.image ?? null
+}
 export function getCropName(cropId, completedCropPerfections) {
   const perfection = getCropPerfection(cropId, completedCropPerfections)
 
@@ -275,7 +607,121 @@ export function getCropPlacementName(cropId, completedCropPerfections) {
     : getCropName(cropId, completedCropPerfections)
 }
 
-export function getCropEffectDescription(cropId, completedCropPerfections) {
+function getPerfectionBaseEffectDescription(
+  cropId,
+  perfection,
+  cropDefinition,
+  seedAugmentations,
+) {
+  if (cropId === 'corn' && perfection?.id === 'mirrorCorn') {
+    return isMirrorCornDebuffRemovalEnabled(seedAugmentations)
+      ? '5 Crops per slot · Hamster efficiency debuff removed'
+      : perfection.baseEffectDescription
+  }
+
+  return perfection.baseEffectDescription ?? cropDefinition.effectDescription
+}
+
+function getPerfectionEffectDescription(
+  cropId,
+  perfection,
+  seedAugmentations,
+  revealManateeEffects = false,
+) {
+  if (cropId === 'pumpkin' && perfection?.id === 'leechingGourd') {
+    return hasLeechingVineAugmentation(seedAugmentations)
+      ? `${perfection.effectDescription} · draws one configurable bending vine through empty plots; nourishment strength adds one tile of range and +0.1 extra Gourd exponent per point, while each unique adjacent debuff Crop type adds ${getLeechingVineTargetsPerType(seedAugmentations)} Turnip targets`
+      : perfection.effectDescription
+  }
+
+  if (cropId === 'corn' && perfection?.id === 'mirrorCorn') {
+    const effectMultiplier =
+      perfection.diagonalTargetEffectMultiplier +
+      getMirrorCornEffectivenessBonus(seedAugmentations)
+    const safeReflectionLimit =
+      perfection.maximumReflectionsPerTile +
+      getMirrorCornReflectionLimitBonus(seedAugmentations)
+
+    return `Multiplies one diagonally adjacent Crop effect by ×${effectMultiplier} · each tile safely receives up to ${safeReflectionLimit} reflections; excess reflected sunlight destroys that Crop's harvest and passive effects`
+  }
+
+  if (cropId === 'carrot' && perfection?.id === 'blazingCarrot') {
+    const baseDescription =
+      `+${perfection.rabbitRelationsBonusAtZero * 100}% Rabbit relations · ` +
+      `+${perfection.globalHarvestBonusPerRelationLog * 100}% all Crop harvest per log10(total Rabbit relations earned), capped at +${perfection.maximumRelationHarvestBonus * 100}% · ` +
+      `+${perfection.highHarvestGlobalHarvestBonus * 100}% all Crop harvest per Crop type with at least ${getCachedFormattedNumber(perfection.highHarvestThreshold, 0)} harvest`
+
+    if (!revealManateeEffects || perfection.surveyTimeEffectEnabled !== true) {
+      return baseDescription
+    }
+
+    return (
+      `${baseDescription} · −${perfection.surveyTimeReductionPerCrop * 100}% survey time per active Blazing Carrot, ` +
+      `with contributing Carrots limited by log10(total Rabbit relations earned), capped at −${perfection.maximumSurveyTimeReduction * 100}% at ${getCachedFormattedNumber(perfection.maximumSurveyRelations, 0)} total Rabbit relations`
+    )
+  }
+
+  if (cropId === 'knotweed' && perfection?.id === 'splitweed') {
+    const augmentationLevel = getSplitweedMonocropLimitLevel(
+      seedAugmentations,
+    )
+    return augmentationLevel > 0
+      ? `${perfection.effectDescription} · +${augmentationLevel} Monocrop limit per directly adjacent Crop that inherently produces no harvest`
+      : perfection.effectDescription
+  }
+
+  if (cropId === 'sweetPotato' && perfection?.id === 'sweetPotato') {
+    const growthExponentCap =
+      perfection.bedGrowthExponentCap +
+      getSweetPotatoGrowthExponentCapBonus(seedAugmentations)
+    const crowdingBase = Math.min(
+      1,
+      perfection.bedBuffCrowdingMultiplier +
+        getSweetPotatoCrowdingBaseBonus(seedAugmentations),
+    )
+    const buffDecayDelay = getSweetPotatoBuffDecayDelay(seedAugmentations)
+    const effectiveBuffCount = buffDecayDelay > 0 ? 'm′' : 'm'
+    const buffDecayDelayDescription = buffDecayDelay > 0
+      ? `, where m′ = max(0, m − ${buffDecayDelay})`
+      : ''
+
+    return (
+      `Orthogonally connected Sweet Potatoes form one bed · each bed gives ` +
+      `+${perfection.bedHamsterEfficiencyBonusPerCrop} × n × ` +
+      `${perfection.bedGrowthMultiplier}^min(n − 1, ${growthExponentCap}) Hamster Efficiency · ` +
+      `every unique connected Turnip or Mirror Corn buffs the whole bed once, ` +
+      `followed by a ×${getCachedFormattedNumber(crowdingBase, 2)}^(${effectiveBuffCount} × (${effectiveBuffCount} − 1) / 2) crowding penalty`
+      + buffDecayDelayDescription
+    )
+  }
+
+  if (cropId !== 'leek' || perfection?.id !== 'enrichingLeek') {
+    return perfection.effectDescription
+  }
+
+  const adjacentCropYieldBonus =
+    perfection.adjacentCropYieldBonus +
+    getLeekAugmentationYieldBonus(seedAugmentations)
+  const adjacencyDescription = hasLeekDiagonalAugmentation(seedAugmentations)
+    ? 'orthogonally and diagonally adjacent crops'
+    : 'adjacent crops'
+
+  const extendedReachDescription = hasLeekOrthogonalSquaredAugmentation(seedAugmentations)
+    ? ' · also reaches crops two tiles away orthogonally at full strength'
+    : ''
+  const description = `+${adjacentCropYieldBonus} Crop yield to itself and ${adjacencyDescription}` +
+    extendedReachDescription
+  return hasRichSoilAugmentation(seedAugmentations)
+    ? description + ' · Rich Soil: in Misfortune only, each enrichment contribution is multiplied by max(1, the recipient\'s base harvest)'
+    : description
+}
+
+export function getCropEffectDescription(
+  cropId,
+  completedCropPerfections,
+  seedAugmentations = {},
+  revealManateeEffects = false,
+) {
   const cropDefinition = CROP_DEFINITIONS[cropId]
   const perfection = getCropPerfection(cropId, completedCropPerfections)
 
@@ -283,18 +729,27 @@ export function getCropEffectDescription(cropId, completedCropPerfections) {
     return cropId
   }
 
+  if (
+    cropId === 'leechingGourd' &&
+    hasLeechingVineAugmentation(seedAugmentations)
+  ) {
+    return `${cropDefinition.effectDescription} · draws one configurable bending vine through empty plots; nourishment strength adds one tile of range and +0.1 extra Gourd exponent per point, while each unique adjacent debuff Crop type adds ${getLeechingVineTargetsPerType(seedAugmentations)} Turnip targets`
+  }
+
   if (cropId === 'pumpkin' && perfection?.id === 'leechingGourd') {
     return cropDefinition.effectDescription
   }
 
   return perfection
-    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} · ${perfection.effectDescription}`
+    ? `${getPerfectionBaseEffectDescription(cropId, perfection, cropDefinition, seedAugmentations)} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations, revealManateeEffects)}`
     : cropDefinition.effectDescription
 }
 
 export function getCropPlacementEffectDescription(
   cropId,
   completedCropPerfections,
+  seedAugmentations = {},
+  revealManateeEffects = false,
 ) {
   const cropDefinition = CROP_DEFINITIONS[cropId]
   const perfection = getCropPerfection(cropId, completedCropPerfections)
@@ -304,10 +759,9 @@ export function getCropPlacementEffectDescription(
   }
 
   return perfection
-    ? `${perfection.baseEffectDescription ?? cropDefinition.effectDescription} · ${perfection.effectDescription}`
+    ? `${getPerfectionBaseEffectDescription(cropId, perfection, cropDefinition, seedAugmentations)} · ${getPerfectionEffectDescription(cropId, perfection, seedAugmentations, revealManateeEffects)}`
     : cropDefinition.effectDescription
 }
-
 export function isCropEffectModifier(cropId) {
   return Boolean(CROP_DEFINITIONS[cropId]?.adjacentCropEffectModifier)
 }
@@ -323,11 +777,25 @@ export function canBeMirrorCornTarget(cropId) {
   return CROP_DEFINITIONS[cropId]?.canBeMirrorCornTarget !== false
 }
 
-export function getAdjacentCropYieldBonus(cropId, completedCropPerfections) {
+export function isTradedCrop(cropId) {
   return (
+    cropId !== 'rootTunnel' &&
+    Boolean(CROP_DEFINITIONS[cropId]?.tradeFaction)
+  )
+}
+
+export function getAdjacentCropYieldBonus(
+  cropId,
+  completedCropPerfections,
+  seedAugmentations = {},
+) {
+  const baseBonus =
     getCropPerfection(cropId, completedCropPerfections)
       ?.adjacentCropYieldBonus ?? 0
-  )
+
+  return cropId === 'leek' && baseBonus > 0
+    ? baseBonus + getLeekAugmentationYieldBonus(seedAugmentations)
+    : baseBonus
 }
 
 export function getUnlockedCropIds(
@@ -341,10 +809,18 @@ export function getUnlockedCropIds(
   hasUnlockedRootTunnel = false,
   hasUnlockedSunflower = false,
   rowDuplicators = 0,
+  hasUnlockedCarrot = false,
+  hasUnlockedFourLeafClover = false,
+  hasUnlockedWheat = false,
+  unlockedManateeCropIds = [],
+  floorReplicators = 0,
+  hasUnlockedPeanuts = false,
+  hasMisfortuneCanola = rowDuplicators >= CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT,
+  cornUnlocked = blueprint.columns > 1,
 ) {
   const unlockedCrops = ['leek']
 
-  if (blueprint.columns > 1) {
+  if (cornUnlocked) {
     unlockedCrops.push('corn')
   }
   if (unionized) {
@@ -365,6 +841,9 @@ export function getUnlockedCropIds(
   if (hasUnlockedKnotweed) {
     unlockedCrops.push('knotweed')
   }
+  if (hasUnlockedWheat) {
+    unlockedCrops.push('wheat')
+  }
   if (hasUnlockedRootTunnel && !isCropTemporarilyUnavailable('rootTunnel')) {
     unlockedCrops.push('rootTunnel')
   }
@@ -374,37 +853,95 @@ export function getUnlockedCropIds(
   if (rowDuplicators >= CANOLA_UNLOCK_ROW_DUPLICATOR_COUNT) {
     unlockedCrops.push('canola')
   }
+  if (hasUnlockedCarrot) {
+    unlockedCrops.push('carrot')
+  }
+  if (hasUnlockedFourLeafClover) {
+    unlockedCrops.push('fourLeafClover')
+  }
+  if (
+    hasMisfortuneCanola &&
+    floorReplicators >= SOYBEAN_UNLOCK_FLOOR_REPLICATOR_COUNT
+  ) {
+    unlockedCrops.push('soybean')
+  }
+  unlockedManateeCropIds.forEach((cropId) => {
+    if (CROP_DEFINITIONS[cropId]?.isManateeCrop && !unlockedCrops.includes(cropId)) {
+      unlockedCrops.push(cropId)
+    }
+  })
+  if (hasUnlockedPeanuts) unlockedCrops.push('peanuts')
 
   return unlockedCrops
 }
 
-export function getVisibleCropIds(unlockedCropIds, totalHamstersHired = 0) {
+export function getVisibleCropIds(
+  unlockedCropIds,
+  totalHamstersHired = 0,
+  hasUnlockedRowDuplicators = false,
+  hasMisfortuneCanola = false,
+  hasMisfortuneVisit = hasMisfortuneCanola,
+  activeArea = 'main',
+) {
   const visibleCropIds = ['leek']
+  const followsCropOrder = activeArea !== 'misfortune'
+  const progressionCropIds = CROP_IDS.filter(
+    (cropId) =>
+      CROP_DEFINITIONS[cropId]?.isManateeCrop !== true &&
+      CROP_DEFINITIONS[cropId]?.isRewardCrop !== true,
+  )
 
-  for (let index = 1; index < CROP_IDS.length; index += 1) {
-    const cropId = CROP_IDS[index]
-    const previousCropId = CROP_IDS[index - 1]
+  for (let index = 1; index < progressionCropIds.length; index += 1) {
+    const cropId = progressionCropIds[index]
+    const previousCropId = progressionCropIds[index - 1]
 
-    if (!unlockedCropIds.includes(previousCropId)) {
+    if (followsCropOrder && !unlockedCropIds.includes(previousCropId)) {
       break
     }
 
     if (
-      cropId === 'corn' &&
-      totalHamstersHired < CORN_REVEAL_HAMSTER_COUNT
+      (cropId === 'corn' && totalHamstersHired < CORN_REVEAL_HAMSTER_COUNT) ||
+      (cropId === 'pumpkin' && totalHamstersHired < PUMPKIN_REVEAL_HAMSTER_COUNT) ||
+      (cropId === 'wheat' && !hasUnlockedRowDuplicators) ||
+      (cropId === 'soybean' && (!hasMisfortuneVisit || !hasMisfortuneCanola))
     ) {
-      break
-    }
-
-    if (
-      cropId === 'pumpkin' &&
-      totalHamstersHired < PUMPKIN_REVEAL_HAMSTER_COUNT
-    ) {
-      break
+      if (followsCropOrder) break
+      continue
     }
 
     visibleCropIds.push(cropId)
   }
+
+  if (
+    hasMisfortuneCanola &&
+    hasMisfortuneVisit &&
+    !visibleCropIds.includes('soybean')
+  ) {
+    visibleCropIds.push('soybean')
+  }
+
+  CROP_IDS.filter(
+    (cropId) => CROP_DEFINITIONS[cropId]?.isRewardCrop === true,
+  ).forEach((cropId) => {
+    if (unlockedCropIds.includes(cropId)) {
+      const insertionIndex = visibleCropIds.indexOf(
+        CROP_DEFINITIONS[cropId].displayBeforeCropId,
+      )
+      if (insertionIndex >= 0) {
+        visibleCropIds.splice(insertionIndex, 0, cropId)
+      } else {
+        visibleCropIds.push(cropId)
+      }
+    }
+  })
+
+  CROP_IDS.filter(
+    (cropId) => CROP_DEFINITIONS[cropId]?.isManateeCrop === true,
+  ).forEach((cropId) => {
+    if (unlockedCropIds.includes(cropId)) {
+      visibleCropIds.push(cropId)
+    }
+  })
 
   return visibleCropIds
 }

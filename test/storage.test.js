@@ -3,10 +3,15 @@ import test from 'node:test'
 import {
   exportGame,
   importGame,
+  importGameSnapshot,
   normalizeGame,
   SAVE_FORMAT_VERSION,
 } from '../src/game/storage.js'
-import { SUNFLOWER_UNLOCK_CROP_COUNT } from '../src/game/crops.js'
+import {
+  SUNFLOWER_UNLOCK_CROP_COUNT,
+  WHEAT_UNLOCK_CROP_COUNT,
+} from '../src/game/crops.js'
+import { createInitialFortuneState } from '../src/game/fortuneLogic.js'
 
 test('legacy saves reset blueprint progress after the expansion axes swap', () => {
   const migratedGame = normalizeGame({
@@ -59,6 +64,82 @@ test('current saves retain valid Mirror Corn diagonal tile targets', () => {
   assert.deepEqual(emptyTargetSave.blueprint.mirrorCornTargets, [3, null, null, null])
 })
 
+test('legacy Musk Grass blueprint tiles migrate to Shoal Grass', () => {
+  const migratedGame = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    blueprint: {
+      rows: 1,
+      columns: 2,
+      cells: ['leek', 'muskGrass'],
+    },
+    blueprintSlots: [
+      {
+        rows: 1,
+        columns: 2,
+        cells: ['muskGrass', 'leek'],
+      },
+    ],
+  })
+
+  assert.deepEqual(migratedGame.blueprint.cells, ['shoalGrass', 'leek'])
+  assert.deepEqual(migratedGame.blueprintSlots[0].cells, ['shoalGrass', 'leek'])
+})
+
+test('current saves retain valid Splitweed footprints and clear legacy single tiles', () => {
+  const validSave = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    hasUnlockedKnotweed: true,
+    completedCropPerfections: ['splitweed'],
+    blueprint: {
+      rows: 2,
+      columns: 2,
+      cells: [
+        'knotweed',
+        'splitweedPart',
+        'splitweedPart',
+        'splitweedPart',
+      ],
+    },
+  })
+  const legacySave = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    hasUnlockedKnotweed: true,
+    completedCropPerfections: ['splitweed'],
+    blueprint: {
+      rows: 2,
+      columns: 2,
+      cells: ['knotweed', 'leek', null, null],
+    },
+  })
+
+  assert.deepEqual(validSave.blueprint.cells, [
+    'knotweed',
+    'splitweedPart',
+    'splitweedPart',
+    'splitweedPart',
+  ])
+  assert.deepEqual(legacySave.blueprint.cells, [null, 'leek', null, null])
+})
+
+test('Wheat requires Row Duplicators and saves preserve Sweet Potato perfection', () => {
+  const withoutDuplicators = normalizeGame({
+    crops: WHEAT_UNLOCK_CROP_COUNT,
+    completedCropPerfections: ['sweetPotato'],
+  })
+  const withDuplicators = normalizeGame({
+    crops: WHEAT_UNLOCK_CROP_COUNT,
+    hasUnlockedRowDuplicators: true,
+    completedCropPerfections: ['sweetPotato'],
+  })
+
+  assert.equal(withoutDuplicators.hasUnlockedWheat, false)
+  assert.equal(withDuplicators.hasUnlockedWheat, true)
+  assert.equal(
+    withDuplicators.completedCropPerfections.includes('sweetPotato'),
+    true,
+  )
+})
+
 test('current saves retain independent unlocked blueprint slots', () => {
   const migratedGame = normalizeGame({
     blueprintExpansionAxesSwapped: true,
@@ -82,7 +163,7 @@ test('current saves retain independent unlocked blueprint slots', () => {
   assert.deepEqual(migratedGame.blueprintSlots[0].cells, ['leek', 'corn'])
 })
 
-test('current saves remove temporarily unavailable crops from every blueprint slot', () => {
+test('current saves retain Root Tunnel after its Demonstration reward unlock', () => {
   const migratedGame = normalizeGame({
     blueprintExpansionAxesSwapped: true,
     hasUnlockedRootTunnel: true,
@@ -92,10 +173,20 @@ test('current saves remove temporarily unavailable crops from every blueprint sl
       rows: 1,
       columns: 3,
       cells: ['leek', 'rootTunnel', 'corn'],
+      rootTunnelConnections: [
+        { tunnelIndex: 1, senderIndex: 0, recipientIndex: 2 },
+      ],
     },
     blueprintSlots: [
       { rows: 1, columns: 3, cells: ['rootTunnel', 'corn', 'leek'] },
-      { rows: 1, columns: 3, cells: ['leek', 'rootTunnel', 'corn'] },
+      {
+        rows: 1,
+        columns: 3,
+        cells: ['leek', 'rootTunnel', 'corn'],
+        rootTunnelConnections: [
+          { tunnelIndex: 1, senderIndex: 0, recipientIndex: 2 },
+        ],
+      },
       { rows: 1, columns: 3, cells: ['corn', 'leek', 'rootTunnel'] },
     ],
     activeBlueprintSlot: 1,
@@ -105,12 +196,19 @@ test('current saves remove temporarily unavailable crops from every blueprint sl
   assert.deepEqual(
     migratedGame.blueprintSlots.map((blueprint) => blueprint.cells),
     [
-      [null, 'corn', 'leek'],
-      ['leek', null, 'corn'],
-      ['corn', 'leek', null],
+      ['rootTunnel', 'corn', 'leek'],
+      ['leek', 'rootTunnel', 'corn'],
+      ['corn', 'leek', 'rootTunnel'],
     ],
   )
-  assert.deepEqual(migratedGame.blueprint.cells, ['leek', null, 'corn'])
+  assert.deepEqual(migratedGame.blueprint.cells, [
+    'leek',
+    'rootTunnel',
+    'corn',
+  ])
+  assert.deepEqual(migratedGame.blueprint.rootTunnelConnections, [
+    { tunnelIndex: 1, senderIndex: 0, recipientIndex: 2 },
+  ])
 })
 
 test('Sunflower unlock migration ignores Row Duplicators and uses its Crop milestone', () => {
@@ -187,31 +285,150 @@ test('statistics persist and older saves receive safe lifetime defaults', () => 
 test('testing panel unlock and toggle states persist safely', () => {
   const testingSave = normalizeGame({
     testingPanelUnlocked: true,
+    testingPanelVisible: false,
     testingCheats: {
       cropMultiplierEnabled: true,
       hamsterEfficiencyEnabled: true,
+      oneSecondManateeSurveysEnabled: true,
     },
   })
+  const legacyUnlockedSave = normalizeGame({ testingPanelUnlocked: true })
   const ordinarySave = normalizeGame({})
 
   assert.equal(testingSave.testingPanelUnlocked, true)
+  assert.equal(testingSave.testingPanelVisible, false)
+  assert.equal(legacyUnlockedSave.testingPanelVisible, true)
   assert.deepEqual(testingSave.testingCheats, {
     cropMultiplierEnabled: true,
     hamsterEfficiencyEnabled: true,
+    oneSecondManateeSurveysEnabled: true,
   })
   assert.equal(ordinarySave.testingPanelUnlocked, false)
+  assert.equal(ordinarySave.testingPanelVisible, false)
   assert.deepEqual(ordinarySave.testingCheats, {
     cropMultiplierEnabled: false,
     hamsterEfficiencyEnabled: false,
+    oneSecondManateeSurveysEnabled: false,
   })
 })
 
-test('number notation persists and defaults safely to suffix notation', () => {
-  assert.equal(normalizeGame({ numberNotation: 'scientific' }).numberNotation, 'scientific')
+test('number notation and suffix threshold persist with safe defaults', () => {
+  const scientific = normalizeGame({
+    numberNotation: 'scientific',
+    suffixScientificExponent: 33,
+  })
+
+  assert.equal(scientific.numberNotation, 'scientific')
+  assert.equal(scientific.suffixScientificExponent, 33)
   assert.equal(normalizeGame({ numberNotation: 'unknown' }).numberNotation, 'suffix')
+  assert.equal(normalizeGame({ suffixScientificExponent: 999 }).suffixScientificExponent, 303)
   assert.equal(normalizeGame({}).numberNotation, 'suffix')
+  assert.equal(normalizeGame({}).suffixScientificExponent, 303)
 })
 
+test('Trade state persists with safe migration defaults', () => {
+  const tradeSave = normalizeGame({
+    trade: {
+      established: true,
+      rabbitRelations: 4321,
+      rabbitUnlocks: ['hamsterEfficiency', 'hamsterEfficiency', 'invalid'],
+      rabbitBulkContractElapsedSeconds: 0.04,
+      rabbitBulkContractFractionalCompletions: 0.25,
+      rabbitBulkRelationRemainder: 0.75,
+      rabbitContract: {
+        cropId: 'leek',
+        factor: 3e7,
+        fieldsPlanted: 1e40,
+        requiredAmount: 3e47,
+        progress: 2e47,
+        relationsReward: 120,
+      },
+    },
+  })
+  const olderSave = normalizeGame({})
+
+  assert.equal(tradeSave.trade.established, true)
+  assert.equal(tradeSave.trade.rabbitRelations, 4321)
+  assert.equal(tradeSave.trade.totalRabbitRelationsEarned, 8765)
+  assert.deepEqual(tradeSave.trade.rabbitUnlocks, ['hamsterEfficiency'])
+  assert.equal(tradeSave.trade.rabbitContracts.length, 3)
+  assert.equal(tradeSave.trade.rabbitContracts[0].cropId, 'leek')
+  assert.equal(tradeSave.trade.rabbitContracts[0].progress, 2e47)
+  assert.equal(tradeSave.trade.rabbitContractsCompleted, 0)
+  assert.equal(tradeSave.trade.rabbitBulkContractElapsedSeconds, 0.04)
+  assert.equal(tradeSave.trade.rabbitBulkContractFractionalCompletions, 0.25)
+  assert.equal(tradeSave.trade.rabbitBulkRelationRemainder, 0.75)
+  assert.deepEqual(olderSave.trade, {
+    established: false,
+    rabbitRelations: 0,
+    totalRabbitRelationsEarned: 0,
+    rabbitContractsCompleted: 0,
+    rabbitContracts: [],
+    rabbitUnlocks: [],
+    rabbitContractsBlazing: false,
+    rabbitContractPaceTransitionSeconds: 0,
+    rabbitContractPaceSampleSeconds: 0.1,
+    rabbitContractEstimatedCompletionsPerSecond: 0,
+    rabbitBulkContractElapsedSeconds: 0,
+    rabbitBulkContractFractionalCompletions: 0,
+    rabbitBulkRelationRemainder: 0,
+  })
+})
+test('legacy Rabbit blueprint expansions migrate to free blueprint space', () => {
+  const migratedGame = normalizeGame({
+    blueprintExpansionAxesSwapped: true,
+    blueprint: {
+      rows: 2,
+      columns: 2,
+      cells: ['leek', null, null, null],
+    },
+    completedBlueprintExpansions: ['firstRow', 'firstColumn'],
+    trade: {
+      established: true,
+      rabbitUnlocks: ['rowExpansion', 'columnExpansion'],
+    },
+  })
+
+  assert.equal(migratedGame.blueprint.rows, 2)
+  assert.equal(migratedGame.blueprint.columns, 2)
+  assert.deepEqual(migratedGame.completedBlueprintExpansions, [])
+  assert.deepEqual(migratedGame.rabbitBlueprintExpansions, {
+    row: 1,
+    column: 1,
+  })
+})
+
+test('Clover bundles and active Breezes of Fortune persist with safe defaults', () => {
+  const cloverSave = normalizeGame({
+    fortune: {
+      bundle: { x: 25, y: 75 },
+      secondsTowardBundleRoll: 42,
+      activeEffects: [
+        { id: 'bounty', remainingSeconds: 31 },
+      ],
+      notice: { effectId: 'bounty', remainingSeconds: 4 },
+    },
+  })
+  const olderSave = normalizeGame({})
+
+  assert.deepEqual(cloverSave.fortune, {
+    ...createInitialFortuneState(),
+    bundles: [{ x: 25, y: 75 }],
+    secondsTowardBundleRoll: 42,
+    activeEffects: [
+      { id: 'bounty', remainingSeconds: 31 },
+    ],
+    notice: { effectId: 'bounty', remainingSeconds: 4 },
+  })
+  assert.deepEqual(olderSave.fortune, {
+    ...createInitialFortuneState(),
+    bundles: [],
+    secondsTowardBundleRoll: 0,
+    activeEffects: [],
+    notice: null,
+  })
+  assert.deepEqual(importGame(exportGame(cloverSave)).fortune, cloverSave.fortune)
+})
 test('exports and imports a versioned Base64 save code', () => {
   const saveCode = exportGame({
     crops: 12_345,
@@ -234,4 +451,33 @@ test('rejects invalid and unsupported save codes', () => {
     () => importGame(btoa(JSON.stringify({ version: 99, game: {} }))),
     /unsupported version/,
   )
+})
+
+test('save snapshots preserve their simulation timestamp', () => {
+  const saveCode = exportGame(
+    {
+      crops: 12_345,
+      hamsters: 10,
+      blueprintExpansionAxesSwapped: true,
+      blueprint: { cells: ['leek'] },
+    },
+    1_000,
+  )
+  const snapshot = importGameSnapshot(saveCode, 2_000)
+
+  assert.equal(snapshot.savedAt, 1_000)
+  assert.equal(snapshot.game.crops, 12_345)
+})
+
+test('save snapshots clamp future timestamps to the current time', () => {
+  const saveCode = exportGame(
+    {
+      crops: 10,
+      blueprintExpansionAxesSwapped: true,
+      blueprint: { cells: ['leek'] },
+    },
+    5_000,
+  )
+
+  assert.equal(importGameSnapshot(saveCode, 2_000).savedAt, 2_000)
 })

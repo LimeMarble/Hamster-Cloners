@@ -1,0 +1,113 @@
+.background-catch-up-overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--text-strong);
+  background:
+    radial-gradient(circle at 50% 38%, rgb(45 105 62 / 24%), transparent 38%),
+    #070b08;
+}
+
+.background-catch-up-panel {
+  display: grid;
+  gap: 18px;
+  width: min(620px, 100%);
+  padding: clamp(24px, 5vw, 42px);
+  border: 1px solid #397a4e;
+  background: linear-gradient(145deg, #111b14, #090e0b);
+  box-shadow:
+    0 24px 80px rgb(0 0 0 / 70%),
+    0 0 45px rgb(98 221 137 / 10%);
+}
+
+.background-catch-up-panel h2 {
+  margin: -8px 0 2px;
+  color: var(--text-strong);
+  font-size: clamp(1.7rem, 5vw, 2.5rem);
+}
+
+.background-catch-up-panel > p:not(.eyebrow) {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.background-catch-up-counter {
+  display: grid;
+  gap: 2px;
+  padding: 18px;
+  border: 1px solid #315e3e;
+  text-align: center;
+  background: #0b130e;
+}
+
+.background-catch-up-counter strong {
+  color: var(--field-green);
+  font: 700 clamp(2.2rem, 9vw, 4.4rem) ui-monospace, SFMono-Regular,
+    Menlo, Consolas, monospace;
+  line-height: 1;
+}
+
+.background-catch-up-counter span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.background-catch-up-track {
+  height: 12px;
+  overflow: hidden;
+  border: 1px solid #315e3e;
+  background: #101a13;
+}
+
+.background-catch-up-track span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #27864b, var(--field-green));
+  box-shadow: 0 0 14px rgb(98 221 137 / 38%);
+  transition: width 100ms linear;
+}
+
+.background-catch-up-compression {
+  color: var(--field-green) !important;
+  font-weight: 700;
+  text-align: center;
+}
+
+.background-catch-up-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.background-catch-up-actions button {
+  width: 100%;
+  min-height: 48px;
+}
+
+.background-catch-up-actions button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+  opacity: 0.42;
+}
+
+@media (max-width: 560px) {
+  .background-catch-up-overlay {
+    padding: 14px;
+  }
+
+  .background-catch-up-panel {
+    gap: 14px;
+    padding: 22px 16px;
+  }
+
+  .background-catch-up-actions {
+    grid-template-columns: 1fr;
+  }
+}

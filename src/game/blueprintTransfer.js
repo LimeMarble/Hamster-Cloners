@@ -1,5 +1,9 @@
 import { createBlueprint } from './blueprintLogic.js'
-import { isKnownCrop } from './crops.js'
+import { isKnownCrop, normalizeCropId } from './crops.js'
+import { getShoalGrassPlacementLimit } from './cropEffects.js'
+import { MANGROVE_SAPLING_PLACEMENT_LIMIT } from './mangroveSaplingLogic.js'
+import { remapRootTunnelConnections } from './rootTunnelLogic.js'
+import { remapLeechingVines } from './leechingVineLogic.js'
 
 export const BLUEPRINT_FORMAT_VERSION = 1
 const BLUEPRINT_FORMAT_TYPE = 'hamster-cloners-blueprint'
@@ -62,6 +66,68 @@ function parseBlueprintCode(blueprintCode) {
   return payload.blueprint
 }
 
+function resizeBlueprintFromTopLeft(
+  blueprint,
+  targetRows,
+  targetColumns,
+) {
+  const cells = Array(targetRows * targetColumns).fill(null)
+  const mirrorCornTargets = Array(targetRows * targetColumns).fill(null)
+  const retainedRows = Math.min(blueprint.rows, targetRows)
+  const retainedColumns = Math.min(blueprint.columns, targetColumns)
+  const remapIndex = (sourceIndex) => {
+    if (!Number.isInteger(sourceIndex)) return null
+
+    const row = Math.floor(sourceIndex / blueprint.columns)
+    const column = sourceIndex % blueprint.columns
+    return row < retainedRows && column < retainedColumns
+      ? row * targetColumns + column
+      : null
+  }
+
+  for (let row = 0; row < retainedRows; row += 1) {
+    for (let column = 0; column < retainedColumns; column += 1) {
+      const sourceIndex = row * blueprint.columns + column
+      const targetIndex = row * targetColumns + column
+      cells[targetIndex] = blueprint.cells[sourceIndex]
+
+      const sourceMirrorTarget = blueprint.mirrorCornTargets[sourceIndex]
+      if (sourceMirrorTarget === null) continue
+
+      const mirrorTargetRow = Math.floor(
+        sourceMirrorTarget / blueprint.columns,
+      )
+      const mirrorTargetColumn = sourceMirrorTarget % blueprint.columns
+
+      if (
+        mirrorTargetRow < targetRows &&
+        mirrorTargetColumn < targetColumns
+      ) {
+        mirrorCornTargets[targetIndex] =
+          mirrorTargetRow * targetColumns + mirrorTargetColumn
+      }
+    }
+  }
+
+  const rootTunnelConnections = remapRootTunnelConnections(
+    blueprint.rootTunnelConnections,
+    remapIndex,
+  )
+  const leechingVines = remapLeechingVines(
+    blueprint.leechingVines,
+    remapIndex,
+  )
+
+  return {
+    rows: targetRows,
+    columns: targetColumns,
+    cells,
+    mirrorCornTargets,
+    ...(rootTunnelConnections.length > 0 ? { rootTunnelConnections } : {}),
+    ...(leechingVines.length > 0 ? { leechingVines } : {}),
+  }
+}
+
 export function exportBlueprint(blueprint) {
   return encodeBase64(
     JSON.stringify({
@@ -80,31 +146,64 @@ export function importBlueprint(
     unlockedCropIds = [],
     hasMirrorCorn = false,
     hasLeechingGourd = false,
+    hasSplitweed = false,
+    hasLeechingVine = false,
+    completedCropPerfections = [],
+    seedAugmentations = {},
   },
 ) {
   const rawBlueprint = parseBlueprintCode(blueprintCode)
+  const sourceRows = Number(rawBlueprint.rows)
+  const sourceColumns = Number(rawBlueprint.columns)
+  const hasValidSourceSize =
+    Number.isInteger(sourceRows) &&
+    sourceRows >= 1 &&
+    Number.isInteger(sourceColumns) &&
+    sourceColumns >= 1
+  const sourceCellCount = hasValidSourceSize
+    ? sourceRows * sourceColumns
+    : 0
   const expectedRows = Math.max(1, Math.floor(Number(rows) || 1))
   const expectedColumns = Math.max(1, Math.floor(Number(columns) || 1))
-  const totalCells = expectedRows * expectedColumns
 
   if (
-    rawBlueprint.rows !== expectedRows ||
-    rawBlueprint.columns !== expectedColumns
-  ) {
-    throw new Error(
-      `This blueprint is ${rawBlueprint.rows}×${rawBlueprint.columns}; the active slot is ${expectedRows}×${expectedColumns}.`,
-    )
-  }
-
-  if (
+    !hasValidSourceSize ||
     !Array.isArray(rawBlueprint.cells) ||
-    rawBlueprint.cells.length !== totalCells ||
+    rawBlueprint.cells.length !== sourceCellCount ||
     !Array.isArray(rawBlueprint.mirrorCornTargets) ||
-    rawBlueprint.mirrorCornTargets.length !== totalCells
+    rawBlueprint.mirrorCornTargets.length !== sourceCellCount ||
+    (rawBlueprint.rootTunnelConnections !== undefined &&
+      !Array.isArray(rawBlueprint.rootTunnelConnections)) ||
+    (rawBlueprint.leechingVines !== undefined &&
+      !Array.isArray(rawBlueprint.leechingVines))
   ) {
     throw new Error('The blueprint has an invalid number of tiles.')
   }
 
+  const normalizedSourceBlueprint = createBlueprint({
+    ...rawBlueprint,
+    requireSplitweedFootprints: hasSplitweed,
+  })
+  const normalizedRawCells = rawBlueprint.cells.map(normalizeCropId)
+
+  if (
+    JSON.stringify(normalizedSourceBlueprint.cells) !==
+      JSON.stringify(normalizedRawCells) ||
+    JSON.stringify(normalizedSourceBlueprint.mirrorCornTargets) !==
+      JSON.stringify(rawBlueprint.mirrorCornTargets) ||
+    JSON.stringify(normalizedSourceBlueprint.rootTunnelConnections ?? []) !==
+      JSON.stringify(rawBlueprint.rootTunnelConnections ?? []) ||
+    JSON.stringify(normalizedSourceBlueprint.leechingVines ?? []) !==
+      JSON.stringify(rawBlueprint.leechingVines ?? [])
+  ) {
+    throw new Error('The blueprint contains an invalid crop layout or tile link.')
+  }
+
+  const resizedBlueprint = resizeBlueprintFromTopLeft(
+    normalizedSourceBlueprint,
+    expectedRows,
+    expectedColumns,
+  )
   const allowedCropIds = new Set(unlockedCropIds)
 
   if (hasLeechingGourd) {
@@ -112,7 +211,11 @@ export function importBlueprint(
     allowedCropIds.add('leechingGourdPart')
   }
 
-  const lockedCrop = rawBlueprint.cells.find(
+  if (hasSplitweed) {
+    allowedCropIds.add('splitweedPart')
+  }
+
+  const lockedCrop = resizedBlueprint.cells.find(
     (crop) => crop !== null && (!isKnownCrop(crop) || !allowedCropIds.has(crop)),
   )
 
@@ -120,23 +223,46 @@ export function importBlueprint(
     throw new Error('This blueprint contains a crop you have not unlocked.')
   }
 
+  const shoalGrassCount = resizedBlueprint.cells.filter(
+    (crop) => crop === 'shoalGrass',
+  ).length
+  if (
+    shoalGrassCount >
+    getShoalGrassPlacementLimit(
+      resizedBlueprint,
+      completedCropPerfections,
+      seedAugmentations,
+    )
+  ) {
+    throw new Error(
+      'This blueprint contains more Shoal Grass than its placement limit allows.',
+    )
+  }
+
+  const mangroveSaplingCount = resizedBlueprint.cells.filter(
+    (crop) => crop === 'mangroveSapling',
+  ).length
+  if (mangroveSaplingCount > MANGROVE_SAPLING_PLACEMENT_LIMIT) {
+    throw new Error(
+      `This blueprint contains more than ${MANGROVE_SAPLING_PLACEMENT_LIMIT} Mangrove Saplings.`,
+    )
+  }
+
   if (
     !hasMirrorCorn &&
-    rawBlueprint.mirrorCornTargets.some((targetIndex) => targetIndex !== null)
+    resizedBlueprint.mirrorCornTargets.some(
+      (targetIndex) => targetIndex !== null,
+    )
   ) {
     throw new Error('Unlock Mirror Corn before importing its tile links.')
   }
 
-  const normalizedBlueprint = createBlueprint(rawBlueprint)
-
-  if (
-    JSON.stringify(normalizedBlueprint.cells) !==
-      JSON.stringify(rawBlueprint.cells) ||
-    JSON.stringify(normalizedBlueprint.mirrorCornTargets) !==
-      JSON.stringify(rawBlueprint.mirrorCornTargets)
-  ) {
-    throw new Error('The blueprint contains an invalid crop layout or tile link.')
+  if (!hasLeechingVine && (resizedBlueprint.leechingVines?.length ?? 0) > 0) {
+    throw new Error('Unlock Leeching Vine before importing its paths.')
   }
 
-  return normalizedBlueprint
+  return createBlueprint({
+    ...resizedBlueprint,
+    requireSplitweedFootprints: hasSplitweed,
+  })
 }

@@ -1,3 +1,13 @@
+@media (max-width: 1100px) {
+  .fortune-active-effects {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: fit-content;
+    margin: 0 0 12px auto;
+  }
+}
+
 @media (max-width: 700px) {
   .game-shell {
     width: min(100% - 20px, 620px);
@@ -30,11 +40,30 @@
     grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   }
 
+  .monocrop-status {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .blueprint-heading > div {
+    order: 1;
+  }
+
+  .blueprint-heading .size-pill {
+    order: 2;
+  }
+
+  .blueprint-heading .monocrop-status {
+    flex-basis: 100%;
+    order: 3;
+  }
+
   .statistics-grid .statistics-playtime {
     grid-column: span 1;
   }
 
-  .modal-actions .primary-button {
+  .modal-actions .primary-button,
+  .modal-actions .secondary-button {
     width: 100%;
   }
 
@@ -58,9 +87,18 @@
   .hard-reset-button {
     width: 100%;
   }
+
 }
 
 @media (max-width: 460px) {
+  .fortune-effect-tooltip {
+    position: fixed;
+    top: 112px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+  }
+
   .game-tabs {
     gap: 3px;
     overflow-x: auto;

@@ -1,17 +1,36 @@
 import { useGameController } from '../hooks/useGameController.js'
 import { GameNavigation, GameHeader } from './GameNavigation.jsx'
+import { CloverFortune } from './CloverFortune.jsx'
+import { BackgroundCatchUpOverlay } from './BackgroundCatchUpOverlay.jsx'
 import { GameOverlays } from './GameOverlays.jsx'
 import { GameScreen } from './GameScreen.jsx'
 import { MajorProgressionBar } from './MajorProgressionBar.jsx'
+import { MisfortuneStatus } from './Misfortune.jsx'
 import './App.css'
 
 function App() {
-  const { navigation, screen, overlays, progression } = useGameController()
+  const {
+    isGameReady,
+    navigation,
+    screen,
+    overlays,
+    progression,
+  } = useGameController()
+
+  if (!isGameReady) {
+    return (
+      <main className="game-shell game-shell-catch-up">
+        <BackgroundCatchUpOverlay {...overlays.backgroundCatchUp} />
+      </main>
+    )
+  }
 
   return (
     <main className="game-shell">
       <GameHeader />
       <GameNavigation {...navigation} />
+      {screen.misfortune.isMisfortuneAreaActive ? <MisfortuneStatus /> : null}
+      <CloverFortune {...overlays.fortune} />
       <GameScreen {...screen} />
       <MajorProgressionBar {...progression} />
       <GameOverlays {...overlays} />

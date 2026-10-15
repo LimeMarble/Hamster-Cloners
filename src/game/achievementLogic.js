@@ -1,0 +1,200 @@
+import { ACHIEVEMENTS, FALSE_START_DURATION_SECONDS } from './achievementDefinitions.js'
+import { grantAchievement } from './achievementState.js'
+import { isMirrorCornDebuffRemovalEnabled } from './augmentationLogic.js'
+import { createBlueprintCalculationCache } from './blueprintCalculationCache.js'
+import { CROP_DEFINITIONS } from './crops.js'
+import { getBlueprintCropStats } from './cropStats.js'
+import {
+  getBlueprintMonocropMultiplier,
+  getGlobalRowProductionEffects,
+  getLeechingGourdDebuffMultiplier,
+  getMirrorCornEffectBlueprint,
+  getMonocropCropCount,
+  getMonocropThresholdBonus,
+  isMirrorCornOverloaded,
+  isWaterLettuceFieldInfested,
+} from './cropEffects.js'
+import {
+  applyCropProductionModifiers, getBaseFieldIncome, getBaseFieldProductionSnapshot,
+  getCropHamsterEfficiencyMultiplier,
+} from './cropProduction.js'
+import { getFortuneModifiers } from './fortuneLogic.js'
+import { getMonocropThreshold } from './monocropPenalty.js'
+import { getSweetPotatoBeds } from './sweetPotatoLogic.js'
+
+const cacheMetrics = createBlueprintCalculationCache({ structuralFallback: false })
+const cacheStructure = createBlueprintCalculationCache({ structuralFallback: false })
+const metricCropIds = new Map([
+  ['sweetPotato', ['potato', 'hamster-efficiency']],
+  ['leek', ['leek', 'adjacent-crop-yield']],
+  ['turnip', ['turnip', 'adjacent-crop-effects']],
+  ['appleTree', ['apple', null]],
+  ['sunflower', ['sunflower', 'row-duplicator-efficiency']],
+])
+
+export function advanceFalseStartProgress(currentGame, nextGame, columnsBuilt = 0) {
+  if (currentGame.falseStartEligible !== true) return nextGame
+
+  const firstMinute = (Number(currentGame.secondsSinceAreaReset) || 0) <
+    FALSE_START_DURATION_SECONDS
+  if (!nextGame.completedMisfortuneUpgrades?.includes('rushedStart') ||
+      (firstMinute && columnsBuilt > 0)) {
+    return { ...nextGame, falseStartEligible: false }
+  }
+
+  return nextGame.secondsSinceAreaReset >= FALSE_START_DURATION_SECONDS
+    ? grantAchievement(nextGame, 'falseStart')
+    : nextGame
+}
+
+function getBlueprintStructure(blueprint) {
+  return cacheStructure(blueprint, [], () => {
+    const types = new Set()
+    const indicesByCrop = new Map()
+    let hasGourd = false
+    blueprint.cells.forEach((id, index) => {
+      if (id === 'leechingGourd') hasGourd = true
+      if (!CROP_DEFINITIONS[id] || CROP_DEFINITIONS[id].internalOnly || id === 'rootTunnel') return
+      types.add(id)
+      if (!indicesByCrop.has(id)) indicesByCrop.set(id, [])
+      indicesByCrop.get(id).push(index)
+    })
+    return { types, indicesByCrop, hasGourd, infested: isWaterLettuceFieldInfested(blueprint) }
+  })
+}
+
+function getBlueprintMetrics(game, blueprint, fortune, pendingIds) {
+  const perfections = game.completedCropPerfections ?? []
+  const seeds = game.seedAugmentations ?? {}
+  const structure = getBlueprintStructure(blueprint)
+  const needsApple = pendingIds.has('apple10B') && structure.types.has('appleTree')
+  const needsCanola = pendingIds.has('canola800') && structure.types.has('canola')
+  const needsPeanuts = pendingIds.has('makingPeanuts') && game.activeArea === 'misfortune'
+  const needsHarvestTrade = needsApple || (needsPeanuts && structure.types.has('carrot'))
+  return cacheMetrics(blueprint, [
+    perfections, seeds, ...Object.values(fortune),
+    needsCanola ? game.hamsters : 0,
+    needsHarvestTrade ? game.trade?.rabbitContractsCompleted : 0,
+    needsHarvestTrade ? game.trade?.totalRabbitRelationsEarned : 0,
+    needsPeanuts ? game.activeArea : null,
+    ...pendingIds,
+  ], () => {
+    const metrics = {}
+    const monocrop = getBlueprintMonocropMultiplier(blueprint, perfections, seeds)
+    metrics.diverseUnpenalized = structure.types.size >= 6 && monocrop >= 1
+    metrics.infested = structure.infested
+    if (pendingIds.has('sweetDreams') && perfections.includes('sweetPotato') &&
+        structure.types.has('sweetPotato')) {
+      metrics.sweetPotatoBedSize = getSweetPotatoBeds(blueprint).reduce(
+        (largest, bed) => Math.max(largest, bed.indexes.length), 0,
+      )
+    }
+    if (pendingIds.has('cmonDoSomething') && !structure.infested &&
+        perfections.includes('mirrorCorn') && perfections.includes('leechingGourd') &&
+        structure.hasGourd &&
+        !isMirrorCornDebuffRemovalEnabled(seeds)) {
+      // Use the active crops, so burnt Corn or a burnt Gourd cannot qualify.
+      // Check Gourd specifically: Shoal Grass is a different way to remove debuffs.
+      const effectBlueprint = getMirrorCornEffectBlueprint(blueprint, perfections, seeds)
+      metrics.neutralizedMirrorCorn = (structure.indicesByCrop.get('corn') ?? [])
+        .some((index) => effectBlueprint.cells[index] === 'corn' &&
+          getLeechingGourdDebuffMultiplier(effectBlueprint, index) === 0)
+    }
+    if (pendingIds.has('palmOilPlantation')) {
+      const threshold = getMonocropThreshold(blueprint.rows * blueprint.columns,
+        getMonocropThresholdBonus(blueprint, perfections, seeds))
+      metrics.monocropOverload = 0
+      for (const cropId of structure.types) {
+        metrics.monocropOverload = Math.max(metrics.monocropOverload,
+          getMonocropCropCount(blueprint, cropId) / threshold)
+      }
+    }
+    if (needsPeanuts) {
+      const production = getBaseFieldProductionSnapshot(blueprint, perfections,
+        game.trade?.rabbitContractsCompleted ?? 0, fortune.passiveEffectMultiplier,
+        seeds, game.trade?.totalRabbitRelationsEarned ?? 0, game.activeArea,
+        fortune.leekEnrichmentExponent)
+      metrics.misfortuneFieldYield = applyCropProductionModifiers(production.total, fortune)
+    }
+    if (pendingIds.has('controlledBurn')) {
+      metrics.controlledBurn = blueprint.cells.some((id, index) =>
+        CROP_DEFINITIONS[id] && !CROP_DEFINITIONS[id].internalOnly &&
+        isMirrorCornOverloaded(blueprint, index, perfections, seeds),
+      )
+    }
+    if (pendingIds.has('youGetNothing')) {
+      const income = getBaseFieldIncome(blueprint, perfections,
+        game.trade?.rabbitContractsCompleted ?? 0,
+        fortune.passiveEffectMultiplier, seeds, fortune.activeArea,
+        fortune.leekEnrichmentExponent) * fortune.harvestMultiplier * fortune.cropYieldMultiplier
+      metrics.nothing = income <= 0 && getCropHamsterEfficiencyMultiplier(
+        blueprint, perfections, 0, fortune.passiveEffectMultiplier, seeds,
+      ) <= 0
+    }
+    if (needsCanola) {
+      metrics.canola = getGlobalRowProductionEffects(blueprint, game.hamsters,
+        perfections, fortune.passiveEffectMultiplier, seeds)
+        .find((effect) => effect.sourceCropId === 'canola')?.multiplier ?? 1
+    }
+    metricCropIds.forEach((metric, id) => {
+      if (!ACHIEVEMENTS.some((achievement) =>
+        achievement.metric === metric[0] && pendingIds.has(achievement.id),
+      )) return
+      for (const index of structure.indicesByCrop.get(id) ?? []) {
+        const stats = getBlueprintCropStats(blueprint, index, perfections, 0,
+          game.hamsters, game.trade?.rabbitContractsCompleted ?? 0, fortune, seeds,
+          game.trade?.totalRabbitRelationsEarned ?? 0)
+        const value = metric[1]
+          ? stats?.passiveStats.find((stat) => stat.id === metric[1])?.value ?? 0
+          : stats?.harvestYield ?? 0
+        metrics[metric[0]] = Math.max(metrics[metric[0]] ?? 0, value)
+      }
+    })
+    return metrics
+  })
+}
+
+// State snapshots retain awards. Stable blueprint/modifier inputs reuse metrics;
+// crops, farmland and ticking timers are deliberately not cache dependencies.
+export function awardAchievements(game, previousGame = null) {
+  const earned = new Set(game.earnedAchievementIds ?? [])
+  const pending = ACHIEVEMENTS.filter((achievement) =>
+    achievement.available !== false && !earned.has(achievement.id),
+  )
+  if (pending.length === 0) return game
+  const pendingIds = new Set(pending.filter((achievement) => achievement.tier === 1)
+    .map((achievement) => achievement.id))
+  const eventMetrics = {}
+  const previousBlueprint = previousGame?.blueprint
+  if (previousBlueprint && previousBlueprint !== game.blueprint &&
+      previousBlueprint.rows === game.blueprint.rows &&
+      previousBlueprint.columns === game.blueprint.columns) {
+    eventMetrics.cropRotation = previousBlueprint.cells.some((crop, index) =>
+      crop === 'leek' && CROP_DEFINITIONS[game.blueprint.cells[index]] &&
+      game.blueprint.cells[index] !== 'leek' && game.blueprint.cells[index] !== 'rootTunnel',
+    )
+    eventMetrics.backUnderControl =
+      getBlueprintMonocropMultiplier(previousBlueprint,
+        previousGame.completedCropPerfections, previousGame.seedAugmentations) < 1 &&
+      getBlueprintMonocropMultiplier(game.blueprint,
+        game.completedCropPerfections, game.seedAugmentations) >= 1
+  }
+  const fortune = getFortuneModifiers(game)
+  const blueprints = pendingIds.size > 0
+    ? [...new Set([game.blueprint, ...(game.blueprintSlots ?? [])])].filter(Boolean)
+    : []
+  const metrics = blueprints.map((blueprint) => getBlueprintMetrics(
+    game, blueprint, fortune, pendingIds,
+  ))
+  for (const achievement of pending) {
+    if (achievement.metric
+      ? metrics.some((values) => values[achievement.metric] >= achievement.target)
+      : achievement.condition(game, eventMetrics) ||
+        metrics.some((values) => achievement.condition(game, values))) {
+      earned.add(achievement.id)
+    }
+  }
+  return earned.size === (game.earnedAchievementIds?.length ?? 0)
+    ? game
+    : { ...game, earnedAchievementIds: [...earned] }
+}

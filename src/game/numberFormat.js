@@ -60,8 +60,18 @@ const SUFFIX_SIGNIFICANT_DIGITS = 3
 export const NUMBER_NOTATION_SUFFIX = 'suffix'
 export const NUMBER_NOTATION_SCIENTIFIC = 'scientific'
 export const FORCED_SCIENTIFIC_EXPONENT = 3003
+export const DEFAULT_SUFFIX_SCIENTIFIC_EXPONENT = 303
+export const SUFFIX_SCIENTIFIC_EXPONENT_OPTIONS = Object.freeze([
+  33,
+  DEFAULT_SUFFIX_SCIENTIFIC_EXPONENT,
+  FORCED_SCIENTIFIC_EXPONENT,
+])
 const formattedNumberCache = new Map()
+const wholeNumberFormatter = new Intl.NumberFormat(undefined, {
+  maximumFractionDigits: 0,
+})
 let activeNumberNotation = NUMBER_NOTATION_SUFFIX
+let activeSuffixScientificExponent = DEFAULT_SUFFIX_SCIENTIFIC_EXPONENT
 
 function normalizeNumberNotation(notation) {
   return notation === NUMBER_NOTATION_SCIENTIFIC
@@ -69,8 +79,30 @@ function normalizeNumberNotation(notation) {
     : NUMBER_NOTATION_SUFFIX
 }
 
-export function setActiveNumberNotation(notation) {
+function normalizeSuffixScientificExponent(exponent) {
+  const parsed = Math.floor(Number(exponent))
+
+  return SUFFIX_SCIENTIFIC_EXPONENT_OPTIONS.includes(parsed)
+    ? parsed
+    : DEFAULT_SUFFIX_SCIENTIFIC_EXPONENT
+}
+
+export function setActiveNumberNotation(
+  notation,
+  suffixScientificExponent = DEFAULT_SUFFIX_SCIENTIFIC_EXPONENT,
+) {
   activeNumberNotation = normalizeNumberNotation(notation)
+  activeSuffixScientificExponent = normalizeSuffixScientificExponent(
+    suffixScientificExponent,
+  )
+}
+
+export function formatWholeNumber(value) {
+  const numericValue = Number(value)
+
+  return wholeNumberFormatter.format(
+    Number.isNaN(numericValue) ? 0 : Math.floor(numericValue),
+  )
 }
 
 function normalizeDecimalCoefficient(coefficient) {
@@ -209,9 +241,14 @@ function getRoundedScientificParts(mantissa, exponent) {
   return { scaledValue, scientificExponent }
 }
 
-function shouldUseScientificNotation(notation, exponent) {
+function shouldUseScientificNotation(
+  notation,
+  exponent,
+  suffixScientificExponent,
+) {
   return (
     normalizeNumberNotation(notation) === NUMBER_NOTATION_SCIENTIFIC ||
+    exponent >= normalizeSuffixScientificExponent(suffixScientificExponent) ||
     exponent >= FORCED_SCIENTIFIC_EXPONENT ||
     !getSuffixForExponent(exponent)
   )
@@ -221,6 +258,7 @@ export function getFormatCacheKey(
   value,
   maximumFractionDigits = 1,
   notation = NUMBER_NOTATION_SUFFIX,
+  suffixScientificExponent = DEFAULT_SUFFIX_SCIENTIFIC_EXPONENT,
 ) {
   const scientificParts = getScientificParts(value)
 
@@ -240,7 +278,13 @@ export function getFormatCacheKey(
     return `${prefix}:plain:${Math.round(mantissa * 10 ** exponent * roundingScale)}:${precision}`
   }
 
-  if (shouldUseScientificNotation(notation, exponent)) {
+  if (
+    shouldUseScientificNotation(
+      notation,
+      exponent,
+      suffixScientificExponent,
+    )
+  ) {
     const { scaledValue, scientificExponent } = getRoundedScientificParts(
       mantissa,
       exponent,
@@ -260,6 +304,7 @@ export function formatNumber(
   value,
   maximumFractionDigits = 1,
   notation = NUMBER_NOTATION_SUFFIX,
+  suffixScientificExponent = DEFAULT_SUFFIX_SCIENTIFIC_EXPONENT,
 ) {
   const scientificParts = getScientificParts(value)
 
@@ -279,7 +324,13 @@ export function formatNumber(
     return `${sign}${formatPlainNumber(mantissa * 10 ** exponent, maximumFractionDigits)}`
   }
 
-  if (shouldUseScientificNotation(notation, exponent)) {
+  if (
+    shouldUseScientificNotation(
+      notation,
+      exponent,
+      suffixScientificExponent,
+    )
+  ) {
     const { scaledValue, scientificExponent } = getRoundedScientificParts(
       mantissa,
       exponent,
@@ -302,15 +353,26 @@ export function getCachedFormattedNumber(
   value,
   maximumFractionDigits = 1,
   notation = activeNumberNotation,
+  suffixScientificExponent = activeSuffixScientificExponent,
 ) {
-  const cacheKey = getFormatCacheKey(value, maximumFractionDigits, notation)
+  const cacheKey = getFormatCacheKey(
+    value,
+    maximumFractionDigits,
+    notation,
+    suffixScientificExponent,
+  )
   const cachedValue = formattedNumberCache.get(cacheKey)
 
   if (cachedValue !== undefined) {
     return cachedValue
   }
 
-  const formattedValue = formatNumber(value, maximumFractionDigits, notation)
+  const formattedValue = formatNumber(
+    value,
+    maximumFractionDigits,
+    notation,
+    suffixScientificExponent,
+  )
 
   if (formattedNumberCache.size >= MAX_FORMAT_CACHE_SIZE) {
     formattedNumberCache.delete(formattedNumberCache.keys().next().value)

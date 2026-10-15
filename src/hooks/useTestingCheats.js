@@ -1,10 +1,18 @@
 import { useState } from 'react'
 import {
+  CAPYBARA_DEMONSTRATIONS,
+  completeRabbitContractsForTesting,
+  completeNextCapybaraDemonstrationForTesting,
   grantNextBlueprintExpansion,
+  multiplyManateeResources,
   revokeLastBlueprintExpansion,
+  addRandomFortuneEffect,
+  wipeMisfortuneAreaProgress,
+  wipeActiveFortuneEffects,
 } from '../game/gameLogic.js'
 
 const TESTING_CODE = 'limesaysopensesame'
+const MISFORTUNE_WIPE_CODE = 'trulyunfortunate'
 
 export function useTestingCheats({
   game,
@@ -13,9 +21,20 @@ export function useTestingCheats({
 }) {
   const [codeInput, setCodeInput] = useState('')
   const [codeStatus, setCodeStatus] = useState(null)
+  const [isMisfortuneWipeConfirmationOpen, setIsMisfortuneWipeConfirmationOpen] =
+    useState(false)
 
   function submitCode() {
-    if (codeInput.trim().toLowerCase() !== TESTING_CODE) {
+    const submittedCode = codeInput.trim().toLowerCase()
+
+    if (submittedCode === MISFORTUNE_WIPE_CODE) {
+      setCodeInput('')
+      setCodeStatus(null)
+      setIsMisfortuneWipeConfirmationOpen(true)
+      return
+    }
+
+    if (submittedCode !== TESTING_CODE) {
       setCodeStatus({ type: 'error', message: 'Invalid code.' })
       return
     }
@@ -23,12 +42,35 @@ export function useTestingCheats({
     updateGame((currentGame) => ({
       ...currentGame,
       testingPanelUnlocked: true,
+      testingPanelVisible: true,
     }))
     setCodeInput('')
     setCodeStatus({
       type: 'success',
       message: 'Testing panel unlocked.',
     })
+  }
+
+  function cancelMisfortuneWipe() {
+    setIsMisfortuneWipeConfirmationOpen(false)
+  }
+
+  function confirmMisfortuneWipe() {
+    updateGame((currentGame) =>
+      wipeMisfortuneAreaProgress(currentGame),
+    )
+    setIsMisfortuneWipeConfirmationOpen(false)
+    setCodeStatus({
+      type: 'success',
+      message: 'Misfortune progress wiped.',
+    })
+  }
+
+  function toggleTestingPanelVisibility() {
+    updateGame((currentGame) => ({
+      ...currentGame,
+      testingPanelVisible: !currentGame.testingPanelVisible,
+    }))
   }
 
   function toggleCheat(cheatId) {
@@ -70,6 +112,50 @@ export function useTestingCheats({
     )
   }
 
+  function addTestingCloverEffect() {
+    updateGame((currentGame) => addRandomFortuneEffect(currentGame))
+  }
+
+  function wipeTestingCloverEffects() {
+    updateGame((currentGame) => wipeActiveFortuneEffects(currentGame))
+  }
+
+  function completeNextDemonstration() {
+    updateGame((currentGame) =>
+      completeNextCapybaraDemonstrationForTesting(currentGame) ?? currentGame,
+    )
+  }
+
+  function multiplyCurrentManateeMaterials() {
+    updateGame((currentGame) => ({
+      ...currentGame,
+      manatees: multiplyManateeResources(currentGame.manatees, 10),
+    }))
+  }
+
+  function completeTestingRabbitContracts() {
+    updateGame((currentGame) =>
+      completeRabbitContractsForTesting(currentGame, 100),
+    )
+  }
+
+  function multiplyCurrentRabbitRelations() {
+    updateGame((currentGame) => ({
+      ...currentGame,
+      trade: {
+        ...currentGame.trade,
+        rabbitRelations: Math.min(
+          Number.MAX_VALUE,
+          Math.max(0, Number(currentGame.trade?.rabbitRelations) || 0) * 1000,
+        ),
+      },
+    }))
+  }
+
+  const completedDemonstrationCount = CAPYBARA_DEMONSTRATIONS.filter(
+    ({ id, available }) => available !== false &&
+      game.capybara?.completedDemonstrations?.includes(id),
+  ).length
   const columnTrack = blueprintExpansionTracks.find(
     (track) => track.id === 'column',
   )
@@ -84,12 +170,25 @@ export function useTestingCheats({
       codeStatus,
       onSubmitCode: submitCode,
     },
+    misfortuneWipeConfirmation: {
+      isOpen: isMisfortuneWipeConfirmationOpen,
+      onCancel: cancelMisfortuneWipe,
+      onConfirm: confirmMisfortuneWipe,
+    },
     testingPanel: game.testingPanelUnlocked
       ? {
+          isVisible: game.testingPanelVisible === true,
+          onToggleVisibility: toggleTestingPanelVisibility,
           cropMultiplierEnabled:
             game.testingCheats?.cropMultiplierEnabled === true,
           hamsterEfficiencyEnabled:
             game.testingCheats?.hamsterEfficiencyEnabled === true,
+          oneSecondManateeSurveysEnabled:
+            game.testingCheats?.oneSecondManateeSurveysEnabled === true,
+          completedDemonstrationCount,
+          maximumDemonstrationCount: CAPYBARA_DEMONSTRATIONS.filter(
+            ({ available }) => available !== false,
+          ).length,
           columnExpansionCount: columnTrack?.completedStageCount ?? 0,
           maximumColumnExpansions: columnTrack?.stages.length ?? 0,
           rowExpansionCount: rowTrack?.completedStageCount ?? 0,
@@ -98,12 +197,22 @@ export function useTestingCheats({
             toggleCheat('cropMultiplierEnabled'),
           onToggleHamsterEfficiency: () =>
             toggleCheat('hamsterEfficiencyEnabled'),
+          onToggleOneSecondManateeSurveys: () =>
+            toggleCheat('oneSecondManateeSurveysEnabled'),
+          onCompleteNextDemonstration: completeNextDemonstration,
+          onMultiplyCurrentManateeMaterials:
+            multiplyCurrentManateeMaterials,
+          onCompleteRabbitContracts: completeTestingRabbitContracts,
+          onMultiplyCurrentRabbitRelations:
+            multiplyCurrentRabbitRelations,
           onMultiplyCurrentCrops: multiplyCurrentCrops,
           onDivideCurrentCrops: divideCurrentCrops,
           onGrantColumnExpansion: () => grantExpansion('column'),
           onGrantRowExpansion: () => grantExpansion('row'),
           onRevokeColumnExpansion: () => revokeExpansion('column'),
           onRevokeRowExpansion: () => revokeExpansion('row'),
+          onAddCloverEffect: addTestingCloverEffect,
+          onWipeCloverEffects: wipeTestingCloverEffects,
         }
       : null,
   }

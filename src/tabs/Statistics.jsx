@@ -1,7 +1,11 @@
-import { FormattedNumber } from './ui.jsx'
+import { FormattedNumber, WholeNumber } from './ui.jsx'
 import { formatPlaytime } from './uiHelpers.js'
 
-export function Statistics({ game, unlockedCropIds }) {
+export function Statistics({
+  game,
+  unlockedCropIds,
+  cloverBundleChancePerMinute,
+}) {
   return (
     <section className="inventions-panel statistics-panel" aria-labelledby="statistics-title">
       <p className="eyebrow">Lifetime progress</p>
@@ -19,7 +23,7 @@ export function Statistics({ game, unlockedCropIds }) {
         <div>
           <dt>Hamsters hired</dt>
           <dd>
-            <FormattedNumber value={game.totalHamstersHired} maximumFractionDigits={0} />
+            <WholeNumber value={game.totalHamstersHired} />
           </dd>
         </div>
         <div>
@@ -34,9 +38,29 @@ export function Statistics({ game, unlockedCropIds }) {
             <FormattedNumber value={game.completedCropPerfections.length} maximumFractionDigits={0} />
           </dd>
         </div>
+        <div>
+          <dt>Rabbit contracts completed</dt>
+          <dd>
+            <FormattedNumber value={game.trade?.rabbitContractsCompleted ?? 0} maximumFractionDigits={0} />
+          </dd>
+        </div>
+        <div>
+          <dt>Clover Bundle chance {game.cloverAssembly?.assembled ? 'per attempt' : 'per minute'}</dt>
+          <dd>
+            <FormattedNumber
+              value={cloverBundleChancePerMinute * 100}
+              maximumFractionDigits={2}
+            />
+            %
+          </dd>
+        </div>
         <div className="statistics-playtime">
           <dt>Playtime</dt>
           <dd>{formatPlaytime(game.playtimeSeconds)}</dd>
+        </div>
+        <div>
+          <dt>Time since current field reset</dt>
+          <dd>{formatPlaytime(game.secondsSinceAreaReset)}</dd>
         </div>
       </dl>
     </section>

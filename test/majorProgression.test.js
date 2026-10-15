@@ -2,8 +2,13 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   createInitialGame,
+  createBlueprint,
+  CAPYBARA_DEMONSTRATIONS,
+  FORTUNE_EFFECT_IDS,
+  CLOVER_ASSEMBLY_PART_REQUIREMENT,
   getNextMajorProgressionGoal,
   MAJOR_PROGRESSION_GOALS,
+  MISFORTUNE_UPGRADE_IDS,
 } from '../src/game/gameLogic.js'
 import { CROP_PERFECTION_IDS } from '../src/game/crops.js'
 
@@ -13,21 +18,46 @@ test('major progression goals contain crop unlocks, milestones, and perfections 
     [
       'inventions',
       'crop-corn',
+      'misfortune-upgrade-unfortunateRow',
+      'misfortune-upgrade-rushedStart',
       'crop-pumpkin',
       'crop-potato',
       'crop-turnip',
       'crop-perfection',
+      'crop-peanuts',
+      'misfortune-upgrade-oilyTreats',
       'perfection-enrichingLeek',
       'perfection-mirrorCorn',
       'crop-apple-tree',
       'crop-lentil',
       'crop-knotweed',
+      'misfortune-upgrade-adversityGrownTubers',
       'perfection-leechingGourd',
+      'misfortune-upgrade-burdenedFoundations',
       'row-duplicators',
-      'perfection-sweetPotato',
+      'crop-wheat',
+      'misfortune-upgrade-huntForSomethingGreater',
+      'misfortune-upgrade-nourishingMisery',
       'perfection-splitweed',
       'crop-sunflower',
+      'misfortune-upgrade-fortunateColumn',
       'crop-canola',
+      'trade-relations',
+      'crop-carrot',
+      'crop-four-leaf-clover',
+      'capybara-contact',
+      'capybara-demonstration-introduction',
+      'capybara-demonstration-one',
+      'perfection-sweetPotato',
+      'crop-soybean',
+      'misfortune-upgrade-finalSupport',
+      'augmentation-leek-orthogonal-squared',
+      'perfection-five-leaf-clover',
+      'misfortune-upgrade-partingGift',
+      'perfection-samplingLentil',
+      'perfection-blazingCarrot',
+      'capybara-demonstration-two',
+      'capybara-demonstration-three',
     ],
   )
 })
@@ -89,21 +119,17 @@ test('major progression advances to the earliest unfinished goal', () => {
       'leechingGourd',
     ],
     hasUnlockedRowDuplicators: true,
-    crops: 1.25e33,
+    crops: 1.25e32,
   }
-  const sweetPotatoGoal = getNextMajorProgressionGoal(game)
-  assert.equal(sweetPotatoGoal.id, 'perfection-sweetPotato')
-  assert.equal(sweetPotatoGoal.isReady, true)
+  const wheatGoal = getNextMajorProgressionGoal(game)
+  assert.equal(wheatGoal.id, 'crop-wheat')
+  assert.equal(wheatGoal.isReady, false)
+  assert.equal(wheatGoal.progress, 1)
 
   game = {
     ...game,
-    completedCropPerfections: [
-      'enrichingLeek',
-      'mirrorCorn',
-      'leechingGourd',
-      'sweetPotato',
-    ],
-    crops: 6e39,
+    hasUnlockedWheat: true,
+    crops: 6e38,
   }
   const splitweedGoal = getNextMajorProgressionGoal(game)
   assert.equal(splitweedGoal.id, 'perfection-splitweed')
@@ -124,6 +150,203 @@ test('major progression advances to the earliest unfinished goal', () => {
   game = {
     ...game,
     rowDuplicators: 500,
+  }
+  const tradeGoal = getNextMajorProgressionGoal(game)
+  assert.equal(tradeGoal.id, 'trade-relations')
+  assert.equal(tradeGoal.target, 1e57)
+  assert.equal(tradeGoal.isReady, false)
+
+  game = {
+    ...game,
+    crops: 1e57,
+  }
+  assert.equal(getNextMajorProgressionGoal(game).isReady, true)
+
+  game = {
+    ...game,
+    trade: { ...game.trade, established: true },
+  }
+  const carrotGoal = getNextMajorProgressionGoal(game)
+  assert.equal(carrotGoal.id, 'crop-carrot')
+  assert.equal(carrotGoal.isReady, false)
+
+  game = {
+    ...game,
+    trade: { ...game.trade, rabbitRelations: 500 },
+  }
+  assert.equal(getNextMajorProgressionGoal(game).isReady, true)
+
+  game = {
+    ...game,
+    trade: { ...game.trade, rabbitUnlocks: ['carrot'] },
+  }
+  const cloverGoal = getNextMajorProgressionGoal(game)
+  assert.equal(cloverGoal.id, 'crop-four-leaf-clover')
+
+  game = {
+    ...game,
+    trade: { ...game.trade, rabbitRelations: 27777 },
+  }
+  assert.equal(getNextMajorProgressionGoal(game).isReady, true)
+
+  game = {
+    ...game,
+    trade: {
+      ...game.trade,
+      rabbitUnlocks: ['carrot', 'fourLeafClover', 'capybaraContact'],
+    },
+    capybara: { completedDemonstrations: ['introduction', 'demonstrationOne'] },
+    areaProgress: { ...game.areaProgress, misfortune: { rowDuplicators: 500 } },
+  }
+  const soybeanGoal = getNextMajorProgressionGoal(game)
+  assert.equal(soybeanGoal.id, 'crop-soybean')
+  assert.equal(soybeanGoal.target, 555)
+  assert.equal(soybeanGoal.unit, 'Floor Replicators')
+
+  game = {
+    ...game,
+    floorReplicators: 555,
+    areaProgress: {
+      ...game.areaProgress,
+      misfortune: { rowDuplicators: 500 },
+    },
+  }
+  const fiveLeafCloverGoal = getNextMajorProgressionGoal(game)
+  assert.equal(fiveLeafCloverGoal.id, 'perfection-five-leaf-clover')
+  assert.equal(
+    fiveLeafCloverGoal.progressLabel,
+    'Unlock prerequisites to reveal...',
+  )
+  assert.equal(fiveLeafCloverGoal.progress, 0)
+  assert.equal(fiveLeafCloverGoal.isReady, false)
+
+  game = {
+    ...game,
+    hasUnlockedGreaterBlueprinting: true,
+    trade: {
+      ...game.trade,
+      rabbitUnlocks: [
+        ...game.trade.rabbitUnlocks,
+        'rabbitsCharm',
+      ],
+    },
+    cloverAssembly: { progress: CLOVER_ASSEMBLY_PART_REQUIREMENT / 2, assembled: false },
+  }
+  const revealedFiveLeafCloverGoal = getNextMajorProgressionGoal(game, {
+    cloverAssemblyProductionPerSecond: 1.25e55,
+  })
+  assert.equal(
+    revealedFiveLeafCloverGoal.id,
+    'perfection-five-leaf-clover',
+  )
+  assert.equal(revealedFiveLeafCloverGoal.progressLabel, null)
+  assert.equal(revealedFiveLeafCloverGoal.progress, 0.5)
+  assert.equal(revealedFiveLeafCloverGoal.progressPerSecond, 1.25e55)
+
+  game = {
+    ...game,
+    cloverAssembly: { progress: 7.77e58, assembled: true },
+    capybara: { completedDemonstrations: [] },
+    trade: { ...game.trade, rabbitUnlocks: ['carrot', 'fourLeafClover'] },
+  }
+  const capybaraGoal = getNextMajorProgressionGoal(game)
+  assert.equal(capybaraGoal.id, 'capybara-contact')
+
+  game = {
+    ...game,
+    trade: { ...game.trade, rabbitRelations: 40000 },
+  }
+  assert.equal(getNextMajorProgressionGoal(game).isReady, true)
+
+  game = {
+    ...game,
+    trade: {
+      ...game.trade,
+      rabbitUnlocks: ['carrot', 'fourLeafClover', 'capybaraContact'],
+    },
+  }
+  const demonstrationGoal = getNextMajorProgressionGoal(game)
+  assert.equal(
+    demonstrationGoal.id,
+    'capybara-demonstration-introduction',
+  )
+  assert.equal(demonstrationGoal.target, 2e13)
+
+  game = {
+    ...game,
+    capybara: { completedDemonstrations: ['introduction'] },
+  }
+  const secondDemonstrationGoal = getNextMajorProgressionGoal(game)
+  assert.equal(secondDemonstrationGoal.id, 'capybara-demonstration-one')
+  assert.equal(secondDemonstrationGoal.target, 2.5e20)
+  assert.equal(secondDemonstrationGoal.displayProgressAsDash, false)
+  assert.match(secondDemonstrationGoal.description, /No Breeze of Fortune effects may be active/)
+  assert.ok(secondDemonstrationGoal.description.includes(CAPYBARA_DEMONSTRATIONS[1].hint))
+  assert.doesNotMatch(secondDemonstrationGoal.description, /without a planted|no planted/i)
+
+  const cloverPlantedGame = {
+    ...game,
+    blueprint: createBlueprint({ rows: 1, columns: 2, cells: ['leek', 'fourLeafClover'] }),
+  }
+  const cloverPlantedGoal = getNextMajorProgressionGoal(cloverPlantedGame)
+  assert.equal(cloverPlantedGoal.id, 'capybara-demonstration-one')
+  assert.ok(cloverPlantedGoal.current > 0)
+  assert.ok(cloverPlantedGoal.progress > 0)
+  assert.equal(cloverPlantedGoal.displayProgressAsDash, false)
+
+  const breezeActiveGame = {
+    ...cloverPlantedGame,
+    fortune: { ...game.fortune, activeEffects: [{ id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 10 }] },
+  }
+  const breezeActiveGoal = getNextMajorProgressionGoal(breezeActiveGame)
+  assert.equal(breezeActiveGoal.id, 'capybara-demonstration-one')
+  assert.equal(breezeActiveGoal.current, 0)
+  assert.equal(breezeActiveGoal.progress, 0)
+  assert.equal(breezeActiveGoal.isReady, false)
+  assert.equal(breezeActiveGoal.displayProgressAsDash, true)
+
+  const expiredBreezeGoal = getNextMajorProgressionGoal({
+    ...breezeActiveGame,
+    fortune: { ...game.fortune, activeEffects: [{ id: FORTUNE_EFFECT_IDS.BOUNTY, remainingSeconds: 0 }] },
+  })
+  assert.equal(expiredBreezeGoal.displayProgressAsDash, false)
+  assert.ok(expiredBreezeGoal.current > 0)
+
+  game = {
+    ...game,
+    capybara: {
+      completedDemonstrations: ['introduction', 'demonstrationOne'],
+    },
+  }
+  const thirdDemonstrationGoal = getNextMajorProgressionGoal(game)
+  assert.equal(thirdDemonstrationGoal.id, 'capybara-demonstration-two')
+  assert.equal(thirdDemonstrationGoal.current, 0)
+  assert.equal(thirdDemonstrationGoal.target, 4.44e96)
+
+  game = {
+    ...game,
+    capybara: {
+      completedDemonstrations: [
+        'introduction',
+        'demonstrationOne',
+        'misfortuneTrial',
+      ],
+    },
+  }
+  const fourthDemonstrationGoal = getNextMajorProgressionGoal(game)
+  assert.equal(fourthDemonstrationGoal.id, 'all-current-goals-complete')
+  assert.equal(fourthDemonstrationGoal.isComplete, true)
+
+  game = {
+    ...game,
+    capybara: {
+      completedDemonstrations: [
+        'introduction',
+        'demonstrationOne',
+        'misfortuneTrial',
+        'demonstrationTwo',
+      ],
+    },
   }
   const completedGoal = getNextMajorProgressionGoal(game)
   assert.equal(completedGoal.id, 'all-current-goals-complete')
@@ -161,4 +384,72 @@ test('action goals show ready only after their cost is affordable', () => {
   assert.equal(waitingGoal.isReady, false)
   assert.equal(readyGoal.id, 'perfection-enrichingLeek')
   assert.equal(readyGoal.isReady, true)
+})
+
+test('Misfortune progress includes every permanent Misfortune upgrade', () => {
+  const upgradeOrder = [
+    MISFORTUNE_UPGRADE_IDS.UNFORTUNATE_ROW,
+    MISFORTUNE_UPGRADE_IDS.RUSHED_START,
+    MISFORTUNE_UPGRADE_IDS.OILY_TREATS,
+    MISFORTUNE_UPGRADE_IDS.ADVERSITY_GROWN_TUBERS,
+    MISFORTUNE_UPGRADE_IDS.BURDENED_FOUNDATIONS,
+    MISFORTUNE_UPGRADE_IDS.HUNT_FOR_SOMETHING_GREATER,
+    MISFORTUNE_UPGRADE_IDS.NOURISHING_MISERY,
+    MISFORTUNE_UPGRADE_IDS.FORTUNATE_COLUMN,
+    MISFORTUNE_UPGRADE_IDS.FINAL_SUPPORT,
+    MISFORTUNE_UPGRADE_IDS.PARTING_GIFT,
+  ]
+  let game = {
+    ...createInitialGame(),
+    activeArea: 'misfortune',
+    earnedAchievementIds: ['makingPeanuts'],
+    crops: 1e200,
+    totalHamstersHired: 1000,
+    unionized: true,
+    hamsters: 125,
+    completedBlueprintExpansions: ['firstColumn'],
+    hasUnlockedTurnip: true,
+    hasUnlockedCropPerfection: true,
+    completedCropPerfections: CROP_PERFECTION_IDS,
+    hasUnlockedAppleTree: true,
+    hasUnlockedLentil: true,
+    hasUnlockedKnotweed: true,
+    hasUnlockedRowDuplicators: true,
+    hasUnlockedWheat: true,
+    hasUnlockedSunflower: true,
+    rowDuplicators: 500,
+    floorReplicators: 555,
+    trade: {
+      established: true,
+      rabbitRelations: 1e30,
+      rabbitUnlocks: ['carrot', 'fourLeafClover', 'capybaraContact'],
+    },
+    capybara: { completedDemonstrations: ['introduction', 'demonstrationOne'] },
+  }
+
+  for (const upgradeId of upgradeOrder) {
+    if (upgradeId === MISFORTUNE_UPGRADE_IDS.PARTING_GIFT) {
+      assert.equal(getNextMajorProgressionGoal(game).id, 'augmentation-leek-orthogonal-squared')
+      game = { ...game, seedAugmentations: { ...game.seedAugmentations, leekOrthogonalSquaredUnlocked: true } }
+      assert.equal(getNextMajorProgressionGoal(game).id, 'perfection-five-leaf-clover')
+      game = { ...game, cloverAssembly: { progress: 7.77e58, assembled: true } }
+    }
+    const goal = getNextMajorProgressionGoal(game)
+    assert.equal(goal.id, 'misfortune-upgrade-' + upgradeId)
+    assert.equal(goal.category, 'Misfortune upgrade')
+    assert.equal(goal.unit, 'Misfortune Crops')
+
+    game = {
+      ...game,
+      completedMisfortuneUpgrades: [
+        ...game.completedMisfortuneUpgrades,
+        upgradeId,
+      ],
+    }
+  }
+
+  assert.equal(
+    getNextMajorProgressionGoal(game).id,
+    'capybara-demonstration-two',
+  )
 })

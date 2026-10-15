@@ -293,14 +293,44 @@ h2 {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+.notation-card > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.notation-controls {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 360px);
+  min-width: 0;
+}
+
 .notation-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
-  min-width: min(100%, 250px);
+  width: 100%;
+  min-width: 0;
+}
+
+.notation-threshold {
+  display: grid;
+  gap: 8px;
+}
+
+.notation-threshold > span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.notation-threshold-options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .notation-option {
+  min-width: 0;
   padding: 10px 13px;
   border: 1px solid var(--line);
   color: var(--text-muted);
@@ -385,6 +415,11 @@ h2 {
 
 .save-transfer-status-error {
   color: #ff9999;
+}
+
+.manual-save-timer {
+  color: #b8d69a;
+  font-weight: 700;
 }
 
 .hard-reset-button {

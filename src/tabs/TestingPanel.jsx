@@ -1,93 +1,208 @@
-export function TestingPanel({
+import { memo } from 'react'
+import { MANATEES_ENABLED } from '../game/contentAvailability.js'
+function TestingPanelContent({
+  isVisible,
   cropMultiplierEnabled,
   hamsterEfficiencyEnabled,
+  oneSecondManateeSurveysEnabled,
+  completedDemonstrationCount,
+  maximumDemonstrationCount,
   columnExpansionCount,
   maximumColumnExpansions,
   rowExpansionCount,
   maximumRowExpansions,
+  onToggleVisibility,
   onToggleCropMultiplier,
   onToggleHamsterEfficiency,
+  onToggleOneSecondManateeSurveys,
+  onCompleteNextDemonstration,
+  onMultiplyCurrentManateeMaterials,
+  onCompleteRabbitContracts,
+  onMultiplyCurrentRabbitRelations,
   onMultiplyCurrentCrops,
   onDivideCurrentCrops,
   onGrantColumnExpansion,
   onGrantRowExpansion,
   onRevokeColumnExpansion,
   onRevokeRowExpansion,
+  onAddCloverEffect,
+  onWipeCloverEffects,
 }) {
   const columnsMaxed = columnExpansionCount >= maximumColumnExpansions
   const rowsMaxed = rowExpansionCount >= maximumRowExpansions
 
   return (
-    <aside className="testing-panel" aria-labelledby="testing-panel-title">
-      <p className="eyebrow">Testing tools</p>
-      <h2 id="testing-panel-title">Cheat panel</h2>
-      <p className="testing-panel-warning">
-        These controls alter this save and are intended for playtesting.
-      </p>
-      <div className="testing-panel-controls">
-        <button
-          type="button"
-          className={`testing-toggle ${cropMultiplierEnabled ? 'testing-toggle-active' : ''}`}
-          onClick={onToggleCropMultiplier}
-          aria-pressed={cropMultiplierEnabled}
+    <div
+      className={`testing-panel-shell ${
+        isVisible ? 'testing-panel-shell-open' : 'testing-panel-shell-hidden'
+      }`}
+    >
+      <button
+        type="button"
+        className="testing-panel-visibility-toggle"
+        onClick={onToggleVisibility}
+        aria-controls="testing-panel"
+        aria-expanded={isVisible}
+      >
+        {isVisible ? 'Hide cheats' : 'Show cheats'}
+      </button>
+
+      {isVisible ? (
+        <aside
+          className="testing-panel"
+          id="testing-panel"
+          aria-labelledby="testing-panel-title"
         >
-          ×10 Crop production: {cropMultiplierEnabled ? 'On' : 'Off'}
-        </button>
-        <button
-          type="button"
-          className={`testing-toggle ${hamsterEfficiencyEnabled ? 'testing-toggle-active' : ''}`}
-          onClick={onToggleHamsterEfficiency}
-          aria-pressed={hamsterEfficiencyEnabled}
-        >
-          ×10 Hamster efficiency: {hamsterEfficiencyEnabled ? 'On' : 'Off'}
-        </button>
-        <button
-          type="button"
-          className="testing-action"
-          onClick={onMultiplyCurrentCrops}
-        >
-          ×1,000 current Crops
-        </button>
-        <button
-          type="button"
-          className="testing-action"
-          onClick={onDivideCurrentCrops}
-        >
-          /1,000 current Crops
-        </button>
-        <button
-          type="button"
-          className="testing-action"
-          onClick={onGrantColumnExpansion}
-          disabled={columnsMaxed}
-        >
-          +1 Column expansion ({columnExpansionCount}/{maximumColumnExpansions})
-        </button>
-        <button
-          type="button"
-          className="testing-action"
-          onClick={onRevokeColumnExpansion}
-          disabled={columnExpansionCount <= 0}
-        >
-          -1 Column expansion ({columnExpansionCount}/{maximumColumnExpansions})
-        </button>
-        <button
-          type="button"
-          className="testing-action"
-          onClick={onGrantRowExpansion}
-          disabled={rowsMaxed}
-        >
-          +1 Row expansion ({rowExpansionCount}/{maximumRowExpansions})
-        </button>
-        <button
-          type="button"
-          className="testing-action"
-          onClick={onRevokeRowExpansion}
-          disabled={rowExpansionCount <= 0}
-        >
-          -1 Row expansion ({rowExpansionCount}/{maximumRowExpansions})
-        </button>
-      </div>
-    </aside>
+          <p className="eyebrow">Testing tools</p>
+          <h2 id="testing-panel-title">Cheat panel</h2>
+          <p className="testing-panel-warning">
+            These controls alter this save and are intended for playtesting.
+          </p>
+          <div className="testing-panel-controls">
+            <button
+              type="button"
+              className={`testing-toggle ${cropMultiplierEnabled ? 'testing-toggle-active' : ''}`}
+              onClick={onToggleCropMultiplier}
+              aria-pressed={cropMultiplierEnabled}
+            >
+              ×10 Crop production: {cropMultiplierEnabled ? 'On' : 'Off'}
+            </button>
+            <button
+              type="button"
+              className={`testing-toggle ${hamsterEfficiencyEnabled ? 'testing-toggle-active' : ''}`}
+              onClick={onToggleHamsterEfficiency}
+              aria-pressed={hamsterEfficiencyEnabled}
+            >
+              ×10 Hamster efficiency: {hamsterEfficiencyEnabled ? 'On' : 'Off'}
+            </button>
+            {MANATEES_ENABLED ? <button
+              type="button"
+              className={`testing-toggle ${oneSecondManateeSurveysEnabled ? 'testing-toggle-active' : ''}`}
+              onClick={onToggleOneSecondManateeSurveys}
+              aria-pressed={oneSecondManateeSurveysEnabled}
+            >
+              1-second Manatee surveys:{' '}
+              {oneSecondManateeSurveysEnabled ? 'On' : 'Off'}
+            </button> : null}
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onCompleteNextDemonstration}
+              disabled={
+                completedDemonstrationCount >= maximumDemonstrationCount
+              }
+            >
+              Complete next Capybara demonstration (
+              {completedDemonstrationCount}/{maximumDemonstrationCount})
+            </button>
+            {MANATEES_ENABLED ? <button
+              type="button"
+              className="testing-action"
+              onClick={onMultiplyCurrentManateeMaterials}
+            >
+              ×10 current Manatee materials
+            </button> : null}
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onCompleteRabbitContracts}
+            >
+              +100 Rabbit contracts (with rewards)
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onMultiplyCurrentRabbitRelations}
+            >
+              ×1,000 current Rabbit Relations
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onMultiplyCurrentCrops}
+            >
+              ×1,000 current Crops
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onDivideCurrentCrops}
+            >
+              /1,000 current Crops
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onGrantColumnExpansion}
+              disabled={columnsMaxed}
+            >
+              +1 Column expansion ({columnExpansionCount}/{maximumColumnExpansions})
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onRevokeColumnExpansion}
+              disabled={columnExpansionCount <= 0}
+            >
+              -1 Column expansion ({columnExpansionCount}/{maximumColumnExpansions})
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onGrantRowExpansion}
+              disabled={rowsMaxed}
+            >
+              +1 Row expansion ({rowExpansionCount}/{maximumRowExpansions})
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onRevokeRowExpansion}
+              disabled={rowExpansionCount <= 0}
+            >
+              -1 Row expansion ({rowExpansionCount}/{maximumRowExpansions})
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onAddCloverEffect}
+            >
+              Add random Clover effect
+            </button>
+            <button
+              type="button"
+              className="testing-action"
+              onClick={onWipeCloverEffects}
+            >
+              Wipe active Clover effects
+            </button>
+          </div>
+        </aside>
+      ) : null}
+    </div>
   )
 }
+
+const TESTING_PANEL_DISPLAY_KEYS = [
+  'isVisible',
+  'cropMultiplierEnabled',
+  'hamsterEfficiencyEnabled',
+  'oneSecondManateeSurveysEnabled',
+  'completedDemonstrationCount',
+  'maximumDemonstrationCount',
+  'columnExpansionCount',
+  'maximumColumnExpansions',
+  'rowExpansionCount',
+  'maximumRowExpansions',
+]
+
+function areTestingPanelPropsEqual(previous, next) {
+  return TESTING_PANEL_DISPLAY_KEYS.every(
+    (key) => Object.is(previous[key], next[key]),
+  )
+}
+
+export const TestingPanel = memo(
+  TestingPanelContent,
+  areTestingPanelPropsEqual,
+)

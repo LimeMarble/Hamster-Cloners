@@ -1,29 +1,59 @@
-import { getCachedFormattedNumber } from '../game/numberFormat.js'
+import {
+  formatWholeNumber,
+  getCachedFormattedNumber,
+} from '../game/numberFormat.js'
+import {
+  getPercentageGainColor,
+  shouldShowPercentageGain,
+} from '../game/fieldGrowth.js'
 import {
   getCropEffectDescription,
   getCropName,
 } from '../game/crops.js'
-import { getBlueprintCropStats } from '../game/gameLogic.js'
-import { getCropMark } from './uiHelpers.js'
+import {
+  getBlueprintCropStats,
+  getFortuneModifiers,
+} from '../game/gameLogic.js'
+import { CropVisual } from './CropVisual.jsx'
 
 export function FormattedNumber({ value, maximumFractionDigits = 1 }) {
   return getCachedFormattedNumber(value, maximumFractionDigits)
 }
 
+export function WholeNumber({ value }) {
+  return formatWholeNumber(value)
+}
+
+export function PercentageGain({ value }) {
+  if (!shouldShowPercentageGain(value)) return null
+
+  return (
+    <small
+      className="percentage-gain"
+      title="Estimated gain at current production rates"
+      style={{ '--percentage-gain-color': getPercentageGainColor(value) }}
+    >
+      +<FormattedNumber value={value} maximumFractionDigits={4} />%/s
+    </small>
+  )
+}
+
 export function MonocropStatus({ limit, multiplier }) {
   return (
-    <span className="monocrop-pill">
-      <span>Monocrop limit</span>
-      <strong>
-        <FormattedNumber value={limit} maximumFractionDigits={0} /> plots
-      </strong>
-      <span className="monocrop-penalty-label">
-        Monocrop penalty to harvest and crop passives
-      </span>
-      <strong>
-        ×<FormattedNumber value={multiplier} maximumFractionDigits={3} />
-      </strong>
-    </span>
+    <dl className="monocrop-status">
+      <div>
+        <dt>Monocrop limit</dt>
+        <dd>
+          <FormattedNumber value={limit} maximumFractionDigits={0} /> plots
+        </dd>
+      </div>
+      <div>
+        <dt>Monocrop penalty to harvest and crop passives</dt>
+        <dd>
+          ×<FormattedNumber value={multiplier} maximumFractionDigits={3} />
+        </dd>
+      </div>
+    </dl>
   )
 }
 
@@ -38,6 +68,33 @@ export function SignedPercentage({ value }) {
   )
 }
 
+function CropPassiveStatValue({ stat }) {
+  if (stat.format === 'exponent-bonus') {
+    return <>+<FormattedNumber value={stat.value} maximumFractionDigits={3} /></>
+  }
+  if (stat.format === 'percentage') {
+    return <SignedPercentage value={stat.value} />
+  }
+
+  if (stat.format === 'crop-yield') {
+    return (
+      <>
+        {stat.value > 0 ? '+' : stat.value < 0 ? '−' : ''}
+        <FormattedNumber
+          value={Math.abs(stat.value)}
+          maximumFractionDigits={2}
+        />{' '}
+        Crops
+      </>
+    )
+  }
+
+  return (
+    <>
+      ×<FormattedNumber value={stat.value} maximumFractionDigits={3} />
+    </>
+  )
+}
 function RootTunnelDistance({ distances }) {
   if (!distances || distances.length === 0) {
     return null
@@ -46,7 +103,7 @@ function RootTunnelDistance({ distances }) {
   return (
     <span className="crop-hover-tunnel-distance">
       {' '}via Root Tunnel (distance{distances.length === 1 ? '' : 's'}{' '}
-      {distances.join(', ')})
+      {distances.map((distance) => getCachedFormattedNumber(distance, 2)).join(', ')})
     </span>
   )
 }
@@ -68,18 +125,22 @@ export function MirrorCornConnectionLines({ blueprint, links, pending = false })
       preserveAspectRatio="none"
       aria-hidden="true"
     >
-      {links.map(({ sourceIndex, targetIndex }) => {
+      {links.map(({ sourceIndex, targetIndex, tunnelIndex }) => {
         const source = getCellCenter(sourceIndex)
         const target = getCellCenter(targetIndex)
+        const tunnel = Number.isInteger(tunnelIndex)
+          ? getCellCenter(tunnelIndex)
+          : null
 
         return (
-          <line
+          <polyline
             className={pending ? 'mirror-corn-line-pending' : 'mirror-corn-line'}
             key={`${sourceIndex}-${targetIndex}`}
-            x1={source.x}
-            y1={source.y}
-            x2={target.x}
-            y2={target.y}
+            points={
+              tunnel
+                ? `${source.x},${source.y} ${tunnel.x},${tunnel.y} ${target.x},${target.y}`
+                : `${source.x},${source.y} ${target.x},${target.y}`
+            }
           />
         )
       })}
@@ -88,11 +149,16 @@ export function MirrorCornConnectionLines({ blueprint, links, pending = false })
 }
 
 export function CropHoverInspector({
+  game,
   blueprint,
   index,
   completedCropPerfections,
   rowsProducedPerSecond,
   activeHamsters,
+  rabbitContractsCompleted,
+  totalRabbitRelationsEarned,
+  revealManateeEffects,
+  seedAugmentations,
   cursor,
 }) {
   const stats = getBlueprintCropStats(
@@ -101,6 +167,10 @@ export function CropHoverInspector({
     completedCropPerfections,
     rowsProducedPerSecond,
     activeHamsters,
+    rabbitContractsCompleted,
+    getFortuneModifiers(game),
+    seedAugmentations,
+    totalRabbitRelationsEarned,
   )
 
   if (!stats) {
@@ -115,14 +185,22 @@ export function CropHoverInspector({
     >
       <p className="eyebrow">Hovered crop</p>
       <h3>
-        <span aria-hidden="true">{getCropMark(stats.crop)}</span>{' '}
-        {getCropName(stats.crop, completedCropPerfections)}
+        <CropVisual
+          cropId={stats.crop}
+          completedCropPerfections={completedCropPerfections}
+          className="crop-hover-visual"
+        />{' '}
+        {stats.crop === 'fourLeafClover' &&
+        game.cloverAssembly?.assembled === true
+          ? '5-Leaf Clover'
+          : getCropName(stats.crop, completedCropPerfections)}
       </h3>
       <dl className="crop-hover-stats">
         <div>
           <dt>Harvest</dt>
           <dd>
-            {stats.harvestDestroyedByAppleTree ? (
+            {stats.harvestDestroyedByAppleTree ||
+            stats.harvestDestroyedByInfestation ? (
               'Destroyed'
             ) : (
               <>
@@ -131,12 +209,14 @@ export function CropHoverInspector({
             )}
           </dd>
         </div>
-        <div>
-          <dt>Hamster efficiency</dt>
-          <dd>
-            <SignedPercentage value={stats.hamsterEfficiencyBonus} />
-          </dd>
-        </div>
+        {stats.passiveStats.map((stat) => (
+          <div key={stat.id}>
+            <dt>{stat.label}</dt>
+            <dd>
+              <CropPassiveStatValue stat={stat} />
+            </dd>
+          </div>
+        ))}
         {stats.externalCropBuffMultiplier !== null ? (
           <div>
             <dt>External effects</dt>
@@ -147,7 +227,15 @@ export function CropHoverInspector({
         ) : null}
       </dl>
       <p className="crop-hover-own-effect">
-        {getCropEffectDescription(stats.crop, completedCropPerfections)}
+        {stats.crop === 'fourLeafClover' &&
+        game.cloverAssembly?.assembled === true
+          ? 'Brings the fortunes chosen in the active 5-Leaf Clover loadout.'
+          : getCropEffectDescription(
+          stats.crop,
+          completedCropPerfections,
+          seedAugmentations,
+          revealManateeEffects,
+        )}
       </p>
       <h4>Received effects</h4>
       {stats.receivedEffects.length > 0 ? (
@@ -156,7 +244,7 @@ export function CropHoverInspector({
             if (effect.type === 'crop-effect-modifier') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop effects from {effect.count}{' '}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop effects from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
                   {effect.count === 1 ? '' : 's'}
                   <RootTunnelDistance distances={effect.adjacencyDistances} />
@@ -164,11 +252,50 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'sweet-potato-bed') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Connected bed: <FormattedNumber value={effect.connectedCropCount} maximumFractionDigits={0} /> Sweet Potatoes.{' '}
+                  <FormattedNumber value={effect.adjacentBuffCount} maximumFractionDigits={0} /> unique connected buffs
+                  {' '}(
+                  <FormattedNumber value={effect.turnipCount} maximumFractionDigits={0} /> Turnips,{' '}
+                  <FormattedNumber value={effect.mirrorCornCount} maximumFractionDigits={0} /> Mirror Corns)
+                  apply ×<FormattedNumber value={effect.buffMultiplier} maximumFractionDigits={3} />, followed by a ×<FormattedNumber value={effect.crowdingMultiplier} maximumFractionDigits={3} /> crowding penalty.
+                </li>
+              )
+            }
+
+            if (effect.type === 'rich-soil') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Rich Soil: ×<FormattedNumber value={effect.multiplier} />
+                  {' '}Leek enrichment from this Crop's base harvest.
+                </li>
+              )
+            }
+
+            if (effect.type === 'leek-fortune-cookie') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Leek Fortune Cookie: Leek Enrichment
+                  {' '}^<FormattedNumber value={effect.exponent} />
+                </li>
+              )
+            }
+
             if (effect.type === 'mirror-corn') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop effects from {effect.count} Mirror Corn
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop effects from <FormattedNumber value={effect.count} maximumFractionDigits={0} /> Mirror Corn
                   {effect.count === 1 ? '' : 's'}
+                </li>
+              )
+            }
+
+            if (effect.type === 'mirror-corn-overload') {
+              return (
+                <li key={effect.type + '-' + effectIndex}>
+                  Reflected sunlight overload: <FormattedNumber value={effect.count} maximumFractionDigits={0} /> reflections exceeds the safe limit of <FormattedNumber value={effect.safeLimit} maximumFractionDigits={0} />. This Crop's harvest and all passive effects are destroyed.
                 </li>
               )
             }
@@ -182,14 +309,67 @@ export function CropHoverInspector({
               )
             }
 
+            if (effect.type === 'water-lettuce-infestation') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Field-wide Water Lettuce infestation; this Crop's harvest
+                  and all passive effects are disabled.
+                </li>
+              )
+            }
+
+            if (effect.type === 'leeching-vine') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> additional Turnip effectiveness from Leeching Vine
+                  {' '}(Gourd multiplier ^ <FormattedNumber value={effect.exponent} maximumFractionDigits={2} /> from <FormattedNumber value={effect.strength} maximumFractionDigits={0} /> nourishment strength)
+                </li>
+              )
+            }
+
+            if (effect.type === 'shoal-grass-network') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Connected network: <FormattedNumber value={effect.count} maximumFractionDigits={0} /> Shoal Grass
+                </li>
+              )
+            }
+
+            if (effect.type === 'shoal-grass-debuff-nullification') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Debuffs nullified by a complete Shoal Grass surround.
+                </li>
+              )
+            }
+
+            if (effect.type === 'mangrove-nursery') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Nursery Crop types:{' '}
+                  {effect.cropTypes.map((cropType, cropTypeIndex) => (
+                    <span key={cropType.key}>
+                      {cropTypeIndex > 0 ? ', ' : ''}
+                      {getCropName(
+                        cropType.cropId,
+                        completedCropPerfections,
+                      )}{' '}
+                      (×<FormattedNumber value={cropType.weight} maximumFractionDigits={0} />)
+                    </span>
+                  ))}
+                  . Current bonus: +<FormattedNumber value={effect.bonus * 100} maximumFractionDigits={2} />%; cap: +<FormattedNumber value={effect.cap * 100} maximumFractionDigits={0} />%.
+                </li>
+              )
+            }
+
             if (effect.type === 'harvest-destruction') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
                   {effect.multiplier === undefined ? (
-                    'Harvest destroyed by an adjacent Apple Tree'
+                    'Harvest destroyed by an adjacent Apple Sapling'
                   ) : (
                     <>
-                      ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> harvest from Apple Tree
+                      ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> harvest from Apple Sapling
                     </>
                   )}
                   <RootTunnelDistance distances={effect.adjacencyDistances} />
@@ -200,15 +380,54 @@ export function CropHoverInspector({
             if (effect.type === 'global-passive-suppression') {
               return (
                 <li key={effect.type + '-' + effectIndex}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Crop passive effects from Splitweed (cannot be boosted)
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Crop passive effects after field-wide modifiers
                 </li>
               )
             }
 
+            if (effect.type === 'fortune-passive') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> Crop passive effects from Breezes of Fortune
+                </li>
+              )
+            }
+
+            if (effect.type === 'fortune-crop-yield') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> Crop yields from {effect.source === 'fortunesWrath' ? "Fortune's Wrath" : 'Breezes of Fortune'}
+                </li>
+              )
+            }
+
+            if (effect.type === 'fortune-production-exponent') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  Crop production ^<FormattedNumber value={effect.exponent} maximumFractionDigits={2} /> from Fortune&apos;s Wrath
+                </li>
+              )
+            }
+
+            if (effect.type === 'misfortune-upgrade-production') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> Crop production from Unfortunate Row
+                </li>
+              )
+            }
+
+            if (effect.type === 'fortune-harvest') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={3} /> harvest from Breezes of Fortune
+                </li>
+              )
+            }
             if (effect.type === 'global-hamster-efficiency') {
               return (
                 <li key={effectIndex}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Hamster Efficiency from {effect.count}{' '}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Hamster Efficiency from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
 {effect.count === 1 ? '' : 's'} (cannot be boosted)
                 </li>
@@ -216,18 +435,44 @@ export function CropHoverInspector({
             }
 
             if (effect.type === 'global-row-production') {
+              if (effect.pattern === 'horizontal-connections') {
+                return (
+                  <li key={`${effect.type}-${effectIndex}`}>
+                    ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Row production from <FormattedNumber value={effect.count} maximumFractionDigits={0} /> horizontal Soybean connection{effect.count === 1 ? '' : 's'}
+                  </li>
+                )
+              }
+
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Row production from {effect.count}{' '}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Row production from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
                   {effect.count === 1 ? '' : 's'} (cannot be boosted)
+                </li>
+              )
+            }
+            if (effect.type === 'global-floor-production') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> global Floor production from <FormattedNumber value={effect.count} maximumFractionDigits={0} /> complete 2×2 Soybean square{effect.count === 1 ? '' : 's'}
+                </li>
+              )
+            }
+            if (effect.type === 'carrot-high-harvest') {
+              return (
+                <li key={`${effect.type}-${effectIndex}`}>
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from <FormattedNumber value={effect.qualifyingCropTypeCount} maximumFractionDigits={0} />{' '}
+                  high-harvest Crop type{effect.qualifyingCropTypeCount === 1 ? '' : 's'} and{' '}
+                  <FormattedNumber value={effect.activeCarrotCount} maximumFractionDigits={0} />{' '}
+                  {getCropName('carrot', completedCropPerfections)}
+                  {effect.activeCarrotCount === 1 ? '' : 's'}
                 </li>
               )
             }
             if (effect.type === 'global-harvest') {
               return (
                 <li key={`${effect.type}-${effectIndex}`}>
-                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from {effect.count}{' '}
+                  ×<FormattedNumber value={effect.multiplier} maximumFractionDigits={2} /> all Crop harvest from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                   {getCropName(effect.sourceCropId, completedCropPerfections)}
                   {effect.count === 1 ? '' : 's'}
 
@@ -246,7 +491,7 @@ export function CropHoverInspector({
             return (
               <li key={`${effect.type}-${effectIndex}`}>
                 {effect.bonus >= 0 ? '+' : '−'}
-                <FormattedNumber value={Math.abs(effect.bonus)} maximumFractionDigits={2} /> Crop yield from {effect.count}{' '}
+                <FormattedNumber value={Math.abs(effect.bonus)} maximumFractionDigits={2} /> Crop yield from <FormattedNumber value={effect.count} maximumFractionDigits={0} />{' '}
                 {getCropName(effect.sourceCropId, completedCropPerfections)}
                 {effect.count === 1 ? '' : 's'}
                 <RootTunnelDistance distances={effect.adjacencyDistances} />
